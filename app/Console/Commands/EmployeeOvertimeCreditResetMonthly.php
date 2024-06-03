@@ -28,18 +28,19 @@ class EmployeeOvertimeCreditResetMonthly extends Command
      */
     public function handle()
     {
-        $employees = EmployeeProfile::all();
+        /**
+         * Reset Overtime Credit 
+         */
+        $employees = EmployeeProfile::where('deactivated_at', null)->get();
 
         foreach ($employees as $employee) {
-            EmployeeOvertimeCredit::where('employee_profile_id', $employee->id)->first()
+            $employee_overtime_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee->id)->first();
+            $latest_used_credit_by_hour_annual = $employee_overtime_credit->used_credit_by_hour + $employee_overtime_credit->earned_credit_by_hour;
+            $employee_overtime_credit
                 ->update([
-                    'used_credit_by_hour_annual' => DB::raw('used_credit_by_hour_annual + earn_credit_by_hour'),
-                    'earn_credit_by_hour' => 0
+                    'used_credit_by_hour' => $latest_used_credit_by_hour_annual,
+                    'earned_credit_by_hour' => 0
                 ]);
         }
-
-
     }
-
-    
 }

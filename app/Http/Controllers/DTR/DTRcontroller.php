@@ -94,6 +94,10 @@ class DTRcontroller extends Controller
 
     }
     public function getValidatedEntry($firstin,$secondin){
+        if($firstin && $secondin){
+            return $firstin;
+        }
+
         if($firstin && !$secondin){
             return $firstin;
         }
@@ -171,7 +175,8 @@ class DTRcontroller extends Controller
                 'second_in' => ' --:--',
                 'second_out' => ' --:--',
                 'schedule'=>[],
-                'deviceLogs'=>$deviceLogs
+                'deviceLogs'=>$deviceLogs,
+                'rec'=>$selfRecord
             ];
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
@@ -955,9 +960,16 @@ class DTRcontroller extends Controller
                 ]);
             }
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
-            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
+         //   $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
 
+             $recommending =  Help::getRecommendingAndApprovingOfficer($employee->assignedArea->findDetails(),$employee->id)['recommending_officer'] ?? null;
+             $approver = null;
+             if($recommending){
+                $appr = EmployeeProfile::findorFail($recommending);
+                $approver = $appr->personalInformation->employeeName();
+             }
+          
+            
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,

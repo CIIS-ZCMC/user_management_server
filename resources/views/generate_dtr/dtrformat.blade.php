@@ -595,7 +595,7 @@
     </div>
     <br>
     <div class="signature">
-        <div style="font-size: 12px;text-transform:uppercase">
+        <div style="font-size: 12px;text-transform:uppercase;font-weight:bold">
             {{ $Incharge }}
         </div>
         <div class="line"></div>

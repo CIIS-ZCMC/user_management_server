@@ -148,7 +148,7 @@ class OfficialTimeController extends Controller
                 'Date To' => $dateTo,
                 'Time From' => $timeFrom,
                 'Time To' => $timeTo,
-                'purpose' => $purpose,
+                'Purpose' => $purpose,
                 'Date Filed' => $applied_date,
 
 

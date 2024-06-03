@@ -22,6 +22,8 @@ Route::get('/initialize-storage', function () {
 
 Route::
         namespace('App\Http\Controllers')->group(function () {
+            Route::get('test', 'DashboardController@test');
+
             Route::get('announcements', 'AnnouncementsController@index');
             Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
             Route::get('announcements/{id}', 'AnnouncementsController@show');

@@ -954,7 +954,7 @@ class EmployeeProfileController extends Controller
                 'personal_information' => $personal_information_data,
                 'contact' => $personal_information->contact === null? null: new ContactResource($personal_information->contact),
                 'address' => $address,
-                'family_background' => $personal_information->family_background === null? null: new FamilyBackGroundResource($personal_information->familyBackground),
+                'family_background' => $personal_information->familyBackground === null? null: new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
                 'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;

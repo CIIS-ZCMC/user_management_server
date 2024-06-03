@@ -122,11 +122,11 @@ class PermissionController extends Controller
         }
     }
     
-    public function activate($id, AuthPinApprovalRequest $request)
+    public function activate($id, Request $request)
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -153,11 +153,11 @@ class PermissionController extends Controller
         }
     }
     
-    public function deactivate($id, AuthPinApprovalRequest $request)
+    public function deactivate($id, Request $request)
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -184,7 +184,7 @@ class PermissionController extends Controller
         }
     }
     
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
             $user = $request->user;

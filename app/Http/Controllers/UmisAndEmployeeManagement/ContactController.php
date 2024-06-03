@@ -99,9 +99,19 @@ class ContactController extends Controller
         }
     }
 
-    public function update($id, ContactRequest $request)
+    public function update($id, Request $request)
     {
         try {
+
+            if (isset($request->password)) {
+                $user = $request->user;
+                $cleanData['pin'] = strip_tags($request->password);
+
+                if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                    return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                }
+            }
+            
             $contact = Contact::where('personal_information_id', $id)->first();
 
             if (!$contact) {
@@ -110,8 +120,8 @@ class ContactController extends Controller
 
             $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
-                if ($value === null) {
+            foreach ($request->contact as $key => $value) {
+                if ($value === null || $key === 'password') {
                     $cleanData[$key] = $value;
                     continue;
                 }

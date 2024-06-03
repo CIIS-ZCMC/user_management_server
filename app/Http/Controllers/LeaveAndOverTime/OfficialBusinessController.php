@@ -135,7 +135,7 @@ class OfficialBusinessController extends Controller
                 'Employee Name' => $employeeName,
                 'Date From' => $dateFrom,
                 'Date To' => $dateTo,
-                'purpose' => $purpose,
+                'Purpose' => $purpose,
                 'Date Filed' => $applied_date,
 
 
