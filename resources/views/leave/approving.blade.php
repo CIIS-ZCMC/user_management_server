@@ -59,13 +59,22 @@
             font-size: 14px;
             color: #555;
         }
+
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+<body>
     <div class="container">
         <h1>New Leave Request Submitted</h1>
-        <p>Dear {{ $data['name'] }}</p>
+        <p>Dear {{ $data['name'] }},</p>
         <p>An employee has submitted a new leave request. Here are the details:</p>
         <ul>
             <li><strong>Employee ID:</strong> {{ $data['employeeID'] }}</li>
@@ -74,10 +83,10 @@
             <li><strong>Start Date:</strong> {{ $data['dateFrom'] }}</li>
             <li><strong>End Date:</strong> {{ $data['dateTo'] }}</li>
         </ul>
-        <p>Please review the request and take the necessary actions.</p>
-        <p>Thank you,</p>
+        <p>To review the request and take the necessary actions, please click on this <a href="{{ $Link }}">link</a>.</p>
+        <p>Thank you.</p>
         <div class="system-info">
-            <p>This notification was sent by the ZCMC Portal. For more information, please visit our portal to view other information or contact.</p>
+            <p>This notification was sent by the ZCMC Portal. For more information, please visit our portal or contact support.</p>
         </div>
         <p class="footer">This is an automated message, please do not reply.</p>
     </div>

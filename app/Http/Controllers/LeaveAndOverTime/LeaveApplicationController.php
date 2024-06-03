@@ -1282,22 +1282,7 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
-                    $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
-                    $email = $hrmo->personalinformation->contact->email_address;
-                    $name = $hrmo->personalInformation->name();
-
-                    $data = [
-                        'name' =>  'HRMO',
-                        'employeeName' =>  $employee_profile->personalInformation->name(),
-                        'employeeID' => $employee_profile->employee_id,
-                        'leaveType' =>  $leave_type->name,
-                        'dateFrom' =>  $request->date_from,
-                        'dateTo' =>  $request->date_to,
-                        'R' =>  $request->reason,
-                        "Link" => config('app.client_domain')
-                    ];
-
-                    SendEmailJob::dispatch('leave_request', $email, $name, $data);
+                  
                 }
             }
 
@@ -1334,6 +1319,22 @@ class LeaveApplicationController extends Controller
                 "id" => Helpers::getEmployeeID($hrmo_officer),
                 "data" => new NotificationResource($user_notification)
             ]);
+
+            $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
+            $email = $hrmo->personalinformation->contact->email_address;
+            $name = $hrmo->personalInformation->name();
+
+            $data = [
+                'name' =>  'HRMO',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                'leaveType' =>  $leave_type->name,
+                'dateFrom' =>  $request->date_from,
+                'dateTo' =>  $request->date_to,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('leave_request', $email, $name, $data);
 
             // Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing ' . $this->PLURAL_MODULE_NAME . '.'); //System Logs
 
