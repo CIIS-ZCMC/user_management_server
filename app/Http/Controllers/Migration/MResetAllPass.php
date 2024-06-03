@@ -31,13 +31,14 @@ class MResetAllPass extends Controller
         //
         $emm = null;
         try {
+            // dd(EmployeeProfile::all());
             $employees = EmployeeProfile::all();
+            // $employees = EmployeeProfile::offset(450)->limit(100)->get();
             $temp = [];
             $employeeProfiles = EmployeeProfile::leftJoin('assigned_areas as aa', 'employee_profiles.id', '=', 'aa.employee_profile_id')
                 ->select('employee_profiles.employee_id', 'aa.*')
                 ->where(function ($query) {
-                    $query->where('aa.section_id', 12)
-                        ->orWhere('aa.unit_id', 15);
+                    $query->where('aa.section_id', 1);
                 })
                 ->get()->pluck('employee_profile_id');
             // dd($employeeProfiles);
@@ -45,12 +46,12 @@ class MResetAllPass extends Controller
 
                 $password = Helpers::generatePassword();
                 $hashPassword = Hash::make($password . config('app.salt_value'));
-                $employee->authorization_pin = null;
-                $employee->password_encrypted = Crypt::encryptString($hashPassword);
-                $employee->save();
 
                 // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
-                if (in_array($employee->id, $employeeProfiles->toArray())) {
+                if (in_array($employee->id, [132])) {
+                    $employee->authorization_pin = null;
+                    $employee->password_encrypted = Crypt::encryptString($hashPassword);
+                    $employee->save();
                     $employee_profile = EmployeeProfile::find($employee->id);
                     // $default_password = Helpers::generatePassword();
                     $data = [
@@ -78,7 +79,7 @@ class MResetAllPass extends Controller
                 }
             }
 
-            \Log::info('P-Reset&sent Successfully', ["message" => 'Toinks']);
+            \Log::info('P-Reset&sent Successfully', ["message" => '-------------------------------------------------------------------------------------------']);
             dd($temp);
         } catch (\Throwable $th) {
             dd($th);
