@@ -30,6 +30,7 @@ use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
+use App\Jobs\SendEmailJob;
 use App\Models\Country;
 use App\Models\CtoApplication;
 use App\Models\EmployeeLeaveCredit;
@@ -115,7 +116,7 @@ class LeaveApplicationController extends Controller
                                 ->where('status', 'received')
                                 ->get();
             // ->where('status', 'approved')
-         
+
 
         $response = [];
 
@@ -1281,6 +1282,16 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
+
+                    $data = [
+                        'employeeID' => $employee_profile->employee_id,
+                        "Link" => config('app.client_domain')
+                    ];
+
+                    $email = $employee_profile->personalinformation->contact->email_address;
+                    $name = $employee_profile->personalInformation->name();
+
+                    SendEmailJob::dispatch('leave_request', $email, $name, $data);
                 }
             }
 

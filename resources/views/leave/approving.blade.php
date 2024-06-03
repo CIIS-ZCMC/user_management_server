@@ -55,7 +55,7 @@
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
     <div class="container">
         <h1>New Leave Request Submitted</h1>
-        <p>Dear Charlou,</p>
+        <p>Dear {{$name}},</p>
         <p>An employee has submitted a new leave request. Here are the details:</p>
         <ul>
             <li><strong>Employee Name:</strong> Monkey D. Luffy</li>
