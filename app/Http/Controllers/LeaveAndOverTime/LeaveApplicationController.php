@@ -113,9 +113,9 @@ class LeaveApplicationController extends Controller
     public function exportCsv()
     {
         $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')
-                                ->where('status', 'received')
-                                ->get();
-            // ->where('status', 'approved')
+            ->where('status', 'received')
+            ->get();
+        // ->where('status', 'approved')
 
 
         $response = [];
@@ -1282,14 +1282,20 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
+                    $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
+                    $email = $hrmo->personalinformation->contact->email_address;
+                    $name = $hrmo->personalInformation->name();
 
                     $data = [
+                        'name' =>  'HRMO',
+                        'employeeName' =>  $employee_profile->personalInformation->name(),
                         'employeeID' => $employee_profile->employee_id,
+                        'leaveType' =>  $leave_type->name,
+                        'dateFrom' =>  $request->date_from,
+                        'dateTo' =>  $request->date_to,
+                        'R' =>  $request->reason,
                         "Link" => config('app.client_domain')
                     ];
-
-                    $email = $employee_profile->personalinformation->contact->email_address;
-                    $name = $employee_profile->personalInformation->name();
 
                     SendEmailJob::dispatch('leave_request', $email, $name, $data);
                 }
