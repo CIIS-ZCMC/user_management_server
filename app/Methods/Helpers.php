@@ -663,8 +663,8 @@ AND id IN (
                 }
 
 
-                $ot = round($overtime, 2);
-                $ut = round($undertime, 2);
+                $ot = floor($overtime);
+                $ut = floor($undertime);
 
 
                 $Schedule_Minutes  = $this->getTotalTimeRegistered(

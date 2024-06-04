@@ -31,6 +31,10 @@
         <br>
         <span style="font-size:15px">
             if you are seeing this. please register your biometric at IISU
+            <br>
+            or contact us at :
+            <br>
+            Local Telephone number : 262
         </span>
 
     </h3>
