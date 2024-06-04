@@ -15,13 +15,17 @@ use App\Models\OvtApplicationEmployee;
 use Illuminate\Http\Response;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
+use App\Http\Resources\NotificationResource;
+use App\Jobs\SendEmailJob;
 use App\Models\Department;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
+use App\Models\Notifications;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
+use App\Models\UserNotifications;
 use DateTime;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -135,13 +139,14 @@ class OvertimeController extends Controller
         $options->set('isRemoteEnabled', true);
         $dompdf = new Dompdf($options);
         $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-        $dompdf->loadHtml(view("overtimePast",compact(
+        $dompdf->loadHtml(view("overtimePast", compact(
             'employees',
             'time_from',
             'time_to',
             'preparedBy',
             'recommendingOfficer',
-            'approvingOfficer')));
+            'approvingOfficer'
+        )));
 
         $dompdf->setPaper('Letter', 'landscape');
         $dompdf->render();
@@ -595,6 +600,38 @@ class OvertimeController extends Controller
                 'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
+
+            $recommending = EmployeeProfile::where('id', Helpers::getDivHead($assigned_area))->first();
+            $email = $recommending->personalinformation->contact->email_address;
+            $name = $recommending->personalInformation->name();
+
+            $data = [
+                'name' =>  'Division Head',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('overtime_request', $email, $name, $data);
+
+            $title = "New Overtime Request";
+            $description = $user->personalInformation->name() . " filed a new overtime request";
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/head-overtime-requests',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $recommending->id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($recommending->id),
+                "data" => new NotificationResource($user_notification)
+            ]);
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
                 //  'data' => OvertimeResource::collection($overtime_application),
@@ -711,6 +748,39 @@ class OvertimeController extends Controller
                 'overtime_application_id' => $ovt_id,
                 'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
+            ]);
+
+
+            $recommending = EmployeeProfile::where('id', Helpers::getDivHead($assigned_area))->first();
+            $email = $recommending->personalinformation->contact->email_address;
+            $name = $recommending->personalInformation->name();
+
+            $data = [
+                'name' =>  'Division Head',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('overtime_request', $email, $name, $data);
+
+            $title = "New Overtime Request";
+            $description = $user->personalInformation->name() . " filed a new overtime request";
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/head-overtime-requests',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $recommending->id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($recommending->id),
+                "data" => new NotificationResource($user_notification)
             ]);
 
             return response()->json([
@@ -852,6 +922,38 @@ class OvertimeController extends Controller
                 'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
+
+            $recommending = EmployeeProfile::where('id', Helpers::getDivHead($assigned_area))->first();
+            $email = $recommending->personalinformation->contact->email_address;
+            $name = $recommending->personalInformation->name();
+
+            $data = [
+                'name' =>  'Division Head',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('overtime_request', $email, $name, $data);
+
+            $title = "New Overtime Request";
+            $description = $user->personalInformation->name() . " filed a new overtime request";
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/head-overtime-requests',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $recommending->id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($recommending->id),
+                "data" => new NotificationResource($user_notification)
+            ]);
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
                 //  'data' => OvertimeResource::collection($overtime_application),
@@ -910,6 +1012,19 @@ class OvertimeController extends Controller
                 'action_by_id' => $employee_profile->id,
                 'action' => $log_action
             ]);
+
+            $approving = EmployeeProfile::where('id', $data->approving_officer)->first();
+            $email = $approving->personalinformation->contact->email_address;
+            $name = $approving->personalInformation->name();
+
+            $data = [
+                'name' =>  'MCC Chief',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('overtime_request', $email, $name, $data);
 
             return response()->json([
                 'data' => new OvertimeResource($data),

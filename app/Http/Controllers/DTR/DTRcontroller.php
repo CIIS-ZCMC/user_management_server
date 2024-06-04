@@ -360,6 +360,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
+
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
 
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
@@ -968,8 +969,8 @@ class DTRcontroller extends Controller
                 $appr = EmployeeProfile::findorFail($recommending);
                 $approver = $appr->personalInformation->employeeName();
              }
-          
-            
+
+
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,

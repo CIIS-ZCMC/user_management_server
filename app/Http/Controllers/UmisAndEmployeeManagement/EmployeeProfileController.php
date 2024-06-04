@@ -860,6 +860,40 @@ class EmployeeProfileController extends Controller
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
         $profile_url = $employee_profile->profile_url === null? null: config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url;
 
+
+        $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
+
+        $totalMonths = 0; // Initialize total months variable
+        $totalYears = 0; // Initialize total months variable
+        $totalZcmc = 0;
+
+        foreach ($work_experiences as $work) {
+            $dateFrom = Carbon::parse($work->date_from);
+            $dateTo = Carbon::parse($work->date_to);
+            $months = $dateFrom->diffInMonths($dateTo);
+            if ($work->company == "Zamboanga City Medical Center") {
+                $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
+                $totalZcmc  += $totalZcmcMonths;
+            }
+
+            $totalMonths += $months;
+        
+        }
+
+        $currentServiceMonths = 0;
+        if ($employee_profile->employmentType->id !== 5) {
+            $dateHired = Carbon::parse($employee_profile->date_hired);
+            $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
+        }
+       
+        $total = $currentServiceMonths +  $totalMonths;
+        $totalYears = floor($total  / 12);
+
+        // Total service in ZCMC
+        $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
+        $totalYearsInZcmc = floor($totalMonthsInZcmc  / 12);
+
+
         $employee = [
             'profile_url' => $profile_url,
             'employee_id' => $employee_profile->employee_id,
@@ -872,6 +906,10 @@ class EmployeeProfileController extends Controller
             'years_of_service' => $employee_profile->personalInformation->years_of_service,
             'last_login' => $last_login === null ? null : $last_login->created_at,
             'biometric_id' => $employee_profile->biometric_id,
+            'total_months' => $total - ($totalYears * 12),
+            'total_years' => $totalYears,
+            'zcmc_service_years' => $totalYearsInZcmc,
+            'zcmc_service_months' => $totalMonthsInZcmc - ($totalYearsInZcmc * 12),
             'is_admin' => $special_access_role !== null ? true : false,
             'is_allowed_ta' => $employee_profile->allow_time_adjustment,
             'shifting' => $employee_profile->shifting
@@ -1179,10 +1217,16 @@ class EmployeeProfileController extends Controller
             $contact = Contact::where('email_address', $email)->first();
 
             if (!$contact) {
-                return response()->json(['message' => "Email doesn't exist."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Email verification failed. Please use the email you provided during registration."], Response::HTTP_FORBIDDEN);
             }
 
             $employee = $contact->personalInformation->employeeProfile;
+
+            if ($employee->authorization_pin === null || $employee->authorization_pin === '') {
+                return response()->json(['message' => "Your account password cannot be recovered as there has been no login activity recorded.
+                "], Response::HTTP_FORBIDDEN);
+            };
+
             $my_employee_details = Helpers::generateMyOTPDetails($employee);
 
             SendEmailJob::dispatch('otp', $my_employee_details['email'], $my_employee_details['name'], $my_employee_details['data']);
@@ -1604,10 +1648,13 @@ class EmployeeProfileController extends Controller
             $hashPassword = Hash::make($last_password->password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
+            $now = Carbon::now();
+            $threeMonths = $now->addMonths(3);
+
             $employee_profile->update([
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => Carbon::now(),
-                'password_expiration_at' => Carbon::now()->addSeconds(10),
+                'password_expiration_at' => $threeMonths,
                 'is_2fa' => false
             ]);
 
@@ -2611,7 +2658,7 @@ class EmployeeProfileController extends Controller
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
-                
+
                 $key = strtolower($request->sector).'_id';
                 $cleanData['plantilla_number_id'] = $plantilla_number_id;
                 $cleanData[$key] = strip_tags($request->area_id);
@@ -2729,7 +2776,7 @@ class EmployeeProfileController extends Controller
                 "Link" => config('app.client_domain')
             ];
 
-            $email = $employee_profile->personalinformation->contact->email_address;
+            $email = $employee_profile->personalInformation->contact->email_address;
             $name = $employee_profile->personalInformation->name();
 
             SendEmailJob::dispatch('new_account', $email, $name, $data);
@@ -2897,15 +2944,33 @@ class EmployeeProfileController extends Controller
 
             $totalMonths = 0; // Initialize total months variable
             $totalYears = 0; // Initialize total months variable
+            $totalZcmc = 0;
 
             foreach ($work_experiences as $work) {
                 $dateFrom = Carbon::parse($work->date_from);
                 $dateTo = Carbon::parse($work->date_to);
                 $months = $dateFrom->diffInMonths($dateTo);
+                if ($work->company == "Zamboanga City Medical Center") {
+                    $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
+                    $totalZcmc  += $totalZcmcMonths;
+                }
+
                 $totalMonths += $months;
+            
             }
 
-            $totalYears = floor($totalMonths / 12);
+            $currentServiceMonths = 0;
+            if ($employee_profile->employmentType->id !== 5) {
+                $dateHired = Carbon::parse($employee_profile->date_hired);
+                $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
+            }
+           
+            $total = $currentServiceMonths +  $totalMonths;
+            $totalYears = floor($total  / 12);
+
+            // Total service in ZCMC
+            $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
+            $totalYearsInZcmc = floor($totalMonthsInZcmc  / 12);
 
             $employee = [
                 'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
@@ -2918,8 +2983,10 @@ class EmployeeProfileController extends Controller
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
                 'last_login' => $last_login === null ? null : $last_login->created_at,
                 'biometric_id' => $employee_profile->biometric_id,
-                'total_months' => $totalMonths - ($totalYears * 12),
+                'total_months' => $total - ($totalYears * 12),
                 'total_years' => $totalYears,
+                'zcmc_service_years' => $totalYearsInZcmc,
+                'zcmc_service_months' => $totalMonthsInZcmc - ($totalYearsInZcmc * 12),
                 'is_allowed_ta' => $employee_profile->allow_time_adjustment,
                 'shifting' => $employee_profile->shifting
             ];

@@ -34,10 +34,23 @@ class EmployeeEarnAnnualSPLCredit extends Command
          * This task will trigger every 5th day of january
          * This task is intended for Special Privilege Leave
          */
+        $employees = EmployeeProfile::select('employee_profiles.*', 'd.probation')
+            ->join('assigned_areas as aa', 'aa.employee_profile_id', '=', 'employee_profiles.id')
+            ->join('designations as d', 'd.id', '=', 'aa.designation_id')
+            ->get()
+            ->filter(function ($employee) {
+                /**
+                 * Employees that is not under probation
+                 */
+                $probationMonths = (int) $employee->probation;
+                return $employee->date_hired >= Carbon::now()->subMonths($probationMonths);
+            });
 
-        $employees = EmployeeProfile::where('date_hired', Carbon::now()->subMonths(6))->get();
         $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
 
+        /**
+         * Reset SPL credit of employees base on annual credit per annual a person may get in a SPL
+         */
         foreach($employees as $employee){
             $employee_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
                 ->where('leave_type_id', $special_privilege_leave->id)->first();
@@ -45,13 +58,13 @@ class EmployeeEarnAnnualSPLCredit extends Command
             $current_credit = $employee_leave_credit->total_leave_credits;
 
             $employee_leave_credit -> update([
-                'total_leave_credits' => $special_privilege_leave->annual_value
+                'total_leave_credits' => $special_privilege_leave->annual_credit
             ]);
 
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $employee_leave_credit->id,
                 'previous_credit' => $current_credit,
-                'leave_credits' => $special_privilege_leave->annual_value,
+                'leave_credits' => $special_privilege_leave->annual_credit,
                 'reason' => "Annual SPL Credits",
                 'action' => "add"
             ]);
