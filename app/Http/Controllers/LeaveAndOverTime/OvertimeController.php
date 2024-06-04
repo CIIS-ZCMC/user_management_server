@@ -15,6 +15,7 @@ use App\Models\OvtApplicationEmployee;
 use Illuminate\Http\Response;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
+use App\Jobs\SendEmailJob;
 use App\Models\Department;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
@@ -135,13 +136,14 @@ class OvertimeController extends Controller
         $options->set('isRemoteEnabled', true);
         $dompdf = new Dompdf($options);
         $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-        $dompdf->loadHtml(view("overtimePast",compact(
+        $dompdf->loadHtml(view("overtimePast", compact(
             'employees',
             'time_from',
             'time_to',
             'preparedBy',
             'recommendingOfficer',
-            'approvingOfficer')));
+            'approvingOfficer'
+        )));
 
         $dompdf->setPaper('Letter', 'landscape');
         $dompdf->render();
@@ -595,6 +597,19 @@ class OvertimeController extends Controller
                 'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
+
+            $recommending = EmployeeProfile::where('id', Helpers::getDivHead($assigned_area))->first();
+            $email = $recommending->personalinformation->contact->email_address;
+            $name = $recommending->personalInformation->name();
+
+            $data = [
+                'name' =>  'Division Head',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('overtime_request', $email, $name, $data);
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
                 //  'data' => OvertimeResource::collection($overtime_application),

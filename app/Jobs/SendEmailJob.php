@@ -30,9 +30,9 @@ class SendEmailJob implements ShouldQueue
                 $subject = 'New Leave Request Submitted';
                 $body = View::make('leave.approving', ['data' => $data])->render();
                 break;
-            case "leave_update":
-                $subject = 'Leave Status Update';
-                $body = View::make('leave.mail', $data)->render();
+            case "overtime_request":
+                $subject = 'New Overtime Request Submitted';
+                $body = View::make('overtime.approving', ['data' => $data])->render();
                 break;
             case "new_account":
                 $subject = 'Your ZCMC Portal Account.';
