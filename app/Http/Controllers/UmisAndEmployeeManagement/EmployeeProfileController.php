@@ -2729,7 +2729,7 @@ class EmployeeProfileController extends Controller
                 "Link" => config('app.client_domain')
             ];
 
-            $email = $employee_profile->personalinformation->contact->email_address;
+            $email = $employee_profile->personalInformation->contact->email_address;
             $name = $employee_profile->personalInformation->name();
 
             SendEmailJob::dispatch('new_account', $email, $name, $data);
