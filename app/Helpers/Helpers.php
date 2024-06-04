@@ -520,7 +520,7 @@ class Helpers
                     $division = Division::where('id', $user->assignedArea->division->id)->first();
 
                     return [
-                        "recommending_officer" => $user->id,
+                        "recommending_officer" => $division->chief_employee_profile_id,
                         "approving_officer" => $division->chief_employee_profile_id
                     ];
 
@@ -884,16 +884,16 @@ class Helpers
                     $query->where('date', $currentDate);
                 })
                 ->exists();
-    
+
             // If schedule is missing for any day, return false
             if (!$hasSchedule) {
                 return false;
             }
-    
+
             // Move to the next day
             $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
         }
-    
+
         // If schedules are found for every day, return true
         return true;
         // return EmployeeSchedule::where('employee_profile_id', $employeeId)
