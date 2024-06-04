@@ -72,13 +72,13 @@
 </head>
 
 <body>
-    
-    
+
+
     <div class="container">
         <div style="display: flex; align-items: center;">
             <!-- ZCMC Logo on the left -->
             <img style="width:50px; margin-right: 10px;" src="https://th.bing.com/th/id/R.4ae65110f08f0d39558fd28c2cc01bd8?rik=zU9J5LxP9cw%2bbw&riu=http%3a%2f%2fdai.global-intelligent-solutions.com%2fimg%2fclients%2fzcmc.png&ehk=jWGGGeHJrilA0FTl4weHQ%2ff0L1diRoZfPim1tkB87eA%3d&risl=&pid=ImgRaw&r=0" alt="ZCMC Logo"/>
-            
+
             <!-- Center Text -->
             <div style="text-align: left;">
                 <p style="font-size: 12px; margin: 0; font-weight: lighter">Republic of the Philippines</p>
@@ -87,15 +87,14 @@
                 <p style="font-size: 12px; margin: 0; font-weight: lighter; text-transform: uppercase;">Dr. Evangelista Street, Sta. Catalina, Zamboanga City</p>
             </div>
         </div>
-        <h1>New <b>{{ $data['leaveType'] }}</b> Request</h1>
+    
         <p>Dear <b>{{ $data['name'] }}</b>,</p>
         <p>An employee has submitted a new leave request. Here are the details:</p>
         <ul>
             <li><strong>Employee ID:</strong> {{ $data['employeeID'] }}</li>
             <li><strong>Employee Name:</strong> {{ $data['employeeName'] }}</li>
-            <li><strong>Leave Type:</strong> {{ $data['leaveType'] }}</li>
-            <li><strong>Start Date:</strong> {{ date(' F d, Y', strtotime($data['dateFrom'])) }}</li>
-            <li><strong>End Date:</strong> {{ date(' F d, Y', strtotime($data['dateTo'])) }}</li>
+
+
         </ul>
         <p>To review the request and take the necessary actions, please click on this <a href="{{ $data['Link'] }}">link</a>.</p>
         <p>Thank you.</p>

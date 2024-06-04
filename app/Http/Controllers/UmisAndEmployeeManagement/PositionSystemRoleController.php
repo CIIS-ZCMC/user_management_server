@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Models\AssignArea;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -145,6 +146,12 @@ class PositionSystemRoleController extends Controller
             if(!$position_system_role)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $assigned_areas = AssignArea::where('designation_id', $position_system_role->designation_id)->get();
+
+            if(count($assigned_areas) > 0){
+                return response()->json(['message' => "Record is being use by other data."], Response::HTTP_FORBIDDEN);
             }
 
             $position_system_role -> delete();
