@@ -895,6 +895,7 @@ class LeaveApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($next_approving),
                     "data" => new NotificationResource($user_notification)
                 ]);
+                
                 $officer = EmployeeProfile::where('id', $next_approving)->first();
                 $email = $officer->personalinformation->contact->email_address;
                 $name = $officer->personalInformation->name();
@@ -1297,7 +1298,7 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
-                  
+
                 }
             }
 

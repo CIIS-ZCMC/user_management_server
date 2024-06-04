@@ -69,7 +69,7 @@
             </td>
         </tr>
     </table>
-        <h4>Your account for Zcmc Portal</h4>
+        <h4>Your account for ZCMC Portal</h4>
 
         <span style="font-size: 14px">PASSWORD:  <span style="font-weight:600">test</span></span>
         <h5 style="font-weight: normal">You need to register your biometric in IHOMP.<br/>No one can access your account without accessing this email.<br>Don't share this with anyone.</h5>

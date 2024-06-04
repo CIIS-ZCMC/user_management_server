@@ -1,3 +1,9 @@
+<?php
+// Generate the current date and time
+    $currentDateTime = date('F j, Y, g:i a');;
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,6 +44,8 @@
         }
 
     </style>
+
+    
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
     <div class="container">
@@ -66,6 +74,8 @@
             </td>
         </tr>
     </table>
+      
+        <h3>Date Sent: <?php echo $currentDateTime; ?></h2>
         <h4>Your ( OTP ) One Time Pin is</h4>
         <h1>{{$otpcode}}</h1>
         <h5 style="font-weight: normal">No one can access your account without accessing this email.<br>Don't share this with anyone.</h5>
