@@ -113,7 +113,7 @@ class DashboardController extends Controller
     public function listOfBirthdayCelebrant(Request $request)
     {
         try{
-            $personal_informations = PersonalInformation::whereMonth('date_of_birth', now()->format('m'))
+            $personal_informations = PersonalInformation::whereNotIn('id', [1])->whereMonth('date_of_birth', now()->format('m'))
                 ->whereDay('date_of_birth', now()->format('d'))->get();
             
             return response()->json([

@@ -77,7 +77,7 @@ class WorkExperienceController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+                $cleanData[$key] = $value;
             }
 
             $work_experience = WorkExperience::create($cleanData);
@@ -106,7 +106,7 @@ class WorkExperienceController extends Controller
                         $cleanData[$key] = $value;
                         continue;
                     }
-                    $cleanData[$key] = strip_tags($value);
+                    $cleanData[$key] = $value;
                 }
                 $cleanData['personal_information_id'] = $personal_information_id;
                 $work_experience = WorkExperience::create($cleanData);
@@ -158,7 +158,7 @@ class WorkExperienceController extends Controller
                         $cleanData[$key] = $value;
                         continue;
                     }
-                    $cleanData[$key] = strip_tags($value);
+                    $cleanData[$key] = $value;
                 }
 
                 if($work_experience->id === null || $work_experience->id === 'id'){
@@ -197,7 +197,7 @@ class WorkExperienceController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+                $cleanData[$key] = $value;
             }
             
             $work_experience->update($cleanData);

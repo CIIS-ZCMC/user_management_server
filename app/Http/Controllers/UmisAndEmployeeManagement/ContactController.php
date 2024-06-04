@@ -128,7 +128,7 @@ class ContactController extends Controller
                         $cleanData[$key] = $value;
                         continue;
                     }
-                    $cleanData[$key] = strip_tags($value);
+                    $cleanData[$key] = $value;
                 }
             } 
 
@@ -137,7 +137,7 @@ class ContactController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+                $cleanData[$key] = $value;
             }
 
             $contact->update($cleanData);
