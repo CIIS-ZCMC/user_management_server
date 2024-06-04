@@ -27,7 +27,7 @@ class SendEmailJob implements ShouldQueue
 
         switch ($email_type) {
             case "leave_request":
-                $subject = 'New Leave Request Submitted';
+                $subject = 'ZCMC - UMIS New Leave Request';
                 $body = View::make('leave.approving', ['data' => $data])->render();
                 break;
             case "leave_update":

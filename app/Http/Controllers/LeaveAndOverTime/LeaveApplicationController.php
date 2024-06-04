@@ -1336,7 +1336,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
-            $email = $hrmo->personalinformation->contact->email_address;
+            $email = $hrmo->personalInformation->contact->email_address;
             $name = $hrmo->personalInformation->name();
 
             $data = [
