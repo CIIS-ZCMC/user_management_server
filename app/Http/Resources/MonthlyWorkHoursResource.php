@@ -20,7 +20,7 @@ class MonthlyWorkHoursResource extends JsonResource
             'employment_type' => [
                 'id' => $this->employmentType->id,
                 'name' => $this->employmentType->name,
-                'work_hours' => $this->employmentType->monthlyWorkingHours,
+                'work_hours' => $this->employmentType->monthlyWorkingHours->work_hours,
             ],
         ];
     }
