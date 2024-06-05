@@ -27,6 +27,8 @@ class EmployeeScheduleResource extends JsonResource
 
         return [
             'employee_id' => $this->resource->isEmpty() ? null : $this->resource->first()->employee_profile_id,
+            'position_type' => $this->employeeProfile->findDesignation()->position_type,
+            'shifting' => $this->employeeProfile->shifting,
             'schedule' => $schedule,
         ];
     }
