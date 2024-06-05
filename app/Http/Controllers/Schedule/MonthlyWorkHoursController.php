@@ -34,20 +34,21 @@ class MonthlyWorkHoursController extends Controller
     public function index()
     {
         try {
+            $i = 1;
             $data = MonthlyWorkHours::with('employmentType')->get()->groupBy('month_year');
-            $formattedData = $data->map(function ($items, $monthYear, $i = 1) {
-                return [
+            $formattedData = $data->map(function ($items, $monthYear) use (&$i) {
+                $formatted = [
                     'id' => $i++,
-                    'month' => $monthYear,
-                    'year' => $monthYear,
+                    'month_year' => $monthYear,
                     'employment_type' => $items->map(function ($item) {
                         return [
-                            'id' => $item->employmentType->id,
+                            'id' => $item->id,
                             'name' => $item->employmentType->name,
                             'work_hours' => $item->employmentType->monthlyWorkingHours->work_hours,
                         ];
-                    })
+                    }),
                 ];
+                return $formatted;
             })->values();
 
             return response()->json(['data' => $formattedData], Response::HTTP_OK);

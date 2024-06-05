@@ -215,7 +215,7 @@
         </div>
 
         <div class="float-right">
-            For The Month of : <span class="underline"> {{ date('F', strtotime($month)) }} </span>
+            For The Month of : <span class="underline"> {{ date('F Y', strtotime($month)) }} </span>
         </div>
     </div>
 
