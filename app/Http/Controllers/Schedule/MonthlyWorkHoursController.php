@@ -34,8 +34,24 @@ class MonthlyWorkHoursController extends Controller
     public function index()
     {
         try {
-            $data = MonthlyWorkHours::with('employmentType')->get();
-            return response()->json(['data' => MonthlyWorkHoursResource::collection($data)], Response::HTTP_OK);
+            $data = MonthlyWorkHours::with('employmentType')->get()->groupBy('month_year');
+            $formattedData = $data->map(function ($items, $monthYear, $i = 1) {
+                return [
+                    'id' => $i++,
+                    'month' => $monthYear,
+                    'year' => $monthYear,
+                    'employment_type' => $items->map(function ($item) {
+                        return [
+                            'id' => $item->employmentType->id,
+                            'name' => $item->employmentType->name,
+                            'work_hours' => $item->employmentType->monthlyWorkingHours->work_hours,
+                        ];
+                    })
+                ];
+            })->values();
+
+            return response()->json(['data' => $formattedData], Response::HTTP_OK);
+            // return response()->json(['data' => MonthlyWorkHoursResource::collection($data)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
