@@ -89,7 +89,9 @@ class EmployeeScheduleController extends Controller
     {
         try {
             $user = $request->user;
-            $model = EmployeeSchedule::with('employeeProfile')->where('employee_profile_id', $user->id)->get();
+            $model = EmployeeSchedule::with(['employee', 'schedule.timeShift'])
+                ->where('employee_profile_id', $user->id)
+                ->get();
 
             return response()->json([
                 'data' => new EmployeeScheduleResource($model),
