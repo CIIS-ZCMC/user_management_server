@@ -524,7 +524,8 @@
                                             </tr>
                                         @else
                                             <tr>
-                                                <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id ? $vl_employee_credit->total_leave_credits + $data->applied_credits :$vl_employee_credit->total_leave_credits}}</td>
+                                                
+                                                <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $fl_employee_credit->leave_type_id || $data->leave_type_id === $vl_employee_credit->leave_type_id ? $vl_employee_credit->total_leave_credits + $data->applied_credits :$vl_employee_credit->total_leave_credits}}</td>
                                                 <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id ? $sl_employee_credit->total_leave_credits + $data->applied_credits :$sl_employee_credit->total_leave_credits}}</td>
                                                 <td style="padding: 3px; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits + $data->applied_credits}}</td>
                                             </tr>
@@ -534,8 +535,8 @@
                                                     <td style="padding: 3px; font-size:11px">&nbsp;</td>
                                                     <td style="padding: 3px; font-size:11px">&nbsp;</td>
                                                 @else
-                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id? $data->applied_credits :0}}</td>
-                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id? $data->applied_credits:0}}</td>
+                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id || $data->leave_type_id === $fl_employee_credit->leave_type_id ? $data->applied_credits : 0}}</td>
+                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id ? $data->applied_credits : 0}}</td>
                                                     <td style="padding: 3px; font-size:11px">{{$data->applied_credits}}</td>
                                                 @endif
                                             </tr>
@@ -545,8 +546,8 @@
                                                     <td class="text-end" style="font-weight: lighter; font-size:11px">{{$sl_employee_credit->total_leave_credits}} DAYS</td>
                                                     <td class="text-end" style="font-weight: lighter; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits - 0}} DAYS</td>
                                                 @else
-                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $vl_employee_credit->leave_type_id? $vl_employee_credit->total_leave_credits :$vl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
-                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $sl_employee_credit->leave_type_id? $sl_employee_credit->total_leave_credits :$sl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
+                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $vl_employee_credit->leave_type_id || $data->leave_type_id !== $fl_employee_credit->leave_type_id ? $vl_employee_credit->total_leave_credits :$vl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
+                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $sl_employee_credit->leave_type_id ? $sl_employee_credit->total_leave_credits :$sl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
                                                     <td class="text-end" style="font-weight: lighter; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
                                                 @endif
                                             </tr>
