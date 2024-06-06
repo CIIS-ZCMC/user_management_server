@@ -997,6 +997,7 @@ class DTRcontroller extends Controller
                     'ctoApp' => $ctoData ?? [],
                     'biometric_id'=>$biometric_id
                 ]);
+
             } else {
                 $options = new Options();
                 $options->set('isPhpEnabled', true);
