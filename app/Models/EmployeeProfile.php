@@ -446,6 +446,7 @@ class EmployeeProfile extends Authenticatable
     public function myEmployees($assign_area, $user)
     {
         $employees = [];
+        $division_heads = [];
         $division_employees = [];
         $department_employees = [];
         $section_employees = [];
@@ -457,7 +458,16 @@ class EmployeeProfile extends Authenticatable
             case 'Division':
                 $divisions = Division::where('id', $assign_area['details']->id)->get();
                 foreach ($divisions as $division) {
-                    $division_employees = $this->retrieveEmployees($employees, 'division_id', $division->id, [$user->id, 1]);
+                    if ($user->id !== $division->chief->id) {
+                        $division_employees = $this->retrieveEmployees($employees, 'division_id', $division->id, [1, $division->chief->id]);
+                    } else {
+                        $all_division = Division::all();
+                        foreach ($all_division as $head) {
+                            $division_heads[] = $head->chief;
+                        }
+
+                        $division_employees = $this->retrieveEmployees($employees, 'division_id', $division->id, [1]);
+                    }
                 }
 
                 $departments = Department::where('division_id', $assign_area['details']->id)->get();
@@ -470,7 +480,7 @@ class EmployeeProfile extends Authenticatable
                     $section_employees[] = $section->supervisor;
                 }
 
-                $employees = array_merge($division_employees, $department_employees, $section_employees);
+                $employees = array_merge($division_heads, $division_employees, $department_employees, $section_employees);
                 break;
 
             case 'Department':

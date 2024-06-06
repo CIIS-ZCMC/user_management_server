@@ -254,80 +254,97 @@
                             @foreach ($dates as $date)
                                 <td>
                                     <div class="schedule-container">
-                                        @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
+                                        {{-- @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
                                             <span class="schedule-cell">H</span>
-                                        @else
-                                            @php
-                                                $foundShift = false;
-                                            @endphp
+                                        @else --}}
+                                        @php
+                                            $isHoliday =
+                                                $holiday->where('month_day', date('m-d', strtotime($date)))->count() >
+                                                0;
+                                            $foundShift = false;
+                                        @endphp
 
+                                        @if ($isHoliday)
+                                            @foreach ($data->schedule as $shift)
+                                                @if ($shift['date'] === $date)
+                                                    <span class="schedule-cell">{!! $shift->timeShift->calendarTimeShiftDetails() !!}</span>
+                                                    @php
+                                                        $totalHours += $shift->timeShift->total_hours;
+                                                        $foundShift = true;
+                                                    @endphp
+                                                @endif
+                                            @endforeach
+
+                                            @if (!$foundShift)
+                                                <span class="schedule-cell">H</span>
+                                            @endif
+                                        @else
                                             {{-- Assuming $data->schedule is an array --}}
                                             @foreach ($data->schedule as $shift)
                                                 @if ($shift['date'] === $date)
                                                     <span class="schedule-cell">{!! $shift->timeShift->calendarTimeShiftDetails() !!}</span>
                                                     @php
-                                                        // Calculate total hours
                                                         $totalHours += $shift->timeShift->total_hours;
                                                         $foundShift = true;
                                                     @endphp
-                                                @break
+                                                @endif
+                                            @endforeach
+
+                                            {{-- If no shift found for the date --}}
+                                            @if (!$foundShift)
+                                                <span class="schedule-cell">x</span>
                                             @endif
-                                        @endforeach
-
-                                        {{-- If no shift found for the date --}}
-                                        @if (!$foundShift)
-                                            <span class="schedule-cell">x</span>
                                         @endif
-                                    @endif
-                                </div>
-                            </td>
-                        @endforeach
+                                        {{-- @endif --}}
+                                    </div>
+                                </td>
+                            @endforeach
 
-                        <td> {{ $totalHours }} </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<footer>
-    <div class="signatures">
-        <div class="row">
-            <div class="row-item">
-                <span> Prepared By </span>
-                <span class="signature">{{ $user->name() }}</span>
-                <span>{{ $user->position()['position'] ?? 'Scheduler' }}</span>
-            </div>
-
-            <div class="row-item">
-                <span> Reviewed By </span>
-                @if ($recommending_officer === null)
-                    <span class="signature"></span>
-                    <span style="margin-top: 100px"></span>
-                @else
-                    <span class="signature">{{ $recommending_officer->name() }}</span>
-                    <span>{{ $recommending_officer->position()['position'] ?? null }}</span>
-                @endif
-            </div>
-
-            <div class="row-item">
-                <span> Approved By </span>
-                @if ($recommending_officer === null)
-                    <span class="signature"></span>
-                    <span style="margin-top: 100px"></span>
-                @else
-                    <span class="signature">{{ $approving_officer->name() }}</span>
-                    <span>{{ $approving_officer->position()['position'] ?? null }}</span>
-                @endif
-            </div>
+                            <td> {{ $totalHours }} </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
-</footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous">
-</script>
+    <footer>
+        <div class="signatures">
+            <div class="row">
+                <div class="row-item">
+                    <span> Prepared By </span>
+                    <span class="signature">{{ $user->personalInformation->employeeName() }}</span>
+                    <span>{{ $user->position()['position'] ?? 'Scheduler' }}</span>
+                </div>
+
+                <div class="row-item">
+                    <span> Reviewed By </span>
+                    @if ($recommending_officer === null)
+                        <span class="signature"></span>
+                        <span style="margin-top: 100px"></span>
+                    @else
+                        <span class="signature">{{ $recommending_officer->personalInformation->employeeName() }}</span>
+                        <span>{{ $recommending_officer->position()['position'] ?? null }}</span>
+                    @endif
+                </div>
+
+                <div class="row-item">
+                    <span> Approved By </span>
+                    @if ($recommending_officer === null)
+                        <span class="signature"></span>
+                        <span style="margin-top: 100px"></span>
+                    @else
+                        <span class="signature">{{ $approving_officer->personalInformation->employeeName() }}</span>
+                        <span>{{ $approving_officer->position()['position'] ?? null }}</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous">
+    </script>
 </body>
 
 </html>
