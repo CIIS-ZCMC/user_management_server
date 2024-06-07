@@ -48,14 +48,16 @@ class Authorization
                 }
                 if($has_rights) break;
             }
-    
+
             $request->merge(['permission' => $routePermission]);
-    
+
             return $next($request);
         }
 
         $permissions = Cache::get($user->employee_id);
-        
+
+
+
         if($permissions && !$has_rights){
             try{
                 foreach ($permissions['system'] as $key => $value) {
@@ -69,19 +71,21 @@ class Authorization
                     }
                     if($has_rights) break;
                 }
-                
+
                 $request->merge(['permission' => $routePermission]);
-    
+
                 return $next($request);
             }catch(\Throwable $th){
-                
+
             }
         }
-        
+
+
+
         if($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary'){
-            
+
             $permissions = Cache::get("COMMON-REG");
-            
+
             if($permissions !== null && !$has_rights){
                 foreach ($permissions['modules'] as $key => $data) {
                     if ($data['code'] === $system_module['code']) {
@@ -91,16 +95,15 @@ class Authorization
                     }
                     if($has_rights) break;
                 }
-                
+
                 $request->merge(['permission' => $routePermission]);
 
                 return $next($request);
             }
         }
-        
+
         if($employment_type->name === "Job Order"){
             $permissions = Cache::get("COMMON-JO");
-            
             if($permissions && !$has_rights){
                 foreach ($permissions['modules'] as $key => $data) {
                     if ($data['code'] === $system_module['code']) {
@@ -110,7 +113,7 @@ class Authorization
                     }
                     if($has_rights) break;
                 }
-                
+
                 $request->merge(['permission' => $routePermission]);
 
                 return $next($request);

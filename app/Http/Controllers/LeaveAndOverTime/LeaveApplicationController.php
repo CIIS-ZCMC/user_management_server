@@ -1778,6 +1778,9 @@ class LeaveApplicationController extends Controller
             $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
                 ->where('employee_profile_id', $data->employee_profile_id)
                 ->first();
+            $fl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'FL')->first()->id)
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->first();
 
             // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
@@ -1809,7 +1812,7 @@ class LeaveApplicationController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization', 'document_details'))->render();
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'fl_employee_credit', 'is_monetization', 'document_details'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'portrait');

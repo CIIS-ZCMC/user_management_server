@@ -729,6 +729,13 @@ class EmployeeProfileController extends Controller
             if ($employment_type->name == "Job Order") {
                 $role = Role::where("code", "COMMON-JO")->first();
                 $jo_system_role = SystemRole::where('role_id', $role->id)->first();
+                /**
+                 * If bug happens that user has rights but for JOB ORDER is unll on Cache Uncomment this code.
+                 *
+                 * $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+                 * $cacheExpiration = Carbon::now()->addYear();
+                 * Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+                 */
 
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $jo_system_role->system_id) {
@@ -877,7 +884,7 @@ class EmployeeProfileController extends Controller
             }
 
             $totalMonths += $months;
-        
+
         }
 
         $currentServiceMonths = 0;
@@ -885,7 +892,7 @@ class EmployeeProfileController extends Controller
             $dateHired = Carbon::parse($employee_profile->date_hired);
             $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
         }
-       
+
         $total = $currentServiceMonths +  $totalMonths;
         $totalYears = floor($total  / 12);
 
@@ -2956,7 +2963,7 @@ class EmployeeProfileController extends Controller
                 }
 
                 $totalMonths += $months;
-            
+
             }
 
             $currentServiceMonths = 0;
@@ -2964,7 +2971,7 @@ class EmployeeProfileController extends Controller
                 $dateHired = Carbon::parse($employee_profile->date_hired);
                 $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
             }
-           
+
             $total = $currentServiceMonths +  $totalMonths;
             $totalYears = floor($total  / 12);
 
