@@ -226,6 +226,8 @@ class DTRcontroller extends Controller
                         $Employee_Info
                     );
 
+
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -237,6 +239,13 @@ class DTRcontroller extends Controller
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
+
+
+                    //Get attendance first  group per employee biometric_id
+                                //get the first successful entry.
+                                //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
+                                //
+
 
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
@@ -283,6 +292,10 @@ class DTRcontroller extends Controller
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
+
+
+                            //ASSIGN DELETION FUNCTION ALGORITHM
+                            // 9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
                             $tad->delete_data(['value' => 3]);
                         } else {
                             //yesterday Time
