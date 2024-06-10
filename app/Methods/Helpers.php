@@ -655,18 +655,35 @@ AND id IN (
                 }
 
                 $undertime = $undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry;
+                $noHalfEntry = 0;
 
                 if ($f3_entry && $f4_entry) {
                     $overtime = $overtime_4th_entry;
                 } else {
                     $overtime = $overtime_2nd_entry;
+                    //return ;
+
+                    if(isset($time_stamps_req['third_entry']) && isset($time_stamps_req['last_entry'])){
+
+                        $fent = date('Y-m-d', strtotime($f1_entry));
+                        $second_Sched_secondin = $time_stamps_req['third_entry'];
+                        $second_Sched_secondout = $time_stamps_req['last_entry'];
+
+                        $s_3 = date("Y-m-d H:i:s", strtotime("$fent $second_Sched_secondin"));
+                        $s_4 = date("Y-m-d H:i:s", strtotime("$fent $second_Sched_secondout"));
+
+                        $s3_Time_stamp_ = strtotime($s_3);
+                        $s4_Time_stamp_ = strtotime($s_4);
+
+                        $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_;
+                        $noHalfEntry = $totalHalfSEcs / 60;
+                    }
                 }
 
 
+
                 $ot = floor($overtime);
-                $ut = floor($undertime);
-
-
+                $ut = floor($undertime );
                 $Schedule_Minutes  = $this->getTotalTimeRegistered(
                     $s1,
                     $s2,
@@ -679,9 +696,10 @@ AND id IN (
                 $overTime_Minutes =  $this->toWordsMinutes($ot)['InMinutes'];
 
                 /* Undertime  */
-                $underTime_inWords = $this->toWordsMinutes($ut)['InWords'];
-                $underTime_Minutes =  $this->toWordsMinutes($ut)['InMinutes'];
+                $underTime_inWords = $this->toWordsMinutes($ut )['InWords'];
+                $underTime_Minutes =  $this->toWordsMinutes($ut )['InMinutes'];
             }
+
 
 
             $Registered_minutes = $this->getTotalTimeRegistered(
@@ -698,8 +716,9 @@ AND id IN (
 
             $tWH = floor($Registered_minutes - $ut);
 
+
             if ($Schedule_Minutes <= $tWH) {
-                $tWH = floor($Schedule_Minutes - $underTime_Minutes);
+                $tWH = floor($Schedule_Minutes - ($underTime_Minutes));
                 $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
                 $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             } else {
@@ -707,6 +726,8 @@ AND id IN (
                 $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
                 $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             }
+
+
             /* Registered Minutes */
             //$Registered_minutes | total_minutes_reg
 
@@ -735,7 +756,7 @@ AND id IN (
             // echo "Schedule :" . $s1 . " | " . $s2 . " | " . $s3 . " | " . $s4 . "\n";
         }
 
-        $over_all_minutes_Rendered = floor(($total_WH_minutes + $overTime_Minutes) - $underTime_Minutes);
+        $over_all_minutes_Rendered = floor(($total_WH_minutes + $overTime_Minutes) - $underTime_Minutes );
 
         // return [
         //     //   'first_out' => strtotime($sc['date_time']),
@@ -767,8 +788,8 @@ AND id IN (
             'total_WH_minutes' => $total_WH_minutes,
             'over_all_minutes_Rendered' => $over_all_minutes_Rendered,
             'Registered_minutes' => $Registered_minutes,
-            'underTime_inWords' => $underTime_inWords,
-            'underTime_Minutes' => $underTime_Minutes,
+            'underTime_inWords' =>  $this->toWordsMinutes( $underTime_Minutes +  $noHalfEntry)['InWords'],
+            'underTime_Minutes' => $underTime_Minutes +  $noHalfEntry,
             'overTime_inWords' => $overTime_inWords,
             'overTime_Minutes' => $overTime_Minutes
         ];
@@ -874,14 +895,15 @@ AND id IN (
         return $sequences[$sched];
     }
 
-    public function statusDescription($attendance_Log, $key)
+    public function determineEntry(){
+
+    }
+
+    public function statusDescription($employee_ID,$lastStatus,$entry)
     {
-        $status_description = '';
-        $Status_Entry = '';
-        $active_entry = 'f1';
-        $biometric_id = 0;
-        $on_Active_Status = date('Y-m-d H:i:s', strtotime($attendance_Log['date_time'] . '-5 minutes'));
-        switch ($attendance_Log['status']) {
+
+        $on_Active_Status = date('Y-m-d H:i:s', strtotime($entry . '-5 minutes'));
+        switch ($entry) {
             case 0:
                 $status_description = 'CHECK-IN';
                 break;
@@ -901,7 +923,7 @@ AND id IN (
                 $status_description = 'OVERTIME-OUT';
                 break;
             case 255:
-                $biometric_id = $attendance_Log['biometric_id'];
+                $biometric_id = $employee_ID;
                 $date_now = date('Y-m-d');
                 $Records = DailyTimeRecords::where('biometric_id', $biometric_id)
                     ->whereDate('created_at', $date_now)->get();
@@ -926,18 +948,17 @@ AND id IN (
                 break;
         }
         $dt = [
-            0 => ['date_time' => $attendance_Log['date_time']],
+            0 => ['date_time' => $entry],
         ];
         if (!$this->withinInterval($on_Active_Status, $dt)) {
             $Within_interval = "NO";
         } else {
             $Within_interval = "YES";
         }
-
         return [
-            'description' => $status_description,
+            'description' =>$lastStatus,
             'within_interval' => $Within_interval,
-            'isEmployee' => $this->isEmployee($biometric_id)
+            'isEmployee' => $this->isEmployee($employee_ID)
         ];
     }
 
@@ -959,16 +980,33 @@ AND id IN (
         }
     }
 
+    public function merge_unique_entries($log_data_Array, $new_Rec) {
+        // Create an associative array to keep track of unique entries
+        $unique_entries = [];
+
+        // Add existing entries to the unique array using a unique key
+        foreach ($log_data_Array as $entry) {
+            $key = $entry['biometric_id'] . '-' . $entry['date_time'] . '-' . $entry['status'];
+            $unique_entries[$key] = $entry;
+        }
+
+        // Add new entries to the unique array using the same unique key
+        foreach ($new_Rec as $entry) {
+            $key = $entry['biometric_id'] . '-' . $entry['date_time'] . '-' . $entry['status'];
+            if (!isset($unique_entries[$key])) {
+                $unique_entries[$key] = $entry;
+            }
+        }
+
+        // Convert the unique array back to a regular array
+        return array_values($unique_entries);
+    }
+
     public function saveDTRLogs($check_Records, $validate, $device, $yesterdate)
     {
-
-
         $new_timing = 0;
         $unique_Employee_IDs = [];
         $date = date('Y-m-d');
-
-
-
         foreach ($check_Records as $record) {
             $employee_ID = $record['biometric_id'];
             if (!in_array($employee_ID, $unique_Employee_IDs)) {
@@ -978,15 +1016,11 @@ AND id IN (
                 $date = date('Y-m-d', strtotime($record['date_time']));
             }
         }
-
-
-
         foreach ($unique_Employee_IDs as $id) {
 
             $employee_Records = array_filter($check_Records, function ($att) use ($id) {
                 return $att['biometric_id'] == $id;
             });
-
             foreach ($employee_Records as $kk => $new) {
 
                 $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
@@ -1014,17 +1048,22 @@ AND id IN (
                 ];
                 $new_timing++;
             }
+
+
             // /* Checking if DTR logs for the day is generated */
 
             $check_DTR_Logs = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 1);
+
 
             if (count($check_DTR_Logs->get()) >= 1) {
                 // /* Counting logs data */
                 $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
                 $log_data_Array = json_decode($log_Data, true);
+                $OldRecord = json_decode($log_Data, true);
                 // /* Saving individually to user-attendance jsonLogs */
-                $log_data_Array = array_merge($log_data_Array, $new_Rec);
 
+
+              $log_data_Array =  $this->merge_unique_entries($log_data_Array, $new_Rec);
 
                 $ndata = [];
                 foreach ($log_data_Array as $n) {
@@ -1035,10 +1074,13 @@ AND id IN (
 
                 $newt = 0;
                 $nr = [];
+
                 foreach ($ndata as $new) {
+
 
                     $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
                     $entry = "Logged";
+
                     if ($rec) {
                         $f1 = $rec->first_in;
                         $f2 = $rec->first_out;
@@ -1049,10 +1091,9 @@ AND id IN (
                             $entry = "Daily Time Recorded";
                         }
                     }
-
-
                     $devID = $device['id'];
                     $devName =$this->getDeviceName($device['id']);
+
                     $datepull =  date('Y-m-d H:i:s');
                     if(isset($new['device_id'])){
 
@@ -1060,9 +1101,9 @@ AND id IN (
                         $devName = $this->getDeviceName($new['device_id']);
                         $datepull = $new['datepull'];
                     }
+                    /* extract Data here */
 
-
-                    $nr[] = [
+                         $nr[] = [
                         'timing' => $newt,
                         'biometric_id' => $new['biometric_id'],
                         'name' => $new['name'],
@@ -1074,16 +1115,15 @@ AND id IN (
                         'entry_status' =>  $entry,
                         'datepull' =>$datepull
                     ];
+
                     $newt++;
                 }
-
 
                 $check_DTR_Logs->update([
                     'json_logs' => json_encode($nr)
                 ]);
+
             } else {
-
-
                 $ndata = [];
                 foreach ($new_Rec as $n) {
                     if ($n['biometric_id'] == $id) {
@@ -1108,12 +1148,8 @@ AND id IN (
                         }
                     }
 
-
-
                     $devID = $device['id'];
                     $devName =$this->getDeviceName($device['id']);
-
-
                     $nr[] = [
                         'timing' => $newt,
                         'biometric_id' => $new['biometric_id'],
@@ -1128,8 +1164,6 @@ AND id IN (
                     ];
                     $newt++;
                 }
-
-
 
                 $chec_kDTR = DailyTimeRecords::whereDate('dtr_date', $date)->where('biometric_id', $id);
                 if (count($chec_kDTR->get()) >= 1) {
@@ -1195,39 +1229,105 @@ AND id IN (
         }
         return $Employee_Info;
     }
-
-
-
     public function getEmployeeAttendance($attendance_Logs, $Employee_Info)
     {
-
         $Employee_Attendance = [];
-        foreach ($attendance_Logs as $key =>  $attendance_Log) {
+        $processedLogs = []; // To avoid reprocessing the same log entries
+
+        foreach ($attendance_Logs as $key => $attendance_Log) {
             $employee_ID = $attendance_Log['biometric_id'];
             $employee_Name = '';
-            $count = 0;
-            foreach ($Employee_Info as  $k => $info) {
+            foreach ($Employee_Info as $info) {
                 if ($info['biometric_id'] === $employee_ID) {
                     $employee_Name = $info['name'];
-                    $count++;
                     break;
                 }
             }
 
-            if (!empty($employee_Name)) {
-                $Employee_Attendance[] = [
-                    'timing' => $key,
-                    'biometric_id' => $employee_ID,
-                    'name' => $employee_Name,
-                    'date_time' => $attendance_Log['date_time'],
-                    'status' => $attendance_Log['status'],
-                    'status_description' => $this->statusDescription($attendance_Log, $key)
+            $dtr = DailyTimeRecords::where('dtr_date', date('Y-m-d', strtotime($attendance_Log['date_time'])))
+                ->where('biometric_id', $employee_ID)
+                ->first();
 
+            // Mapping DailyTimeRecords to a simpler array format
+            $mapdtr = null;
+            if ($dtr) {
+                $mapdtr = [
+                    'first_in' => $dtr->first_in,
+                    'first_out' => $dtr->first_out,
+                    'second_in' => $dtr->second_in,
+                    'second_out' => $dtr->second_out
                 ];
             }
+
+            // Skip if already processed
+            if (isset($processedLogs[$employee_ID])) {
+                continue;
+            }
+
+            $previousTimestamp = null;
+            $lastStatus = null;
+
+            foreach ($attendance_Logs as $index => $entry) {
+                if ($entry['biometric_id'] !== $employee_ID) {
+                    continue;
+                }
+
+                $currentTimestamp = strtotime($entry['date_time']);
+
+                // Check if there is a match in $mapdtr
+                if ($mapdtr) {
+                    $currentDateTime = $entry['date_time'];
+
+                    if ($currentDateTime == $mapdtr['first_in']) {
+                        $entry['entry_status'] = "CHECK-IN";
+                        $lastStatus = "CHECK-IN";
+                    } elseif ($currentDateTime == $mapdtr['first_out']) {
+                        $entry['entry_status'] = "CHECK-OUT";
+                        $lastStatus = "CHECK-OUT";
+                    } elseif ($currentDateTime == $mapdtr['second_in']) {
+                        $entry['entry_status'] = "CHECK-IN";
+                        $lastStatus = "CHECK-IN";
+                    } elseif ($currentDateTime == $mapdtr['second_out']) {
+                        $entry['entry_status'] = "CHECK-OUT";
+                        $lastStatus = "CHECK-OUT";
+                    }
+                }
+
+                // If no match found in $mapdtr, apply the old logic
+                if (!isset($entry['entry_status'])) {
+                    // if ($index == 0) {
+                    //     $entry['entry_status'] = "CHECK-IN";
+                    //     $lastStatus = "CHECK-IN";
+                    // } else {
+                        $interval = ($currentTimestamp - $previousTimestamp) / 60;
+
+                        if ($interval <= 3) { // 3 minutes interval
+                            $entry['entry_status'] = "LOGGED";
+                        } else {
+                            if ($lastStatus == "CHECK-IN") {
+                                $entry['entry_status'] = "CHECK-OUT";
+                                $lastStatus = "CHECK-OUT";
+                            } else {
+                                $entry['entry_status'] = "CHECK-IN";
+                                $lastStatus = "CHECK-IN";
+                            }
+                        }
+                    //}
+                }
+
+                $entry['name'] = $employee_Name;
+                $entry['status_description'] = $this->statusDescription($employee_ID, $entry['entry_status'], $entry['date_time']);
+                $Employee_Attendance[] = $entry; // Add entry to the main array
+
+                $previousTimestamp = $currentTimestamp;
+            }
+
+            $processedLogs[$employee_ID] = true;
         }
+
         return $Employee_Attendance;
     }
+
 
 
     public function forceToStrTimeFormat($date_Or_Timestamp)

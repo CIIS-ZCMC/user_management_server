@@ -208,6 +208,15 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function deleteDeviceLogs(){
+        foreach ($this->devices as $device) {
+            if ($tad = $this->device->bIO($device)) {
+                $tad->delete_data(['value' => 3]);
+            }
+        }
+    }
+
+
     public function fetchDTRFromDevice()
     {
 
@@ -221,12 +230,11 @@ class DTRcontroller extends Controller
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
-                    $Employee_Attendance = $this->helper->getEmployeeAttendance(
+
+                   $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
                     );
-
-
 
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
@@ -236,17 +244,16 @@ class DTRcontroller extends Controller
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
                         });
 
+                        //return $check_Records;
+
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
-
 
                     //Get attendance first  group per employee biometric_id
                                 //get the first successful entry.
                                 //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
                                 //
-
-
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
@@ -262,7 +269,8 @@ class DTRcontroller extends Controller
                                              * With Schedule
                                              * 4 sets of sched
                                              */
-                                             $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+
+                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
                                         } else {
                                             /**
                                              * With Schedule
@@ -296,7 +304,7 @@ class DTRcontroller extends Controller
 
                             //ASSIGN DELETION FUNCTION ALGORITHM
                             // 9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
-                            $tad->delete_data(['value' => 3]);
+                        //    $tad->delete_data(['value' => 3]);
                         } else {
                             //yesterday Time
                             // Save the past 24 hours records
@@ -349,7 +357,7 @@ class DTRcontroller extends Controller
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
                             // /* Clear device data */
-                            $tad->delete_data(['value' => 3]);
+                          //  $tad->delete_data(['value' => 3]);
                         }
                     } else {
                         //Save anomaly entries
@@ -367,7 +375,7 @@ class DTRcontroller extends Controller
                                 'status_desc' => $value['status_description']
                             ]);
                         }
-                        $tad->delete_data(['value' => 3]);
+                      //  $tad->delete_data(['value' => 3]);
                     }
                     // End of Validation of Time
                 } // End Checking if Connected to Device
@@ -379,6 +387,7 @@ class DTRcontroller extends Controller
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
+        return true;
     }
 
     public function formatDate($date)
