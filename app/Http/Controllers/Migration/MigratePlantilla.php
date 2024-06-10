@@ -69,133 +69,145 @@ class MigratePlantilla extends Controller
 
     public function migratePlantillas()
     {
+
         try {
-            // For migrating the personal information
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-            // Truncate the table
-            DB::table('plantillas')->truncate();
-            DB::table('plantilla_numbers')->truncate();
+            $patch = true;
+            $touchExisting = false;
+            $planted = [];
+            if ($patch) {
+                //An employee without assigned areas does not have a plantilla.
+                //LIST OF EMPLOYEE that doesnt have plantilla
+                $profilesWithoutAreas =  EmployeeProfile::select('*')
+                    ->where('employment_type_id', 1)
+                    ->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
+                    ->whereNull('assigned_areas.id')
+                    ->get();
 
-            // Re-enable foreign key checks
-
-            // DB::table('employee_profiles')->truncate();
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
-            DB::beginTransaction();
-            // Path to the CSV file
-
-            $designations = Designation::all();
-            //===> get the designation and create its plantillas
-
-            foreach ($designations as $desig) {
-                Plantilla::create([
-                    'slot' => 10,
-                    'total_used_plantilla_no' => 0,
-                    'effective_at' => Carbon::now(),
-                    'designation_id' => $desig->id
-                ]);
-            }
-
-            //===> get all employee, findout what are they designations
-            $filePath = storage_path('../app/json_data/EMPLOYEE.csv');
-
-
-
-            // Create a CSV reader
-            $reader = Reader::createFromPath($filePath, 'r');
-            $reader->setHeaderOffset(0); // Assumes first row is header
-
-            // Read the CSV data
-            $csvData = $reader->getRecords();
-
-
-            /////FOR 
-
-            $filePath2 = storage_path('../app/json_data/areaassig.csv');
-            // Create a CSV reader
-            $reader2 = Reader::createFromPath($filePath2, 'r');
-            $reader2->setHeaderOffset(0); // Assumes first row is header
-            // Read the CSV data
-            $forAssigning = $reader2->getRecords();
-            /////
-            $over = [];
-            $employeeThatMultipleAssignArea = [];
-            foreach ($csvData as $index => $row) {
-                ////===> findout if the employee is Job order then if not continue this step.
-                $data = json_decode(json_encode($row));
-                if (!$data->isJO) {
-                    // dd($data);
-                    $desig = strtolower(str_replace(' ', '', $data->POSITON));
-
-                    $designatid = DB::table('designations')
-                        ->select('*', DB::raw("REPLACE(LOWER(name), ' ', '') AS label"))
-                        ->where(DB::raw("REPLACE(LOWER(name), ' ', '')"), '=', "$desig")
-                        ->get();
-                    if (count($designatid) > 1 || count($designatid) < 1) {
-                        dd(['no designationid found, or duplicate designation found' => $desig]);
-                    }
-                    // dd($designatid[0]->id);
-                    //===> get the designation_id of that employee and find plantilla that you generated in step1,
-                    $PlantillaId = Plantilla::where('designation_id', '=', $designatid[0]->id)->get();
-                    if (count($PlantillaId) > 1 || count($PlantillaId) < 1) {
-                        dd($PlantillaId);
-                    }
-                    $employeeId = EmployeeProfile::where('employee_id', '=', $data->id)->get();
-                    if (count($employeeId) > 1 || count($employeeId) < 1) {
-                        foreach ($employeeId as $temp) {
-                            $over[] = $temp->employee_id;
-                        }
-                    }
-
+                foreach ($profilesWithoutAreas->pluck('employee_id') as $empToPatch) {
+                    //get the designation of this employee in the hrbliz
+                    $hrblizdesig = DB::connection('sqlsrv')->select("
+                    SELECT TOP (1) e.[employeeid]
+                        ,e.[no],
+                        japp.datecreated
+                        ,jp.*
+                    FROM [hrblizge].[dbo].[employee] e
+                    left join jobappointment japp on e.employeeid = japp.employeeid
+                    left join jobposition jp on japp.jobpositionid = jp.jobpositionid
+                    where e.no like '%$empToPatch%' ORDER BY japp.datecreated DESC;");
+                    $desigCode  = $hrblizdesig[0]->code;
+                    $plantilla = Designation::where('code', $desigCode)->first()->plantilla[0]->id;
                     PlantillaNumber::create(
                         [
-                            'number' => 'UMIS-BETA-' . str_pad($index, 4, '0', STR_PAD_LEFT),
+                            'number' => 'UMIS-BETA-' . str_pad(time(), 4, '0', STR_PAD_LEFT),
                             'is_vacant' => 0,
                             'assigned_at' => Carbon::now(),
                             'is_dissolve' => 0,
-                            'plantilla_id' => $PlantillaId[0]->id,
-                            'employee_profile_id' => $employeeId[0]->id,
+                            'plantilla_id' => $plantilla,
+                            'employee_profile_id' => $empToPatch,
                         ]
                     );
-                    //===> generate its unique plantilla number and record in planilla_number table
-                } else {
-                    $employeeThatMultipleAssignArea[] = ['id' => $data->id, 'designation' => $data->POSITON];
+                    $planted[] = ['id' => $empToPatch];
                 }
-            }
-            // foreach ($employeeThatMultipleAssignArea as $data) {
-            //     //find the assign
-            //     $assignArea = AssignArea::where('employee_profile_id', $data['id'])->first();
-            //     if ($assignArea) {
-            //         // If the assigned area exists, update section, department, and division
-            //         if ($assignArea->division_id == null) {
-            //             $assignArea->division_id = $division == '' ? null : $division;
-            //         }
-            //         if ($assignArea->department_id == null) {
-            //             $assignArea->department_id = $department == '' ? null : $department;
-            //         }
-            //         if ($assignArea->section_id == null) {
-            //             $assignArea->section_id = $section == '' ? null : $section;
-            //         }
 
-            //         $assignArea->save();
-            //     } else {
-            //         // If the assigned area doesn't exist, create a new one
-            //         AssignArea::create([
-            //             'salary_grade_step' => 1,
-            //             'employee_profile_id' => $EmployeeProfile[0]->id,
-            //             'division_id' => $division == '' ? null : $division,
-            //             'department_id' => $department == '' ? null : $department,
-            //             'section_id' => $section == '' ? null : $section,
-            //             'unit_id' => null,
-            //             'designation_id' => $plantillaDesignation,
-            //             'plantilla_id' => $plantillaId,
-            //             'plantilla_number_id' => $plantillaNumberId[0]->id,
-            //             'effective_at' => Carbon::create(2025, 1, 1)
-            //         ]);
-            //     }
-            // }
-            DB::commit();
-            return response()->json('BETA: generated plantilla associated with designation');
+                //if 
+                DB::commit();
+                dd($planted);
+            } else {
+                // For migrating the personal information
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+                // Truncate the table
+                DB::table('plantillas')->truncate();
+                DB::table('plantilla_numbers')->truncate();
+
+                // Re-enable foreign key checks
+
+                // DB::table('employee_profiles')->truncate();
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+                DB::beginTransaction();
+                // Path to the CSV file
+
+                $designations = Designation::all();
+                //===> get the designation and create its plantillas
+
+                foreach ($designations as $desig) {
+                    Plantilla::create([
+                        'slot' => 10,
+                        'total_used_plantilla_no' => 0,
+                        'effective_at' => Carbon::now(),
+                        'designation_id' => $desig->id
+                    ]);
+                }
+
+                //===> get all employee, findout what are they designations
+                $filePath = storage_path('../app/json_data/EMPLOYEE.csv');
+
+
+
+                // Create a CSV reader
+                $reader = Reader::createFromPath($filePath, 'r');
+                $reader->setHeaderOffset(0); // Assumes first row is header
+
+                // Read the CSV data
+                $csvData = $reader->getRecords();
+
+
+                /////FOR 
+
+                $filePath2 = storage_path('../app/json_data/areaassig.csv');
+                // Create a CSV reader
+                $reader2 = Reader::createFromPath($filePath2, 'r');
+                $reader2->setHeaderOffset(0); // Assumes first row is header
+                // Read the CSV data
+                $forAssigning = $reader2->getRecords();
+                /////
+                $over = [];
+                $employeeThatMultipleAssignArea = [];
+                foreach ($csvData as $index => $row) {
+                    ////===> findout if the employee is Job order then if not continue this step.
+                    $data = json_decode(json_encode($row));
+                    if (!$data->isJO) {
+                        // dd($data);
+                        $desig = strtolower(str_replace(' ', '', $data->POSITON));
+
+                        $designatid = DB::table('designations')
+                            ->select('*', DB::raw("REPLACE(LOWER(name), ' ', '') AS label"))
+                            ->where(DB::raw("REPLACE(LOWER(name), ' ', '')"), '=', "$desig")
+                            ->get();
+                        if (count($designatid) > 1 || count($designatid) < 1) {
+                            dd(['no designationid found, or duplicate designation found' => $desig]);
+                        }
+                        // dd($designatid[0]->id);
+                        //===> get the designation_id of that employee and find plantilla that you generated in step1,
+                        $PlantillaId = Plantilla::where('designation_id', '=', $designatid[0]->id)->get();
+                        if (count($PlantillaId) > 1 || count($PlantillaId) < 1) {
+                            dd($PlantillaId);
+                        }
+                        $employeeId = EmployeeProfile::where('employee_id', '=', $data->id)->get();
+                        if (count($employeeId) > 1 || count($employeeId) < 1) {
+                            foreach ($employeeId as $temp) {
+                                $over[] = $temp->employee_id;
+                            }
+                        }
+
+                        PlantillaNumber::create(
+                            [
+                                'number' => 'UMIS-BETA-' . str_pad($index, 4, '0', STR_PAD_LEFT),
+                                'is_vacant' => 0,
+                                'assigned_at' => Carbon::now(),
+                                'is_dissolve' => 0,
+                                'plantilla_id' => $PlantillaId[0]->id,
+                                'employee_profile_id' => $employeeId[0]->id,
+                            ]
+                        );
+                        //===> generate its unique plantilla number and record in planilla_number table
+                    }
+                }
+
+                // DB::commit();
+                return response()->json('BETA: generated plantilla associated with designation');
+            }
         } catch (\Throwable $th) {
             DB::rollBack();
             dd($th);

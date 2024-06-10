@@ -41,14 +41,15 @@ class MResetAllPass extends Controller
                     $query->where('aa.section_id', 1);
                 })
                 ->get()->pluck('employee_profile_id');
-            // dd($employeeProfiles);
-            foreach ($employees as $employee) {
 
+
+            foreach ($employees as $employee) {
                 $password = Helpers::generatePassword();
                 $hashPassword = Hash::make($password . config('app.salt_value'));
 
                 // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
-                if (in_array($employee->id, [132])) {
+                if (in_array($employee->id, [2374])) {
+
                     $employee->authorization_pin = null;
                     $employee->password_encrypted = Crypt::encryptString($hashPassword);
                     $employee->save();

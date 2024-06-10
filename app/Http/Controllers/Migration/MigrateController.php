@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Crypt;
 use Carbon\Carbon;
 use App\Models\EmployeeProfile;
 use App\Models\EmploymentType;
+use App\Models\PersonalInformation;
+use Illuminate\Validation\Rules\Exists;
 
 class MigrateController extends Controller
 {
@@ -22,112 +24,192 @@ class MigrateController extends Controller
     public function import()
     {
         try {
+            $patch = true;
+            $touchExisting = false;
 
-            // $employee_profile = EmployeeProfile::find(471);
-            // $default_password = Helpers::generatePassword();
-            // $body = [
-            //     'employeeID' => $employee_profile->employee_id,
-            //     'Password' => $default_password,
-            //     "Link" => config('app.client_domain')
-            // ];
 
-            // $email = $employee_profile->personalinformation->contact->email_address;
-            // $name = $employee_profile->personalInformation->name();
+            ///DELETE AND MIGRATE
+            if (!$patch) {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-            // $data = [
-            //     'Subject' => 'Your Zcmc Portal Account.',
-            //     'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-            //     'Receiver_Name' => $employee_profile->personalInformation->name(),
-            //     'Body' => $body
-            // ];
+                // Truncate the table
+                DB::table('personal_informations')->where('id', '!=', 1)->delete();
 
-            // SendEmailJob::dispatch('new_account', $email, $name, $data);
-            // dd(['sent' => $email]);
-            // For migrating the personal information
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                // Re-enable foreign key checks
 
-            // Truncate the table
-            DB::table('personal_informations')->where('id', '!=', 1)->delete();
-
-            // Re-enable foreign key checks
-
-            DB::table('employee_profiles')->where('id', '!=', 1)->delete();
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
-            DB::beginTransaction();
-            // Path to the CSV file
-            $filePath = storage_path('../app/json_data/INNOVATIONS.csv');
+                DB::table('employee_profiles')->where('id', '!=', 1)->delete();
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+                DB::beginTransaction();
+                // Path to the CSV file
+                $filePath = storage_path('../app/json_data/INNOVATIONS.csv');
 
 
 
-            // Create a CSV reader
-            $reader = Reader::createFromPath($filePath, 'r');
-            $reader->setHeaderOffset(0); // Assumes first row is header
+                // Create a CSV reader
+                $reader = Reader::createFromPath($filePath, 'r');
+                $reader->setHeaderOffset(0); // Assumes first row is header
 
-            // Read the CSV data
-            $csvData = $reader->getRecords();
+                // Read the CSV data
+                $csvData = $reader->getRecords();
 
-            foreach ($csvData as $index => $row) {
-                $id = $row['employeeid'];
-                $yearsOfService = $this->calculateYearsOfService($id);
-                $data = $this->getPersonalInformation($id);
-                $index += 1;
-                // dd($data);
+                foreach ($csvData as $index => $row) {
+                    $id = $row['employeeid'];
+                    $yearsOfService = $this->calculateYearsOfService($id);
+                    $data = $this->getPersonalInformation($id);
+                    $index += 1;
+                    // dd($data);
 
-                DB::table('personal_informations')->insert([
-                    'id' => $index,
-                    'first_name' => $data->firstname,
-                    'middle_name' => $data->middlename,
-                    'last_name' => $data->lastname,
-                    'name_extension' => $data->nameextension,
-                    'years_of_service' => $yearsOfService,
-                    'name_title' => $data->nametitle,
-                    'sex' => $data->Gender,
-                    'date_of_birth' => $data->birthdate,
-                    'place_of_birth' => $data->birthplace,
-                    'civil_status' => $data->civilstatus,
-                    'date_of_marriage' => $data->marriagedate,
-                    'citizenship' => $data->citizenship || 'Filipino',
-                    'country' => "Philippines",
-                    'height' => $data->height,
-                    'weight' => $data->weight,
-                    'blood_type' => $data->BloodType,
+                    DB::table('personal_informations')->insert([
+                        'id' => $index,
+                        'first_name' => $data->firstname,
+                        'middle_name' => $data->middlename,
+                        'last_name' => $data->lastname,
+                        'name_extension' => $data->nameextension,
+                        'years_of_service' => $yearsOfService,
+                        'name_title' => $data->nametitle,
+                        'sex' => $data->Gender,
+                        'date_of_birth' => $data->birthdate,
+                        'place_of_birth' => $data->birthplace,
+                        'civil_status' => $data->civilstatus,
+                        'date_of_marriage' => $data->marriagedate,
+                        'citizenship' => $data->citizenship || 'Filipino',
+                        'country' => "Philippines",
+                        'height' => $data->height,
+                        'weight' => $data->weight,
+                        'blood_type' => $data->BloodType,
+                    ]);
+                    // dd(EmploymentType::find(3)->id);
+
+                    $password = 'Zcmc_Umis2023@';
+
+                    $hashPassword = Hash::make($password . config('app.salt_value'));
+                    $encryptedPassword = Crypt::encryptString($hashPassword);
+
+                    $now = Carbon::now();
+                    $fortyDaysFromNow = $now->addDays(40);
+                    $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
+
+                    $employee_profile = EmployeeProfile::create([
+                        'employee_id' => $id,
+                        'date_hired' => Carbon::createFromFormat('Y-m-d', $data->datehire),
+                        'password_encrypted' => $encryptedPassword,
+                        'password_created_at' => now(),
+                        'password_expiration_at' => $fortyDaysExpiration,
+                        'biometric_id' => $index,
+                        'allow_time_adjustment' => TRUE,
+                        'employment_type_id' => EmploymentType::find(3)->id || 3,
+                        'personal_information_id' => $index
+                    ]);
+
+                    Log::info('User Migrate Successfully', [
+                        'user_detail' => $employee_profile,
+                        'user_name' => $employee_profile,
+                        'password' => $password,
+                    ]);
+                }
+                Log::info('Personal Information migrate successfully.');
+
+
+
+                DB::commit();
+
+                return response()->json('success');
+            } else {
+                DB::beginTransaction();
+                // Path to the CSV file
+                $filePath = storage_path('../app/json_data/migrate/employee.csv');
+
+
+
+                // Create a CSV reader
+                $reader = Reader::createFromPath($filePath, 'r');
+                $reader->setHeaderOffset(0); // Assumes first row is header
+
+                // Read the CSV data
+                $csvData = $reader->getRecords();
+                $success = [];
+                $failed = [];
+                $noIntheUmis = [];
+                foreach ($csvData as $index => $row) {
+                    $umisEmp = null;
+                    $id = $row['Employee ID Number'];
+                    $employeeType = isset($row['isJO']) ? $row['isJO'] : '';
+                    $data = $this->getPersonalInformation($id);
+                    //if the getPersonalInformation from the hrbliz doesnt find one it will going to continue
+                    if (!$data) {
+                        $failed[] = $id;
+                        continue;
+                    }
+                    $umisEmp = EmployeeProfile::where('employee_id', $id)->first();
+                    //check if the employee tobe migrate is already exist in the umis
+                    if ($umisEmp == null) {
+                        //if not exist create.
+                        $yearsOfService = $this->calculateYearsOfService($id);
+                        $noIntheUmis[] = $id;
+
+                        $newEmployee = PersonalInformation::create(
+                            [
+                                'first_name' => $data->firstname,
+                                'middle_name' => $data->middlename,
+                                'last_name' => $data->lastname,
+                                'name_extension' => $data->nameextension,
+                                'years_of_service' => $yearsOfService,
+                                'name_title' => $data->nametitle,
+                                'sex' => $data->Gender,
+                                'date_of_birth' => $data->birthdate,
+                                'place_of_birth' => $data->birthplace,
+                                'civil_status' => $data->civilstatus,
+                                'date_of_marriage' => $data->marriagedate,
+                                'citizenship' => $data->citizenship || 'Filipino',
+                                'country' => "Philippines",
+                                'height' => $data->height,
+                                'weight' => $data->weight,
+                                'blood_type' => $data->BloodType,
+                            ]
+                        );
+
+                        $password = 'Zcmc_Umis2023@';
+
+                        $hashPassword = Hash::make($password . config('app.salt_value'));
+                        $encryptedPassword = Crypt::encryptString($hashPassword);
+
+                        $now = Carbon::now();
+                        $fortyDaysFromNow = $now->addDays(40);
+                        $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
+
+                        $employee_profile = EmployeeProfile::create([
+                            'employee_id' => $id,
+                            'date_hired' => Carbon::createFromFormat('Y-m-d', $data->datehire),
+                            'password_encrypted' => $encryptedPassword,
+                            'password_created_at' => now(),
+                            'password_expiration_at' => $fortyDaysExpiration,
+                            'biometric_id' => $newEmployee->id,
+                            'allow_time_adjustment' => TRUE,
+                            'employment_type_id' => $employeeType == '' ? 1 : 5,
+                            'personal_information_id' => $newEmployee->id
+                        ]);
+                        $success[] = $newEmployee->id;
+                    } else {
+                        // if Exists update.
+                        if ($touchExisting) {
+                            //update the existing
+                        } else {
+                            continue;
+                        }
+                        //but for now continue
+
+                    }
+                }
+
+                DB::commit();
+                dd([
+                    'failed to find in HRbliz' => $failed,
+                    'List of employee not registered in UMIS' => $noIntheUmis,
+                    'Found in HRBLIZ' => $success
                 ]);
-                // dd(EmploymentType::find(3)->id);
 
-                $password = 'Zcmc_Umis2023@';
-
-                $hashPassword = Hash::make($password . config('app.salt_value'));
-                $encryptedPassword = Crypt::encryptString($hashPassword);
-
-                $now = Carbon::now();
-                $fortyDaysFromNow = $now->addDays(40);
-                $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
-
-                $employee_profile = EmployeeProfile::create([
-                    'employee_id' => $id,
-                    'date_hired' => Carbon::createFromFormat('Y-m-d', $data->datehire),
-                    'password_encrypted' => $encryptedPassword,
-                    'password_created_at' => now(),
-                    'password_expiration_at' => $fortyDaysExpiration,
-                    'biometric_id' => $index,
-                    'allow_time_adjustment' => TRUE,
-                    'employment_type_id' => EmploymentType::find(3)->id || 3,
-                    'personal_information_id' => $index
-                ]);
-
-                Log::info('User Migrate Successfully', [
-                    'user_detail' => $employee_profile,
-                    'user_name' => $employee_profile,
-                    'password' => $password,
-                ]);
+                return response()->json('success');
             }
-            Log::info('Personal Information migrate successfully.');
-
-
-
-            DB::commit();
-
-            return response()->json('success');
         } catch (\Throwable $th) {
             DB::rollBack();
             dd($th);
@@ -233,6 +315,9 @@ class MigrateController extends Controller
             LEFT JOIN dbo.nationality as empNat ON empDet.nationalityid = empNat.nationalityid
             Where emp.no = '$id' "
         );
+        if (count($data) < 1) {
+            return false;
+        };
         return $data[0]; // Placeholder value
     }
 }
