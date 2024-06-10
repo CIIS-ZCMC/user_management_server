@@ -1204,6 +1204,8 @@ class LeaveApplicationController extends Controller
 
                         if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+
+
                         }
 
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
@@ -1336,9 +1338,35 @@ class LeaveApplicationController extends Controller
                 "data" => new NotificationResource($user_notification)
             ]);
 
+            //OIC NOTIFS
+            if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+            $from = Carbon::parse($request->date_from)->format('F d, Y');
+            $to = Carbon::parse($request->date_to)->format('F d, Y');
+            $title = "Assigned as OIC";
+            $description = 'You have been assigned as Officer-in-Charge from '. $from. ' to '. $to. ' by '. $employee_profile->personalInformation->name();
+
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/employees-per-area',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $request->employee_oic_id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($request->employee_oic_id),
+                "data" => new NotificationResource($user_notification)
+            ]);
+            }
+
             $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
             $email = $hrmo->personalInformation->contact->email_address;
             $name = $hrmo->personalInformation->name();
+
 
             $data = [
                 'name' =>  'HRMO',
