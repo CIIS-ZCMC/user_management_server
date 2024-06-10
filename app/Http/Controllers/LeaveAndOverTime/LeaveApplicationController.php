@@ -1349,7 +1349,7 @@ class LeaveApplicationController extends Controller
             $notification = Notifications::create([
                 "title" => $title,
                 "description" => $description,
-                "module_path" => '/employees-per-area',
+                "module_path" => '/calendar',
             ]);
 
             $user_notification = UserNotifications::create([
