@@ -1122,7 +1122,7 @@ class LeaveApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+                    if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
                         $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                     }
 
@@ -1202,7 +1202,7 @@ class LeaveApplicationController extends Controller
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                        if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+                        if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
 
 
@@ -1339,7 +1339,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             //OIC NOTIFS
-            if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+            if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
             $from = Carbon::parse($request->date_from)->format('F d, Y');
             $to = Carbon::parse($request->date_to)->format('F d, Y');
             $title = "Assigned as OIC";
