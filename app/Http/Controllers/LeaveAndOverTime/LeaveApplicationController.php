@@ -1343,7 +1343,7 @@ class LeaveApplicationController extends Controller
             $from = Carbon::parse($request->date_from)->format('F d, Y');
             $to = Carbon::parse($request->date_to)->format('F d, Y');
             $title = "Assigned as OIC";
-            $description = 'You have been assigned as Officer-in-Charge from '. $from. ' to '. $to. ' by '. $employee_profile->personalInformation->name();
+            $description = 'You have been assigned as Officer-in-Charge from '. $from. ' to '. $to. ' by '. $employee_profile->personalInformation->name() . '.';
 
 
             $notification = Notifications::create([
