@@ -8,6 +8,8 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Models\Address;
 use App\Http\Requests\PasswordApprovalRequest;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -201,6 +203,45 @@ class PersonalInformationController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function generatePDS(Request $request)
+    {
+        try{
+
+            // // return view('pds.pdsForm');
+            // $options = new Options();
+            // $options->set('isPhpEnabled', true);
+            // $options->set('isHtml5ParserEnabled', true);
+            // $options->set('isRemoteEnabled', true);
+            // $dompdf = new Dompdf($options);
+            // $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+            // $dompdf->loadHtml(view('pds.pdsForm',  []));
+            // $dompdf->setBasePath(public_path());
+            // $dompdf->setPaper('Legal', 'portrait');
+            // $dompdf->render();
+            // $filename = 'Personal Data Sheet.pdf';
+
+            $options = new Options();
+            $options->set('isPhpEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+            $html = view('pds.pdsForm', [])->render();
+            $dompdf->loadHtml($html);
+
+            $dompdf->setPaper('Legal', 'portrait');
+            $dompdf->render();
+            $filename = 'PDS.pdf';
+
+
+            /* Downloads as PDF */
+            $dompdf->stream($filename); 
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'generatePDS', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

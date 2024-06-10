@@ -40,6 +40,8 @@ Route::
             Route::get('news-search', 'NewsController@searchNews');
             Route::get('news/{id}', 'NewsController@show');
             Route::get('notification', 'NotificationController@store');
+
+            
         });
 
 Route::
@@ -54,6 +56,7 @@ Route::
             Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
             Route::get('validate-token', 'CsrfTokenController@validateToken');
             Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
         });
 
 Route::middleware('auth.cookie')->group(function () {
