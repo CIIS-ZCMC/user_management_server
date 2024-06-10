@@ -35,20 +35,24 @@ class MonthlyWorkHoursController extends Controller
     {
         try {
             $data = MonthlyWorkHours::with('employmentType')->get()->groupBy('month_year');
-            $formattedData = $data->map(function ($items, $monthYear, $i = 1) {
-                return [
+            $formattedData = [];
+            $i = 1;
+
+            foreach ($data as $monthYear => $records) {
+                $employmentTypes = [];
+                foreach ($records as $record) {
+                    $employmentTypes[] = [
+                        'id' => $record->employmentType->id,
+                        'name' => $record->employmentType->name,
+                        'work_hours' => $record->work_hours,
+                    ];
+                }
+                $formattedData[] = [
                     'id' => $i++,
-                    'month' => $monthYear,
-                    'year' => $monthYear,
-                    'employment_type' => $items->map(function ($item) {
-                        return [
-                            'id' => $item->employmentType->id,
-                            'name' => $item->employmentType->name,
-                            'work_hours' => $item->employmentType->monthlyWorkingHours->work_hours,
-                        ];
-                    })
+                    'month_year' => $monthYear,
+                    'employment_type' => $employmentTypes
                 ];
-            })->values();
+            }
 
             return response()->json(['data' => $formattedData], Response::HTTP_OK);
             // return response()->json(['data' => MonthlyWorkHoursResource::collection($data)], Response::HTTP_OK);

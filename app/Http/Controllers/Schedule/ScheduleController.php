@@ -290,9 +290,7 @@ class ScheduleController extends Controller
             $area_id = $request->area_id;
             $area_sector = strtolower($request->area_sector);
             $year = Carbon::parse($request->date)->year;
-            $month = Carbon::parse($request->date)->month;
-
-
+            $month = Carbon::parse($request->date);
 
             $data = EmployeeProfile::with([
                 'assignedArea',
