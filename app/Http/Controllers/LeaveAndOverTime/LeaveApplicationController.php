@@ -895,6 +895,7 @@ class LeaveApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($next_approving),
                     "data" => new NotificationResource($user_notification)
                 ]);
+                
                 $officer = EmployeeProfile::where('id', $next_approving)->first();
                 $email = $officer->personalinformation->contact->email_address;
                 $name = $officer->personalInformation->name();
@@ -1121,7 +1122,7 @@ class LeaveApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+                    if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
                         $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                     }
 
@@ -1201,8 +1202,10 @@ class LeaveApplicationController extends Controller
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                        if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+                        if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+
+
                         }
 
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
@@ -1297,7 +1300,7 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
-                  
+
                 }
             }
 
@@ -1335,9 +1338,35 @@ class LeaveApplicationController extends Controller
                 "data" => new NotificationResource($user_notification)
             ]);
 
+            //OIC NOTIFS
+            if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
+            $from = Carbon::parse($request->date_from)->format('F d, Y');
+            $to = Carbon::parse($request->date_to)->format('F d, Y');
+            $title = "Assigned as OIC";
+            $description = 'You have been assigned as Officer-in-Charge from '. $from. ' to '. $to. ' by '. $employee_profile->personalInformation->name() . '.';
+
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/calendar',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $request->employee_oic_id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($request->employee_oic_id),
+                "data" => new NotificationResource($user_notification)
+            ]);
+            }
+
             $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
-            $email = $hrmo->personalinformation->contact->email_address;
+            $email = $hrmo->personalInformation->contact->email_address;
             $name = $hrmo->personalInformation->name();
+
 
             $data = [
                 'name' =>  'HRMO',
@@ -1777,6 +1806,9 @@ class LeaveApplicationController extends Controller
             $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
                 ->where('employee_profile_id', $data->employee_profile_id)
                 ->first();
+            $fl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'FL')->first()->id)
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->first();
 
             // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
@@ -1808,7 +1840,7 @@ class LeaveApplicationController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization', 'document_details'))->render();
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'fl_employee_credit', 'is_monetization', 'document_details'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'portrait');

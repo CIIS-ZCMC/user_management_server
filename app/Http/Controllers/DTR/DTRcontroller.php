@@ -360,6 +360,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
+
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
 
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
@@ -569,11 +570,45 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
             $FrontDisplay = $request->frontview;
-            $ishalf = $request->ishalf;
+            $ishalf = 1;
 
             /*
             Multiple IDS for Multiple PDF generation
             */
+            $yr = date('Y',strtotime("$year_of-$month_of-1"));
+            $mnth = date('n',strtotime("$year_of-$month_of-1"));
+            $yrnow= date('Y');
+            $mnthnow = date('n');
+            $dynow = date('j');
+            if($yr <= $yrnow){
+                //print 31
+
+                if($mnth < $mnthnow){
+
+                    $ishalf = 0;
+                    //print 31
+                }else if($mnth == $mnthnow) {
+                    if($dynow >=20){
+                        //print 31
+
+                        $ishalf = 0;
+                    }else {
+                            //print 15
+                        $ishalf = 1;
+                    }
+                }else {
+                    if($dynow >=20){
+                        //print 31
+
+                        $ishalf = 0;
+                    }else {
+                        //print 15
+                        $ishalf = 1;
+                    }
+                }
+            }
+
+
             $id = json_decode($biometric_id);
 
             if (count($id) == 0) {
@@ -968,8 +1003,8 @@ class DTRcontroller extends Controller
                 $appr = EmployeeProfile::findorFail($recommending);
                 $approver = $appr->personalInformation->employeeName();
              }
-          
-            
+
+
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,
@@ -996,6 +1031,7 @@ class DTRcontroller extends Controller
                     'ctoApp' => $ctoData ?? [],
                     'biometric_id'=>$biometric_id
                 ]);
+
             } else {
                 $options = new Options();
                 $options->set('isPhpEnabled', true);
@@ -2176,31 +2212,33 @@ class DTRcontroller extends Controller
 
     public function test()
     {
-        $mail = new PHPMailer(true);
-        try {
-            $mail->isSMTP();
-            $mail->SMTPDebug = 2;
-            $mail->Host = gethostbyname('www.mail.gov.ph');
-            $mail->Port = 587;
-            $mail->SMTPSecure ='tls';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'innovations@doh.zcmc.gov.ph'; // Your email address
-            $mail->Password = 'Innov020623!~'; // Your email password
-            $mail->setFrom('innovations@doh.zcmc.gov.ph', 'ZCMC-Portal');
-            $mail->addAddress('reenjie17@gmail.com', 'Reenjay Caimor');
-            $mail->Subject = 'THIS IS JUST A TEST EMAIL ZCMC PORTAL';
-            $mail->CharSet = PHPMailer::CHARSET_UTF8;
-            $mail->isHTML(true);
-            $mail->Body = "Hi there. Im working!!";
-            $mail->AltBody = 'This is a plain text message body';
-            if ($mail->send()) {
-                return "send";
-            } else {
-                return "failed to sendd";
-            }
-        } catch (\Throwable $th) {
-            return $th;
-        }
+
+        return view('dtrlog');
+        // $mail = new PHPMailer(true);
+        // try {
+        //     $mail->isSMTP();
+        //     $mail->SMTPDebug = 2;
+        //     $mail->Host = gethostbyname('www.mail.gov.ph');
+        //     $mail->Port = 587;
+        //     $mail->SMTPSecure ='tls';
+        //     $mail->SMTPAuth = true;
+        //     $mail->Username = 'innovations@doh.zcmc.gov.ph'; // Your email address
+        //     $mail->Password = 'Innov020623!~'; // Your email password
+        //     $mail->setFrom('innovations@doh.zcmc.gov.ph', 'ZCMC-Portal');
+        //     $mail->addAddress('reenjie17@gmail.com', 'Reenjay Caimor');
+        //     $mail->Subject = 'THIS IS JUST A TEST EMAIL ZCMC PORTAL';
+        //     $mail->CharSet = PHPMailer::CHARSET_UTF8;
+        //     $mail->isHTML(true);
+        //     $mail->Body = "Hi there. Im working!!";
+        //     $mail->AltBody = 'This is a plain text message body';
+        //     if ($mail->send()) {
+        //         return "send";
+        //     } else {
+        //         return "failed to sendd";
+        //     }
+        // } catch (\Throwable $th) {
+        //     return $th;
+        // }
 
 
         /*

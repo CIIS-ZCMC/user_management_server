@@ -38,7 +38,6 @@
         }
         table {
             width: 90%;
-            border-collapse: collapse;
             margin: 0;
             /* text-align: left; */
         }
@@ -452,9 +451,10 @@
             
                                         <div style="margin-top: 20px;">
                                             <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
-                                                {{ $data->employeeProfile->personalInformation->first_name }}
-                                                {{ substr($data->employeeProfile->personalInformation->middle_name, 0, 1) }}.
+                                                {{ $data->employeeProfile->personalInformation->employeeName() }}
+                                                {{-- {{ substr($data->employeeProfile->personalInformation->middle_name, 0, 1) }}.
                                                 {{ $data->employeeProfile->personalInformation->last_name }} 
+                                                {{ $data->employeeProfile->personalInformation->last_name }}  --}}
                                             </span>
                                             <br> 
                                             <label style="text-align: center; display: block;">Signature of Applicant</label>
@@ -523,7 +523,8 @@
                                             </tr>
                                         @else
                                             <tr>
-                                                <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id ? $vl_employee_credit->total_leave_credits + $data->applied_credits :$vl_employee_credit->total_leave_credits}}</td>
+                                                
+                                                <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $fl_employee_credit->leave_type_id || $data->leave_type_id === $vl_employee_credit->leave_type_id ? $vl_employee_credit->total_leave_credits + $data->applied_credits :$vl_employee_credit->total_leave_credits}}</td>
                                                 <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id ? $sl_employee_credit->total_leave_credits + $data->applied_credits :$sl_employee_credit->total_leave_credits}}</td>
                                                 <td style="padding: 3px; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits + $data->applied_credits}}</td>
                                             </tr>
@@ -533,8 +534,8 @@
                                                     <td style="padding: 3px; font-size:11px">&nbsp;</td>
                                                     <td style="padding: 3px; font-size:11px">&nbsp;</td>
                                                 @else
-                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id? $data->applied_credits :0}}</td>
-                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id? $data->applied_credits:0}}</td>
+                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id || $data->leave_type_id === $fl_employee_credit->leave_type_id ? $data->applied_credits : 0}}</td>
+                                                    <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id ? $data->applied_credits : 0}}</td>
                                                     <td style="padding: 3px; font-size:11px">{{$data->applied_credits}}</td>
                                                 @endif
                                             </tr>
@@ -544,8 +545,8 @@
                                                     <td class="text-end" style="font-weight: lighter; font-size:11px">{{$sl_employee_credit->total_leave_credits}} DAYS</td>
                                                     <td class="text-end" style="font-weight: lighter; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits - 0}} DAYS</td>
                                                 @else
-                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $vl_employee_credit->leave_type_id? $vl_employee_credit->total_leave_credits :$vl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
-                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $sl_employee_credit->leave_type_id? $sl_employee_credit->total_leave_credits :$sl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
+                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $vl_employee_credit->leave_type_id || $data->leave_type_id !== $fl_employee_credit->leave_type_id ? $vl_employee_credit->total_leave_credits :$vl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
+                                                    <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $sl_employee_credit->leave_type_id ? $sl_employee_credit->total_leave_credits :$sl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
                                                     <td class="text-end" style="font-weight: lighter; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits + $data->applied_credits - $data->applied_credits}} DAYS</td>
                                                 @endif
                                             </tr>
@@ -557,9 +558,9 @@
                                     <div class="text-center" style="padding-top: 20px;">
                                         <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
                                             @if ($data->hrmoOfficer)
-                                            {{ $data->hrmoOfficer->personalInformation->first_name }}
-                                            {{ substr($data->hrmoOfficer->personalInformation->middle_name, 0, 1) }}.
-                                            {{ $data->hrmoOfficer->personalInformation->last_name }} 
+                                            {{ $data->hrmoOfficer->personalInformation->employeeName() }}
+                                            {{-- {{ substr($data->hrmoOfficer->personalInformation->middle_name, 0, 1) }}.
+                                            {{ $data->hrmoOfficer->personalInformation->last_name }}  --}}
                                         @endif
                                             {{-- {{ $hrmo_officer->supervisor->personalInformation->first_name }}
                                             {{ substr($hrmo_officer->supervisor->personalInformation->middle_name, 0, 1) }}
@@ -604,9 +605,9 @@
                                     <div style="" class="text-center">
                                         <span style="font-size: 13px; padding-top:40px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
                                         @if ($data->recommendingOfficer)
-                                            {{ $data->recommendingOfficer->personalInformation->first_name }}
-                                            {{ substr($data->recommendingOfficer->personalInformation->middle_name, 0, 1) }}.
-                                            {{ $data->recommendingOfficer->personalInformation->last_name }} 
+                                            {{ $data->recommendingOfficer->personalInformation->employeeName() }}
+                                            {{-- {{ substr($data->recommendingOfficer->personalInformation->middle_name, 0, 1) }}.
+                                            {{ $data->recommendingOfficer->personalInformation->last_name }}  --}}
                                         @endif
                                       
                                         </span>
@@ -689,9 +690,9 @@
                         <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 250px; padding-top: 30px; text-transform:uppercase">
                             <b>
                                 @if ($data->approvingOfficer)
-                                {{ $data->approvingOfficer->personalInformation->first_name }}
-                                {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}.
-                                {{ $data->approvingOfficer->personalInformation->last_name }} 
+                                {{ $data->approvingOfficer->personalInformation->employeeName() }}
+                                {{-- {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}.
+                                {{ $data->approvingOfficer->personalInformation->last_name }}  --}}
                                 @else
                                 &nbsp;&nbsp;
                             @endif

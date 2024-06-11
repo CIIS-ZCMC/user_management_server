@@ -242,9 +242,7 @@ class EmployeeProfile extends Authenticatable
     public function findDesignation()
     {
         $assign_area = $this->assignedArea;
-
         $designation = $assign_area->plantilla_id === null ? $assign_area->designation : $assign_area->plantilla->designation;
-
         return $designation;
     }
 
@@ -448,9 +446,11 @@ class EmployeeProfile extends Authenticatable
     public function myEmployees($assign_area, $user)
     {
         $employees = [];
+        $division_heads = [];
         $division_employees = [];
         $department_employees = [];
         $section_employees = [];
+        $unit_employees = [];
 
         // $employees = $this->retrieveEmployees($employees, Str::lower($assign_area['sector']) . "_id", $assign_area['details']->id, [$user->id, 1]);
 
@@ -458,7 +458,16 @@ class EmployeeProfile extends Authenticatable
             case 'Division':
                 $divisions = Division::where('id', $assign_area['details']->id)->get();
                 foreach ($divisions as $division) {
-                    $division_employees = $this->retrieveEmployees($employees, 'division_id', $division->id, [$user->id, 1]);
+                    if ($user->id !== $division->chief->id) {
+                        $division_employees = $this->retrieveEmployees($employees, 'division_id', $division->id, [1, $division->chief->id]);
+                    } else {
+                        $all_division = Division::all();
+                        foreach ($all_division as $head) {
+                            $division_heads[] = $head->chief;
+                        }
+
+                        $division_employees = $this->retrieveEmployees($employees, 'division_id', $division->id, [1]);
+                    }
                 }
 
                 $departments = Department::where('division_id', $assign_area['details']->id)->get();
@@ -471,7 +480,7 @@ class EmployeeProfile extends Authenticatable
                     $section_employees[] = $section->supervisor;
                 }
 
-                $employees = array_merge($division_employees, $department_employees, $section_employees);
+                $employees = array_merge($division_heads, $division_employees, $department_employees, $section_employees);
                 break;
 
             case 'Department':
@@ -485,12 +494,15 @@ class EmployeeProfile extends Authenticatable
             case 'Section':
                 $sections = Section::where('id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $my_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
-                    $units = Unit::where('id', $assign_area['details']->id)->get();
-                    foreach ($units as $unit) {
-                        $employees = array_merge($my_employees, (array) $unit->head);
-                    }
+                    $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                 }
+
+                $units = Unit::where('section_id', $assign_area['details']->id)->get();
+                foreach ($units as $unit) {
+                    $unit_employees[] = $unit->head;
+                }
+
+                $employees = array_merge($section_employees, $unit_employees);
                 break;
 
             case 'Unit':

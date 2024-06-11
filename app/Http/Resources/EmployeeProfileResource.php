@@ -16,7 +16,7 @@ class EmployeeProfileResource extends JsonResource
     public function toArray(Request $request): array
     {
         $personal_information = $this->personalInformation;
-        $name = $personal_information->name();
+        $name = $personal_information->employeeName();
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area ? $assigned_area->findDetails() : null;
         $area = $area_details;

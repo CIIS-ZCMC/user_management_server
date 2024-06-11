@@ -17,8 +17,11 @@ class MonthlyWorkHoursResource extends JsonResource
         return [
             'id' => $this->id,
             'month_year' => $this->month_year,
-            'work_hours' => $this->work_hours,
-            'employment_type_id' => $this->employment_type_id
+            'employment_type' => [
+                'id' => $this->employmentType->id,
+                'name' => $this->employmentType->name,
+                'work_hours' => $this->employmentType->monthlyWorkingHours->work_hours,
+            ],
         ];
     }
 }
