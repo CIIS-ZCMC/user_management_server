@@ -198,17 +198,19 @@
 
             <tr padding="0">
                 <td class="border-right border-dark title">2. Surname</td>
-                <td colspan="2" class="border border-dark row-value">___data___</td>
+                <td colspan="2" class="border border-dark row-value">-</td>
             </tr>
             <tr>
                 <td class="ml-3 title title-indent" >First name</td> 
-                <td class="border border-dark row-value" style="width: 60%" >___data___</td> 
-                <td class="border border-dark title"><div class="title" style="font-size: 6px">NAME EXTENSION (JR., SR) </div> <div class="row-value">___data___</div></td>
+                <td class="border border-dark row-value" style="width: 60%" >-</td> 
+                <td class="border border-dark bg-title">
+                    <div style="font-size: 6px; margin-bottom: 0px">NAME EXTENSION (JR., SR) <div class="row-value">-</div> </div> 
+                </td>
             </tr>
 
             <tr>
                 <td class="border-right border-dark title title-indent">Middle name</td>
-                <td colspan="2" class="border border-dark row-value">___data___</td>
+                <td colspan="2" class="border border-dark row-value">-</td>
             </tr>    
         </table>
 
@@ -216,7 +218,7 @@
         <table cellspacing="0" cellpadding="0" class="border border-dark table-section"> 
             <tr>
                 <td class="border border-dark title">3. Date of birth <br/> <div class="title-indent pb-2">(mm/dd/yyyy)</div></td>
-                <td class="border border-dark row-value" >___data___</td>
+                <td class="border border-dark row-value" >-</td>
 
                 {{-- CITIZENSHIP --}}
                 <td rowspan="3" class="border-right border-dark pt-0 title" style="width: 23%">
@@ -239,12 +241,12 @@
                     <label style="margin-left: 120px">Pls. indicate country:</label>
 
                     {{-- COUNTRY --}}
-                    <div class="row-value py-0">___data___</div>
+                    <div class="row-value py-0">-</div>
                 </td>
             </tr>
             <tr>
                 <td class="title border border-dark">4. PLACE OF BIRTH</td> 
-                <td class="border border-dark row-value">___data___</td> 
+                <td class="border border-dark row-value">-</td> 
             </tr>
 
             <tr>
@@ -324,7 +326,7 @@
             {{-- HEIGHT --}}
             <tr>
                 <td class="border border-dark title" >7. HEIGHT (m)</td>
-                <td class="border border-dark row-value">___data___</td>
+                <td class="border border-dark row-value">-</td>
                 <td class="title" style="width: 17%">
             
                 </td>
@@ -334,7 +336,7 @@
             <tr>
         
                 <td class="border border-dark title" >8. WEIGHT (kg)</td>
-                <td class="border border-dark row-value">___data___</td>
+                <td class="border border-dark row-value">-</td>
                 
                 <td class="title text-center" >
                     ZIP CODE
@@ -364,8 +366,8 @@
                 <td class="border border-dark" rowspan="3" >
                     {{-- STREET --}}
                     <div class="address-layout">
-                        <span>___data___</span>
-                        <span>___data___</span>
+                        <span>-</span>
+                        <span>-</span>
                     </div>
                     <hr/>
                     <div class="address-layout bottom-label">
@@ -377,8 +379,8 @@
 
                     {{-- SUBDIVISION --}}
                     <div class="address-layout">
-                        <span>___data___</span>
-                        <span>___data___</span>
+                        <span>-</span>
+                        <span>-</span>
                     </div>
                     <hr/>
                     <div class="address-layout bottom-label">
@@ -389,8 +391,8 @@
 
                     {{-- CITY --}}
                     <div class="address-layout ">
-                        <span>___data___</span>
-                        <span>___data___</span>
+                        <span>-</span>
+                        <span>-</span>
                     </div>
                     <hr/>
                     <div class="address-layout bottom-label">
@@ -505,100 +507,100 @@
         <table cellspacing="0" cellpadding="0" class="border border-dark table-section"> 
             <tr >
                 <td class="border-right border-dark title" style="width: 21%">22. SPOUSE'S SURNAME</td>
-                <td class="border border-dark row-value" colspan="2" >___data___</td>
+                <td class="border border-dark row-value" colspan="2" >-</td>
                 <td class="border border-dark bg-title" style="width: 30%;font-size: 8px" >23. NAME of CHILDREN  (Write full name and list all)</td>
                 <td class="border border-dark bg-title text-center" style="width: 12%; font-size: 8px">DATE OF BIRTH <br/>(mm/dd/yyyy) </td>
             </tr>
             <tr>    
                 <td class="ml-3 title title-indent" > FIRST NAME</td>   
-                <td class="border border-dark row-value"  style="width: 21%">___data___</td> 
+                <td class="border border-dark row-value"  style="width: 21%">-</td> 
                 <td class="border border-dark bg-title">
-                    <div style="font-size: 6px; margin-bottom: 0px">NAME EXTENSION (JR., SR) <div class="row-value">___data___</div> </div> 
+                    <div style="font-size: 6px; margin-bottom: 0px">NAME EXTENSION (JR., SR) <div class="row-value">-</div> </div> 
                    
                 </td>
-                <td class="border border-dark row-value" >___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" >-</td> 
+                <td class="border border-dark row-value" >-</td> 
             </tr>
 
             <tr>
                 <td class="border-right border-dark title title-indent">Middle name</td>
-                <td colspan="2" class="border border-dark row-value">___data___</td> 
-                <td class="border border-dark row-value" >___data___</td>
-                <td class="border border-dark row-value" >___data___</td>  
+                <td colspan="2" class="border border-dark row-value">-</td> 
+                <td class="border border-dark row-value" >-</td>
+                <td class="border border-dark row-value" >-</td>  
             </tr>  
             <tr >
                 <td class="border border-dark title title-indent">OCCUPATION</td>
-                <td class="border border-dark row-value" colspan="2">___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" colspan="2">-</td> 
+                <td class="border border-dark row-value" >-</td> 
+                <td class="border border-dark row-value" >-</td> 
             </tr>
             <tr>    
                 <td class="border border-dark title title-indent">EMPLOYER/BUSINESS NAME</td>
-                <td class="border border-dark row-value" colspan="2">___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" colspan="2">-</td> 
+                <td class="border border-dark row-value" >-</td> 
+                <td class="border border-dark row-value" >-</td> 
             </tr>
 
             <tr>
                 <td class="border border-dark title title-indent">BUSINESS ADDRESS</td>
-                <td class="border border-dark row-value" colspan="2">___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" colspan="2">-</td> 
+                <td class="border border-dark row-value" >-</td> 
+                <td class="border border-dark row-value" >-</td> 
             </tr>  
             
             <tr>
                 <td class="border border-dark title title-indent">TELEPHONE NO.</td>
-                <td class="border border-dark row-value" colspan="2">___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" colspan="2">-</td> 
+                <td class="border border-dark row-value" >-</td> 
+                <td class="border border-dark row-value" >-</td> 
             </tr>    
 
             {{-- FATHER --}}
             <tr>
                 <td class="border-right border-dark title">24. FATHER'S SURNAME</td>
-                <td class="border border-dark row-value" colspan="2">___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
+                <td class="border border-dark row-value" colspan="2">-</td>
+                <td class="border border-dark row-value" >-</td>
+                <td class="border border-dark row-value" >-</td>
             </tr>
             <tr>    
                 <td class="ml-3 title title-indent" > FIRST NAME</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" >-</td> 
                 <td class="border border-dark bg-title" style="width: 21%">
-                    <div style="font-size: 6px; margin-bottom: 0px">NAME EXTENSION (JR., SR) <div class="row-value">___data___</div> </div> 
+                    <div style="font-size: 6px; margin-bottom: 0px">NAME EXTENSION (JR., SR) <div class="row-value">-</div> </div> 
                    
                 </td>
-                <td class="border border-dark row-value" >___data___</td> 
-                <td class="border border-dark row-value" >___data___</td> 
+                <td class="border border-dark row-value" >-</td> 
+                <td class="border border-dark row-value" >-</td> 
             </tr>
             <tr>
                 <td class="border-bottom border-dark title title-indent">Middle name</td>
-                <td colspan="2" class="border border-dark row-value">___data___</td> 
-                <td class="border border-dark row-value" >___data___</td>
-                <td class="border border-dark row-value" >___data___</td>  
+                <td colspan="2" class="border border-dark row-value">-</td> 
+                <td class="border border-dark row-value" >-</td>
+                <td class="border border-dark row-value" >-</td>  
             </tr>  
 
             {{-- MOTHER --}}
             <tr>
                 <td class="border-right border-dark title">24. MOTHER'S MAIDEN NAME</td>
-                <td class="border border-dark row-value" colspan="2">___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
+                <td class="border border-dark row-value" colspan="2">-</td>
+                <td class="border border-dark row-value" >-</td>
+                <td class="border border-dark row-value" >-</td>
             </tr>
             <tr>    
                 <td class="ml-3 title title-indent" > SURNAME</td> 
-                <td class="border border-dark row-value" colspan="2">___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
+                <td class="border border-dark row-value" colspan="2">-</td>
+                <td class="border border-dark row-value" >-</td>
+                <td class="border border-dark row-value" >-</td>
             </tr>
             <tr>    
                 <td class="ml-3 title title-indent" > FIRST NAME</td> 
-                <td class="border border-dark row-value" colspan="2">___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
-                <td class="border border-dark row-value" >___data___</td>
+                <td class="border border-dark row-value" colspan="2">-</td>
+                <td class="border border-dark row-value" >-</td>
+                <td class="border border-dark row-value" >-</td>
             </tr>
             <tr>
                 <td class="border-bottom border-dark title title-indent">Middle name</td>
-                <td colspan="2" class="border border-dark row-value">___data___</td> 
+                <td colspan="2" class="border border-dark row-value">-</td> 
                 
                 <td class="border border-dark row-value footer-continue" colspan="8">
                     (Continue on separate sheet if necessary)

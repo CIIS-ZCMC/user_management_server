@@ -2371,8 +2371,5 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
 
-
-
-
     });
 });
