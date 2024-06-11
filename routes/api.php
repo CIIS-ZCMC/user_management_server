@@ -41,7 +41,7 @@ Route::
             Route::get('news/{id}', 'NewsController@show');
             Route::get('notification', 'NotificationController@store');
 
-            
+
         });
 
 Route::
@@ -1706,7 +1706,14 @@ Route::middleware('auth.cookie')->group(function () {
 
         /**
          * Monitization Posting Module
+         *
          */
+
+            //reports
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::post('leave-application-filter', 'LeaveApplicationController@countapprovedleaveApplication');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts', 'MonitizationPostingController@index');
         });
@@ -2362,6 +2369,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
             Route::get('get-my-total-work-hours', 'MonthlyWorkHoursController@getMyTotalWorkHours');
         });
+
+
+
+
 
     });
 });
