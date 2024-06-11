@@ -1901,7 +1901,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
-            Route::get('export-csv','LeaveApplicationController@exportCsv');
+            Route::get('export-csv', 'LeaveApplicationController@exportCsv');
         });
 
 
@@ -1949,7 +1949,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-OB download'])->group(function () {
-            Route::get('export-csv-ob','OfficialBusinessController@exportCsv');
+            Route::get('export-csv-ob', 'OfficialBusinessController@exportCsv');
         });
 
         /**
@@ -1972,7 +1972,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-OT download'])->group(function () {
-            Route::get('export-csv-ot','OfficialTimeController@exportCsv');
+            Route::get('export-csv-ot', 'OfficialTimeController@exportCsv');
         });
 
 
@@ -2121,7 +2121,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-CT download'])->group(function () {
-            Route::get('export-csv-cto','CtoApplicationController@exportCsv');
+            Route::get('export-csv-cto', 'CtoApplicationController@exportCsv');
         });
     });
 

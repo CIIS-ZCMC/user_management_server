@@ -70,7 +70,6 @@ class EmployeeScheduleController extends Controller
                 });
             });
 
-
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
