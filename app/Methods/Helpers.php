@@ -65,10 +65,11 @@ class Helpers
 
     public function withinInterval($last_entry, $bio_entry)
     {
-
+      
         $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(config("app.alloted_dtr_interval") * 60));
-
-
+        
+     
+      
         if ($With_Interval <= $bio_entry[0]['date_time']) {
             return true;
         }
@@ -300,7 +301,12 @@ AND id IN (
 
     public function CurrentSchedule($biometric_id, $value, $yesterdayRecord)
     {
-
+        if(!isset($value['date_time'])){
+            return [
+                'daySchedule' =>[],
+                'break_Time_Req' =>[],
+            ];
+        }
         $entrydateYear = date('Y', strtotime($value['date_time']));
         $entrydateMonth = date('m', strtotime($value['date_time']));
         $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");
@@ -560,7 +566,7 @@ AND id IN (
     {
         //return $this->toWordsMinutes(59.71);
 
-
+      
         foreach ($sequence as $sc) {
             /* Entries */
             $validate = $data;
@@ -569,7 +575,8 @@ AND id IN (
                 // You can access $data as needed
                 $validate = is_array($data) ? $data[0] : $data;
             }
-
+            $noHalfEntry = 0;
+            $noHalfEntryfirst  = 0;
 
             $f1_entry = $validate->first_in;
             $f2_entry = $validate->first_out;
@@ -655,7 +662,7 @@ AND id IN (
                 }
 
                 $undertime = $undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry;
-                $noHalfEntry = 0;
+              
 
                 if ($f3_entry && $f4_entry) {
                     $overtime = $overtime_4th_entry;
@@ -675,24 +682,12 @@ AND id IN (
                         $s3_Time_stamp_ = strtotime($s_3);
                         $s4_Time_stamp_ = strtotime($s_4);
 
-                        if($f1_entry && !$f2_entry){
-                            $first_Sched_firstin = $time_stamps_req['first_entry'];
-                            $first_Sched_firstout = $time_stamps_req['second_entry'];
-    
-                            $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
-                            $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
-
-                            $s1_Time_stamp_ = strtotime($s_1);
-                            $s2_Time_stamp_ = strtotime($s_2);
-                            $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_ - $s2_Time_stamp_ - $s1_Time_stamp_;
-                            $noHalfEntry = $totalHalfSEcs / 60;
-
-                        }else {
-                            $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_;
-                            $noHalfEntry = $totalHalfSEcs / 60;
-                        }
-
-                     
+                        
+                          $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_;
+                       
+                  
+                       
+                       $noHalfEntry = $totalHalfSEcs / 60;
                     }
                 }
 
@@ -797,6 +792,20 @@ AND id IN (
             $underTime_Minutes = 0;
         }
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
+    
+        if($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry){
+            $first_Sched_firstin = $time_stamps_req['first_entry'];
+            $first_Sched_firstout = $time_stamps_req['second_entry'];
+
+            $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
+            $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
+
+            $s1_Time_stamp_ = strtotime($s_1);
+            $s2_Time_stamp_ = strtotime($s_2);
+            $totalHalfSEcsfirst = $s2_Time_stamp_ - $s1_Time_stamp_;
+       
+            $noHalfEntryfirst =  $totalHalfSEcsfirst/60;
+       }
         $attr = [
             'total_WH_words' => $total_WH_words,
             'required_WH' => $required_WH,
@@ -804,8 +813,8 @@ AND id IN (
             'total_WH_minutes' => $total_WH_minutes,
             'over_all_minutes_Rendered' => $over_all_minutes_Rendered,
             'Registered_minutes' => $Registered_minutes,
-            'underTime_inWords' =>  $this->toWordsMinutes( $underTime_Minutes +  $noHalfEntry)['InWords'],
-            'underTime_Minutes' => $underTime_Minutes +  $noHalfEntry,
+            'underTime_inWords' =>  $this->toWordsMinutes( $underTime_Minutes +  ($noHalfEntry + $noHalfEntryfirst))['InWords'],
+            'underTime_Minutes' => $underTime_Minutes +  ($noHalfEntry + $noHalfEntryfirst),
             'overTime_inWords' => $overTime_inWords,
             'overTime_Minutes' => $overTime_Minutes
         ];
@@ -1308,17 +1317,11 @@ AND id IN (
                         $lastStatus = "CHECK-OUT";
                     }
                 }
-
-                // If no match found in $mapdtr, apply the old logic
-                if (!isset($entry['entry_status'])) {
-                    // if ($index == 0) {
-                    //     $entry['entry_status'] = "CHECK-IN";
-                    //     $lastStatus = "CHECK-IN";
-                    // } else {
                         $interval = ($currentTimestamp - $previousTimestamp) / 60;
 
                         if ($interval <= 3) { // 3 minutes interval
                             $entry['entry_status'] = "LOGGED";
+                            $lastStatus = "LOGGED";
                         } else {
                             if ($lastStatus == "CHECK-IN") {
                                 $entry['entry_status'] = "CHECK-OUT";
@@ -1329,7 +1332,7 @@ AND id IN (
                             }
                         }
                     //}
-                }
+                
                 $entry['timing'] = $key;
                 $entry['name'] = $employee_Name;
                 $entry['status_description'] = $this->statusDescription($employee_ID, $entry['entry_status'], $entry['date_time']);

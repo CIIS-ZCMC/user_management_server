@@ -12,15 +12,15 @@
         }
 
         .Absent {
-            background-color: #FFDCDC;
+            background-color: #FFE5E5;
         }
 
         .Holiday {
-            background-color: #F3E0B5;
+            background-color: #FFFBDA;
         }
 
         .Present {
-            background-color: #d3e0d2;
+            background-color: #E0FBE2;
         }
 
         .wsched {

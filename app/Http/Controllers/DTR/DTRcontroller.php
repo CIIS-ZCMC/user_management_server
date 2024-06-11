@@ -217,12 +217,34 @@ class DTRcontroller extends Controller
         }
     }
 
+    function getvalidatedData($bioEntry)
+{
+    // Check if the entry is an array of entries
+    if (isset($bioEntry[0])) {
+        return $bioEntry[0];
+    }
+    // Check if the entry is a single entry
+    elseif (isset($bioEntry)) {
+        return $bioEntry;
+    }
+    // Return null if no date_time is found
+    return null;
+}
+
+public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_id){
+
+
+  
+
+}
+
+
 
     public function fetchDTRFromDevice()
     {
 
         try {
-
+            $loaded = [];
             foreach ($this->devices as $device) {
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
                     $logs = $tad->get_att_log();
@@ -241,154 +263,205 @@ class DTRcontroller extends Controller
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
                         $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
-                            return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
+                            return date('Y-m-d', strtotime($attd['date_time'])) == $date_now  ;
                         });
-
-                        //return $check_Records;
-
+                      
+                        
                         if (count($check_Records) >= 1) {
+                         
                             foreach ($check_Records as $bioEntry) {
+                            
                                 $biometric_id = $bioEntry['biometric_id'];
-
+                              
+                               
+                               
+                               $empSingleRecord = array_values(array_filter($Employee_Attendance, function ($attd) use ($date_now,$biometric_id) {
+                                    return date('Y-m-d', strtotime($attd['date_time'])) == $date_now && $attd['biometric_id'] == $biometric_id;
+                                }));
+                    
+                              
+                                $getRecord = array_values(array_filter($empSingleRecord, function($row) use($biometric_id) {
+                                    $date_times = $row['date_time'];
+                                  
+                                    return !DailyTimeRecords::where('biometric_id', $biometric_id)
+                                        ->where(function ($query) use ($date_times) {
+                                            $query->where('first_in', $date_times)
+                                                ->orWhere('first_out', $date_times)
+                                                ->orWhere('second_in', $date_times)
+                                                ->orWhere('second_out', $date_times);
+                                        })
+                                        ->exists();
+                                }));
+                    
+                          
+                                if(isset($getRecord)){
+                                    
+                                    $getnotlogged = array_values(array_filter($getRecord,function($d){
+                                        return $d['entry_status'] !== "LOGGED";
+                                    }));
+                    
+                                    $bioEntry =  $getnotlogged;
+                                }
+                      
+                                
                     //Get attendance first  group per employee biometric_id
                                 //get the first successful entry.
                                 //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
                                 //
-                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-                                $DaySchedule = $Schedule['daySchedule'];
-                                $BreakTime = $Schedule['break_Time_Req'];
-
-
-
-                                    if (count($DaySchedule) >= 1) {
-                                       if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
-
-                                        if (count($BreakTime) >= 1) {
-
-                                            /**
-                                             * With Schedule
-                                             * 4 sets of sched
-                                             */
-
-                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
-                                        } else {
-                                            /**
-                                             * With Schedule
-                                             * 2 sets of sched
-                                             */
-
-                                            $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
-                                        }
-                                       }else {
-
+                                $loaded[] = ['biometricid'=>$biometric_id,'data'=>$bioEntry];
+                                if($bioEntry){
+                                    $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
+                                    $DaySchedule = $Schedule['daySchedule'];
+                                   $BreakTime = $Schedule['break_Time_Req'];
+                                 
+   
+                                       if (count($DaySchedule) >= 1) {
+                                          if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
+                       
+                                           if (count($BreakTime) >= 1) {
+                       
+                                               /**
+                                                * With Schedule
+                                                * 4 sets of sched
+                                                */
+                       
+                                             $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $this->getvalidatedData($bioEntry), $biometric_id);
+                                           } else {
+                                               /**
+                                                * With Schedule
+                                                * 2 sets of sched
+                                                */
+                       
+                                               $this->DTR->NoBreaktimePull($DaySchedule, $this->getvalidatedData($bioEntry), $biometric_id);
+                                           }
+                                          }else {
+                       
+                                              /**
+                                            * No Schedule Pulling
+                                            */
+                                           $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
+                                          }
+                       
+                                       } else {
+                       
                                            /**
-                                         * No Schedule Pulling
-                                         */
-                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                            * No Schedule Pulling
+                                            */
+                                          $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                        }
-
-                                    } else {
-
-                                        /**
-                                         * No Schedule Pulling
-                                         */
-                                       $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
-                                    }
+                                }
+                       
                             }
-
+                    
                             //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
-
-
+                    
+                    
                             //ASSIGN DELETION FUNCTION ALGORITHM
                             // 9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
                         //    $tad->delete_data(['value' => 3]);
                         } else {
                             //yesterday Time
                             // Save the past 24 hours records
-
-
+                    
+                    
                             $datenow = date('Y-m-d');
                             $late_Records = array_filter($Employee_Attendance, function ($attd) use ($datenow) {
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
-
-
-
+                    
+                    
+                    
                             foreach ($late_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
-
-                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                    
+                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-
+                    
                                 if (count($DaySchedule) >= 1) {
                                     if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
-
+                    
                                      if (count($BreakTime) >= 1) {
                                          /**
                                           * With Schedule
                                           * 4 sets of sched
                                           */
-                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime,$this->getvalidatedData($bioEntry), $biometric_id);
                                      } else {
                                          /**
                                           * With Schedule
                                           * 2 sets of sched
                                           */
-                                         $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                         $this->DTR->NoBreaktimePull($DaySchedule,$this->getvalidatedData($bioEntry), $biometric_id);
                                      }
                                     }else {
                                         /**
                                       * No Schedule Pulling
                                       */
-                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                     $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                     }
-
+                    
                                  } else {
                                      /**
                                       * No Schedule Pulling
                                       */
-                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                     $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                  }
                             }
-                            // /* Save DTR Logs */
+                         
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
-                            // /* Clear device data */
-                          //  $tad->delete_data(['value' => 3]);
+                       
                         }
-                    } else {
-                        //Save anomaly entries
-                        /**
-                         * Here we saved all entries that the device date and time and server
-                         * does not match..
-                         *
-                         */
-                        foreach ($Employee_Attendance as $key => $value) {
-                            DtrAnomalies::create([
-                                'biometric_id' => $value['biometric_id'],
-                                'name' => $value['name'],
-                                'dtr_entry' => $value['date_time'],
-                                'status' => $value['status'],
-                                'status_desc' => $value['status_description']
-                            ]);
-                        }
-                      //  $tad->delete_data(['value' => 3]);
-                    }
-                    // End of Validation of Time
-                } // End Checking if Connected to Device
+                    
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+                     
+
+            //         // End of Validation of Time
+               }  else {
+                //Save anomaly entries
+                /**
+                 * Here we saved all entries that the device date and time and server
+                 * does not match..
+                 *
+                 */
+                foreach ($Employee_Attendance as $key => $value) {
+                    DtrAnomalies::create([
+                        'biometric_id' => $value['biometric_id'],
+                        'name' => $value['name'],
+                        'dtr_entry' => $value['date_time'],
+                        'status' => $value['status'],
+                        'status_desc' => $value['status_description']
+                    ]);
+                }
+             }
+            }
             }
         } catch (\Throwable $th) {
-
+         return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
 
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
-        return true;
+        return $loaded;
     }
 
     public function formatDate($date)
@@ -603,7 +676,8 @@ class DTRcontroller extends Controller
             $yrnow= date('Y');
             $mnthnow = date('n');
             $dynow = date('j');
-            if($yr <= $yrnow){
+            if(!$FrontDisplay){
+                    if($yr <= $yrnow){
                 //print 31
 
                 if($mnth < $mnthnow){
@@ -630,6 +704,10 @@ class DTRcontroller extends Controller
                     }
                 }
             }
+            }else {
+                $ishalf = 0; 
+            }
+        
 
 
             $id = json_decode($biometric_id);
