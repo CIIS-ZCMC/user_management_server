@@ -125,6 +125,7 @@ class EmployeeProfileController extends Controller
         }
     }
 
+
     public function profileUpdateRequest(Request $request)
     {
         try {
@@ -2946,7 +2947,6 @@ class EmployeeProfileController extends Controller
 
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
-
             $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
 
             $totalMonths = 0; // Initialize total months variable
@@ -3187,8 +3187,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
+    
     public function promotion($id, PromotionRequest $request)
     {
         try {
@@ -3506,4 +3505,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
 }
