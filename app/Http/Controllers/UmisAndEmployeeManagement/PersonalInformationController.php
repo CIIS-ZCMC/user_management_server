@@ -8,6 +8,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Models\Address;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Models\EmployeeProfile;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -211,7 +212,7 @@ class PersonalInformationController extends Controller
     {
         try{
 
-            // // return view('pds.pdsForm');
+            return view('pds.pdsForm');
             // $options = new Options();
             // $options->set('isPhpEnabled', true);
             // $options->set('isHtml5ParserEnabled', true);
@@ -245,4 +246,5 @@ class PersonalInformationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 }
