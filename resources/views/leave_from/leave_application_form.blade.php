@@ -38,7 +38,6 @@
         }
         table {
             width: 90%;
-            border-collapse: collapse;
             margin: 0;
             /* text-align: left; */
         }
