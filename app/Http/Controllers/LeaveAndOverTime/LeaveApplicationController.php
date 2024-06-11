@@ -7,6 +7,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Http\Resources\NotificationResource;
+// use App\Http\Resources\EmployeeProfileResource;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\DocumentNumber;
@@ -155,8 +156,6 @@ class LeaveApplicationController extends Controller
         return ['data' => $response];
     }
 
-
-
     public function hrmoApproval(Request $request)
     {
         try {
@@ -223,6 +222,51 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function test(Request $request)
+    {
+        try {
+            $request_status = $request->status;
+            $request_leave_type_id = $request->leave_type_id;
+
+            $filter_applications = LeaveApplication::select('leave_applications.*', 'leave_types.name as leave_type_name')
+                ->leftJoin('leave_types', 'leave_applications.leave_type_id', '=', 'leave_types.id')
+                ->leftJoin('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.employee_id');
+
+            if (isset($request_status) && !is_null($request_status)) {
+                $filter_applications->where('leave_applications.status', $request_status);
+            }
+
+            if (isset($request_leave_type_id) && !is_null($request_status)) {
+                $filter_applications->where('leave_applications.leave_type_id', $request_leave_type_id);
+            }
+
+            // Filter month, quarter, year based on request parameters
+            if (isset($request->month)) {
+                $filter_applications->whereMonth('leave_applications.date_from', $request->month);
+            } elseif (isset($request->quarter)) {
+                $filter_applications->whereRaw('QUARTER(leave_applications.date_from) = ?', [$request->quarter]);
+            } elseif (isset($request->year)) {
+                $filter_applications->whereYear('leave_applications.date_from', $request->year);
+            }
+
+            $filter_applications = $filter_applications->get();
+
+            $approvedCount = count($filter_applications);
+
+            return response()->json([
+                'data' => [
+                    'approved_count' => $approvedCount,
+                    'status' => $request_status,
+                    'approvedLeaveDetails' => LeaveApplicationResource::collection($filter_applications),
+                ],
+                'message' => 'Approved leave requests count and details retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     public function approvedLeaveRequest(Request $request)
     {
@@ -895,7 +939,7 @@ class LeaveApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($next_approving),
                     "data" => new NotificationResource($user_notification)
                 ]);
-                
+
                 $officer = EmployeeProfile::where('id', $next_approving)->first();
                 $email = $officer->personalinformation->contact->email_address;
                 $name = $officer->personalInformation->name();
@@ -1204,8 +1248,6 @@ class LeaveApplicationController extends Controller
 
                         if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
-
-
                         }
 
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
@@ -1300,7 +1342,6 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
-
                 }
             }
 
@@ -1340,27 +1381,27 @@ class LeaveApplicationController extends Controller
 
             //OIC NOTIFS
             if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
-            $from = Carbon::parse($request->date_from)->format('F d, Y');
-            $to = Carbon::parse($request->date_to)->format('F d, Y');
-            $title = "Assigned as OIC";
-            $description = 'You have been assigned as Officer-in-Charge from '. $from. ' to '. $to. ' by '. $employee_profile->personalInformation->name() . '.';
+                $from = Carbon::parse($request->date_from)->format('F d, Y');
+                $to = Carbon::parse($request->date_to)->format('F d, Y');
+                $title = "Assigned as OIC";
+                $description = 'You have been assigned as Officer-in-Charge from ' . $from . ' to ' . $to . ' by ' . $employee_profile->personalInformation->name() . '.';
 
 
-            $notification = Notifications::create([
-                "title" => $title,
-                "description" => $description,
-                "module_path" => '/employees-per-area',
-            ]);
+                $notification = Notifications::create([
+                    "title" => $title,
+                    "description" => $description,
+                    "module_path" => '/employees-per-area',
+                ]);
 
-            $user_notification = UserNotifications::create([
-                'notification_id' => $notification->id,
-                'employee_profile_id' => $request->employee_oic_id,
-            ]);
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $request->employee_oic_id,
+                ]);
 
-            Helpers::sendNotification([
-                "id" => Helpers::getEmployeeID($request->employee_oic_id),
-                "data" => new NotificationResource($user_notification)
-            ]);
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($request->employee_oic_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
             }
 
             $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
