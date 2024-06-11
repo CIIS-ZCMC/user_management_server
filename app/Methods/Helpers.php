@@ -675,8 +675,24 @@ AND id IN (
                         $s3_Time_stamp_ = strtotime($s_3);
                         $s4_Time_stamp_ = strtotime($s_4);
 
-                        $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_;
-                        $noHalfEntry = $totalHalfSEcs / 60;
+                        if($f1_entry && !$f2_entry){
+                            $first_Sched_firstin = $time_stamps_req['first_entry'];
+                            $first_Sched_firstout = $time_stamps_req['second_entry'];
+    
+                            $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
+                            $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
+
+                            $s1_Time_stamp_ = strtotime($s_1);
+                            $s2_Time_stamp_ = strtotime($s_2);
+                            $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_ - $s2_Time_stamp_ - $s1_Time_stamp_;
+                            $noHalfEntry = $totalHalfSEcs / 60;
+
+                        }else {
+                            $totalHalfSEcs = $s4_Time_stamp_ - $s3_Time_stamp_;
+                            $noHalfEntry = $totalHalfSEcs / 60;
+                        }
+
+                     
                     }
                 }
 
@@ -1314,7 +1330,7 @@ AND id IN (
                         }
                     //}
                 }
-
+                $entry['timing'] = $key;
                 $entry['name'] = $employee_Name;
                 $entry['status_description'] = $this->statusDescription($employee_ID, $entry['entry_status'], $entry['date_time']);
                 $Employee_Attendance[] = $entry; // Add entry to the main array
