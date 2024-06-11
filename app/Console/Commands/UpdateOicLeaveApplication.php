@@ -2,13 +2,19 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\Helpers;
+use App\Http\Resources\NotificationResource;
 use App\Models\CtoApplication;
+use App\Models\EmployeeProfile;
 use App\Models\LeaveApplication;
 use App\Models\MonetizationApplication;
+use App\Models\Notifications;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
 use App\Models\Overtime;
 use App\Models\OvertimeApplication;
+use App\Models\UserNotifications;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class UpdateOicLeaveApplication extends Command
@@ -134,8 +140,32 @@ class UpdateOicLeaveApplication extends Command
                     $this->updateApprovingOfficer($moneRecord, $employee_id, $employee_oic);
                 }
             }
+            $employee_profile = EmployeeProfile::find($employee_id);
+            $from = Carbon::parse($application->date_from)->format('F d, Y');
+            $to = Carbon::parse($application->date_to)->format('F d, Y');
+            $title = "OIC in effect";
+            $description = 'You are now the Officer-in-Charge from '. $from. ' to '. $to. ' .';
+    
+    
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/calendar',
+            ]);
+    
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $employee_oic,
+            ]);
+    
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($employee_oic),
+                "data" => new NotificationResource($user_notification)
+            ]);
+
 
         }
+  
 
     }
 

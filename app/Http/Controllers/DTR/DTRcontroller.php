@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Response;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
+use Illuminate\Support\Facades\Storage;
 
 class DTRcontroller extends Controller
 {
@@ -208,6 +209,15 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function deleteDeviceLogs(){
+        foreach ($this->devices as $device) {
+            if ($tad = $this->device->bIO($device)) {
+                $tad->delete_data(['value' => 3]);
+            }
+        }
+    }
+
+
     public function fetchDTRFromDevice()
     {
 
@@ -221,11 +231,12 @@ class DTRcontroller extends Controller
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
-                    $Employee_Attendance = $this->helper->getEmployeeAttendance(
+
+                   $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
-                    );
-
+                    );     
+                    $this->SaveLogsLocal($Employee_Attendance, $device);
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -234,10 +245,16 @@ class DTRcontroller extends Controller
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
                         });
 
+                        //return $check_Records;
+
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
 
+                    //Get attendance first  group per employee biometric_id
+                                //get the first successful entry.
+                                //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
+                                //
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
@@ -253,7 +270,8 @@ class DTRcontroller extends Controller
                                              * With Schedule
                                              * 4 sets of sched
                                              */
-                                             $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+
+                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
                                         } else {
                                             /**
                                              * With Schedule
@@ -283,7 +301,11 @@ class DTRcontroller extends Controller
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
-                            $tad->delete_data(['value' => 3]);
+
+
+                            //ASSIGN DELETION FUNCTION ALGORITHM
+                            // 9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
+                        //    $tad->delete_data(['value' => 3]);
                         } else {
                             //yesterday Time
                             // Save the past 24 hours records
@@ -336,7 +358,7 @@ class DTRcontroller extends Controller
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
                             // /* Clear device data */
-                            $tad->delete_data(['value' => 3]);
+                          //  $tad->delete_data(['value' => 3]);
                         }
                     } else {
                         //Save anomaly entries
@@ -354,7 +376,7 @@ class DTRcontroller extends Controller
                                 'status_desc' => $value['status_description']
                             ]);
                         }
-                        $tad->delete_data(['value' => 3]);
+                      //  $tad->delete_data(['value' => 3]);
                     }
                     // End of Validation of Time
                 } // End Checking if Connected to Device
@@ -366,6 +388,7 @@ class DTRcontroller extends Controller
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
+        return true;
     }
 
     public function formatDate($date)
@@ -2210,10 +2233,149 @@ class DTRcontroller extends Controller
         }
     }
 
-    public function test()
-    {
+    public function SaveLogsLocal($attendancelog, $device){
+        
+        $fileName = 'biometricLog_'.now()->format('Y_m_d').'.txt';
+        $header = " -- Biometric Logs as of : ".date('Y-m-d'). PHP_EOL;
 
-        return view('dtrlog');
+        $header2 = "biometric_id - date_time - Status - Employee - Punch State - Device Name - Ip-Address ". PHP_EOL;
+        $header3 = '-'.PHP_EOL;
+        $header4 = '-'.PHP_EOL;
+        $header5= '-'.PHP_EOL;
+        // Read existing content if file exists
+        $existingContent = '';
+        if (Storage::disk('local')->exists($fileName)) {
+            $existingContent = Storage::disk('local')->get($fileName);
+        } else {
+            $existingContent = $header.''.$header4.''.$header3.''.$header2.''.$header5;
+        }
+        
+        $newContent = '';
+        foreach ($attendancelog as $value) {
+            $datas = $value['biometric_id'].'-'.$value['date_time'].'-'.$value['status'].'-'.$value['name'].'-'.$value['status_description']['description'].'-'.$device['device_name'].'-'.$device['ip_address'];
+            // Check if data already exists in the file
+            if (strpos($existingContent, $datas) === false) {
+                $newContent .= $datas . PHP_EOL;
+            }
+        }
+        
+        // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
+        if (!empty($newContent)) {
+            Storage::disk('local')->put($fileName, $existingContent . $newContent);
+            return response()->json(['message' => 'File created/updated successfully!', 'file' => $fileName], 201);
+        } else {
+            return response()->json(['message' => 'No new data to add.'], 200);
+        }
+    }
+
+    public function test()
+    {   
+        $attendancelog =  [
+            [
+                "biometric_id" => "492",
+                "date_time" => "2024-06-11 08:01:31",
+                "verified" => "1",
+                "status" => "255",
+                "workcode" => "0",
+                "entry_status" => "CHECK-IN",
+                "timing" => 0,
+                "name" => "Barretto, Alyana Claire",
+                "status_description" => [
+                    "description" => "CHECK-IN",
+                    "within_interval" => "YES",
+                    "isEmployee" => true
+                ]
+            ],
+            [
+                "biometric_id" => "498",
+                "date_time" => "2024-06-11 08:01:57",
+                "verified" => "1",
+                "status" => "255",
+                "workcode" => "0",
+                "entry_status" => "CHECK-IN",
+                "timing" => 1,
+                "name" => "Falcasantos, Dennis",
+                "status_description" => [
+                    "description" => "CHECK-IN",
+                    "within_interval" => "YES",
+                    "isEmployee" => true
+                ]
+            ],
+            [
+                "biometric_id" => "498",
+                "date_time" => "2024-06-11 08:51:07",
+                "verified" => "1",
+                "status" => "255",
+                "workcode" => "0",
+                "entry_status" => "CHECK-OUT",
+                "timing" => 1,
+                "name" => "Falcasantos, Dennis",
+                "status_description" => [
+                    "description" => "CHECK-OUT",
+                    "within_interval" => "YES",
+                    "isEmployee" => true
+                ]
+            ],
+            [
+                "biometric_id" => "493",
+                "date_time" => "2024-06-11 08:50:48",
+                "verified" => "1",
+                "status" => "255",
+                "workcode" => "0",
+                "entry_status" => "CHECK-IN",
+                "timing" => 2,
+                "name" => "Caimor, Reenjay",
+                "status_description" => [
+                    "description" => "CHECK-IN",
+                    "within_interval" => "YES",
+                    "isEmployee" => true
+                ]
+            ],
+            [
+                "biometric_id" => "489",
+                "date_time" => "2024-06-11 08:50:52",
+                "verified" => "1",
+                "status" => "255",
+                "workcode" => "0",
+                "entry_status" => "CHECK-IN",
+                "timing" => 3,
+                "name" => "Maque, Ricah",
+                "status_description" => [
+                    "description" => "CHECK-IN",
+                    "within_interval" => "YES",
+                    "isEmployee" => true
+                ]
+            ]
+        ];
+
+        $fileName = 'biometricLog_'.now()->format('Y_m_d').'.txt';
+        $header = " -- Biometric Logs as of : ".date('Y-m-d'). PHP_EOL;
+        
+        // Read existing content if file exists
+        $existingContent = '';
+        if (Storage::disk('local')->exists($fileName)) {
+            $existingContent = Storage::disk('local')->get($fileName);
+        } else {
+            $existingContent = $header;
+        }
+        
+        $newContent = '';
+        foreach ($attendancelog as $value) {
+            $datas = $value['biometric_id'].'-'.$value['date_time'].'-'.$value['status'].'-'.$value['name'].'-'.$value['status_description']['description'];
+            // Check if data already exists in the file
+            if (strpos($existingContent, $datas) === false) {
+                $newContent .= $datas . PHP_EOL;
+            }
+        }
+        
+        // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
+        if (!empty($newContent)) {
+            Storage::disk('local')->put($fileName, $existingContent . $newContent);
+            return response()->json(['message' => 'File created/updated successfully!', 'file' => $fileName], 201);
+        } else {
+            return response()->json(['message' => 'No new data to add.'], 200);
+        }
+     
         // $mail = new PHPMailer(true);
         // try {
         //     $mail->isSMTP();
