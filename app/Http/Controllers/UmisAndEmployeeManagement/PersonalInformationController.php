@@ -28,16 +28,16 @@ class PersonalInformationController extends Controller
 
     public function index(Request $request)
     {
-        try{
+        try {
             $personal_informations = PersonalInformation::all();
-            
+
             return response()->json(['data' => PersonalInformationResource::collection($personal_informations)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
      * Employee PDS Registration
      * This must have registration of employee information such as name, height, weight, etc
@@ -45,12 +45,12 @@ class PersonalInformationController extends Controller
      */
     public function store(PersonalInformationRequest $request)
     {
-        try{
-            $is_res_per = $request->is_res_per === 1 ? true:false;
+        try {
+            $is_res_per = $request->is_res_per === 1 ? true : false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null){
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -70,7 +70,7 @@ class PersonalInformationController extends Controller
 
             $residential = Address::create($residential_address);
 
-            if($is_res_per !== null && $is_res_per){
+            if ($is_res_per !== null && $is_res_per) {
                 $data = [
                     'personal_information' => $personal_information,
                     'residential' => $residential,
@@ -97,40 +97,39 @@ class PersonalInformationController extends Controller
                 'residential' => $residential,
                 'permanent' => $permanent
             ];
-            
+
             return $personal_information;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             throw new \Exception("Failed to register personal information.", 400);
         }
     }
-    
+
     public function show($id, Request $request)
     {
-        try{
+        try {
             $personal_information = PersonalInformation::findOrFail($id);
 
-            if(!$personal_information)
-            {
+            if (!$personal_information) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             return response()->json(['data' => new PersonalInformationResource($personal_information)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, PersonalInformationUpdateRequest $request)
     {
-        try{
+        try {
             $personal_information = PersonalInformation::find($id);
 
-            $is_res_per = $request->is_res_per === 1 ? true:false;
+            $is_res_per = $request->is_res_per === 1 ? true : false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null){
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -148,12 +147,12 @@ class PersonalInformationController extends Controller
                 'is_residential' => 1,
                 'personal_information_id' => $personal_information->id
             ];
-            
-            if(($residential_address['res_id'] ===  null || $residential_address['res_id'] === 'null') && $residential_address['address'] !== null){
+
+            if (($residential_address['res_id'] ===  null || $residential_address['res_id'] === 'null') && $residential_address['address'] !== null) {
                 Address::create($residential_address);
             }
 
-            if(!$residential_address['is_res_per']){
+            if (!$residential_address['is_res_per']) {
                 $permanent_address =  [
                     'address' => strip_tags($request->p_address),
                     'telephone_no' => strip_tags($request->p_telephone),
@@ -166,22 +165,22 @@ class PersonalInformationController extends Controller
                 Address::create($permanent_address);
             }
 
-            if($residential_address['is_res_per']){
+            if ($residential_address['is_res_per']) {
                 $per_address = Address::where('is_residential', 0)->where('personal_information_id', $personal_information->id)->first();
-                if($per_address){
+                if ($per_address) {
                     $per_address->delete();
                 }
             }
-            
+
             return $personal_information;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             throw new \Exception("Failed to register employee family background.", 400);
         }
     }
-    
+
     public function destroy($id, AuthPinApprovalRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -191,25 +190,24 @@ class PersonalInformationController extends Controller
 
             $personal_information = PersonalInformation::findOrFail($id);
 
-            if(!$personal_information)
-            {
+            if (!$personal_information) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $personal_information -> delete();
+            $personal_information->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function generatePDS(Request $request)
     {
-        try{
+        try {
 
             // // return view('pds.pdsForm');
             // $options = new Options();
@@ -239,9 +237,9 @@ class PersonalInformationController extends Controller
 
 
             /* Downloads as PDF */
-            $dompdf->stream($filename); 
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'generatePDS', $th->getMessage());
+            $dompdf->stream($filename);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'generatePDS', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

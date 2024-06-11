@@ -12,14 +12,14 @@ class LeaveCredit extends JsonResource
      *
      * @return array<string, mixed>
      */
-  
-     public function toArray($request)
-     {
-         return [
-             'id' => $this->id,
-             'day_value' => $this->day_value,
-             'month_value' => $this->month_value,
-             
-         ];
-     }
+
+    public function toArray($request)
+    {
+        return [
+            'id' => $this->id,
+            'day_value' => $this->day_value,
+            'month_value' => $this->month_value,
+
+        ];
+    }
 }
