@@ -16,11 +16,11 @@
         }
 
         .Holiday {
-            background-color: #FFFBDA;
+            background-color: #FFD6A5;
         }
 
         .Present {
-            background-color: #E0FBE2;
+            background-color: #D2E3C8;
         }
 
         .wsched {

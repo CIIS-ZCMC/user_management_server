@@ -1321,13 +1321,13 @@ AND id IN (
                             $entry['entry_status'] = "CHECK-IN";
                             $lastStatus = "CHECK-IN";
                         } elseif ($currentDateTime == $mapdtr['first_out']) {
-                            $entry['entry_status'] = "CHECK-OUT1";
+                            $entry['entry_status'] = "CHECK-OUT";
                             $lastStatus = "CHECK-OUT";
                         } elseif ($currentDateTime == $mapdtr['second_in']) {
                             $entry['entry_status'] = "CHECK-IN";
                             $lastStatus = "CHECK-IN";
                         } elseif ($currentDateTime == $mapdtr['second_out']) {
-                            $entry['entry_status'] = "CHECK-OUT2";
+                            $entry['entry_status'] = "CHECK-OUT";
                             $lastStatus = "CHECK-OUT";
                         }
                     }
@@ -1345,7 +1345,7 @@ AND id IN (
                         $entry['entry_status'] = "LOGGED";
                     } else {
                      if ($lastStatus == "CHECK-IN") {
-                            $entry['entry_status'] = "CHECK-OUT3";
+                            $entry['entry_status'] = "CHECK-OUT";
                             $lastStatus = "CHECK-OUT";
                     } else if ($lastStatus == "CHECK-OUT") {
                         $entry['entry_status'] = "CHECK-IN";

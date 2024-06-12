@@ -58,7 +58,34 @@ class DTRcontroller extends Controller
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
+    
+    public function printDtrLogs(Request $request){
+        $user = $request->user;
+        $biometric_id = $user->biometric_id;//$user->biometric_id;
+        $date = $request->requestDate;
+        $dtr = $this->getUserDeviceLogs($biometric_id,$date);
+        $emp = EmployeeProfile::where('biometric_id',$biometric_id)->first();
+        $Name = $emp->personalInformation->name();
+        $designation = $emp->findDesignation();
+        $empID = $emp->employee_id;
 
+
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        $dompdf->loadHtml(view('dtrlog',compact('dtr','Name','designation','empID')));
+
+        $dompdf->setPaper('Letter', 'portrait');
+        $dompdf->render();
+
+        $filename = $date."Logs-".$Name.".pdf";
+        $dompdf->stream($filename);
+       
+      
+    }
     public function getBiometricLog(Request $request){
         try{
             $data = $request->input;
@@ -268,6 +295,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now  ;
                         });
 
+                        
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
 
@@ -276,7 +304,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                                 $getRecord = array_values(array_filter($check_Records, function($row) use($biometric_id) {
                                     $date_times = $row['date_time'];
 
-                                    return !DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date_times)))
+                                    return $row['biometric_id'] == $biometric_id && !DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date_times)))
                                         ->where(function ($query) use ($date_times) {
                                             $query->where('first_in', $date_times)
                                                 ->orWhere('first_out', $date_times)
@@ -295,6 +323,8 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
 
                                     $bioEntry =  $getnotlogged;
                                 }
+
+                             //   return $this->getvalidatedData($bioEntry);
 
 
                                 $loaded[] = ['biometricid'=>$biometric_id,'data'=>$bioEntry];
@@ -2339,219 +2369,6 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
 
     public function test()
     {
-        $attendancelog =  [
-            [
-                "biometric_id" => "492",
-                "date_time" => "2024-06-11 08:01:31",
-                "verified" => "1",
-                "status" => "255",
-                "workcode" => "0",
-                "entry_status" => "CHECK-IN",
-                "timing" => 0,
-                "name" => "Barretto, Alyana Claire",
-                "status_description" => [
-                    "description" => "CHECK-IN",
-                    "within_interval" => "YES",
-                    "isEmployee" => true
-                ]
-            ],
-            [
-                "biometric_id" => "498",
-                "date_time" => "2024-06-11 08:01:57",
-                "verified" => "1",
-                "status" => "255",
-                "workcode" => "0",
-                "entry_status" => "CHECK-IN",
-                "timing" => 1,
-                "name" => "Falcasantos, Dennis",
-                "status_description" => [
-                    "description" => "CHECK-IN",
-                    "within_interval" => "YES",
-                    "isEmployee" => true
-                ]
-            ],
-            [
-                "biometric_id" => "498",
-                "date_time" => "2024-06-11 08:51:07",
-                "verified" => "1",
-                "status" => "255",
-                "workcode" => "0",
-                "entry_status" => "CHECK-OUT",
-                "timing" => 1,
-                "name" => "Falcasantos, Dennis",
-                "status_description" => [
-                    "description" => "CHECK-OUT",
-                    "within_interval" => "YES",
-                    "isEmployee" => true
-                ]
-            ],
-            [
-                "biometric_id" => "493",
-                "date_time" => "2024-06-11 08:50:48",
-                "verified" => "1",
-                "status" => "255",
-                "workcode" => "0",
-                "entry_status" => "CHECK-IN",
-                "timing" => 2,
-                "name" => "Caimor, Reenjay",
-                "status_description" => [
-                    "description" => "CHECK-IN",
-                    "within_interval" => "YES",
-                    "isEmployee" => true
-                ]
-            ],
-            [
-                "biometric_id" => "489",
-                "date_time" => "2024-06-11 08:50:52",
-                "verified" => "1",
-                "status" => "255",
-                "workcode" => "0",
-                "entry_status" => "CHECK-IN",
-                "timing" => 3,
-                "name" => "Maque, Ricah",
-                "status_description" => [
-                    "description" => "CHECK-IN",
-                    "within_interval" => "YES",
-                    "isEmployee" => true
-                ]
-            ]
-        ];
-
-        $fileName = 'biometricLog_'.now()->format('Y_m_d').'.txt';
-        $header = " -- Biometric Logs as of : ".date('Y-m-d'). PHP_EOL;
-
-        // Read existing content if file exists
-        $existingContent = '';
-        if (Storage::disk('local')->exists($fileName)) {
-            $existingContent = Storage::disk('local')->get($fileName);
-        } else {
-            $existingContent = $header;
-        }
-
-        $newContent = '';
-        foreach ($attendancelog as $value) {
-            $datas = $value['biometric_id'].'-'.$value['date_time'].'-'.$value['status'].'-'.$value['name'].'-'.$value['status_description']['description'];
-            // Check if data already exists in the file
-            if (strpos($existingContent, $datas) === false) {
-                $newContent .= $datas . PHP_EOL;
-            }
-        }
-
-        // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
-        if (!empty($newContent)) {
-            Storage::disk('local')->put($fileName, $existingContent . $newContent);
-            return response()->json(['message' => 'File created/updated successfully!', 'file' => $fileName], 201);
-        } else {
-            return response()->json(['message' => 'No new data to add.'], 200);
-        }
-
-        // $mail = new PHPMailer(true);
-        // try {
-        //     $mail->isSMTP();
-        //     $mail->SMTPDebug = 2;
-        //     $mail->Host = gethostbyname('www.mail.gov.ph');
-        //     $mail->Port = 587;
-        //     $mail->SMTPSecure ='tls';
-        //     $mail->SMTPAuth = true;
-        //     $mail->Username = 'innovations@doh.zcmc.gov.ph'; // Your email address
-        //     $mail->Password = 'Innov020623!~'; // Your email password
-        //     $mail->setFrom('innovations@doh.zcmc.gov.ph', 'ZCMC-Portal');
-        //     $mail->addAddress('reenjie17@gmail.com', 'Reenjay Caimor');
-        //     $mail->Subject = 'THIS IS JUST A TEST EMAIL ZCMC PORTAL';
-        //     $mail->CharSet = PHPMailer::CHARSET_UTF8;
-        //     $mail->isHTML(true);
-        //     $mail->Body = "Hi there. Im working!!";
-        //     $mail->AltBody = 'This is a plain text message body';
-        //     if ($mail->send()) {
-        //         return "send";
-        //     } else {
-        //         return "failed to sendd";
-        //     }
-        // } catch (\Throwable $th) {
-        //     return $th;
-        // }
-
-
-        /*
-        **
-        * test on how to access request function on another controller for instance
-        */
-        // $dtrentry = "2024-03-20 8:41:00";
-        // $schedule = "2024-03-20 8:00:00";
-        // $isoncall = 1;
-        // $alloted_mins_Oncall = 0.5; // 30 minutes
-
-        // $dtr_date = date('Y-m-d', strtotime($dtrentry));
-        // $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
-
-        // /* With Schedule Entry */
-        // $in_Entry = $schedule;
-
-        // $time_stamp = strtotime($in_Entry);
-
-
-        // $new_Time_stamp = $time_stamp - (12 * 3600);
-        // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
-
-        // $newEntry = $schedule;
-        // if ($isoncall) {
-        //     //// Logic for ONCALL
-
-        //     $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
-
-        //     $calIn = date("Y-m-d H:i:s", $schedEntry);
-        //     $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
-        //     if ($calIn <= $dtrentry) {
-
-        //         //within 30 mins.
-        //         // then accept as 8am straight
-        //         $newEntry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
-        //     }
-
-        //     return $newEntry;
-        // } else {
-        //     // if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
-        //     //     DailyTimeRecords::create([
-        //     //         'biometric_id' => $biometric_id,
-        //     //         'dtr_date' => $dtr_date,
-        //     //         'first_in' => $dtrentry['date_time'],
-        //     //         'is_biometric' => 1,
-        //     //     ]);
-        //     // }
-        // }
-
-        // for ($i = 1; $i <= 30; $i++) {
-
-        //     $date = date('Y-m-d', strtotime('2024-02-' . $i));
-
-        //     if (date('D', strtotime($date)) != 'Sun') {
-        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
-
-        //         DailyTimeRecords::create([
-        //             'biometric_id' => 1,
-        //             'dtr_date' => $date,
-        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-        //             'interval_req' => null,
-        //             'required_working_hours' => null,
-        //             'required_working_minutes' => null,
-        //             'total_working_hours' => null,
-        //             'total_working_minutes' => null,
-        //             'overtime' => null,
-        //             'overtime_minutes' => null,
-        //             'undertime' => null,
-        //             'undertime_minutes' => null,
-        //             'overall_minutes_rendered' => null,
-        //             'total_minutes_reg' => null,
-        //             'is_biometric' => 1,
-        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-        //         ]);
-        //     }
-        // }
+            return view('dtrlog');
     }
 }

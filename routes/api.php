@@ -1663,6 +1663,8 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
+
+            Route::get('print-dtr-logs', 'DTRcontroller@printDtrLogs');
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
