@@ -2203,6 +2203,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedules-employment-type', 'ScheduleController@EmploymentType');
+        });
 
         /**
          * Exchange Schedule Module
