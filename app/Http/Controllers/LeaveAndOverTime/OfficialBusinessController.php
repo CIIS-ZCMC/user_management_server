@@ -72,6 +72,31 @@ class OfficialBusinessController extends Controller
                 ], Response::HTTP_OK);
             }
 
+            if ($employeeId == 1) {
+                $official_business_application = OfficialBusiness::select('official_business_applications.*')
+                    ->groupBy(
+                        'id',
+                        'date_from',
+                        'date_to',
+                        'status',
+                        'purpose',
+                        'personal_order_file',
+                        'personal_order_path',
+                        'personal_order_size',
+                        'certificate_of_appearance',
+                        'certificate_of_appearance_path',
+                        'certificate_of_appearance_size',
+                        'recommending_officer',
+                        'approving_officer',
+                        'remarks',
+                        'employee_profile_id',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+
             $official_business_application = OfficialBusiness::select('official_business_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
                     $query->whereIn('official_business_applications.status', $recommending)
@@ -116,9 +141,9 @@ class OfficialBusinessController extends Controller
     public function exportCsv()
     {
         $ob_applications = OfficialBusiness::with('employee')
-                                ->where('status', 'approved')
-                                ->get();
-            // ->where('status', 'approved')
+            ->where('status', 'approved')
+            ->get();
+        // ->where('status', 'approved')
 
 
         $response = [];
@@ -153,7 +178,6 @@ class OfficialBusinessController extends Controller
             $user = $request->user;
             $sql = OfficialBusiness::where('employee_profile_id', $user->id)->get();
             return response()->json(['data' => OfficialBusinessResource::collection($sql)], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -235,7 +259,7 @@ class OfficialBusinessController extends Controller
 
                 $employeeProfile = EmployeeProfile::find($employeeId);
                 $title = "New Official Business request";
-                $description = $employeeProfile->personalInformation->name()." filed a new official business request";
+                $description = $employeeProfile->personalInformation->name() . " filed a new official business request";
 
 
                 $notification = Notifications::create([
@@ -310,7 +334,7 @@ class OfficialBusinessController extends Controller
 
 
             $employeeProfile = EmployeeProfile::find($data->employee_profile_id);
-            $officer='';
+            $officer = '';
 
             if ($request->status === 'approved') {
                 switch ($data->status) {
@@ -348,7 +372,7 @@ class OfficialBusinessController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'declined by recommending officer';
-                    $officer= "Recommending";
+                    $officer = "Recommending";
                 } else if ($employee_profile->id === $ob_application_approving) {
                     if ($data->status === 'declined by approving officer') {
                         return response()->json([
@@ -356,16 +380,13 @@ class OfficialBusinessController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'declined by approving officer';
-                    $officer= "Approving";
+                    $officer = "Approving";
                 }
                 $log_action = 'Request Declined';
-
-
             }
             $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
 
-            if ($data->status === 'approved')
-            {
+            if ($data->status === 'approved') {
                 //EMPLOYEE
                 $notification = Notifications::create([
                     "title" => "Official Business request approved",
@@ -382,13 +403,11 @@ class OfficialBusinessController extends Controller
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
                 ]);
-            }
-            else if ($data->status === "declined by recommending officer" || $data->status === "declined by approving officer")
-            {
+            } else if ($data->status === "declined by recommending officer" || $data->status === "declined by approving officer") {
                 //EMPLOYEE
                 $notification = Notifications::create([
                     "title" => "Official Business request declined",
-                    "description" => "Your official business request has been declined by your". $officer ."Officer. ",
+                    "description" => "Your official business request has been declined by your" . $officer . "Officer. ",
                     "module_path" => '/ob',
                 ]);
 
@@ -401,14 +420,12 @@ class OfficialBusinessController extends Controller
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
                 ]);
-            }
-            else
-            {
+            } else {
                 //NOTIFS
                 //NEXT APPROVING
                 $notification = Notifications::create([
                     "title" =>  "New Official Business request",
-                    "description" => $employeeProfile->personalInformation->name()." filed a new official request.",
+                    "description" => $employeeProfile->personalInformation->name() . " filed a new official request.",
                     "module_path" => '/ob-requests',
                 ]);
 
@@ -445,7 +462,6 @@ class OfficialBusinessController extends Controller
                 'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], $log_action),
                 'message' => $log_action,
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
