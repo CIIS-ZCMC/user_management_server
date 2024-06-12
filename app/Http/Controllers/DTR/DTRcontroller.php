@@ -234,7 +234,7 @@ class DTRcontroller extends Controller
 public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_id){
 
 
-  
+
 
 }
 
@@ -254,40 +254,29 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
 
-                   $Employee_Attendance = $this->helper->getEmployeeAttendance(
+                 $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
-                    );     
+                    );
                     $this->SaveLogsLocal($Employee_Attendance, $device);
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
                         $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now  ;
                         });
-                      
-                        
+
                         if (count($check_Records) >= 1) {
-                         
                             foreach ($check_Records as $bioEntry) {
-                            
+
                                 $biometric_id = $bioEntry['biometric_id'];
-                              
-                               
-                               
-                               $empSingleRecord = array_values(array_filter($Employee_Attendance, function ($attd) use ($date_now,$biometric_id) {
-                                    return date('Y-m-d', strtotime($attd['date_time'])) == $date_now && $attd['biometric_id'] == $biometric_id;
-                                }));
-                    
-                              
-                                $getRecord = array_values(array_filter($empSingleRecord, function($row) use($biometric_id) {
+
+                                $getRecord = array_values(array_filter($check_Records, function($row) use($biometric_id) {
                                     $date_times = $row['date_time'];
-                                  
-                                    return !DailyTimeRecords::where('biometric_id', $biometric_id)
+
+                                    return !DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date_times)))
                                         ->where(function ($query) use ($date_times) {
                                             $query->where('first_in', $date_times)
                                                 ->orWhere('first_out', $date_times)
@@ -296,98 +285,100 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                                         })
                                         ->exists();
                                 }));
-                    
-                          
+
+
                                 if(isset($getRecord)){
-                                    
+
                                     $getnotlogged = array_values(array_filter($getRecord,function($d){
-                                        return $d['entry_status'] !== "LOGGED";
+                                        return $d['entry_status'] == "CHECK-IN" || $d['entry_status'] == "CHECK-OUT" ;
                                     }));
-                    
+
                                     $bioEntry =  $getnotlogged;
                                 }
-                      
-                                
+
+
+                                $loaded[] = ['biometricid'=>$biometric_id,'data'=>$bioEntry];
+
                     //Get attendance first  group per employee biometric_id
                                 //get the first successful entry.
                                 //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
                                 //
-                                $loaded[] = ['biometricid'=>$biometric_id,'data'=>$bioEntry];
+
                                 if($bioEntry){
                                     $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
                                     $DaySchedule = $Schedule['daySchedule'];
                                    $BreakTime = $Schedule['break_Time_Req'];
-                                 
-   
+
+
                                        if (count($DaySchedule) >= 1) {
                                           if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
-                       
+
                                            if (count($BreakTime) >= 1) {
-                       
+
                                                /**
                                                 * With Schedule
                                                 * 4 sets of sched
                                                 */
-                       
+
                                              $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $this->getvalidatedData($bioEntry), $biometric_id);
                                            } else {
                                                /**
                                                 * With Schedule
                                                 * 2 sets of sched
                                                 */
-                       
+
                                                $this->DTR->NoBreaktimePull($DaySchedule, $this->getvalidatedData($bioEntry), $biometric_id);
                                            }
                                           }else {
-                       
+
                                               /**
                                             * No Schedule Pulling
                                             */
                                            $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                           }
-                       
+
                                        } else {
-                       
+
                                            /**
                                             * No Schedule Pulling
                                             */
                                           $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                        }
                                 }
-                       
+
                             }
-                    
+
                             //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
-                    
-                    
+
+
                             //ASSIGN DELETION FUNCTION ALGORITHM
                             // 9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
                         //    $tad->delete_data(['value' => 3]);
                         } else {
                             //yesterday Time
                             // Save the past 24 hours records
-                    
-                    
+
+
                             $datenow = date('Y-m-d');
                             $late_Records = array_filter($Employee_Attendance, function ($attd) use ($datenow) {
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
-                    
-                    
-                    
+
+
+
                             foreach ($late_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
-                    
+
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-                    
+
                                 if (count($DaySchedule) >= 1) {
                                     if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
-                    
+
                                      if (count($BreakTime) >= 1) {
                                          /**
                                           * With Schedule
@@ -407,7 +398,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                                       */
                                      $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                     }
-                    
+
                                  } else {
                                      /**
                                       * No Schedule Pulling
@@ -415,11 +406,11 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                                      $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                  }
                             }
-                         
+
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
-                       
+
                         }
-                    
+
 
 
 
@@ -432,7 +423,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
 
 
 
-                     
+
 
             //         // End of Validation of Time
                }  else {
@@ -705,9 +696,9 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                 }
             }
             }else {
-                $ishalf = 0; 
+                $ishalf = 0;
             }
-        
+
 
 
             $id = json_decode($biometric_id);
@@ -2312,7 +2303,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
     }
 
     public function SaveLogsLocal($attendancelog, $device){
-        
+
         $fileName = 'biometricLog_'.now()->format('Y_m_d').'.txt';
         $header = " -- Biometric Logs as of : ".date('Y-m-d'). PHP_EOL;
 
@@ -2327,7 +2318,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
         } else {
             $existingContent = $header.''.$header4.''.$header3.''.$header2.''.$header5;
         }
-        
+
         $newContent = '';
         foreach ($attendancelog as $value) {
             $datas = $value['biometric_id'].'-'.$value['date_time'].'-'.$value['status'].'-'.$value['name'].'-'.$value['status_description']['description'].'-'.$device['device_name'].'-'.$device['ip_address'];
@@ -2336,7 +2327,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                 $newContent .= $datas . PHP_EOL;
             }
         }
-        
+
         // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
         if (!empty($newContent)) {
             Storage::disk('local')->put($fileName, $existingContent . $newContent);
@@ -2347,7 +2338,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
     }
 
     public function test()
-    {   
+    {
         $attendancelog =  [
             [
                 "biometric_id" => "492",
@@ -2428,7 +2419,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
 
         $fileName = 'biometricLog_'.now()->format('Y_m_d').'.txt';
         $header = " -- Biometric Logs as of : ".date('Y-m-d'). PHP_EOL;
-        
+
         // Read existing content if file exists
         $existingContent = '';
         if (Storage::disk('local')->exists($fileName)) {
@@ -2436,7 +2427,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
         } else {
             $existingContent = $header;
         }
-        
+
         $newContent = '';
         foreach ($attendancelog as $value) {
             $datas = $value['biometric_id'].'-'.$value['date_time'].'-'.$value['status'].'-'.$value['name'].'-'.$value['status_description']['description'];
@@ -2445,7 +2436,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                 $newContent .= $datas . PHP_EOL;
             }
         }
-        
+
         // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
         if (!empty($newContent)) {
             Storage::disk('local')->put($fileName, $existingContent . $newContent);
@@ -2453,7 +2444,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
         } else {
             return response()->json(['message' => 'No new data to add.'], 200);
         }
-     
+
         // $mail = new PHPMailer(true);
         // try {
         //     $mail->isSMTP();
