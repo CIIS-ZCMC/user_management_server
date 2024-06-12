@@ -2380,12 +2380,22 @@ Route::middleware('auth.cookie')->group(function () {
           
         });
 
+        // CIVIL STATUS
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-civil-status', 'EmployeeReportController@allEmployeesCivilStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-civil-status/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByCivilStatus');
+        });
+        
+
+        // EMPLOYMENT TYPE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-employment-type/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesByEmploymentType');
           
         });
 
-        // EMPLOYMENT TYPE WITH AREA
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-employment-type/{id}', 'EmployeeReportController@employeesEmploymentType');
           
