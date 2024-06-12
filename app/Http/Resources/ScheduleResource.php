@@ -42,6 +42,7 @@ class ScheduleResource extends JsonResource
             'name' => $this->personalInformation->name(),
             'employee_id' => $this->employee_id,
             'biometric_id' => $this->biometric->biometric_id ?? null,
+            'employment_type' => $this->employmentType,
             'designation' => $this->findDesignation()->name,
             'assigned_area' => $this->assignedArea->findDetails(),
             'position_type' => $this->findDesignation()->position_type,

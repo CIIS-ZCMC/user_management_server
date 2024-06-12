@@ -90,9 +90,9 @@
             width: 100%;
             /* Adjusted to fill the container */
             /* border-collapse: collapse; */
-            margin: 0;
+            /* margin: 0;
             padding-top: 20px;
-            text-align: left;
+            text-align: left; */
         }
 
         table,
@@ -173,6 +173,9 @@
             /* display: inline-block; */
         }
 
+        .schedule-cell {
+            font-size: 10px;
+        }
 
         @media print {
             @page {
@@ -221,10 +224,10 @@
 
     <div class="container">
         <div class="table-responsive"> <!-- Added -->
-            <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
+            <table class="table-bordered" border="1" cellspacing="0" cellpadding="8">
                 <thead>
                     <tr>
-                        <th class="schedule-cell" rowspan="2">#</th>
+                        <th rowspan="2">#</th>
                         <th class="th-name" rowspan="2">Name</th>
 
                         @foreach ($dates as $date)
@@ -244,7 +247,7 @@
                 <tbody>
                     @foreach ($employee as $key => $data)
                         <tr>
-                            <td class="schedule-cell"> {{ ++$key }} </td>
+                            <td> {{ ++$key }} </td>
                             <td class="td-name"> {{ $data->personalInformation->name() }} </td>
 
                             @php
@@ -314,7 +317,7 @@
                 <div class="row-item">
                     <span> Prepared By </span>
                     <span class="signature">{{ $user->personalInformation->employeeName() }}</span>
-                    <span>{{ $user->position()['position'] ?? 'Scheduler' }}</span>
+                    <span style="font-size: 12px">{{ $user->findDesignation()['name'] ?? 'Scheduler' }}</span>
                 </div>
 
                 <div class="row-item">
@@ -324,7 +327,8 @@
                         <span style="margin-top: 100px"></span>
                     @else
                         <span class="signature">{{ $recommending_officer->personalInformation->employeeName() }}</span>
-                        <span>{{ $recommending_officer->position()['position'] ?? null }}</span>
+                        <span
+                            style="font-size: 12px">{{ $recommending_officer->findDesignation()['name'] ?? null }}</span>
                     @endif
                 </div>
 
@@ -335,7 +339,8 @@
                         <span style="margin-top: 100px"></span>
                     @else
                         <span class="signature">{{ $approving_officer->personalInformation->employeeName() }}</span>
-                        <span>{{ $approving_officer->position()['position'] ?? null }}</span>
+                        <span
+                            style="font-size: 12px">{{ $approving_officer->findDesignation()['name'] ?? null }}</span>
                     @endif
                 </div>
             </div>

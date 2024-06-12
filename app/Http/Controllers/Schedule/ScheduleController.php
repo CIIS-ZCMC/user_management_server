@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Controllers\UmisAndEmployeeManagement\EmploymentTypeController;
 use App\Http\Resources\EmployeeScheduleResource;
 use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeSchedule;
+use App\Models\EmploymentType;
 use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
@@ -276,6 +278,11 @@ class ScheduleController extends Controller
         }
     }
 
+    public function EmploymentType(Request $request)
+    {
+        $data = new EmploymentTypeController();
+        return $data->index($request);
+    }
 
     public function FilterByAreaAndDate(Request $request)
     {
@@ -287,9 +294,9 @@ class ScheduleController extends Controller
             $year = $date->year;
             $month = $date->month;
 
-            $data = null;
             $area_id = $request->area_id;
             $area_sector = strtolower($request->area_sector);
+            $employment_type_id = $request->employment_type;
 
             $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
 
@@ -309,9 +316,17 @@ class ScheduleController extends Controller
                 $query->whereIn('id', $employee_ids);
             }
 
-            $data = $query->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
-                $query->where($area_sector . '_id', $area_id);
-            })->get();
+            if ($employment_type_id !== '0') {
+                $query->where('employment_type_id', $employment_type_id);
+            }
+
+            if ($area_id !== '0') {
+                $query->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
+                    $query->where($area_sector . '_id', $area_id);
+                });
+            }
+
+            $data = $query->get();
 
             $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray();
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
