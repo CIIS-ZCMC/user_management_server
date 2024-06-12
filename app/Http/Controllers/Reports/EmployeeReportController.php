@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Reports;
+
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EmployeesDetailsReport;
@@ -14,7 +15,7 @@ class EmployeeReportController extends Controller
 {
     private $CONTROLLER_NAME = 'Employee Reports';
 
-    
+
     public function allEmployeesBloodType(Request $request)
     {
         try {
@@ -25,8 +26,8 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($employee_profiles),
                 'message' => 'List of employee blood types retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesBloodType', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesBloodType', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -41,28 +42,28 @@ class EmployeeReportController extends Controller
 
             if ($area_id == 'null') {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('pi.blood_type', $type)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('pi.blood_type', $type)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             } else {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('aa.'.$sector."_id", $area)
-                ->where('pi.blood_type', $type)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('aa.' . $sector . "_id", $area)
+                    ->where('pi.blood_type', $type)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             }
-            
+
             return response()->json([
                 'data' => EmployeesDetailsReport::collection($employees),
                 'count' => COUNT($employees),
                 'message' => 'List of employee blood types retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesByBloodType', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesByBloodType', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -71,10 +72,10 @@ class EmployeeReportController extends Controller
     {
         try {
 
-        // CHECK SHOW IN EMPLOYEE PROFILE
+            // CHECK SHOW IN EMPLOYEE PROFILE
 
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesServiceLength', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesServiceLength', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -82,7 +83,7 @@ class EmployeeReportController extends Controller
     public function employeesEmploymentType($employment_type_id, Request $request)
     {
         try {
-           
+
             $employees = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', NULL)->where('employment_type_id', $employment_type_id)->get();
 
             return response()->json([
@@ -90,8 +91,8 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($employees),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesServiceLength', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesServiceLength', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -106,7 +107,7 @@ class EmployeeReportController extends Controller
 
             $employees = EmployeeProfile::select('employee_profiles.*')
                 ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->where('aa.'.$sector."_id", $area)
+                ->where('aa.' . $sector . "_id", $area)
                 ->where('employee_profiles.employment_type_id', $employment_type_id)
                 ->whereNotIn('employee_profiles.id', [1])
                 ->where('employee_id', '!=', null)
@@ -117,8 +118,8 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($employees),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesServiceLength', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesServiceLength', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -126,7 +127,7 @@ class EmployeeReportController extends Controller
     public function employeesPerJobPosition($designation_id, Request $request)
     {
         try {
-            
+
             $employees = AssignArea::with('employeeProfile')->where('designation_id', $designation_id)->get();
 
             return response()->json([
@@ -134,8 +135,8 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($employees),
                 'message' => 'List of employees job position retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesPerJobPosition', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesPerJobPosition', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -145,16 +146,16 @@ class EmployeeReportController extends Controller
         try {
 
             $key = Str::lower(strip_tags($sector));
-            
-            $employees = AssignArea::with('employeeProfile')->where('designation_id', $designation_id)->where($key."_id", $area_id)->get();
+
+            $employees = AssignArea::with('employeeProfile')->where('designation_id', $designation_id)->where($key . "_id", $area_id)->get();
 
             return response()->json([
                 'data' => EmployeesDetailsReport::collection($employees),
                 'count' => COUNT($employees),
                 'message' => 'List of employees job position retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesPerJobPosition', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesPerJobPosition', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
