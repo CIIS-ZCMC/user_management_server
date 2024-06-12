@@ -332,7 +332,22 @@ class LeaveApplicationController extends Controller
     public function approvedLeaveApplication()
     {
         try {
+
             $leave_applications = LeaveApplication::where('status', 'approved')->orWhere('status', 'received')->orWhere('status', 'cancelled by hrmo')->get();
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function countapprovedleaveApplication(Request $request)
+    {
+        try {
+            return $status = $request->status;
+            $leave_applications = LeaveApplication::where('status', $status)->count();
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
@@ -896,13 +911,14 @@ class LeaveApplicationController extends Controller
                 ]);
 
                 $officer = EmployeeProfile::where('id', $next_approving)->first();
+                $employee = EmployeeProfile::where('id', $leave_application->employee_profile_id)->first();
                 $email = $officer->personalinformation->contact->email_address;
                 $name = $officer->personalInformation->name();
 
                 $data = [
                     'name' =>  $message,
-                    'employeeName' =>  $employee_profile->personalInformation->name(),
-                    'employeeID' => $employee_profile->employee_id,
+                    'employeeName' =>  $employee->personalInformation->name(),
+                    'employeeID' => $employee->employee_id,
                     'leaveType' =>  $leave_type->name,
                     'dateFrom' =>  $leave_application->date_from,
                     'dateTo' =>  $leave_application->date_to,
@@ -1121,7 +1137,7 @@ class LeaveApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+                    if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
                         $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                     }
 
@@ -1201,7 +1217,7 @@ class LeaveApplicationController extends Controller
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                        if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+                        if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                         }
 
@@ -1335,7 +1351,11 @@ class LeaveApplicationController extends Controller
             ]);
 
             //OIC NOTIFS
+<<<<<<< HEAD
             if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
+=======
+            if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
+>>>>>>> origin/main
                 $from = Carbon::parse($request->date_from)->format('F d, Y');
                 $to = Carbon::parse($request->date_to)->format('F d, Y');
                 $title = "Assigned as OIC";
@@ -1345,7 +1365,11 @@ class LeaveApplicationController extends Controller
                 $notification = Notifications::create([
                     "title" => $title,
                     "description" => $description,
+<<<<<<< HEAD
                     "module_path" => '/employees-per-area',
+=======
+                    "module_path" => '/calendar',
+>>>>>>> origin/main
                 ]);
 
                 $user_notification = UserNotifications::create([

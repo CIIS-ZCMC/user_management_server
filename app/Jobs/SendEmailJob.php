@@ -34,6 +34,10 @@ class SendEmailJob implements ShouldQueue
                 $subject = 'New Overtime Request Submitted';
                 $body = View::make('overtime.approving', ['data' => $data])->render();
                 break;
+            case "oic_request":
+                $subject = 'New OIC assigned';
+                $body = View::make('leave.oic', ['data' => $data])->render();
+                break;
             case "new_account":
                 $subject = 'Your ZCMC Portal Account.';
                 $body = View::make('mail.credentials', $data)->render();

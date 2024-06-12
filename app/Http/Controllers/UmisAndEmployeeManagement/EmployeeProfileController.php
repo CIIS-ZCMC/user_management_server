@@ -26,6 +26,7 @@ use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
+use App\Models\FailedLoginTrail;
 use App\Models\OfficerInChargeTrail;
 use App\Models\PlantillaAssignedArea;
 use App\Models\Training;
@@ -124,6 +125,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     public function profileUpdateRequest(Request $request)
     {
@@ -287,10 +289,12 @@ class EmployeeProfileController extends Controller
             }
 
             if (!$employee_profile) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Employee id or password incorrect."]);
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
             if (!$employee_profile->isDeactivated()) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Account is deactivated."]);
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
 
@@ -298,6 +302,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . config("app.salt_value"), $decryptedPassword)) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Employee id or password incorrect."]);
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
@@ -414,6 +419,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
+            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -438,6 +444,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
+            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: ".$th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1100,6 +1107,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signOutFromOtherDevice]: Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -1123,6 +1131,7 @@ class EmployeeProfileController extends Controller
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
+            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signOutFromOtherDevice]: ".$th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1307,6 +1316,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signInWithOTP]: Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -1329,6 +1339,7 @@ class EmployeeProfileController extends Controller
                 ->json(['data' => $data, 'message' => "Success signin with two factor authentication."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signInWithOTP]: ".$th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -2946,7 +2957,6 @@ class EmployeeProfileController extends Controller
 
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
-
             $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
 
             $totalMonths = 0; // Initialize total months variable
@@ -3187,8 +3197,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
+    
     public function promotion($id, PromotionRequest $request)
     {
         try {
@@ -3506,4 +3515,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
 }

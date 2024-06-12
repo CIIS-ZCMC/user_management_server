@@ -133,6 +133,7 @@ class CtoApplicationController extends Controller
         }
         return ['data' => $response];
     }
+    
     public function CtoApplicationUnderSameArea(Request $request)
     {
         try {

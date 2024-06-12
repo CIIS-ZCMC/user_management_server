@@ -41,6 +41,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('notification', 'NotificationController@store');
 });
 
+<<<<<<< HEAD
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
@@ -54,6 +55,25 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
     Route::get('generate-pds', 'PersonalInformationController@generatePDS');
 });
+=======
+
+        });
+
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+            Route::post('sign-in', 'EmployeeProfileController@signIn');
+            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+            Route::post('new-password', 'EmployeeProfileController@newPassword');
+            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+            Route::get('validate-token', 'CsrfTokenController@validateToken');
+            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+        });
+>>>>>>> origin/main
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -1706,7 +1726,14 @@ Route::middleware('auth.cookie')->group(function () {
 
         /**
          * Monitization Posting Module
+         *
          */
+
+            //reports
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::post('leave-application-filter', 'LeaveApplicationController@countapprovedleaveApplication');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts', 'MonitizationPostingController@index');
         });
@@ -2362,5 +2389,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
             Route::get('get-my-total-work-hours', 'MonthlyWorkHoursController@getMyTotalWorkHours');
         });
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> origin/main
     });
 });

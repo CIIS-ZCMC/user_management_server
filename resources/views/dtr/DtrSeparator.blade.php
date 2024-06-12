@@ -283,8 +283,23 @@
                     @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
 
                     @else
-                        @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+
+                    @php
+                    $dnow = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+
+                    $filteredSecondin = array_filter($secondin, function ($row) use ($dnow) {
+                        return date('Y-m-d', strtotime($row['dtr_date'])) === $dnow;
+                    });
+
+                    $filteredSecondin = array_slice($filteredSecondin, 0, 1);
+                @endphp
+
+                        @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d') &&  count($filteredSecondin) === 0)
                             <span class="timefirstarrival">{{ $absentMessage }} </span>
+
+
+
+
                             <script>
                                 $(document).ready(function() {
                                     $("#entry{{ $i }}1").addClass("Absent");
@@ -421,8 +436,31 @@
                 !$ob_Count &&
                 !$cto_Count &&
                 !$countin)
-            @if ($showdd && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d') && !$notabsent)
+   @php
+   $dnow = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+
+   $filteredSecondin = array_filter($secondin, function ($row) use ($dnow) {
+       return date('Y-m-d', strtotime($row['dtr_date'])) === $dnow;
+   });
+
+   $filteredSecondin = array_slice($filteredSecondin, 0, 1);
+@endphp
+
+
+            @if ($showdd && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d') && !$notabsent && count($filteredSecondin ) === 0)
                 <span class="timefirstarrival">{{ $dayoffmessage }}</span>
+
+                @elseif(count($filteredSecondin ) >=1)
+                <script>
+                    $(document).ready(function() {
+                        $("#entry{{ $i }}1").addClass("Present");
+                        $("#entry{{ $i }}2").addClass("Present");
+                        $("#entry{{ $i }}3").addClass("Present");
+                        $("#entry{{ $i }}4").addClass("Present");
+
+                    })
+                </script>
+
             @endif
             @php
                 $showdd = false;
