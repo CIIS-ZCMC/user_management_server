@@ -185,8 +185,29 @@ class OvertimeController extends Controller
 
             //     ], Response::HTTP_OK);
             // }
-
-            $overtime_application = OvertimeApplication::select('overtime_applications.*')
+            if ($employeeId == 1) {
+                $overtime_application = OvertimeApplication::select('overtime_applications.*')
+                    ->groupBy(
+                        'id',
+                        'employee_profile_id',
+                        'status',
+                        'purpose',
+                        'recommending_officer',
+                        'approving_officer',
+                        'overtime_letter_of_request',
+                        'overtime_letter_of_request_path',
+                        'overtime_letter_of_request_size',
+                        'remarks',
+                        'decline_reason',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+            else
+            {
+                $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
                     $query->whereIn('overtime_applications.status', $recommending)
                         ->where('overtime_applications.recommending_officer', $employeeId);
@@ -213,7 +234,7 @@ class OvertimeController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-
+            }
 
             return response()->json([
                 'user_id' => $employeeId,

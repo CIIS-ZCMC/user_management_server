@@ -75,7 +75,34 @@ class OfficialTimeController extends Controller
              * Approved by Recommending Officer
              */
 
-            $official_time_application = OfficialTime::select('official_time_applications.*')
+            if ($employeeId == 1) {
+                $official_time_application = OfficialTime::select('official_time_applications.*')
+                    ->groupBy(
+                        'id',
+                        'date_from',
+                        'date_to',
+                        'time_from',
+                        'time_to',
+                        'status',
+                        'purpose',
+                        'personal_order_file',
+                        'personal_order_path',
+                        'personal_order_size',
+                        'certificate_of_appearance',
+                        'certificate_of_appearance_path',
+                        'certificate_of_appearance_size',
+                        'recommending_officer',
+                        'approving_officer',
+                        'remarks',
+                        'employee_profile_id',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+            else{
+                $official_time_application = OfficialTime::select('official_time_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
                     $query->whereIn('official_time_applications.status', $recommending)
                         ->where('official_time_applications.recommending_officer', $employeeId);
@@ -107,6 +134,10 @@ class OfficialTimeController extends Controller
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+            }
+
+
 
             return response()->json([
                 'data' => OfficialTimeResource::collection($official_time_application),
