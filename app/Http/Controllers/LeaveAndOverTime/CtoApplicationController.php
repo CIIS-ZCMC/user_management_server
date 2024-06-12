@@ -63,7 +63,29 @@ class CtoApplicationController extends Controller
             //     ], Response::HTTP_OK);
             // }
 
-            $cto_application = CtoApplication::select('cto_applications.*')
+            if ($employeeId == 1) {
+                $cto_application = CtoApplication::select('cto_applications.*')
+                    ->groupBy(
+                        'id',
+                        'date',
+                        'applied_credits',
+                        'is_am',
+                        'is_pm',
+                        'status',
+                        'purpose',
+                        'recommending_officer',
+                        'approving_officer',
+                        'remarks',
+                        'employee_profile_id',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+            else
+            {
+                $cto_application = CtoApplication::select('cto_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
                     $query->whereIn('cto_applications.status', $recommending)
                         ->where('cto_applications.recommending_officer', $employeeId);
@@ -89,6 +111,9 @@ class CtoApplicationController extends Controller
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
+            }
+
+
 
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_application),
@@ -102,9 +127,9 @@ class CtoApplicationController extends Controller
     public function exportCsv()
     {
         $cto_applications = CtoApplication::with('employeeProfile')
-                                ->where('status', 'approved')
-                                ->get();
-            // ->where('status', 'approved')
+            ->where('status', 'approved')
+            ->get();
+        // ->where('status', 'approved')
 
 
         $response = [];
@@ -112,7 +137,7 @@ class CtoApplicationController extends Controller
         foreach ($cto_applications as $cto_application) {
             $employeeName = $cto_application->employeeProfile->name();
             $employeeid = $cto_application->employeeProfile->employee_id;
-            $date= $cto_application->date;
+            $date = $cto_application->date;
             $is_am = $cto_application->is_am;
             $is_pm = $cto_application->is_pm;
             $remarks = $cto_application->remarks;
@@ -133,7 +158,7 @@ class CtoApplicationController extends Controller
         }
         return ['data' => $response];
     }
-    
+
     public function CtoApplicationUnderSameArea(Request $request)
     {
         try {
@@ -217,7 +242,7 @@ class CtoApplicationController extends Controller
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
             $employeeProfile = EmployeeProfile::find($data->employee_profile_id);
-            $officer='';
+            $officer = '';
 
             if ($request->status === 'approved') {
                 switch ($data->status) {
@@ -276,8 +301,7 @@ class CtoApplicationController extends Controller
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
-            if($data->status === 'approved')
-            {
+            if ($data->status === 'approved') {
                 //EMPLOYEE
                 $notification = Notifications::create([
                     "title" => "Compensatory Time-Off request approved",
@@ -294,13 +318,11 @@ class CtoApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
                 ]);
-            }
-            else if ($data->status === 'declined by recommending officer' || $data->status === 'declined by approving officer')
-            {
+            } else if ($data->status === 'declined by recommending officer' || $data->status === 'declined by approving officer') {
                 //EMPLOYEE
                 $notification = Notifications::create([
                     "title" => "Compensatory Time-Off request declined",
-                    "description" => "Your compensatory time-off request has been declined by your". $officer ." Officer. ",
+                    "description" => "Your compensatory time-off request has been declined by your" . $officer . " Officer. ",
                     "module_path" => '/cto',
                 ]);
 
@@ -313,14 +335,12 @@ class CtoApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
                 ]);
-            }
-            else
-            {
+            } else {
                 //NOTIFS
                 //NEXT APPROVING
                 $notification = Notifications::create([
                     "title" =>  "New Compensatory Time-Off request",
-                    "description" => $employeeProfile->personalInformation->name()." filed a new compensatory time-off request.",
+                    "description" => $employeeProfile->personalInformation->name() . " filed a new compensatory time-off request.",
                     "module_path" => '/cto-requests',
                 ]);
 
@@ -552,7 +572,7 @@ class CtoApplicationController extends Controller
 
                     $employeeProfile = EmployeeProfile::find($employeeId);
                     $title = "New Compensatory Time Off request";
-                    $description = $employeeProfile->personalInformation->name()." filed a new compensatory time-off request.";
+                    $description = $employeeProfile->personalInformation->name() . " filed a new compensatory time-off request.";
 
 
                     $notification = Notifications::create([

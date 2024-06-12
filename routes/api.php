@@ -2374,4 +2374,54 @@ Route::middleware('auth.cookie')->group(function () {
 
 
     });
+
+    /**
+     * Employee Reports
+     */
+    Route::namespace('App\Http\Controllers\Reports')->group(function () {
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-blood-type', 'EmployeeReportController@allEmployeesBloodType');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-by-type/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByBloodType');
+          
+        });
+
+        // CIVIL STATUS
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-civil-status', 'EmployeeReportController@allEmployeesCivilStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-civil-status/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByCivilStatus');
+        });
+        
+
+        // EMPLOYMENT TYPE
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-by-employment-type/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesByEmploymentType');
+          
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-by-employment-type/{id}', 'EmployeeReportController@employeesEmploymentType');
+          
+        });
+
+
+        // PER JOB POSITION
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-by-job-position/{id}', 'EmployeeReportController@employeesPerJobPosition');
+          
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-by-job-position/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesPerJobPositionAndArea');
+          
+        });
+    });
+
+
 });

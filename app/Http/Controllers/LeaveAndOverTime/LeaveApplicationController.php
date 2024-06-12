@@ -58,47 +58,85 @@ class LeaveApplicationController extends Controller
             /**
              * Supervisor = for recommending, for approving, approved, de
              */
-            $leave_applications = LeaveApplication::select('leave_applications.*')
-                ->where(function ($query) use ($recommending, $approving, $employeeId) {
-                    $query->whereIn('leave_applications.status', $recommending)
-                        ->where('leave_applications.recommending_officer', $employeeId);
-                })
-                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
-                    $query->whereIn('leave_applications.status', $approving)
-                        ->where('leave_applications.approving_officer', $employeeId);
-                })
-                ->groupBy(
-                    'id',
-                    'employee_profile_id',
-                    'leave_type_id',
-                    'date_from',
-                    'date_to',
-                    'country',
-                    'city',
-                    'is_outpatient',
-                    'illness',
-                    'is_masters',
-                    'is_board',
-                    'is_commutation',
-                    'applied_credits',
-                    'status',
-                    'remarks',
-                    'without_pay',
-                    'reason',
-                    'is_printed',
-                    'print_datetime',
-                    'hrmo_officer',
-                    'recommending_officer',
-                    'approving_officer',
-                    'employee_oic_id',
-                    'is_effective',
-                    'received_at',
-                    'cancelled_at',
-                    'created_at',
-                    'updated_at'
-                )
-                ->orderBy('created_at', 'desc')
-                ->get();
+
+            if ($employeeId == 1) {
+                $leave_applications = LeaveApplication::select('leave_applications.*')
+                    ->groupBy(
+                        'id',
+                        'employee_profile_id',
+                        'leave_type_id',
+                        'date_from',
+                        'date_to',
+                        'country',
+                        'city',
+                        'is_outpatient',
+                        'illness',
+                        'is_masters',
+                        'is_board',
+                        'is_commutation',
+                        'applied_credits',
+                        'status',
+                        'remarks',
+                        'without_pay',
+                        'reason',
+                        'is_printed',
+                        'print_datetime',
+                        'hrmo_officer',
+                        'recommending_officer',
+                        'approving_officer',
+                        'employee_oic_id',
+                        'is_effective',
+                        'received_at',
+                        'cancelled_at',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            } else {
+                $leave_applications = LeaveApplication::select('leave_applications.*')
+                    ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                        $query->whereIn('leave_applications.status', $recommending)
+                            ->where('leave_applications.recommending_officer', $employeeId);
+                    })
+                    ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                        $query->whereIn('leave_applications.status', $approving)
+                            ->where('leave_applications.approving_officer', $employeeId);
+                    })
+                    ->groupBy(
+                        'id',
+                        'employee_profile_id',
+                        'leave_type_id',
+                        'date_from',
+                        'date_to',
+                        'country',
+                        'city',
+                        'is_outpatient',
+                        'illness',
+                        'is_masters',
+                        'is_board',
+                        'is_commutation',
+                        'applied_credits',
+                        'status',
+                        'remarks',
+                        'without_pay',
+                        'reason',
+                        'is_printed',
+                        'print_datetime',
+                        'hrmo_officer',
+                        'recommending_officer',
+                        'approving_officer',
+                        'employee_oic_id',
+                        'is_effective',
+                        'received_at',
+                        'cancelled_at',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+
 
 
             return response()->json([
