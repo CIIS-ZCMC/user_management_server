@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Models\AssignedArea;
 
 use App\Models\Schedule;
 
@@ -254,7 +255,6 @@ class EmployeeProfile extends Authenticatable
             return $dtr;
         }
         return [];
-
     }
 
     public function issuanceInformation()
@@ -612,4 +612,8 @@ class EmployeeProfile extends Authenticatable
         return $this->belongsTo(MonthlyWorkHours::class);
     }
 
+    public function assignedAreas()
+    {
+        return $this->hasMany(AssignArea::class);
+    }
 }
