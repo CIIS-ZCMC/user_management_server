@@ -445,7 +445,6 @@ class Helpers
             } else {
                 $dates[] = $formattedDate;
             }
-
         }
 
         return $dates;

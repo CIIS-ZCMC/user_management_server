@@ -386,12 +386,6 @@ class LeaveApplicationController extends Controller
     public function countapprovedleaveApplication(Request $request)
     {
         try {
-            return $status = $request->status;
-            $leave_applications = LeaveApplication::where('status', $status)->count();
-            return response()->json([
-                'data' => LeaveApplicationResource::collection($leave_applications),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

@@ -954,6 +954,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('employee-profile/{id}/revoke/{access_right_id}', 'EmployeeProfileController@revokeRights');
         });
 
+        //reports
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('leave-application-filter', 'EmployeeProfileController@Areas');
+        });
+
         /**
          * Employment Type Module
          */
@@ -1709,10 +1714,10 @@ Route::middleware('auth.cookie')->group(function () {
          *
          */
 
-            //reports
-        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
-            Route::post('leave-application-filter', 'LeaveApplicationController@countapprovedleaveApplication');
-        });
+        //     //reports
+        // Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+        //     Route::post('leave-application-filter', 'EmployeeProfileController@myAreas');
+        // });
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts', 'MonitizationPostingController@index');
@@ -2384,7 +2389,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-type/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByBloodType');
-          
+
         });
 
         // CIVIL STATUS
@@ -2395,29 +2400,29 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-civil-status/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByCivilStatus');
         });
-        
+
 
         // EMPLOYMENT TYPE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-employment-type/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesByEmploymentType');
-          
+
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-employment-type/{id}', 'EmployeeReportController@employeesEmploymentType');
-          
+
         });
 
 
         // PER JOB POSITION
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-job-position/{id}', 'EmployeeReportController@employeesPerJobPosition');
-          
+
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-job-position/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesPerJobPositionAndArea');
-          
+
         });
     });
 
