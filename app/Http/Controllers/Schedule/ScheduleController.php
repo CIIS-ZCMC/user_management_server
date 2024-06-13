@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Controllers\UmisAndEmployeeManagement\EmploymentTypeController;
 use App\Http\Resources\EmployeeScheduleResource;
-use App\Http\Resources\HolidayResource;
 use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeSchedule;
+use App\Models\EmploymentType;
 use App\Models\Holiday;
-use App\Models\MonthlyWorkHours;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 use App\Models\Section;
 
 use App\Http\Resources\ScheduleResource;
-use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
 use App\Models\Unit;
@@ -208,12 +207,20 @@ class ScheduleController extends Controller
             // }
 
             $my_area = $user->assignedArea->findDetails();
+            $areas = [];
 
             if ($my_area['details']->code === 'HRMO' || $user->employee_id === '1918091351') {
-                return response()->json(['data' => $this->areas(), 'message' => "HRMO."], Response::HTTP_OK);
+                foreach ($this->areas() as $value) {
+                    $areas[] = [
+                        'id' => $value['area'],
+                        'name' => $value['name'],
+                        'sector' => $value['sector']
+                    ];
+                }
+
+                return response()->json(['data' => $areas, 'message' => "HRMO."], Response::HTTP_OK);
             }
 
-            $areas = [];
             switch ($my_area['sector']) {
                 case "Division":
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
@@ -225,22 +232,12 @@ class ScheduleController extends Controller
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
                             $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
-
-                            $units = Unit::where('section_id', $section->id)->get();
-                            foreach ($units as $unit) {
-                                $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
-                            }
                         }
                     }
 
                     $sections = Section::where('division_id', $my_area['details']->id)->get();
                     foreach ($sections as $section) {
                         $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
-
-                        $units = Unit::where('section_id', $section->id)->get();
-                        foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
-                        }
                     }
                     break;
                 case "Department":
@@ -281,30 +278,70 @@ class ScheduleController extends Controller
         }
     }
 
+    public function EmploymentType(Request $request)
+    {
+        $data = new EmploymentTypeController();
+        return $data->index($request);
+    }
 
     public function FilterByAreaAndDate(Request $request)
     {
         try {
             $user = $request->user;
+            $assigned_area = $user->assignedArea->findDetails();
+
+            $date = Carbon::parse($request->date);
+            $year = $date->year;
+            $month = $date->month;
 
             $area_id = $request->area_id;
             $area_sector = strtolower($request->area_sector);
-            $year = Carbon::parse($request->date)->year;
-            $month = Carbon::parse($request->date);
+            $employment_type_id = $request->employment_type;
 
-            $data = EmployeeProfile::with([
-                'assignedArea',
-                'schedule' => function ($innerQuery) use ($year, $month) {
-                    $innerQuery->with(['timeShift', 'holiday'])
+            $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
+
+            $query = EmployeeProfile::with([
+                'personalInformation',
+                'schedule' => function ($query) use ($year, $month) {
+                    $query->with(['timeShift', 'holiday'])
                         ->whereYear('date', '=', $year)
                         ->whereMonth('date', '=', $month);
                 }
-            ])->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
-                $query->where($area_sector . '_id', $area_id);
-            })->whereInget();
+            ])->whereNull('deactivated_at')
+                ->where('id', '!=', 1);
 
+            if (!$isSpecialUser) {
+                $myEmployees = $user->myEmployees($assigned_area, $user);
+                $employee_ids = collect($myEmployees)->pluck('id')->toArray();
+                $query->whereIn('id', $employee_ids);
+            }
 
-            return response()->json(['data' => ScheduleResource::collection($data)], Response::HTTP_OK);
+            if ($employment_type_id !== '0') {
+                $query->where('employment_type_id', $employment_type_id);
+            }
+
+            if ($area_id !== '0') {
+                $query->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
+                    $query->where($area_sector . '_id', $area_id);
+                });
+            }
+
+            $data = $query->get();
+
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray();
+            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
+
+            $data->each(function ($employee) {
+                $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
+                    return $schedule->timeShift->total_hours ?? 0;
+                });
+            });
+
+            return response()->json([
+                'data' => ScheduleResource::collection($data),
+                'dates' => $dates_with_day,
+            ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
