@@ -670,7 +670,10 @@ class Helpers
         //Check for overlapping dates in LeaveApplication
         $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
-                ->where('status', '!=', 'declined')
+                ->where(function ($query) {
+                    $query->where('status', 'not like', '%declined%')
+                        ->where('status', 'not like', '%cancelled%');
+                })
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -684,7 +687,7 @@ class Helpers
         // Check for overlapping dates in OfficialBusiness
         $overlappingOb = OfficialBusiness::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
-                ->where('status', '!=', 'declined')
+                ->where('status', 'not like', '%declined%')
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -697,7 +700,7 @@ class Helpers
 
         $overlappingOT = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
-                ->where('status', '!=', 'declined')
+                ->where('status','not like', '%declined%')
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -709,7 +712,7 @@ class Helpers
         })->exists();
 
         $overlappingCTO = CtoApplication::where('employee_profile_id', $employeeId)
-            ->where('status', '!=', 'declined')
+            ->where('status', 'not like', '%declined%')
             ->where(function ($query) use ($start, $end) {
                 $query->whereDate('date', '>=', $start)
                     ->whereDate('date', '<=', $end);
