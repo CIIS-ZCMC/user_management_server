@@ -1777,6 +1777,10 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => "You cannot receive a cancelled application."], Response::HTTP_FORBIDDEN);
             }
 
+            if ($leave_application->status === 'received') {
+                return response()->json(['message' => "You already received this application."], Response::HTTP_FORBIDDEN);
+            }
+
             $leave_application->update([
                 'status' => 'received',
                 'received_at' => Carbon::now(),
