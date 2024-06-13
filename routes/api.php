@@ -20,44 +20,40 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            Route::get('test', 'DashboardController@test');
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('test', 'DashboardController@test');
 
-            Route::get('announcements', 'AnnouncementsController@index');
-            Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-            Route::get('announcements/{id}', 'AnnouncementsController@show');
+    Route::get('announcements', 'AnnouncementsController@index');
+    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+    Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-            Route::get('events', 'EventsController@index');
-            Route::get('events-search', 'EventsController@searchEvents');
-            Route::get('events/{id}', 'EventsController@show');
+    Route::get('events', 'EventsController@index');
+    Route::get('events-search', 'EventsController@searchEvents');
+    Route::get('events/{id}', 'EventsController@show');
 
-            Route::get('memorandums', 'MemorandumsController@index');
-            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-            Route::get('memorandums/{id}', 'MemorandumsController@show');
+    Route::get('memorandums', 'MemorandumsController@index');
+    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+    Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-            Route::get('news', 'NewsController@index');
-            Route::get('news-search', 'NewsController@searchNews');
-            Route::get('news/{id}', 'NewsController@show');
-            Route::get('notification', 'NotificationController@store');
+    Route::get('news', 'NewsController@index');
+    Route::get('news-search', 'NewsController@searchNews');
+    Route::get('news/{id}', 'NewsController@show');
+    Route::get('notification', 'NotificationController@store');
+});
 
-
-        });
-
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            Route::post('sign-in', 'EmployeeProfileController@signIn');
-            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-            Route::post('new-password', 'EmployeeProfileController@newPassword');
-            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-            Route::get('validate-token', 'CsrfTokenController@validateToken');
-            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
-        });
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::post('sign-in', 'EmployeeProfileController@signIn');
+    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
+    Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+    Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+    Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+});
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -812,7 +808,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('inactive-employee/{id}', 'InActiveEmployeeController@showProfile');
-
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1709,7 +1704,7 @@ Route::middleware('auth.cookie')->group(function () {
          *
          */
 
-            //reports
+        //reports
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::post('leave-application-filter', 'LeaveApplicationController@countapprovedleaveApplication');
         });
@@ -1911,7 +1906,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
-            Route::get('export-csv','LeaveApplicationController@exportCsv');
+            Route::get('export-csv', 'LeaveApplicationController@exportCsv');
         });
 
 
@@ -1959,7 +1954,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-OB download'])->group(function () {
-            Route::get('export-csv-ob','OfficialBusinessController@exportCsv');
+            Route::get('export-csv-ob', 'OfficialBusinessController@exportCsv');
         });
 
         /**
@@ -1982,7 +1977,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-OT download'])->group(function () {
-            Route::get('export-csv-ot','OfficialTimeController@exportCsv');
+            Route::get('export-csv-ot', 'OfficialTimeController@exportCsv');
         });
 
 
@@ -2131,7 +2126,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-CT download'])->group(function () {
-            Route::get('export-csv-cto','CtoApplicationController@exportCsv');
+            Route::get('export-csv-cto', 'CtoApplicationController@exportCsv');
         });
     });
 
@@ -2369,8 +2364,6 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
             Route::get('get-my-total-work-hours', 'MonthlyWorkHoursController@getMyTotalWorkHours');
         });
-
-
     });
 
     /**
@@ -2384,7 +2377,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-type/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByBloodType');
-          
         });
 
         // CIVIL STATUS
@@ -2395,31 +2387,54 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-civil-status/{type}/area/{id}/sector/{sector}', 'EmployeeReportController@employeesByCivilStatus');
         });
-        
+
 
         // EMPLOYMENT TYPE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-employment-type/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesByEmploymentType');
-          
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-employment-type/{id}', 'EmployeeReportController@employeesEmploymentType');
-          
         });
 
 
         // PER JOB POSITION
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-job-position/{id}', 'EmployeeReportController@employeesPerJobPosition');
-          
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-job-position/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesPerJobPositionAndArea');
-          
+        });
+
+        // FOR TESTING PURPOSES ONLY
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('select-area', 'LeaveApplicationReportController@selectArea');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('test', 'LeaveApplicationReportController@test');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('fetched-areas', 'LeaveApplicationReportController@fetchedAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('rank-per-area', 'LeaveApplicationReportController@rankPerArea');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('approval-status', 'LeaveApplicationReportController@approvalStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('leave-type', 'LeaveApplicationReportController@leaveType');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('date-range', 'LeaveApplicationReportController@dateRange');
         });
     });
-
-
 });
