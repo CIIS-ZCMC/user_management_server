@@ -1668,6 +1668,8 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
+
+            Route::get('print-dtr-logs', 'DTRcontroller@printDtrLogs');
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
@@ -1916,7 +1918,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
-            Route::get('export-csv','LeaveApplicationController@exportCsv');
+            Route::get('export-csv', 'LeaveApplicationController@exportCsv');
         });
 
 
@@ -1964,7 +1966,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-OB download'])->group(function () {
-            Route::get('export-csv-ob','OfficialBusinessController@exportCsv');
+            Route::get('export-csv-ob', 'OfficialBusinessController@exportCsv');
         });
 
         /**
@@ -1987,7 +1989,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-OT download'])->group(function () {
-            Route::get('export-csv-ot','OfficialTimeController@exportCsv');
+            Route::get('export-csv-ot', 'OfficialTimeController@exportCsv');
         });
 
 
@@ -2136,7 +2138,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-CT download'])->group(function () {
-            Route::get('export-csv-cto','CtoApplicationController@exportCsv');
+            Route::get('export-csv-cto', 'CtoApplicationController@exportCsv');
         });
     });
 
@@ -2206,6 +2208,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedules-employment-type', 'ScheduleController@EmploymentType');
+        });
 
         /**
          * Exchange Schedule Module

@@ -587,8 +587,8 @@
     </div>
     <br>
     <div class="signature">
-        <div>
-
+        <div style="font-size: 12px;text-transform:uppercase;font-weight:bold">
+            {{ $Employee_Name }}
         </div>
         <div class="line"></div>
         <span> Verified as to prescribed hours</span>

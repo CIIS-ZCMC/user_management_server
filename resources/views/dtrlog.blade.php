@@ -273,8 +273,8 @@
         <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg' }}" alt="zcmcLogo">
         <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg' }}" alt="dohLogo">
     @endif --}}
-    <img id="zcmclogo" src="{{ asset('storage/logo/zcmc.jpeg') }}" alt="zcmcLogo">
-    <img id="dohlogo" src="{{ asset('storage/logo/doh.jpeg') }}" alt="dohLogo">
+    <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg' }}" alt="zcmcLogo">
+        <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg' }}" alt="dohLogo">
         <span id="rotp">
             Republic of the Philippines
             <br>
@@ -314,12 +314,12 @@
 
     <table style="width: 100%;text-align:center;margin-bottom:20px">
         <tr>
-            <td>  Reenjay Caimor</td>
-            <td> <span style="font-size:13px">Print Date : 06/06/2024</span></td>
+            <td>  {{$Name}}</td>
+            <td> <span style="font-size:13px">Print Date : {{date('m-d-Y')}}</span></td>
         </tr>
         <tr>
-            <td style="font-size:12px">Computer Programmer 2  <br>
-                2022090251
+            <td style="font-size:12px">{{$designation->name}} <br>
+                {{$empID}}
             </td>
             <td> <span style="font-size:13px"></span></td>
         </tr>
@@ -329,16 +329,17 @@
         <tr id="headertop">
             <th style="text-align: center;padding-top:20px;width:100px" >
                 <h3>
-                    June 06, 2024
+                  
+                    {{date('F j, Y',strtotime($dtr['dtr_date']))}}
                 </h3>
             </th>
             <th  style="text-align: center">
              Time Registered
             </th>
             <th  style="text-align: center;width:140px">
-                DT pull
+               Pulled
             <br>
-            <span style="font-size:9px">Date Time Pulled by Device</span>
+            <span style="font-size:9px">Time Pulled by Device</span>
             </th>
             <th style="text-align: center;width:150px">Device Name</th>
             <th style="text-align: center" >Punch State</th>
@@ -347,25 +348,42 @@
 
         {{-- {{print_r($dtrRecords)}} --}}
         <tbody>
+                @php
+                      //dtr_date 
+        //date_time,datepull,device_name, status_description->description,entry_status
+                @endphp
 
-            @for ($i = 1; $i < 10; $i++)
+                @foreach ($dtr['logs'] as $item)
+                <tr >
+                    <td  >
+                    
+                        @if ($item->entry_status == "Logged")
+                        <span style="font-size:12px">0</span>
+                        @else 
+                        <span style="font-size:12px">DTR</span>
+                        @endif
+                       
+                   
+                    </td>
+                    <td  style="text-align: center; font-weight:bold">
+                        <span style="font-weight: bold">{{date('h:i a',strtotime($item->date_time))}}</span>
+                    </td>
+                    <td  style="text-align: center;font-weight:bold">{{date('h:i a',strtotime($item->datepull))}}</td>
+                    <td style="text-align: center">{{$item->device_name}}</td>
+                    <td style="text-align: center" >
+                        @if ($item->status == 255)
+                        Global State
+                        @elseif($item->status == 0)
+                        Check in
+                        @elseif($item->status == 1)
+                            Check out
+                        @endif
 
-            <tr >
-                <td  >
-                    <span style="font-size:12px">✔</span>
-                    <span style="font-size:12px">-</span>
-                </td>
-                <td  style="text-align: center; font-weight:bold">
-                 8:{{rand(10,60)}} Am
-                </td>
-                <td  style="text-align: center;font-weight:bold"> 8:50 Am</td>
-                <td style="text-align: center">Admin Building Lobby</td>
-                <td style="text-align: center" >Global State</td>
-                <td style="text-align: center" >Daily Time Recorded</td>
-            </tr>
-
-
-            @endfor
+                    </td>
+                    <td style="text-align: center" >{{$item->entry_status}}</td>
+                </tr>
+                @endforeach
+          
         </tbody>
     </table>
 
