@@ -386,12 +386,6 @@ class LeaveApplicationController extends Controller
     public function countapprovedleaveApplication(Request $request)
     {
         try {
-            return $status = $request->status;
-            $leave_applications = LeaveApplication::where('status', $status)->count();
-            return response()->json([
-                'data' => LeaveApplicationResource::collection($leave_applications),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1176,7 +1170,7 @@ class LeaveApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
+                    if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                         $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                     }
 
@@ -1256,7 +1250,7 @@ class LeaveApplicationController extends Controller
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                        if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
+                        if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                         }
 
@@ -1390,7 +1384,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             //OIC NOTIFS
-            if ($request->employee_oic_id !== "null" || $request->employee_oic_id !== null) {
+            if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                 $from = Carbon::parse($request->date_from)->format('F d, Y');
                 $to = Carbon::parse($request->date_to)->format('F d, Y');
                 $title = "Assigned as OIC";
@@ -1775,6 +1769,10 @@ class LeaveApplicationController extends Controller
 
             if ($leave_application->status === 'cancelled by hrmo') {
                 return response()->json(['message' => "You cannot receive a cancelled application."], Response::HTTP_FORBIDDEN);
+            }
+
+            if ($leave_application->status === 'received') {
+                return response()->json(['message' => "You already received this application."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application->update([
