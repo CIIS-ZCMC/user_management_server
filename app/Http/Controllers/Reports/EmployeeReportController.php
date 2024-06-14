@@ -75,10 +75,21 @@ class EmployeeReportController extends Controller
         }
     }
 
-    public function allEmployeesCivilStatus(Request $request)
+    public function allEmployeesCivilStatus($civil_status, Request $request)
     {
         try {
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', NULL)->get();
+            if ($civil_status == 0) {
+                $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', NULL)->get();
+            } else {
+                $employees = EmployeeProfile::select('employee_profiles.*')
+                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                ->where('pi.civil_status', $civil_status)
+                ->whereNotIn('employee_profiles.id', [1])
+                ->get();
+            }
+
+           
 
             return response()->json([
                 'data' => EmployeesDetailsReport::collection($employee_profiles),

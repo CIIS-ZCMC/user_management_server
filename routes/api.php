@@ -2399,7 +2399,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // CIVIL STATUS
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('employees-civil-status', 'EmployeeReportController@allEmployeesCivilStatus');
+            Route::get('employees-civil-status/{civil_status}', 'EmployeeReportController@allEmployeesCivilStatus');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
