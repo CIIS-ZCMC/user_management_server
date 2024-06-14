@@ -2414,7 +2414,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('test', 'LeaveApplicationReportController@test');
+            Route::post('generate-report', 'LeaveApplicationReportController@generateReport');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -2435,6 +2435,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('date-range', 'LeaveApplicationReportController@dateRange');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('leave-application-report-filter', 'LeaveApplicationReportController@test');
         });
     });
 });
