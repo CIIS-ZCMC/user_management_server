@@ -956,7 +956,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         //reports
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('leave-application-filter', 'EmployeeProfileController@Areas');
+            Route::post('leave-application-filter', 'EmployeeProfileController@getAreas');
         });
 
         /**
