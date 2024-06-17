@@ -475,7 +475,8 @@ class PlantillaController extends Controller
                 $area = [
                     'area' => $division->id,
                     'name' => $division->name,
-                    'sector' => 'division'
+                    'sector' => 'division',
+                    'code' => $division->code
                 ];
                 $all_areas[] = $area;
             }
@@ -484,7 +485,8 @@ class PlantillaController extends Controller
                 $area = [
                     'area' => $department->id,
                     'name' => $department->name,
-                    'sector' => 'department'
+                    'sector' => 'department',
+                    'code' =>  $department->code
                 ];
                 $all_areas[] = $area;
             }
@@ -493,7 +495,8 @@ class PlantillaController extends Controller
                 $area = [
                     'area' => $section->id,
                     'name' => $section->name,
-                    'sector' => 'section'
+                    'sector' => 'section',
+                    'code' => $section->code
                 ];
                 $all_areas[] = $area;
             }
@@ -502,7 +505,8 @@ class PlantillaController extends Controller
                 $area = [
                     'area' => $unit->id,
                     'name' => $unit->name,
-                    'sector' => 'unit'
+                    'sector' => 'unit',
+                    'code' => $unit->code
                 ];
                 $all_areas[] = $area;
             }
