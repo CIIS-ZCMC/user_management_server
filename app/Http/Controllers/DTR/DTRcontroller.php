@@ -1026,7 +1026,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
             $leaveapp  = $employee->leaveApplications->filter(function ($row) {
                 return $row['status'] == "received";
             });
-
+         
 
 
             $leavedata = [];
@@ -1044,6 +1044,7 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
 
             }
 
+          
 
             //Official business
             if($employee->officialBusinessApplications){
