@@ -954,6 +954,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('employee-profile/{id}/revoke/{access_right_id}', 'EmployeeProfileController@revokeRights');
         });
 
+        //reports
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('leave-application-filter', 'EmployeeProfileController@Areas');
+        });
+
         /**
          * Employment Type Module
          */
@@ -1711,10 +1716,10 @@ Route::middleware('auth.cookie')->group(function () {
          *
          */
 
-        //reports
-        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
-            Route::post('leave-application-filter', 'LeaveApplicationController@countapprovedleaveApplication');
-        });
+        //     //reports
+        // Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+        //     Route::post('leave-application-filter', 'EmployeeProfileController@myAreas');
+        // });
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts', 'MonitizationPostingController@index');
@@ -2394,7 +2399,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // CIVIL STATUS
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('employees-civil-status', 'EmployeeReportController@allEmployeesCivilStatus');
+            Route::get('employees-civil-status/{civil_status}', 'EmployeeReportController@allEmployeesCivilStatus');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {

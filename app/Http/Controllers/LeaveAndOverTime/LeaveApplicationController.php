@@ -386,12 +386,6 @@ class LeaveApplicationController extends Controller
     public function countapprovedleaveApplication(Request $request)
     {
         try {
-            return $status = $request->status;
-            $leave_applications = LeaveApplication::where('status', $status)->count();
-            return response()->json([
-                'data' => LeaveApplicationResource::collection($leave_applications),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1775,6 +1769,10 @@ class LeaveApplicationController extends Controller
 
             if ($leave_application->status === 'cancelled by hrmo') {
                 return response()->json(['message' => "You cannot receive a cancelled application."], Response::HTTP_FORBIDDEN);
+            }
+
+            if ($leave_application->status === 'received') {
+                return response()->json(['message' => "You already received this application."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application->update([
