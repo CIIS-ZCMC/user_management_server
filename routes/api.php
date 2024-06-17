@@ -2410,35 +2410,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // FOR TESTING PURPOSES ONLY
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('select-area', 'LeaveApplicationReportController@selectArea');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('generate-report', 'LeaveApplicationReportController@generateReport');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('fetched-areas', 'LeaveApplicationReportController@fetchedAreas');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('rank-per-area', 'LeaveApplicationReportController@rankPerArea');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('approval-status', 'LeaveApplicationReportController@approvalStatus');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('leave-type', 'LeaveApplicationReportController@leaveType');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('date-range', 'LeaveApplicationReportController@dateRange');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('leave-application-report-filter', 'LeaveApplicationReportController@test');
+            Route::post('filter-leave-application', 'LeaveApplicationReportController@filterLeaveApplication');
         });
     });
 });
