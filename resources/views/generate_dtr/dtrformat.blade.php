@@ -494,50 +494,51 @@
                     }
                     $leavemessage = '';
                     foreach ($ourdata as $key => $value) {
-                        switch ($value['leavetype']) {
-                            case 'Vacation Leave':
-                                $leavemessage = 'VL';
-                                break;
-                            case 'Sick Leave':
-                                $leavemessage = 'SL';
-                                break;
-                            case 'Special Privilege Leave':
-                                $leavemessage = 'SPL';
-                                break;
-                            case 'Mandatory/Forced Leave':
-                                $leavemessage = 'FL';
-                                break;
-                            case 'Solo Parent Leave':
-                                $leavemessage = 'SoloParent';
-                                break;
-                            case 'Maternity Leave':
-                                $leavemessage = 'ML';
-                                break;
-                            case 'Allocation of Maternity Leave (Paternity leave)':
-                                $leavemessage = 'PL';
-                                break;
-                            case 'Paternity leave (Regular Paternity leave)':
-                                $leavemessage = 'RPL';
-                                break;
-                            case 'Study Leave':
-                                $leavemessage = 'Study';
-                                break;
-                            case 'Adoption Leave':
-                                $leavemessage = 'AL';
-                                break;
-                            case '10-Day VAWC Leave':
-                                $leavemessage = '10d VAWC';
-                                break;
-                            case 'Rehabilitation Leave':
-                                $leavemessage = 'RL';
-                                break;
-                            case 'Special Leave Benefits for Women':
-                                $leavemessage = 'SLB';
-                                break;
-                            case 'Special Emergency (Calamity) Leave':
-                                $leavemessage = 'SEL';
-                                break;
-                        }
+                        $leavemessage = $value['leavetype'];
+                        // switch ($value['leavetype']) {
+                        //     case 'Vacation Leave':
+                        //         $leavemessage = 'VL';
+                        //         break;
+                        //     case 'Sick Leave':
+                        //         $leavemessage = 'SL';
+                        //         break;
+                        //     case 'Special Privilege Leave':
+                        //         $leavemessage = 'SPL';
+                        //         break;
+                        //     case 'Mandatory/Forced Leave':
+                        //         $leavemessage = 'FL';
+                        //         break;
+                        //     case 'Solo Parent Leave':
+                        //         $leavemessage = 'SoloParent';
+                        //         break;
+                        //     case 'Maternity Leave':
+                        //         $leavemessage = 'ML';
+                        //         break;
+                        //     case 'Allocation of Maternity Leave (Paternity leave)':
+                        //         $leavemessage = 'PL';
+                        //         break;
+                        //     case 'Paternity leave (Regular Paternity leave)':
+                        //         $leavemessage = 'RPL';
+                        //         break;
+                        //     case 'Study Leave':
+                        //         $leavemessage = 'Study';
+                        //         break;
+                        //     case 'Adoption Leave':
+                        //         $leavemessage = 'AL';
+                        //         break;
+                        //     case '10-Day VAWC Leave':
+                        //         $leavemessage = '10d VAWC';
+                        //         break;
+                        //     case 'Rehabilitation Leave':
+                        //         $leavemessage = 'RL';
+                        //         break;
+                        //     case 'Special Leave Benefits for Women':
+                        //         $leavemessage = 'SLB';
+                        //         break;
+                        //     case 'Special Emergency (Calamity) Leave':
+                        //         $leavemessage = 'SEL';
+                        //         break;
+                        // }
                     }
 
                     //    $leavemessage = 'On leave';
