@@ -87,6 +87,7 @@ use App\Http\Controllers\DTR\TwoFactorAuthController;
 use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Models\LeaveApplication;
 
 class EmployeeProfileController extends Controller
 {
@@ -419,7 +420,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
-            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "Please be inform that your account currently doesn't have access to the system."]);
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -444,7 +445,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
-            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: ".$th->getMessage()]);
+            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -872,7 +873,7 @@ class EmployeeProfileController extends Controller
         $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
-        $profile_url = $employee_profile->profile_url === null? null: config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url;
+        $profile_url = $employee_profile->profile_url === null ? null : config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url;
 
 
         $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
@@ -891,7 +892,6 @@ class EmployeeProfileController extends Controller
             }
 
             $totalMonths += $months;
-
         }
 
         $currentServiceMonths = 0;
@@ -1004,9 +1004,9 @@ class EmployeeProfileController extends Controller
             'employee_details' => [
                 'employee' => $employee,
                 'personal_information' => $personal_information_data,
-                'contact' => $personal_information->contact === null? null: new ContactResource($personal_information->contact),
+                'contact' => $personal_information->contact === null ? null : new ContactResource($personal_information->contact),
                 'address' => $address,
-                'family_background' => $personal_information->familyBackground === null? null: new FamilyBackGroundResource($personal_information->familyBackground),
+                'family_background' => $personal_information->familyBackground === null ? null : new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
                 'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;
@@ -1025,7 +1025,7 @@ class EmployeeProfileController extends Controller
                 'issuance' => $employee_profile->issuanceInformation,
                 'reference' => $employee_profile->personalInformation->references,
                 'legal_information' => $employee_profile->personalInformation->legalInformation,
-                'identification' => $employee_profile->personalInformation->identificationNumber === null? null: new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
+                'identification' => $employee_profile->personalInformation->identificationNumber === null ? null : new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
@@ -1131,7 +1131,7 @@ class EmployeeProfileController extends Controller
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
-            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signOutFromOtherDevice]: ".$th->getMessage()]);
+            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signOutFromOtherDevice]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1339,7 +1339,7 @@ class EmployeeProfileController extends Controller
                 ->json(['data' => $data, 'message' => "Success signin with two factor authentication."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
-                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signInWithOTP]: ".$th->getMessage()]);
+            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signInWithOTP]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -2322,6 +2322,14 @@ class EmployeeProfileController extends Controller
                             }
                         }
                     }
+
+
+                    $sections = Section::where('division_id', $my_area['details']->id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+                    }
+
+
                     break;
                 case "Department":
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
@@ -2358,6 +2366,405 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function Areas(Request $request)
+    {
+        try {
+
+            $area = $request->sector;
+            $report_type = $request->report_type;
+            $status = $request->status;
+            $area_under = $request->area_under;
+            $area_id = $request->area_id;
+            $leave_type_id = $request->leave_type_id;
+            $areas = [];
+
+            if ($report_type === 'area') {
+                $leave_type = LeaveType::find($leave_type_id);
+                // Only return areas
+                switch ($area) {
+                    case "Division":
+                        $division = Division::where('id', $area_id)->first();
+                        if ($division) {
+                            $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)->whereHas('employeeProfile', function ($query) use ($division) {
+                                $query->whereHas('assignedArea', function ($q) use ($division) {
+                                    $q->where('division_id', $division->id);
+                                });
+                            })->count();
+                            $areas[] = [
+                                'id' => $division->id . '-division',
+                                'name' => $division->name,
+                                'sector' => 'Division',
+                                'leave_count' => $leave_count,
+                                'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                'leave_type_code' => $leave_type ? $leave_type->code : null
+                            ];
+                        }
+                        if ($area_under === 'All') {
+                            $departments = Department::where('division_id', $area_id)->get();
+                            foreach ($departments as $department) {
+                                $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($department) {
+                                    $query->whereHas('assignedArea', function ($q) use ($department) {
+                                        $q->where('department_id', $department->id);
+                                    });
+                                })->count();
+                                $areas[] = [
+                                    'id' => $department->id . '-department',
+                                    'name' => $department->name,
+                                    'sector' => 'Department',
+                                    'leave_count' => $leave_count,
+                                    'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                    'leave_type_code' => $leave_type ? $leave_type->code : null
+                                ];
+                                $sections = Section::where('department_id', $department->id)->get();
+                                foreach ($sections as $section) {
+                                    $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($section) {
+                                        $query->whereHas('assignedArea', function ($q) use ($section) {
+                                            $q->where('section_id', $section->id);
+                                        });
+                                    })->count();
+                                    $areas[] = [
+                                        'id' => $section->id . '-section',
+                                        'name' => $section->name,
+                                        'sector' => 'Section',
+                                        'leave_count' => $leave_count,
+                                        'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                        'leave_type_code' => $leave_type ? $leave_type->code : null
+                                    ];
+                                    $units = Unit::where('section_id', $section->id)->get();
+                                    foreach ($units as $unit) {
+                                        $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($unit) {
+                                            $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                $q->where('unit_id', $unit->id);
+                                            });
+                                        })->count();
+                                        $areas[] = [
+                                            'id' => $unit->id . '-unit',
+                                            'name' => $unit->name,
+                                            'sector' => 'Unit',
+                                            'leave_count' => $leave_count,
+                                            'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                            'leave_type_code' => $leave_type ? $leave_type->code : null
+                                        ];
+                                    }
+                                }
+                            }
+
+                            $sections = Section::where('division_id', $area_id)->get();
+                            foreach ($sections as $section) {
+                                $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($section) {
+                                    $query->whereHas('assignedArea', function ($q) use ($section) {
+                                        $q->where('section_id', $section->id);
+                                    });
+                                })->count();
+                                $areas[] = [
+                                    'id' => $section->id . '-section',
+                                    'name' => $section->name,
+                                    'sector' => 'Section',
+                                    'leave_count' => $leave_count,
+                                    'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                    'leave_type_code' => $leave_type ? $leave_type->code : null
+                                ];
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($unit) {
+                                        $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                            $q->where('unit_id', $unit->id);
+                                        });
+                                    })->count();
+                                    $areas[] = [
+                                        'id' => $unit->id . '-unit',
+                                        'name' => $unit->name,
+                                        'sector' => 'Unit',
+                                        'leave_count' => $leave_count,
+                                        'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                        'leave_type_code' => $leave_type ? $leave_type->code : null
+                                    ];
+                                }
+                            }
+                        }
+                        break;
+                    case "Department":
+                        $department = Department::where('id', $area_id)->first();
+                        if ($department) {
+                            $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($department) {
+                                $query->whereHas('assignedArea', function ($q) use ($department) {
+                                    $q->where('department_id', $department->id);
+                                });
+                            })->count();
+                            $areas[] = [
+                                'id' => $area_id . '-' . strtolower($area),
+                                'name' => $department->name,
+                                'sector' => $area,
+                                'leave_count' => $leave_count,
+                                'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                'leave_type_code' => $leave_type ? $leave_type->code : null
+                            ];
+                        }
+                        if ($area_under === 'All') {
+                            $sections = Section::where('department_id', $area_id)->get();
+                            foreach ($sections as $section) {
+                                $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($section) {
+                                    $query->whereHas('assignedArea', function ($q) use ($section) {
+                                        $q->where('section_id', $section->id);
+                                    });
+                                })->count();
+                                $areas[] = [
+                                    'id' => $section->id . '-section',
+                                    'name' => $section->name,
+                                    'sector' => 'Section',
+                                    'leave_count' => $leave_count,
+                                    'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                    'leave_type_code' => $leave_type ? $leave_type->code : null
+                                ];
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($unit) {
+                                        $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                            $q->where('unit_id', $unit->id);
+                                        });
+                                    })->count();
+                                    $areas[] = [
+                                        'id' => $unit->id . '-unit',
+                                        'name' => $unit->name,
+                                        'sector' => 'Unit',
+                                        'leave_count' => $leave_count,
+                                        'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                        'leave_type_code' => $leave_type ? $leave_type->code : null
+                                    ];
+                                }
+                            }
+                        }
+                        break;
+                    case "Section":
+                        $section = Section::where('id', $area_id)->first();
+                        if ($section) {
+                            $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($section) {
+                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                    $q->where('section_id', $section->id);
+                                });
+                            })->count();
+                            $areas[] = [
+                                'id' => $area_id . '-' . strtolower($area),
+                                'name' => $section->name,
+                                'sector' => $area,
+                                'leave_count' => $leave_count,
+                                'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                'leave_type_code' => $leave_type ? $leave_type->code : null
+                            ];
+                        }
+                        if ($area_under === 'All') {
+                            $units = Unit::where('section_id', $area_id)->get();
+                            foreach ($units as $unit) {
+                                $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($unit) {
+                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                        $q->where('unit_id', $unit->id);
+                                    });
+                                })->count();
+                                $areas[] = [
+                                    'id' => $unit->id . '-unit',
+                                    'name' => $unit->name,
+                                    'sector' => 'Unit',
+                                    'leave_count' => $leave_count,
+                                    'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                    'leave_type_code' => $leave_type ? $leave_type->code : null
+                                ];
+                            }
+                        }
+                        break;
+                    case "Unit":
+                        $unit = Unit::where('id', $area_id)->first();
+                        if ($unit) {
+                            $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($unit) {
+                                $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                    $q->where('unit_id', $unit->id);
+                                });
+                            })->count();
+                            $areas[] = [
+                                'id' => $area_id . '-' . strtolower($area),
+                                'name' => $unit->name,
+                                'sector' => $area,
+                                'leave_count' => $leave_count,
+                                'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                'leave_type_code' => $leave_type ? $leave_type->code : null
+                            ];
+                        }
+                        break;
+                }
+                // Sort the areas by leave_count in descending order
+                usort($areas, function ($a, $b) {
+                    return $b['leave_count'] - $a['leave_count'];
+                });
+                return response()->json(['areas' => $areas]);
+            } elseif ($report_type === 'employee') {
+                // Return leave applications with areas
+                $status = $request->status; // Assuming leave_status is passed in the request
+                $leave_applications = LeaveApplication::where('status', $status)->get();
+
+                foreach ($leave_applications as $leave_application) {
+                    $employee_profile_id = $leave_application->employee_profile_id;
+
+                    // Get employee's assigned areas
+                    $employee = AssignArea::where('employee_profile_id', $employee_profile_id)->first();
+                    $employee_areas = [];
+
+                    if ($employee) {
+                        switch ($area) {
+                            case "Division":
+                                $division = Division::where('id', $area_id)->first();
+                                if ($division) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $division->name, 'sector' => $area];
+                                }
+                                if ($area_under) {
+                                    $departments = Department::where('division_id', $area_id)->get();
+                                    foreach ($departments as $department) {
+                                        $employee_areas[] = ['id' => $department->id . '-department', 'name' => $department->name, 'sector' => 'Department'];
+                                        $sections = Section::where('department_id', $department->id)->get();
+                                        foreach ($sections as $section) {
+                                            $employee_areas[] = ['id' => $section->id . '-section', 'name' => $section->name, 'sector' => 'Section'];
+                                            $units = Unit::where('section_id', $section->id)->get();
+                                            foreach ($units as $unit) {
+                                                $employee_areas[] = ['id' => $unit->id . '-unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                            case "Department":
+                                $department = Department::where('id', $area_id)->first();
+                                if ($department) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $department->name, 'sector' => $area];
+                                }
+                                if ($area_under) {
+                                    $sections = Section::where('department_id', $area_id)->get();
+                                    foreach ($sections as $section) {
+                                        $employee_areas[] = ['id' => $section->id . '-section', 'name' => $section->name, 'sector' => 'Section'];
+                                        $units = Unit::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $employee_areas[] = ['id' => $unit->id . '-unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                        }
+                                    }
+                                }
+                                break;
+                            case "Section":
+                                $section = Section::where('id', $area_id)->first();
+                                if ($section) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $section->name, 'sector' => $area];
+                                }
+                                if ($area_under) {
+                                    $units = Unit::where('section_id', $area_id)->get();
+                                    foreach ($units as $unit) {
+                                        $employee_areas[] = ['id' => $unit->id . '-unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                    }
+                                }
+                                break;
+                            case "Unit":
+                                $unit = Unit::where('id', $area_id)->first();
+                                if ($unit) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $unit->name, 'sector' => $area];
+                                }
+                                break;
+                        }
+                    }
+
+                    // Combine leave application with employee areas
+                    $areas[] = [
+                        'leave_application' => $leave_application,
+                        'employee_areas' => $employee_areas
+                    ];
+                }
+
+                return response()->json(['areas' => $areas]);
+            }
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getAreas(Request $request)
+    {
+        try {
+            $area = $request->sector;
+            $area_id = $request->area_id;
+            $areas = [];
+
+            switch ($area) {
+                case "Division":
+                    $division = Division::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area];
+                    $departments = Department::where('division_id', $area_id)->get();
+
+                    foreach ($departments as $department) {
+                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'Department'];
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach ($sections as $section) {
+                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'Section'];
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                            }
+                        }
+                    }
+                    $sections = Section::where('division_id', $area_id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'Section'];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                        }
+                    }
+                    break;
+                case "Department":
+                    $department = Department::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area];
+                    $sections = Section::where('department_id', $area_id)->get();
+
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'Section'];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                        }
+                    }
+                    break;
+                case "Section":
+                    $section = Section::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area];
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                    }
+                    break;
+                case "Unit":
+                    $units = Unit::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area];
+                    break;
+            }
+
+
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
 
     public function getEmployeeListByEmployementTypes(Request $request)
     {
@@ -2404,7 +2811,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [];
 
             foreach ($personal_information_json as $key => $value) {
-                if(Str::contains($key, "_value")) continue;
+                if (Str::contains($key, "_value")) continue;
                 $personal_information_data[$key] = $value;
             }
 
@@ -2430,7 +2837,7 @@ class EmployeeProfileController extends Controller
             /**
              * Family background module
              */
-            if($request->family_background !== null){
+            if ($request->family_background !== null) {
                 $family_background_request = new FamilyBackgroundRequest();
                 $family_background_json = json_decode($request->family_background);
                 $family_background_data = [];
@@ -2448,7 +2855,7 @@ class EmployeeProfileController extends Controller
             /**
              * Education module
              */
-            if($request->educations !== null){
+            if ($request->educations !== null) {
                 $education_request = new EducationalBackgroundRequest();
                 $education_json = json_decode($request->educations);
                 $education_data = [];
@@ -2465,7 +2872,7 @@ class EmployeeProfileController extends Controller
             /**
              * Identification module
              */
-            if($request->identification !== null){
+            if ($request->identification !== null) {
                 $identification_request = new IdentificationNumberRequest();
                 $identification_json = json_decode($request->identification);
                 $identification_data = [];
@@ -2482,7 +2889,7 @@ class EmployeeProfileController extends Controller
             /**
              * Work experience module
              */
-            if($request->work_experiences !== null){
+            if ($request->work_experiences !== null) {
                 $work_experience_request = new WorkExperienceRequest();
                 $work_experience_json = json_decode($request->work_experiences);
                 $work_experience_data = [];
@@ -2499,7 +2906,7 @@ class EmployeeProfileController extends Controller
             /**
              * Voluntary work module
              */
-            if($request->voluntary_work !== null){
+            if ($request->voluntary_work !== null) {
                 $voluntary_work_request = new VoluntaryWorkRequest();
                 $voluntary_work_json = json_decode($request->voluntary_work);
                 $voluntary_work_data = [];
@@ -2516,7 +2923,7 @@ class EmployeeProfileController extends Controller
             /**
              * Other module
              */
-            if($request->others !== null){
+            if ($request->others !== null) {
                 $other_request = new OtherInformationManyRequest();
                 $other_json = json_decode($request->others);
                 $other_data = [];
@@ -2533,7 +2940,7 @@ class EmployeeProfileController extends Controller
             /**
              * Legal information module
              */
-            if($request->legal_information !== null){
+            if ($request->legal_information !== null) {
                 $legal_info_request = new LegalInformationManyRequest();
                 $legal_info_json = json_decode($request->legal_information);
                 $legal_info_data = [];
@@ -2550,7 +2957,7 @@ class EmployeeProfileController extends Controller
             /**
              * Training module
              */
-            if($request->trainings !== null){
+            if ($request->trainings !== null) {
                 $training_request = new TrainingManyRequest();
                 $training_json = json_decode($request->trainings);
                 $training_data = [];
@@ -2567,7 +2974,7 @@ class EmployeeProfileController extends Controller
             /**
              * Reference module
              */
-            if($request->reference !== null){
+            if ($request->reference !== null) {
                 $referrence_request = new ReferenceManyRequest();
                 $referrence_json = json_decode($request->reference);
                 $referrence_data = [];
@@ -2584,7 +2991,7 @@ class EmployeeProfileController extends Controller
             /**
              * Eligibilities module
              */
-            if($request->eligibilities !== null){
+            if ($request->eligibilities !== null) {
                 $eligibilities_request = new CivilServiceEligibilityManyRequest();
                 $eligibilities_json = json_decode($request->eligibilities);
                 $eligibilities_data = [];
@@ -2677,7 +3084,7 @@ class EmployeeProfileController extends Controller
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
 
-                $key = strtolower($request->sector).'_id';
+                $key = strtolower($request->sector) . '_id';
                 $cleanData['plantilla_number_id'] = $plantilla_number_id;
                 $cleanData[$key] = strip_tags($request->area_id);
 
@@ -2973,7 +3380,6 @@ class EmployeeProfileController extends Controller
                 }
 
                 $totalMonths += $months;
-
             }
 
             $currentServiceMonths = 0;
@@ -3197,7 +3603,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function promotion($id, PromotionRequest $request)
     {
         try {
@@ -3515,7 +3921,4 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
 }

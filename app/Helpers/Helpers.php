@@ -445,7 +445,6 @@ class Helpers
             } else {
                 $dates[] = $formattedDate;
             }
-
         }
 
         return $dates;
@@ -1187,4 +1186,5 @@ class Helpers
             return "HTTP request failed with status: $status";
         }
     }
+
 }
