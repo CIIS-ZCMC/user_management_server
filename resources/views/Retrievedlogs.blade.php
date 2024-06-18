@@ -11,7 +11,12 @@
      body {
         padding: 100px;
         margin: 0;
-     
+
+    }
+    @media only screen and (max-width: 796px) {
+        #containerD {
+            width: 100%;
+        }
     }
 
 </style>
@@ -43,38 +48,37 @@ $(document).ready(function(){
         $('#timer').html('00:00');
             window.location.href='/CheckLogs'
         }
-       
+
     }, 1000);
 
-   
+
 });
 </script>
 
 
 
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-12" id="containerD">
             <h2 style="display: flex;justify-content:space-between">
                 <div>
-                       <span style="font-weight: normal;font-size:16px">Employee ID :</span> {{$employee_id}}
-                <br>
+
                 <span style="font-weight: normal;font-size:16px">Employee Name :</span> {{$name}}
                 <br>
-            
+
                 </div>
                 <div>
-               
+
                     <button onclick="window.location.href='/CheckLogs'" class="btn btn-danger px-5">Exit</button>
-                 
-                  
+
+
                 </div>
-             
-            
+
+
             </h2>
-          <div style="float: right">
-            <span style="font-size:15px;">Automatically closing in </span>
-            <span id="timer" style="color:red" >--:--</span>
-          </div>
+            <div style="display:flex;justify-content:flex-end;font-size:40px">
+                <span style="font-size:15px;font-weight:bold">Automatically closing in </span>
+                <span id="timer" style="color:red;margin-left:4px" >--:--</span>
+              </div>
             <br>
             <div class="row">
                 <div class="col-md-12">
@@ -94,91 +98,96 @@ $(document).ready(function(){
                         </thead>
                         <tbody>
                             @if ($dtr)
-                              <tr  style="text-align: center" >
-                                <td>{{$dtr->first_in ? date('h:i a',strtotime($dtr->first_in)): "--" }}</td>
+                              <tr  style="text-align: center;font-size:35px" >
+                                <td>{{$dtr->first_in ? date('h:i a',strtotime($dtr->first_in)): "--:--" }}</td>
                                 <td>{{$dtr->first_out ? date('h:i a',strtotime($dtr->first_out)): "--:--" }}</td>
                                 <td>{{$dtr->second_in ? date('h:i a',strtotime($dtr->second_in)): "--:--" }}</td>
                                 <td>{{$dtr->second_out ? date('h:i a',strtotime($dtr->second_out)): "--:--" }}</td>
                             </tr>
-                            @else 
+                            @else
                             <tr  style="text-align: center" >
-                                <td><span class="badge bg-secondary">No records found</span></td>
-                                <td>{{$dtr->first_out}}</td>
-                                <td>{{$dtr->second_in}}</td>
-                                <td>{{$dtr->second_out}}</td>
+                                <td>--:--</td>
+                                <td>--:--</td>
+                                <td>--:--</td>
+                                <td>--:--</td>
                             </tr>
                             @endif
-                          
+
                         </tbody>
                       </table>
                 </div>
                </div>
                 </div>
                 <div class="col-md-12 mt-2">
-                
+
                     <div class="card shadow">
                         <div class="card-body p-5">
                             <h4>
                                 Logs recorded and their sequence.
                             </h4>
-                            <table class="table table-striped table-striped-columns">
-                                <thead>
-                                  <tr class="table-secondary">
-                                    <th scope="col">Sequence</th>
-                                    <th scope="col">Entry</th>
-                                    <th scope="col">Punch</th>
-                                    <th scope="col">Device Name</th>
-                                    <th scope="col">Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                    $dtlogs = [];
-                                        if($dtrlogs){
-                                            $jlogs = json_decode($dtrlogs->json_logs);
-                                         //  dd($jlogs);
-                                        }
-                                    @endphp
-                                    @foreach ($jlogs as $item)
-                                        <tr>
-                                            <td>{{$item->timing + 1}}</td>
-                                            <td>
-                                                {{date('h:i a',strtotime($item->date_time))}}
-                                            </td>
-                                            <td>
-                                                @switch($item->status)
-                                                @case(1)
-                                                <span class="badge bg-warning">Check-OUT</span>
-                                                @break
-                                            @case(0)
-                                            <span class="badge bg-success">Check-IN</span>
-                                                @break
-                                                @case(255)
-                                                <span class="badge bg-primary">Global State</span>
-                                                @break
-                                                @endswitch
-                                            </td>
-                                            <td>
-                                                {{$item->device_name}}
-                                            </td>
-                                            <td>
-                                                @if ($item->entry_status == "Logged")
-                                                <span style="color:gray"> {{$item->entry_status}}</span>
-                                                @else 
-                                                <span style="color:rgb(81, 168, 81)"> {{$item->entry_status}}</span>
-                                                @endif
-                                               
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                              </table>
+               <div class="table-responsive">
+                <table class="table table-striped table-striped-columns">
+                    <thead>
+                      <tr class="table-secondary">
+                        <th scope="col">Sequence</th>
+                        <th scope="col">Entry</th>
+                        <th scope="col">Punch</th>
+                        <th scope="col">Device Name</th>
+                        <th scope="col">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                        $dtlogs = [];
+                            if($dtrlogs){
+                                $jlogs = json_decode($dtrlogs->json_logs);
+                             
+                            }
+                        @endphp
+                        @if (isset($jlogs))
+                        @foreach ($jlogs as $item)
+                        <tr style="font-size:35px">
+                            <td>{{$item->timing + 1}}</td>
+                            <td>
+                                {{date('h:i a',strtotime($item->date_time))}}
+                            </td>
+                            <td>
+                                @switch($item->status)
+                                @case(1)
+                                <span class="badge bg-warning">Check-OUT</span>
+                                @break
+                            @case(0)
+                            <span class="badge bg-success">Check-IN</span>
+                                @break
+                                @case(255)
+                                <span class="badge bg-primary">Global State</span>
+                                @break
+                                @endswitch
+                            </td>
+                            <td>
+                                {{$item->device_name}}
+                            </td>
+                            <td>
+                                @if ($item->entry_status == "Logged")
+                                <span style="color:gray"> {{$item->entry_status}}</span>
+                                @else
+                                <span style="color:rgb(81, 168, 81)"> {{$item->entry_status}}</span>
+                                @endif
+
+                            </td>
+                        </tr>
+                    @endforeach
+                        @endif
+
+                    </tbody>
+                  </table>
+               </div>
                         </div>
                        </div>
                 </div>
-        
+
                 <div class="col-md-12 mt-2">
-                
+
                     <div class="card shadow">
                         <div class="card-body p-5">
                             <h4>
@@ -190,12 +199,12 @@ $(document).ready(function(){
                                     <th scope="col">Entry</th>
                                     <th scope="col">Punch</th>
                                     <th scope="col">Assumed Status</th>
-                                    
+
                                   </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($biologs as $item)
-                                        <tr>
+                                        <tr style="font-size:35px">
                                             <td>{{date('h:i a',strtotime($item['date_time']))}}</td>
                                             <td>
                                                 @switch($item['status'])
@@ -208,7 +217,7 @@ $(document).ready(function(){
                                                         @case(255)
                                                         <span class="badge bg-primary">Global State</span>
                                                         @break
-                                                    
+
                                                 @endswitch
                                             </td>
                                             <td>
@@ -216,7 +225,7 @@ $(document).ready(function(){
                                             </td>
                                         </tr>
                                     @endforeach
-                               
+
                                 </tbody>
                               </table>
                         </div>
@@ -225,6 +234,6 @@ $(document).ready(function(){
             </div>
         </div>
     </div>
-   
+
 </body>
 </html>
