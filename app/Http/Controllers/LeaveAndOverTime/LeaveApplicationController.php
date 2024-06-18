@@ -1928,7 +1928,7 @@ class LeaveApplicationController extends Controller
 
             $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN); 
             }
             $hrmo_officer = Helpers::getHrmoOfficer();
             $start = Carbon::parse($request->date_from);
