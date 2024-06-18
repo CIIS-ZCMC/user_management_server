@@ -11,6 +11,10 @@ use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\AnnouncementsRequest;
 use App\Http\Resources\AnnouncementsResource;
 use App\Models\Announcements;
+use App\Models\EmployeeProfile;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
+use Illuminate\Support\Facades\DB;
 
 class AnnouncementsController extends Controller
 {
@@ -24,9 +28,8 @@ class AnnouncementsController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $events = Cache::remember('announcements', $cacheExpiration, function(){
-                return Announcements::all();
+                return Announcements::orderBy('created_at', 'desc')->get();
             });
-
             return response()->json([
                 'data' => AnnouncementsResource::collection($events),
                 'message' => 'Announcements records retrieved.'
@@ -62,6 +65,7 @@ class AnnouncementsController extends Controller
     public function store(AnnouncementsRequest $request)
     {
         try{
+            DB::beginTransaction();
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -81,18 +85,33 @@ class AnnouncementsController extends Controller
                     }
                     $cleanData['attachments'] = $array_list;
                 }
-                $cleanData[$key] = strip_tags($value);
+                $cleanData[$key] = $value;
             } 
-
             $event = Announcements::create($cleanData);
 
+            if($event){
+                $notification = Notifications::create([
+                    'title'=>"Announcement!",
+                    'description'=>$event->title,
+                    'module_path'=>'/announcement',
+                ]);
+                $employeeId = EmployeeProfile::all();
+                foreach($employeeId as $id){
+                    UserNotifications::create([
+                        'seen'=>0,
+                        'notification_id'=>$notification->id,
+                        'employee_profile_id'=>$id->id
+                    ]);
+                }
+            }
             Helpers::registerSystemLogs($request, $event['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
+            DB::commit();
             return response()->json([
                 'data' => new AnnouncementsResource($event),
                 'message' => 'Event created successfully'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            DB::rollback();
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
