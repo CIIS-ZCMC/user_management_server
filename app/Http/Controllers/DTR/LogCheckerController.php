@@ -11,6 +11,7 @@ use App\Models\DailyTimeRecordLogs;
 use App\Models\EmployeeProfile;
 use App\Methods\Helpers;
 use App\Helpers\Helpers as Helpersv2;
+use App\Http\Controllers\DTR\DTRcontroller;
 class LogCheckerController extends Controller
 {
     protected $helper;
@@ -18,11 +19,13 @@ class LogCheckerController extends Controller
     protected $ip;
     protected $bioms;
     protected $devices;
+    protected $dtr;
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
+        $this->dtr = new DTRcontroller();
 
         try {
             $content = $this->bioms->operatingDevice()->getContent();
@@ -51,7 +54,7 @@ class LogCheckerController extends Controller
         $dtr = DailyTimeRecords::where('biometric_id',$biometric_id)->where('dtr_date',$datenow)->first();
         $dtrlogs = DailyTimeRecordLogs::where('biometric_id',$biometric_id)->where('dtr_date',$datenow)->first();
         $biologs = [];
-    
+
         foreach ($this->devices as $device) {
             if ($tad = $this->device->bIO($device)) {
                 $logs = $tad->get_att_log();
@@ -59,7 +62,9 @@ class LogCheckerController extends Controller
                 $attendance = simplexml_load_string($logs);
                 $user_Inf = simplexml_load_string($all_user_info);
                 $attendance_Logs =  $this->helper->getAttendance($attendance);
-                $Employee_Info  = $this->helper->getEmployee($user_Inf);
+
+                if($this->dtr->isNotEmptyFields($attendance_Logs)){
+                          $Employee_Info  = $this->helper->getEmployee($user_Inf);
 
                 $Employee_Attendance = $this->helper->getEmployeeAttendance(
                     $attendance_Logs,
@@ -69,15 +74,18 @@ class LogCheckerController extends Controller
                     return date('Y-m-d', strtotime($attd['date_time'])) == $datenow && $attd['biometric_id'] ==  $biometric_id ;
                 });
 
-        
+
                 $biologs[] = array_values($check_Records);
+                }
+
+
             }
         }
-        
+
         $biologs = $biologs[0] ?? [];
 
-      
-     
+
+
         return view('Retrievedlogs',compact('dtr','dtrlogs','biologs','name','employee_id'));
 
     }

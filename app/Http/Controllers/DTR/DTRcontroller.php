@@ -266,7 +266,14 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
 }
 
 
-
+function isNotEmptyFields($logs) {
+    foreach ($logs as $log) {
+        if (in_array("", $log, true)) {
+            return false;
+        }
+    }
+    return true;
+}
     public function fetchDTRFromDevice()
     {
 
@@ -279,12 +286,15 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
+                  
+                    if($this->isNotEmptyFields($attendance_Logs)){
+                       
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
-
-                 $Employee_Attendance = $this->helper->getEmployeeAttendance(
+                    $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
                     );
+                   
                     $this->SaveLogsLocal($Employee_Attendance, $device);
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
@@ -479,10 +489,12 @@ public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_i
                     ]);
                 }
              }
+                    }
+                 
             }
             }
         } catch (\Throwable $th) {
-    
+            return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
 
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
