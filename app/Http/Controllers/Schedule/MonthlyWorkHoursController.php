@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Schedule;
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MonthlyWorkHourRequest;
-use App\Http\Resources\EmploymentTypeResource;
+use App\Http\Resources\MonthlyWorkHoursEmploymentTypeResource;
 use App\Http\Resources\MonthlyWorkHoursResource;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
@@ -14,7 +14,6 @@ use App\Services\RequestLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 class MonthlyWorkHoursController extends Controller
 {
@@ -45,6 +44,7 @@ class MonthlyWorkHoursController extends Controller
                         'id' => $record->employmentType->id,
                         'name' => $record->employmentType->name,
                         'work_hours' => $record->work_hours,
+                        'monthly_working_hours_id' => $record->id,
                     ];
                 }
                 $formattedData[] = [
@@ -123,36 +123,38 @@ class MonthlyWorkHoursController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         try {
-            $data = MonthlyWorkHours::findOrFail($id);
+            $updatedEntries = [];
+            $data = $request->input('data');
+            foreach ($data as $entry) {
+                foreach ($entry as $key => $value) {
+                    if (empty($value)) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
 
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
+                    if (is_int($value)) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
                 }
 
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
+                $data = MonthlyWorkHours::find($cleanData['monthly_work_hours_id']);
+
+                if (!$data) {
+                    return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
                 }
 
-                $cleanData[$key] = strip_tags($value);
+                $data->update($cleanData);
+                $updatedEntries[] = new MonthlyWorkHoursResource($data);
             }
 
-            $data->update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' => new MonthlyWorkHoursResource($data),
+                'data' => $updatedEntries,
                 'message' => "Data Successfully update"
             ], Response::HTTP_OK);
 
@@ -233,10 +235,10 @@ class MonthlyWorkHoursController extends Controller
     public function getEmploymentType(Request $request)
     {
         try {
-            $employment_types = EmploymentType::all();
+            $employment_types = EmploymentType::with('monthlyWorkHours')->get();
 
             return response()->json([
-                'data' => EmploymentTypeResource::collection($employment_types),
+                'data' => MonthlyWorkHoursEmploymentTypeResource::collection($employment_types),
                 'message' => 'Employment type list retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

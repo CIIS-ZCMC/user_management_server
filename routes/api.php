@@ -2365,7 +2365,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-MWH update'])->group(function () {
-            Route::put('monthly-work-hour/{id}', 'MonthlyWorkHoursController@update');
+            Route::put('monthly-work-hour', 'MonthlyWorkHoursController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
