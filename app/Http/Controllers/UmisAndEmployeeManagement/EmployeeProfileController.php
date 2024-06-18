@@ -2515,7 +2515,6 @@ class EmployeeProfileController extends Controller
 
                                 $sections = Section::where('department_id', $department->id)->get();
                                 foreach ($sections as $section) {
-
                                     $sectionData = [
                                         'id' => $department->id . '-department',
                                         'name' => $department->name,
@@ -2545,16 +2544,21 @@ class EmployeeProfileController extends Controller
                                                 $q->where('section_id', $section->id);
                                             });
                                         })->count();
-                                    $areas[] = [
-                                        'id' => $section->id . '-section',
-                                        'name' => $section->name,
-                                        'sector' => 'Section',
-                                        'leave_count' => $leave_count,
-                                        'leave_with_pay_count' => $leave_with_pay_count,
-                                        'leave_without_pay_count' => $leave_without_pay_count,
-                                        'leave_type_name' => $leave_type ? $leave_type->name : null,
-                                        'leave_type_code' => $leave_type ? $leave_type->code : null
+                                    // Accumulate total leave counts
+                                    $leave_with_pay_count_total += $leave_with_pay_count;
+                                    $leave_without_pay_count_total += $leave_without_pay_count;
+                                    $leave_count_total += $leave_count;
+
+                                    // Push leave counts for the current leave type into areaData
+                                    $sectionData['leave_types'][] = [
+                                        'leave_type_id' => $leave_type_id,
+                                        'leave_type_name' => $leave_type->name,
+                                        'leave_type_code' => $leave_type->code,
+                                        'leave_type_count' => $leave_count,
                                     ];
+
+                                    $areas[] = $sectionData;
+
                                     $units = Unit::where('section_id', $section->id)->get();
                                     foreach ($units as $unit) {
                                         $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
@@ -2593,6 +2597,15 @@ class EmployeeProfileController extends Controller
 
                             $sections = Section::where('division_id', $area_id)->get();
                             foreach ($sections as $section) {
+                                $sectionData = [
+                                    'id' => $department->id . '-department',
+                                    'name' => $department->name,
+                                    'sector' => 'Department',
+                                    'leave_with_pay_count' => 0,
+                                    'leave_without_pay_count' => 0,
+                                    'leave_count' => 0,
+                                    'leave_types' => []
+                                ];
                                 $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
                                     ->whereHas('employeeProfile', function ($query) use ($section) {
                                         $query->whereHas('assignedArea', function ($q) use ($section) {
