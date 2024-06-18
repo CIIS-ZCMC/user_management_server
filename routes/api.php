@@ -873,6 +873,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('sub-areas', 'EmployeeProfileController@getAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('area-employees/{id}/sector/{sector}', 'EmployeeProfileController@areasEmployees');
         });
 
@@ -2361,7 +2365,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-MWH update'])->group(function () {
-            Route::put('monthly-work-hour/{id}', 'MonthlyWorkHoursController@update');
+            Route::put('monthly-work-hour', 'MonthlyWorkHoursController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
@@ -2399,7 +2403,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // CIVIL STATUS
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('employees-civil-status', 'EmployeeReportController@allEmployeesCivilStatus');
+            Route::get('employees-civil-status/{civil_status}', 'EmployeeReportController@allEmployeesCivilStatus');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {

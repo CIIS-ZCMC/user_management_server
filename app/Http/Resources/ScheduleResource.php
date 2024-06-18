@@ -48,7 +48,8 @@ class ScheduleResource extends JsonResource
             'position_type' => $this->findDesignation()->position_type,
             'shifting' => $this->shifting,
             // 'position' => $this->position(),
-            'total_working_hours' => $totalWorkingHours . '/' . $monthlyWorkingHours,
+            'total_working_hours' => $totalWorkingHours,
+            'monthly_working_hours' => $monthlyWorkingHours,
             'schedule' => $schedules
         ];
     }

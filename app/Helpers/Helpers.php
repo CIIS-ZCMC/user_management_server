@@ -1186,4 +1186,5 @@ class Helpers
             return "HTTP request failed with status: $status";
         }
     }
+
 }

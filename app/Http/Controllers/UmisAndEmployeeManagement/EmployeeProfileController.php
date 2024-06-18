@@ -2322,6 +2322,14 @@ class EmployeeProfileController extends Controller
                             }
                         }
                     }
+
+
+                    $sections = Section::where('division_id', $my_area['details']->id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+                    }
+
+
                     break;
                 case "Department":
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
@@ -2410,9 +2418,9 @@ class EmployeeProfileController extends Controller
                                 ];
                                 $sections = Section::where('department_id', $department->id)->get();
                                 foreach ($sections as $section) {
-                                    $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($sections) {
-                                        $query->whereHas('assignedArea', function ($q) use ($sections) {
-                                            $q->where('section_id', $sections->id);
+                                    $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($section) {
+                                        $query->whereHas('assignedArea', function ($q) use ($section) {
+                                            $q->where('section_id', $section->id);
                                         });
                                     })->count();
                                     $areas[] = [
@@ -2439,6 +2447,39 @@ class EmployeeProfileController extends Controller
                                             'leave_type_code' => $leave_type ? $leave_type->code : null
                                         ];
                                     }
+                                }
+                            }
+
+                            $sections = Section::where('division_id', $area_id)->get();
+                            foreach ($sections as $section) {
+                                $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($section) {
+                                    $query->whereHas('assignedArea', function ($q) use ($section) {
+                                        $q->where('section_id', $section->id);
+                                    });
+                                })->count();
+                                $areas[] = [
+                                    'id' => $section->id . '-section',
+                                    'name' => $section->name,
+                                    'sector' => 'Section',
+                                    'leave_count' => $leave_count,
+                                    'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                    'leave_type_code' => $leave_type ? $leave_type->code : null
+                                ];
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $leave_count = LeaveApplication::whereHas('employeeProfile', function ($query) use ($unit) {
+                                        $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                            $q->where('unit_id', $unit->id);
+                                        });
+                                    })->count();
+                                    $areas[] = [
+                                        'id' => $unit->id . '-unit',
+                                        'name' => $unit->name,
+                                        'sector' => 'Unit',
+                                        'leave_count' => $leave_count,
+                                        'leave_type_name' => $leave_type ? $leave_type->name : null,
+                                        'leave_type_code' => $leave_type ? $leave_type->code : null
+                                    ];
                                 }
                             }
                         }
@@ -2550,8 +2591,8 @@ class EmployeeProfileController extends Controller
                         }
                         break;
                 }
-                 // Sort the areas by leave_count in descending order
-                usort($areas, function($a, $b) {
+                // Sort the areas by leave_count in descending order
+                usort($areas, function ($a, $b) {
                     return $b['leave_count'] - $a['leave_count'];
                 });
                 return response()->json(['areas' => $areas]);
@@ -2645,6 +2686,83 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function getAreas(Request $request)
+    {
+        try {
+            $area = $request->sector;
+            $area_id = $request->area_id;
+            $areas = [];
+
+            switch ($area) {
+                case "division":
+                    $division = Division::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area, 'code'=> $division->code];
+                    $departments = Department::where('division_id', $area_id)->get();
+
+                    foreach ($departments as $department) {
+                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'department', 'code'=> $department->code];
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach ($sections as $section) {
+                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'section', 'code'=> $section->code];
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
+                            }
+                        }
+                    }
+                    $sections = Section::where('division_id', $area_id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code'=> $section->code];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
+                        }
+                    }
+                    break;
+                case "department":
+                    $department = Department::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area, 'code'=> $department->code];
+                    $sections = Section::where('department_id', $area_id)->get();
+
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code'=> $section->code];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
+                        }
+                    }
+                    break;
+                case "section":
+                    $section = Section::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area, 'code'=> $section->code];
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
+                    }
+                    break;
+                case "unit":
+                    $units = Unit::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area, 'code'=> $unit->code];
+                    break;
+            }
+
+
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 
 
