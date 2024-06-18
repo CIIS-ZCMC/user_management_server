@@ -49,7 +49,51 @@
     color: yellow; /* Change text color if needed */
 }
 
+#textlogo{
+    color: #006989;font-size:60px
+}
+#checktext{
+    font-size:25px;font-weight:normal
+}
+#zcmclogo{
+    width: 120px;user-select: none
+}
+#time {
+    font-size:40px;color:green
+}
+/* @media only screen and (max-width: 796px)  {
+    #txtempIDfield{
+        padding: 20px;  
+        width:100%;
+        font-size: 22px;
+        text-align: center;
+    }
 
+    #btncheck{
+     
+        padding: 15px 60px;
+        width:100%;
+        font-size:17px;
+        margin-left: 8%;
+        
+    }
+
+    #textlogo{
+   font-size:18px
+}
+
+#checktext{
+    font-size:14px;
+}
+
+#zcmclogo{
+    width: 80px;
+    display: none;
+}
+#time {
+    font-size:20px;
+}
+} */
 
 </style>
 
@@ -62,15 +106,15 @@ alert("Employee records not found.")
 @endif
 <body>
 
-    <img src="{{ asset('storage/logo/zcmc.jpeg') }}" style="width: 120px;user-select: none" alt="">
-    <div style="font-size:40px;color:green">   {{date('F j,Y')}}  <span id="server-time">{{date('H:i:s')}}</span></div>
-    <h1 style="user-select: none" > <span style="color: #006989;font-size:60px">
+    <img src="{{ asset('storage/logo/zcmc.jpeg') }}" id="zcmclogo" alt="">
+    <div id="time">   {{date('F j,Y')}}  <span id="server-time">{{date('H:i:s')}}</span></div>
+    <h1 style="user-select: none" > <span id="textlogo" >
         UMIS <br>  DTR & Biometric log Checker
 
 
     </span>
 <br>
-<span style="font-size:25px;font-weight:normal">
+<span style="" id="checktext">
     Check your biometric logs or DTR here!
 </span>
     </h1>
@@ -81,7 +125,7 @@ alert("Employee records not found.")
         <br>
         <button type="button" id="btncheck"> CHECK</button>
     </form>
-    <br><br>
+    <br>
     <span style="font-size:13px;font-weight:normal">User Management Information System</span>
 
 
