@@ -2695,59 +2695,59 @@ class EmployeeProfileController extends Controller
             $areas = [];
 
             switch ($area) {
-                case "Division":
+                case "division":
                     $division = Division::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area];
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area, 'code'=> $division->code];
                     $departments = Department::where('division_id', $area_id)->get();
 
                     foreach ($departments as $department) {
-                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'Department'];
+                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'department', 'code'=> $department->code];
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
-                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'Section'];
+                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'section', 'code'=> $section->code];
 
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
-                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
                             }
                         }
                     }
                     $sections = Section::where('division_id', $area_id)->get();
                     foreach ($sections as $section) {
-                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'Section'];
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code'=> $section->code];
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
                         }
                     }
                     break;
-                case "Department":
+                case "department":
                     $department = Department::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area];
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area, 'code'=> $department->code];
                     $sections = Section::where('department_id', $area_id)->get();
 
                     foreach ($sections as $section) {
-                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'Section'];
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code'=> $section->code];
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
                         }
                     }
                     break;
-                case "Section":
+                case "section":
                     $section = Section::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area];
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area, 'code'=> $section->code];
 
                     $units = Unit::where('section_id', $area_id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code'=> $unit->code];
                     }
                     break;
-                case "Unit":
+                case "unit":
                     $units = Unit::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area];
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area, 'code'=> $unit->code];
                     break;
             }
 
