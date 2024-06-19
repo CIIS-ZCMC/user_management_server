@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->integer('employee_profile_id')->unasigned();
             $table->integer('schedule_id')->unasigned();
-            $table->timestamp('updated_at');
+            $table->timestamps();
         });
     }
 
