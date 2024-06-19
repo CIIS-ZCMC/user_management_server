@@ -2006,6 +2006,7 @@ class LeaveApplicationController extends Controller
             $employee_profile = $user;
             $start = Carbon::parse($request->date_from);
             $end =  Carbon::parse($request->date_to);
+
             $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -2040,12 +2041,12 @@ class LeaveApplicationController extends Controller
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' => 'Change Leave Application Date '
+                'action' => 'Change Leave Application Date'
             ]);
 
             //NOTIFICATIONS
             $title = $leave_type->name . " request date change";
-            $description = "Your leave request for " . $leave_type->name . " on " . $leave_application->date_from . " has been successfully changed.";
+            $description = "Your leave request for " . $leave_type->name . " from " . $leave_application->date_from . " to " . $leave_application->date_to . " has been successfully changed.";
 
             $notification = Notifications::create([
                 "title" => $title,
