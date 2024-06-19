@@ -4,499 +4,373 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log; // Add this import
 use Illuminate\Http\Response;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\Section;
 use App\Models\Unit;
-use App\Helpers\Helpers;
 use App\Models\LeaveApplication;
-use App\Models\leave_type;
-use App\Models\AssignArea;
 use App\Models\LeaveType;
-use Illuminate\Support\Facades\DB; // Import DB facade
-
+use App\Models\AssignArea;
+use App\Helpers\Helpers;
+use Illuminate\Support\Facades\DB;
 
 class LeaveApplicationReportController extends Controller
 {
     private $CONTROLLER_NAME = "Leave Management Reports";
 
-    // Function to format nested areas and return only the children
-    private function formatNestedAreas($areas)
-    {
-        $children = [];
-
-        foreach ($areas as $area) {
-            // Add departments if available
-            if ($area->relationLoaded('departments')) {
-                foreach ($area->departments as $department) {
-                    $formattedDepartment = [
-                        'id' => $department->id,
-                        'name' => $department->name,
-                        'code' => $department->code,
-                        'sector' => 'Department',
-                        'children' => []
-                    ];
-
-                    // Add sections if available
-                    if ($department->relationLoaded('sections')) {
-                        foreach ($department->sections as $section) {
-                            $formattedSection = [
-                                'id' => $section->id,
-                                'name' => $section->name,
-                                'code' => $section->code,
-                                'sector' => 'Section',
-                                'children' => []
-                            ];
-
-                            // Add units if available
-                            if ($section->relationLoaded('units')) {
-                                foreach ($section->units as $unit) {
-                                    $formattedUnit = [
-                                        'id' => $unit->id,
-                                        'name' => $unit->name,
-                                        'code' => $unit->code,
-                                        'sector' => 'Unit'
-                                    ];
-                                    $formattedSection['children'][] = $formattedUnit;
-                                }
-                            }
-
-                            $formattedDepartment['children'][] = $formattedSection;
-                        }
-                    }
-
-                    $children[] = $formattedDepartment;
-                }
-            }
-
-            // Add sections directly under division if available
-            if ($area->relationLoaded('sections')) {
-                foreach ($area->sections as $section) {
-                    $formattedSection = [
-                        'id' => $section->id,
-                        'name' => $section->name,
-                        'code' => $section->code,
-                        'sector' => 'Section',
-                        'children' => []
-                    ];
-
-                    // Add units if available
-                    if ($section->relationLoaded('units')) {
-                        foreach ($section->units as $unit) {
-                            $formattedUnit = [
-                                'id' => $unit->id,
-                                'name' => $unit->name,
-                                'code' => $unit->code,
-                                'sector' => 'Unit'
-                            ];
-                            $formattedSection['children'][] = $formattedUnit;
-                        }
-                    }
-
-                    $children[] = $formattedSection;
-                }
-            }
-
-            // Add units directly under division if available
-            if ($area->relationLoaded('units')) {
-                foreach ($area->units as $unit) {
-                    $formattedUnit = [
-                        'id' => $unit->id,
-                        'name' => $unit->name,
-                        'code' => $unit->code,
-                        'sector' => 'Unit'
-                    ];
-                    $children[] = $formattedUnit;
-                }
-            }
-        }
-
-        return $children;
-    }
-
-    public function selectArea(Request $request)
-    {
-        try {
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-
-            // Fetch specific area and its nested areas based on user's assigned area
-            switch ($sector) {
-                case "Division":
-                case "division":
-                    $areas = Division::where('id', $area_id)
-                        ->with(['departments.sections.units', 'sections.units'])
-                        ->get();
-                    break;
-                case "Department":
-                case "department":
-                    $areas = Department::where('id', $area_id)
-                        ->with('sections.units')
-                        ->get();
-                    break;
-                case "Section":
-                case "section":
-                    $areas = Section::where('id', $area_id)
-                        ->with('units')
-                        ->get();
-                    break;
-                case "Unit":
-                case "unit":
-                    $areas = Unit::where('id', $area_id)
-                        ->get();
-                    break;
-                default:
-                    // Handle default case or error scenario
-                    return response()->json(['message' => 'Invalid user area'], Response::HTTP_BAD_REQUEST);
-            }
-
-            // Log the retrieved areas for debugging
-            Log::info('Retrieved Areas: ', $areas->toArray());
-
-            $nested_area = $this->formatNestedAreas($areas);
-
-            return response()->json([
-                'data' => $nested_area,
-                'message' => 'Successfully retrieved nested areas based on user\'s role.'
-            ], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'test', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function approvalStatus(Request $request)
-    {
-        try {
-            $status = $request->input('status'); // 'approved', 'declined', 'cancelled'
-
-            $leave_applications = LeaveApplication::where('status', $status)->get();
-
-            return response()->json([
-                'count' => COUNT($leave_applications),
-                'data' => $leave_applications
-            ], Response::HTTP_OK);
-        } catch (\Throwable $e) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'approvalStatus', $e->getMessage());
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function leave_type(Request $request)
-    {
-        try {
-            $leave_type_id = $request->input('leave_type_id');
-
-            $leave_applications = LeaveApplication::where('leave_type_id', $leave_type_id)->get();
-
-            return response()->json([
-                'count' => COUNT($leave_applications),
-                'data' => $leave_applications
-            ], Response::HTTP_OK);
-        } catch (\Throwable $e) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'leave_type', $e->getMessage());
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function dateRange(Request $request)
-    {
-        try {
-            $date_from = $request->input('date_from');
-            $date_to = $request->input('date_to');
-
-            $leave_applications = LeaveApplication::whereBetween('date_from', [$date_from, $date_to])->get();
-
-            return response()->json([
-                'count' => count($leave_applications),
-                'data' => $leave_applications
-            ], Response::HTTP_OK);
-        } catch (\Throwable $e) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'dateRange', $e->getMessage());
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /* ------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
-
     public function filterLeaveApplication(Request $request)
     {
         try {
-            // Retrieve request parameters
+            $area = $request->sector;
             $report_format = $request->report_format;
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-            $area_under = $request->area_under;
-            $leave_type_ids = $request->leave_type_ids ?? []; // Ensure leave_type_ids is an array
             $status = $request->status;
+            $area_under = $request->area_under;
+            $area_id = $request->area_id;
+            $leave_type_ids = $request->leave_type_ids ? explode(',', $request->leave_type_ids) : [];
             $date_from = $request->date_from;
             $date_to = $request->date_to;
-            $sort_order = $request->sort_by;
-
+            $sort_by = $request->sort_by;
+            $limit = $request->limit;
             $areas = [];
 
-            switch ($report_format) {
-                case 'area':
-                case 'Area':
-                    if (empty($sector)) {
-                        // If sector is empty, return all areas
-                        $areas = $this->getAllLeaveApplications($leave_type_ids, $status, $date_from, $date_to, $sort_order);
-                    } else {
-                        switch (strtolower($sector)) {
-                            case 'division':
-                                $areas = $this->getLeaveApplicationsByDivision($area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to, $sort_order);
-                                break;
-                            case 'department':
-                                $areas = $this->getLeaveApplicationsByDepartment($area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to, $sort_order);
-                                break;
-                            case 'section':
-                                $areas = $this->getLeaveApplicationsBySection($area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to, $sort_order);
-                                break;
-                            case 'unit':
-                                $areas = $this->getLeaveApplicationsByUnit($area_id, $leave_type_ids, $status, $date_from, $date_to, $sort_order);
-                                break;
-                            default:
-                                return response()->json(['message' => 'Invalid area type'], Response::HTTP_BAD_REQUEST);
-                        }
-                    }
-                    break;
-                case 'employee':
-                case 'Employee':
-                    // Get leave applications by employee
-                    $areas = $this->getLeaveApplicationsByEmployee($status, $leave_type_ids, $date_from, $date_to, $sort_order);
-                    break;
-                default:
-                    return response()->json(['areas' => 'Invalid report format']);
+
+            // Determine if all other parameters are empty
+            $all_params_empty = empty($area) && empty($status) && empty($area_under) && empty($area_id) && empty($leave_type_ids) && empty($date_from) && empty($date_to) && empty($sort_by) && empty($limit);
+
+            if ($all_params_empty) {
+                $areas = $this->getAllAppropriateData($report_format);
+            } else {
+                if (strtolower($report_format) === 'area') {
+                    $areas = $this->getAreaReport($area, $area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to);
+                } elseif (strtolower($report_format) === 'employee') {
+                    $areas = $this->getEmployeeReport($status, $area, $area_id, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                } else {
+                    return response()->json(['message' => 'Invalid report format'], Response::HTTP_OK);
+                }
             }
 
-            return response()->json(['data' => $areas]);
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved areas.'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'generateLeaveReport', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterLeaveApplication', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    private function getAllLeaveApplications($leave_type_ids, $status, $date_from, $date_to, $sort_order)
+    private function getAllAppropriateData($report_format)
     {
         $areas = [];
 
-        // Fetch all divisions
-        $divisions = Division::all();
-        foreach ($divisions as $division) {
-            $areas = array_merge($areas, $this->getLeaveApplicationsByDivision($division->id, $leave_type_ids, 'all', $status, $date_from, $date_to, $sort_order));
-        }
-
-        usort($areas, fn ($a, $b) => $sort_order === 'highest' ? $b['total_leave_count'] <=> $a['total_leave_count'] : $a['total_leave_count'] <=> $b['total_leave_count']);
-        return $areas;
-    }
-
-    private function getLeaveApplicationsByDivision($division_id, $leave_type_ids, $area_under, $status, $date_from, $date_to, $sort_order)
-    {
-        $areas = [];
-        $division = Division::find($division_id);
-        if ($division) {
-            // Count leaves directly under the division
-            $totalLeaveCount = $this->getLeaveCount($leave_type_ids, 'division_id', $division->id, $status, $date_from, $date_to);
-            $leaveCountWithPay = $this->getLeaveCountWithPay($leave_type_ids, 'division_id', $division->id, $status, $date_from, $date_to);
-            $leaveCountWithoutPay = $this->getLeaveCountWithoutPay($leave_type_ids, 'division_id', $division->id, $status, $date_from, $date_to);
-            $receivedCount = $this->getReceivedCount($leave_type_ids, 'division_id', $division->id, $status, $date_from, $date_to);
-            $cancelledCount = $this->getCancelledCount($leave_type_ids, 'division_id', $division->id, $status, $date_from, $date_to);
-            $otherLeaveTypes = $this->getOtherLeaveTypesCounts($leave_type_ids, 'division_id', $division->id, $status, $date_from, $date_to);
-
-            $areas[] = $this->formatAreaData($division->id, 'Division', $division->name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes);
-
-            if ($area_under === 'all' || $area_under === 'All') {
-                // Get departments directly under the division
-                $departments = Department::where('division_id', $division_id)->get();
-
-                foreach ($departments as $department) {
-                    $totalLeaveCount = $this->getLeaveCount($leave_type_ids, 'department_id', $department->id, $status, $date_from, $date_to);
-                    $leaveCountWithPay = $this->getLeaveCountWithPay($leave_type_ids, 'department_id', $department->id, $status, $date_from, $date_to);
-                    $leaveCountWithoutPay = $this->getLeaveCountWithoutPay($leave_type_ids, 'department_id', $department->id, $status, $date_from, $date_to);
-                    $receivedCount = $this->getReceivedCount($leave_type_ids, 'department_id', $department->id, $status, $date_from, $date_to);
-                    $cancelledCount = $this->getCancelledCount($leave_type_ids, 'department_id', $department->id, $status, $date_from, $date_to);
-                    $otherLeaveTypes = $this->getOtherLeaveTypesCounts($leave_type_ids, 'department_id', $department->id, $status, $date_from, $date_to);
-
-                    $areas[] = $this->formatAreaData($department->id, 'Department', $department->name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes);
-
-                    // Get sections directly under the department
-                    $sections = Section::where('department_id', $department->id)->get();
-                    foreach ($sections as $section) {
-                        $totalLeaveCount = $this->getLeaveCount($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                        $leaveCountWithPay = $this->getLeaveCountWithPay($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                        $leaveCountWithoutPay = $this->getLeaveCountWithoutPay($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                        $receivedCount = $this->getReceivedCount($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                        $cancelledCount = $this->getCancelledCount($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                        $otherLeaveTypes = $this->getOtherLeaveTypesCounts($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-
-                        $areas[] = $this->formatAreaData($section->id, 'Section', $section->name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes);
-
-                        // Get all units directly under the section
-                        $units = Unit::where('section_id', $section->id)->get();
-                        foreach ($units as $unit) {
-                            $totalLeaveCount = $this->getLeaveCount($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                            $leaveCountWithPay = $this->getLeaveCountWithPay($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                            $leaveCountWithoutPay = $this->getLeaveCountWithoutPay($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                            $receivedCount = $this->getReceivedCount($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                            $cancelledCount = $this->getCancelledCount($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                            $otherLeaveTypes = $this->getOtherLeaveTypesCounts($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-
-                            $areas[] = $this->formatAreaData($unit->id, 'Unit', $unit->name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes);
-                        }
-                    }
-                }
-
-                // Get sections directly under the division (if any) that are not under any department
-                $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
-                foreach ($sections as $section) {
-                    $totalLeaveCount = $this->getLeaveCount($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                    $leaveCountWithPay = $this->getLeaveCountWithPay($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                    $leaveCountWithoutPay = $this->getLeaveCountWithoutPay($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                    $receivedCount = $this->getReceivedCount($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                    $cancelledCount = $this->getCancelledCount($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-                    $otherLeaveTypes = $this->getOtherLeaveTypesCounts($leave_type_ids, 'section_id', $section->id, $status, $date_from, $date_to);
-
-                    $areas[] = $this->formatAreaData($section->id, 'Section', $section->name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes);
-
-                    // Get all units directly under the section
-                    $units = Unit::where('section_id', $section->id)->get();
-                    foreach ($units as $unit) {
-                        $totalLeaveCount = $this->getLeaveCount($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                        $leaveCountWithPay = $this->getLeaveCountWithPay($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                        $leaveCountWithoutPay = $this->getLeaveCountWithoutPay($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                        $receivedCount = $this->getReceivedCount($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                        $cancelledCount = $this->getCancelledCount($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-                        $otherLeaveTypes = $this->getOtherLeaveTypesCounts($leave_type_ids, 'unit_id', $unit->id, $status, $date_from, $date_to);
-
-                        $areas[] = $this->formatAreaData($unit->id, 'Unit', $unit->name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes);
-                    }
-                }
-            }
-        } else {
-            // If division_id is empty, get all divisions
+        if ($report_format === 'area') {
+            // Fetch all data for area report
             $divisions = Division::all();
             foreach ($divisions as $division) {
-                $areas = array_merge($areas, $this->getLeaveApplicationsByDivision($division->id, $leave_type_ids, $area_under, $status, $date_from, $date_to, $sort_order));
+                $areas = array_merge($areas, $this->getDivisionReport($division->id, [], 'all', null, null, null));
+            }
+        } elseif ($report_format === 'employee') {
+            // Fetch all data for employee report
+            $leave_applications = LeaveApplication::all();
+            foreach ($leave_applications as $leave_application) {
+                $areas[] = [
+                    'leave_application' => $leave_application,
+                    'employee_areas' => $this->getEmployeeAreas(Division::class, $leave_application->employeeProfile->division_id, 'division', 'all')
+                ];
             }
         }
 
-        usort($areas, fn ($a, $b) => $sort_order === 'highest' ? $b['total_leave_count'] <=> $a['total_leave_count'] : $a['total_leave_count'] <=> $b['total_leave_count']);
         return $areas;
     }
 
-    // Similar updates for getLeaveApplicationsByDepartment, getLeaveApplicationsBySection, getLeaveApplicationsByUnit methods
-
-    private function getLeaveCount($leave_type_ids, $area_column, $area_id, $status, $date_from, $date_to)
+    private function getAreaReport($area, $area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to)
     {
-        return LeaveApplication::whereIn('leave_type_id', $leave_type_ids)
-            ->whereHas('employeeProfile', function ($query) use ($area_column, $area_id) {
-                $query->whereHas('assignedAreas', function ($q) use ($area_column, $area_id) {
-                    $q->where($area_column, $area_id);
-                });
-            })
-            ->orWhere('status', $status)
-            ->orWhereBetween('date_from', [$date_from, $date_to])
-            ->count();
+        $areas = [];
+
+        switch (strtolower($area)) {
+            case "division":
+                $areas = $this->getDivisionReport($area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to);
+                break;
+            case "department":
+                $areas = $this->getDepartmentReport($area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to);
+                break;
+            case "section":
+                $areas = $this->getSectionReport($area_id, $leave_type_ids, $area_under, $status, $date_from, $date_to);
+                break;
+            case "unit":
+                $areas = $this->getUnitReport($area_id, $leave_type_ids, $status, $date_from, $date_to);
+                break;
+        }
+
+        usort($areas, function ($a, $b) {
+            return $b['leave_count'] - $a['leave_count'];
+        });
+
+        return $areas;
     }
 
-    private function getLeaveCountWithPay($leave_type_ids, $area_column, $area_id, $status, $date_from, $date_to)
+    private function getDivisionReport($division_id, $leave_type_ids, $area_under, $status, $date_from, $date_to)
     {
-        return LeaveApplication::whereIn('leave_type_id', $leave_type_ids)
-            ->where('without_pay', 0) // Ensure the leave is with pay
-            ->whereHas('employeeProfile', function ($query) use ($area_column, $area_id) {
-                $query->whereHas('assignedAreas', function ($q) use ($area_column, $area_id) {
-                    $q->where($area_column, $area_id);
-                });
-            })
-            ->orWhere('status', $status)
-            ->orWhereBetween('date_from', [$date_from, $date_to])
-            ->count();
+        $areas = [];
+        if (!$division_id || empty($division_id)) {
+            $divisions = Division::all();
+            foreach ($divisions as $division) {
+                $areas = array_merge($areas, $this->getDivisionReport($division->id, [], '', null, null, null));
+            }
+
+            return $areas;
+        }
+
+        $division = Division::find($division_id);
+        $areas = [$this->calculateLeaveCounts($division, 'division', $leave_type_ids, $status, $date_from, $date_to)];
+
+        if (strtolower($area_under) === 'all') {
+            $departments = Department::where('division_id', $division_id)->get();
+            foreach ($departments as $department) {
+                $areas[] = $this->calculateLeaveCounts($department, 'department', $leave_type_ids, $status, $date_from, $date_to);
+                $sections = Section::where('department_id', $department->id)->get();
+                foreach ($sections as $section) {
+                    $areas[] = $this->calculateLeaveCounts($section, 'section', $leave_type_ids, $status, $date_from, $date_to);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $areas[] = $this->calculateLeaveCounts($unit, 'unit', $leave_type_ids, $status, $date_from, $date_to);
+                    }
+                }
+            }
+            // Get sections directly under the division (if any) that are not under any department
+            $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
+            foreach ($sections as $section) {
+                $areas[] = $this->calculateLeaveCounts($section, 'section', $leave_type_ids, $status, $date_from, $date_to);
+                // Get all units directly under the section
+                $units = Unit::where('section_id', $section->id)->get();
+                foreach ($units as $unit) {
+                    $areas[] = $this->calculateLeaveCounts($unit, 'unit', $leave_type_ids, $status, $date_from, $date_to);
+                }
+            }
+        }
+
+        return $areas;
     }
 
-    private function getLeaveCountWithoutPay($leave_type_ids, $area_column, $area_id, $status, $date_from, $date_to)
+    private function getDepartmentReport($department_id, $leave_type_ids, $area_under, $status, $date_from, $date_to)
     {
-        return LeaveApplication::whereIn('leave_type_id', $leave_type_ids)
-            ->where('without_pay', 1) // Ensure the leave is without pay
-            ->whereHas('employeeProfile', function ($query) use ($area_column, $area_id) {
-                $query->whereHas('assignedAreas', function ($q) use ($area_column, $area_id) {
-                    $q->where($area_column, $area_id);
-                });
-            })
-            ->orWhere('status', $status)
-            ->orWhereBetween('date_from', [$date_from, $date_to])
-            ->count();
+        $areas = [];
+        if (!$department_id || empty($department_id)) {
+            $departments = Division::all();
+            foreach ($departments as $department) {
+                $areas = array_merge($areas, $this->getDepartmentReport($department->id, [], '', null, null, null));
+            }
+
+            return $areas;
+        }
+
+        $department = Department::find($department_id);
+        $areas = [$this->calculateLeaveCounts($department, 'department', $leave_type_ids, $status, $date_from, $date_to)];
+
+        if (strtolower($area_under) === 'all') {
+            $sections = Section::where('department_id', $department_id)->get();
+            foreach ($sections as $section) {
+                $areas[] = $this->calculateLeaveCounts($section, 'section', $leave_type_ids, $status, $date_from, $date_to);
+                $units = Unit::where('section_id', $section->id)->get();
+                foreach ($units as $unit) {
+                    $areas[] = $this->calculateLeaveCounts($unit, 'unit', $leave_type_ids, $status, $date_from, $date_to);
+                }
+            }
+        }
+
+        return $areas;
     }
 
-    private function getReceivedCount($leave_type_ids, $area_column, $area_id, $status, $date_from, $date_to)
+    private function getSectionReport($section_id, $leave_type_ids, $area_under, $status, $date_from, $date_to)
     {
-        return LeaveApplication::whereIn('leave_type_id', $leave_type_ids)
-            ->whereHas('employeeProfile', function ($query) use ($area_column, $area_id) {
-                $query->whereHas('assignedAreas', function ($q) use ($area_column, $area_id) {
-                    $q->where($area_column, $area_id);
-                });
-            })
-            ->orWhere('status', 'received')
-            ->orWhereBetween('date_from', [$date_from, $date_to])
-            ->count();
+        $areas = [];
+        if (!$section_id || empty($section_id)) {
+            $sections = Section::all();
+            foreach ($sections as $section) {
+                $areas = array_merge($areas, $this->getSectionReport($section->id, [], '', null, null, null));
+            }
+
+            return $areas;
+        }
+
+        $section = Section::find($section_id);
+        $areas = [$this->calculateLeaveCounts($section, 'section', $leave_type_ids, $status, $date_from, $date_to)];
+
+        if (strtolower($area_under) === 'all') {
+            $units = Unit::where('section_id', $section_id)->get();
+            foreach ($units as $unit) {
+                $areas[] = $this->calculateLeaveCounts($unit, 'unit', $leave_type_ids, $status, $date_from, $date_to);
+            }
+        }
+
+        return $areas;
     }
 
-    private function getCancelledCount($leave_type_ids, $area_column, $area_id, $status, $date_from, $date_to)
+    private function getUnitReport($unit_id, $leave_type_ids, $status, $date_from, $date_to)
     {
-        return LeaveApplication::whereIn('leave_type_id', $leave_type_ids)
-            ->whereHas('employeeProfile', function ($query) use ($area_column, $area_id) {
-                $query->whereHas('assignedAreas', function ($q) use ($area_column, $area_id) {
-                    $q->where($area_column, $area_id);
-                });
-            })
-            ->orWhereNotNull('cancelled_at')
-            ->orWhereBetween('date_from', [$date_from, $date_to])
-            ->count();
+        $areas = [];
+        if (!$unit_id || empty($unit_id)) {
+            $units = Unit::all();
+            foreach ($units as $unit) {
+                $areas = array_merge($areas, $this->getUnitReport($unit->id, [], '', null, null, null));
+            }
+
+            return $areas;
+        }
+        $unit = Unit::find($unit_id);
+        return [$this->calculateLeaveCounts($unit, 'unit', $leave_type_ids, $status, $date_from, $date_to)];
     }
 
-    private function getOtherLeaveTypesCounts($leave_type_ids, $area_column, $area_id, $status, $date_from, $date_to)
+    private function calculateLeaveCounts($area, $sector, $leave_type_ids, $status, $date_from, $date_to)
     {
-        // Fetch all leave types except the current ones
-        $leaveTypes = LeaveType::whereNotIn('id', $leave_type_ids)->get();
+        $areaData = [
+            'id' => $area->id . '-' . $sector,
+            'name' => $area->name,
+            'sector' => ucfirst($sector),
+            'leave_with_pay_count' => 0,
+            'leave_without_pay_count' => 0,
+            'leave_count' => 0,
+            'leave_types' => []
+        ];
 
-        $leaveCounts = [];
+        $leave_with_pay_count_total = 0;
+        $leave_without_pay_count_total = 0;
+        $leave_count_total = 0;
 
-        foreach ($leaveTypes as $leaveType) {
-            $count = LeaveApplication::where('leave_type_id', $leaveType->id)
-                ->whereHas('employeeProfile', function ($query) use ($area_column, $area_id) {
-                    $query->whereHas('assignedAreas', function ($q) use ($area_column, $area_id) {
-                        $q->where($area_column, $area_id);
+        if (empty($leave_type_ids)) {
+            // Fetch all leave types if no specific leave type IDs are provided
+            $leave_types = LeaveType::all();
+        } else {
+            $leave_types = LeaveType::whereIn('id', $leave_type_ids)->get();
+        }
+
+        foreach ($leave_types as $leave_type) {
+            $query = LeaveApplication::where('leave_type_id', $leave_type->id)
+                ->whereHas('employeeProfile', function ($query) use ($area, $sector) {
+                    $query->whereHas('assignedArea', function ($q) use ($area, $sector) {
+                        $q->where($sector . '_id', $area->id);
                     });
-                })
-                ->orWhere(function ($query) use ($status, $date_from, $date_to) {
-                    $query->orWhere('status', $status)
-                        ->orWhereBetween('date_from', [$date_from, $date_to]);
-                })
-                ->count();
+                });
 
-            $leaveCounts[] = [
-                'leave_type_id' => $leaveType->id,
-                'leave_type_name' => $leaveType->name,
-                'leave_count' => $count,
+            if ($status) {
+                $query->where('status', $status);
+            }
+
+            if ($date_from && $date_to) {
+                $query->whereBetween('date_from', [$date_from, $date_to]);
+            }
+
+            $leave_count = $query->count();
+
+            $leave_with_pay_count = $query->clone()->where('without_pay', 0)->count();
+            $leave_without_pay_count = $query->clone()->where('without_pay', 1)->count();
+
+            $leave_with_pay_count_total += $leave_with_pay_count;
+            $leave_without_pay_count_total += $leave_without_pay_count;
+            $leave_count_total += $leave_count;
+
+            $areaData['leave_types'][] = [
+                'leave_type_id' => $leave_type->id,
+                'leave_type_name' => $leave_type->name,
+                'leave_type_code' => $leave_type->code,
+                'leave_type_count' => $leave_count,
             ];
         }
 
-        return $leaveCounts ?? []; // Ensure leaveCounts is an array
+        $areaData['leave_with_pay_count'] = $leave_with_pay_count_total;
+        $areaData['leave_without_pay_count'] = $leave_without_pay_count_total;
+        $areaData['leave_count'] = $leave_count_total;
+
+        return $areaData;
     }
 
-    private function formatAreaData($id, $sector, $name, $totalLeaveCount, $leaveCountWithPay, $leaveCountWithoutPay, $receivedCount, $cancelledCount, $otherLeaveTypes)
+    private function getEmployeeReport($status, $area, $area_id, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
-        return [
-            'id' => $id . '-' . strtolower($sector),
-            'name' => $name,
-            'sector' => $sector,
-            'total_leave_count' => $totalLeaveCount,
-            'leave_count_with_pay' => $leaveCountWithPay,
-            'leave_count_without_pay' => $leaveCountWithoutPay,
-            'received_count' => $receivedCount,
-            'cancelled_count' => $cancelledCount,
-            'other_leave_types' => $otherLeaveTypes
-        ];
+        $leave_applications = LeaveApplication::query();
+
+        if ($status) {
+            $leave_applications->where('status', $status);
+        }
+
+        if ($date_from && $date_to) {
+            $leave_applications->whereBetween('date_from', [$date_from, $date_to]);
+        }
+
+        if ($sort_by) {
+            $leave_applications->orderBy($sort_by);
+        }
+
+        if ($limit) {
+            $leave_applications->limit($limit);
+        }
+
+        $leave_applications = $leave_applications->get();
+
+        $areas = [];
+
+        foreach ($leave_applications as $leave_application) {
+            $employee_profile_id = $leave_application->employee_profile_id;
+
+            // Get employee's assigned areas
+            $employee = AssignArea::where('employee_profile_id', $employee_profile_id)->first();
+            $employee_areas = [];
+
+            if ($employee) {
+                switch (strtolower($area)) {
+                    case "division":
+                        $employee_areas = $this->getEmployeeAreas(Division::class, $area_id, 'division', $area_under);
+                        break;
+                    case "department":
+                        $employee_areas = $this->getEmployeeAreas(Department::class, $area_id, 'department', $area_under);
+                        break;
+                    case "section":
+                        $employee_areas = $this->getEmployeeAreas(Section::class, $area_id, 'section', $area_under);
+                        break;
+                    case "unit":
+                        $employee_areas = $this->getEmployeeAreas(Unit::class, $area_id, 'unit', $area_under);
+                        break;
+                }
+            }
+
+            $areas[] = [
+                'leave_application' => $leave_application,
+                'employee_areas' => $employee_areas
+            ];
+        }
+
+        return $areas;
+    }
+
+    private function getEmployeeAreas($model, $area_id, $sector, $area_under)
+    {
+        $areas = [];
+        $area = $model::find($area_id);
+        if ($area) {
+            $areas[] = ['id' => $area_id . '-' . $sector, 'name' => $area->name, 'sector' => ucfirst($sector)];
+            if (strtolower($area_under) === 'all') {
+                switch ($sector) {
+                    case 'division':
+                        $departments = Department::where('division_id', $area_id)->get();
+                        foreach ($departments as $department) {
+                            $areas = array_merge($areas, $this->getEmployeeAreas(Department::class, $department->id, 'department', 'all'));
+                        }
+                        break;
+                    case 'department':
+                        $sections = Section::where('department_id', $area_id)->get();
+                        foreach ($sections as $section) {
+                            $areas = array_merge($areas, $this->getEmployeeAreas(Section::class, $section->id, 'section', 'all'));
+                        }
+                        break;
+                    case 'section':
+                        $units = Unit::where('section_id', $area_id)->get();
+                        foreach ($units as $unit) {
+                            $areas = array_merge($areas, $this->getEmployeeAreas(Unit::class, $unit->id, 'unit', 'all'));
+                        }
+                        break;
+                }
+            }
+        }
+        return $areas;
     }
 }
