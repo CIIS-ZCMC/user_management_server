@@ -171,13 +171,23 @@ class MonthlyWorkHoursController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $data = MonthlyWorkHours::findOrFail($id);
-            $data->delete();
+            $ids = explode(',', $id);
+            $deletedData = [];
 
+            foreach ($ids as $entry) {
+                $data = MonthlyWorkHours::find($entry);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+                if (!$data) {
+                    return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                }
+
+                $data->delete();
+                $deletedData[] = $entry;
+            }
+
+            Helpers::registerSystemLogs($request, end($deletedData), true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' => $data,
+                'data' => $deletedData,
                 'message' => "Data Successfully deleted"
             ], Response::HTTP_OK);
 
