@@ -1934,7 +1934,6 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end =  Carbon::parse($request->date_to);
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
-
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
@@ -1942,6 +1941,7 @@ class LeaveApplicationController extends Controller
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
+                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -2004,7 +2004,8 @@ class LeaveApplicationController extends Controller
 
             $user = $request->user;
             $employee_profile = $user;
-
+            $start = Carbon::parse($request->date_from);
+            $end =  Carbon::parse($request->date_to);
             $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -2013,6 +2014,18 @@ class LeaveApplicationController extends Controller
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
             $updateData = [];
+
+
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $leave_application->employee_profile_id);
+
+            if ($overlapExists) {
+                return response()->json(['message' => 'The employee already has an application for the same dates.'], Response::HTTP_FORBIDDEN);
+            }
+
+            $checkSchedule = Helpers::hasSchedule($start, $end, $leave_application->employee_profile_id);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "The employee doesn't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
 
             if (!is_null($request->date_from)) {
                 $updateData['date_from'] = $request->date_from;
