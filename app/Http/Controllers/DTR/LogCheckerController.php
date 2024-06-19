@@ -82,8 +82,8 @@ class LogCheckerController extends Controller
             }
         }
 
-        $biologs = $biologs[0] ?? [];
-
+        $biologs = $biologs ?? [];
+        $biologs = $this->array_flatten($biologs);
 
 
         return view('Retrievedlogs',compact('dtr','dtrlogs','biologs','name','employee_id'));
