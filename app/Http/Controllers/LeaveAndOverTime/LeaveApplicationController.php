@@ -2046,7 +2046,7 @@ class LeaveApplicationController extends Controller
 
             //NOTIFICATIONS
             $title = $leave_type->name . " request date change";
-            $description = "Your leave request for " . $leave_type->name . " on " . $leave_application->date_from . "to" . $leave_application->date_to . " has been successfully changed.";
+            $description = "Your leave request for " . $leave_type->name . " from " . $leave_application->date_from . " to " . $leave_application->date_to . " has been successfully changed.";
 
             $notification = Notifications::create([
                 "title" => $title,
