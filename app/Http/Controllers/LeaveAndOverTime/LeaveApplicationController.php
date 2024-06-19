@@ -1934,7 +1934,6 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end =  Carbon::parse($request->date_to);
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
-
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
@@ -1942,6 +1941,7 @@ class LeaveApplicationController extends Controller
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
+                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -1992,6 +1992,81 @@ class LeaveApplicationController extends Controller
                 'data' => new LeaveApplicationResource($leave_application),
                 'credits' => $result ? $result : [],
                 'message' => 'Rescheduled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function changeDate($id, AuthPinApprovalRequest $request)
+    {
+        try {
+
+            $user = $request->user;
+            $employee_profile = $user;
+            $start = Carbon::parse($request->date_from);
+            $end =  Carbon::parse($request->date_to);
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+            $updateData = [];
+
+
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $leave_application->employee_profile_id);
+
+            if ($overlapExists) {
+                return response()->json(['message' => 'The employee already has an application for the same dates.'], Response::HTTP_FORBIDDEN);
+            }
+
+            $checkSchedule = Helpers::hasSchedule($start, $end, $leave_application->employee_profile_id);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "The employee doesn't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
+
+            if (!is_null($request->date_from)) {
+                $updateData['date_from'] = $request->date_from;
+            }
+
+            if (!is_null($request->date_to)) {
+                $updateData['date_to'] = $request->date_to;
+            }
+            $leave_application->update($updateData);
+
+            $result = [];
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Change Leave Application Date '
+            ]);
+
+            //NOTIFICATIONS
+            $title = $leave_type->name . " request date change";
+            $description = "Your leave request for " . $leave_type->name . " on " . $leave_application->date_from . " has been successfully changed.";
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/leave-applications',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $leave_application->employee_profile_id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($leave_application->employee_profile_id),
+                "data" => new NotificationResource($user_notification)
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
+                'message' => 'The date on leave application has been successfully changed.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
