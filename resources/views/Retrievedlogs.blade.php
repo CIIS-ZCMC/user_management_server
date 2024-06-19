@@ -13,6 +13,11 @@
         margin: 0;
 
     }
+    @media only screen and (max-width: 796px) {
+        #containerD {
+            width: 100%;
+        }
+    }
 
 </style>
 <body>
@@ -53,7 +58,7 @@ $(document).ready(function(){
 
 
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-12" id="containerD">
             <h2 style="display: flex;justify-content:space-between">
                 <div>
 
@@ -93,7 +98,7 @@ $(document).ready(function(){
                         </thead>
                         <tbody>
                             @if ($dtr)
-                              <tr  style="text-align: center" >
+                              <tr  style="text-align: center;font-size:35px" >
                                 <td>{{$dtr->first_in ? date('h:i a',strtotime($dtr->first_in)): "--:--" }}</td>
                                 <td>{{$dtr->first_out ? date('h:i a',strtotime($dtr->first_out)): "--:--" }}</td>
                                 <td>{{$dtr->second_in ? date('h:i a',strtotime($dtr->second_in)): "--:--" }}</td>
@@ -120,61 +125,63 @@ $(document).ready(function(){
                             <h4>
                                 Logs recorded and their sequence.
                             </h4>
-                            <table class="table table-striped table-striped-columns">
-                                <thead>
-                                  <tr class="table-secondary">
-                                    <th scope="col">Sequence</th>
-                                    <th scope="col">Entry</th>
-                                    <th scope="col">Punch</th>
-                                    <th scope="col">Device Name</th>
-                                    <th scope="col">Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                    $dtlogs = [];
-                                        if($dtrlogs){
-                                            $jlogs = json_decode($dtrlogs->json_logs);
-                                         
-                                        }
-                                    @endphp
-                                    @if (isset($jlogs))
-                                    @foreach ($jlogs as $item)
-                                    <tr>
-                                        <td>{{$item->timing + 1}}</td>
-                                        <td>
-                                            {{date('h:i a',strtotime($item->date_time))}}
-                                        </td>
-                                        <td>
-                                            @switch($item->status)
-                                            @case(1)
-                                            <span class="badge bg-warning">Check-OUT</span>
-                                            @break
-                                        @case(0)
-                                        <span class="badge bg-success">Check-IN</span>
-                                            @break
-                                            @case(255)
-                                            <span class="badge bg-primary">Global State</span>
-                                            @break
-                                            @endswitch
-                                        </td>
-                                        <td>
-                                            {{$item->device_name}}
-                                        </td>
-                                        <td>
-                                            @if ($item->entry_status == "Logged")
-                                            <span style="color:gray"> {{$item->entry_status}}</span>
-                                            @else
-                                            <span style="color:rgb(81, 168, 81)"> {{$item->entry_status}}</span>
-                                            @endif
+               <div class="table-responsive">
+                <table class="table table-striped table-striped-columns">
+                    <thead>
+                      <tr class="table-secondary">
+                        <th scope="col">Sequence</th>
+                        <th scope="col">Entry</th>
+                        <th scope="col">Punch</th>
+                        <th scope="col">Device Name</th>
+                        <th scope="col">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                        $dtlogs = [];
+                            if($dtrlogs){
+                                $jlogs = json_decode($dtrlogs->json_logs);
+                             
+                            }
+                        @endphp
+                        @if (isset($jlogs))
+                        @foreach ($jlogs as $item)
+                        <tr style="font-size:35px">
+                            <td>{{$item->timing + 1}}</td>
+                            <td>
+                                {{date('h:i a',strtotime($item->date_time))}}
+                            </td>
+                            <td>
+                                @switch($item->status)
+                                @case(1)
+                                <span class="badge bg-warning">Check-OUT</span>
+                                @break
+                            @case(0)
+                            <span class="badge bg-success">Check-IN</span>
+                                @break
+                                @case(255)
+                                <span class="badge bg-primary">Global State</span>
+                                @break
+                                @endswitch
+                            </td>
+                            <td>
+                                {{$item->device_name}}
+                            </td>
+                            <td>
+                                @if ($item->entry_status == "Logged")
+                                <span style="color:gray"> {{$item->entry_status}}</span>
+                                @else
+                                <span style="color:rgb(81, 168, 81)"> {{$item->entry_status}}</span>
+                                @endif
 
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                    @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                        @endif
 
-                                </tbody>
-                              </table>
+                    </tbody>
+                  </table>
+               </div>
                         </div>
                        </div>
                 </div>
@@ -197,7 +204,7 @@ $(document).ready(function(){
                                 </thead>
                                 <tbody>
                                     @foreach ($biologs as $item)
-                                        <tr>
+                                        <tr style="font-size:35px">
                                             <td>{{date('h:i a',strtotime($item['date_time']))}}</td>
                                             <td>
                                                 @switch($item['status'])

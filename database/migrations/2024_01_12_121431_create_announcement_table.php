@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('content');
+            //long Text
+            $table->longText('content',255);
             $table->json('attachments')->nullable();
             $table->timestamps();
         });
