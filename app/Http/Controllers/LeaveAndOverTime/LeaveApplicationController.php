@@ -204,6 +204,7 @@ class LeaveApplicationController extends Controller
              * HR division
              * Only newly applied leave application
              */
+            $employeeId = $employee_profile->id;
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
                 $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer", "cancelled", "received", "cancelled by user", "cancelled by hrmo", "cancelled by mcc"];
@@ -212,6 +213,57 @@ class LeaveApplicationController extends Controller
                     ->where(function ($query) use ($hrmo, $employeeId) {
                         $query->whereIn('leave_applications.status', $hrmo)
                             ->where('leave_applications.hrmo_officer', $employeeId);
+                    })
+
+                    ->groupBy(
+                        'id',
+                        'employee_profile_id',
+                        'leave_type_id',
+                        'date_from',
+                        'date_to',
+                        'country',
+                        'city',
+                        'is_outpatient',
+                        'illness',
+                        'is_masters',
+                        'is_board',
+                        'is_commutation',
+                        'applied_credits',
+                        'status',
+                        'remarks',
+                        'without_pay',
+                        'reason',
+                        'is_printed',
+                        'print_datetime',
+                        'hrmo_officer',
+                        'recommending_officer',
+                        'approving_officer',
+                        'employee_oic_id',
+                        'is_effective',
+                        'received_at',
+                        'cancelled_at',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // $leave_applications = collect($leave_applications)->filter(function ($leave_application) use ($employeeId) {
+                //     // Keep the leave application if the status is "applied" or if the employee profile ID is not equal to $employeeId
+                //     return $leave_application->status === "applied" || $leave_application->status === "cancelled by user" || $leave_application->status === "cancelled by hrmo" || $leave_application->employee_profile_id !== $employeeId;
+                // })->all();
+
+                return response()->json([
+                    'data' => LeaveApplicationResource::collection($leave_applications),
+                    'message' => 'Retrieve all leave application records.'
+                ], Response::HTTP_OK);
+            } else if ($employeeId == 1) {
+                $employeeId = $employee_profile->id;
+                $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer", "cancelled", "received", "cancelled by user", "cancelled by hrmo", "cancelled by mcc"];
+
+                $leave_applications = LeaveApplication::select('leave_applications.*')
+                    ->where(function ($query) use ($hrmo, $employeeId) {
+                        $query->whereIn('leave_applications.status', $hrmo);
                     })
 
                     ->groupBy(
