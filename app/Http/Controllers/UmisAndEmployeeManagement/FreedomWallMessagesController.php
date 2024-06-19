@@ -16,93 +16,124 @@ use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\FreedomWallMessagesRequest;
 use App\Http\Resources\FreedomWallMessagesResource;
 use App\Models\FreedomWallMessages;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
+use App\Http\Resources\NotificationResource;
+use App\Models\EmployeeProfile;
 
 class FreedomWallMessagesController extends Controller
 {
-    private $CONTROLLER_NAME = 'Civil Service Eligibility';
-    private $PLURAL_MODULE_NAME = 'civil service eligibilities';
-    private $SINGULAR_MODULE_NAME = 'civil service eligibility';
+    private $CONTROLLER_NAME = 'Freedom Wall Messages';
 
     public function index(Request $request)
     {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $civil_service_eligibilities = Cache::remember('freedom-wall-messages', $cacheExpiration, function(){
-                return FreedomWallMessages::all();
-            });
+        try {
+            $freedom_wall_messages = FreedomWallMessages::all();
 
             return response()->json([
-                'data' => FreedomWallMessagesResource::collection($civil_service_eligibilities),
+                'data' => FreedomWallMessagesResource::collection($freedom_wall_messages),
                 'message' => 'Freedom wall messages retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    public function store(FreedomWallMessagesRequest $request)
+    public function store(Request $request)
     {
-        try{
-            $employee_profile = $request->user;
-            $cleanData = [];
+        try {
+            $user = $request->user;
+            $employeeProfile = EmployeeProfile::find($user->id);
+            $employeeName = $employeeProfile->personalInformation->employeeName();
 
-            $cleanData['employee_profile_id'] = $employee_profile->id;
+            $request->validate([
+                'content' => 'required|string',
+                'employee_profile_id' => 'required|exists:employee_profiles,id',
+            ]);
 
-            foreach ($request->all() as $key => $value) {
-                if($key === 'user') continue;
-                $cleanData[$key] = strip_tags($value);
+            $cleanData = [
+                'employee_profile_id' => $employeeProfile->id,
+                'content' => strip_tags($request->input('content'))
+            ];
+
+            $message = FreedomWallMessages::create($cleanData);
+
+
+            // Handle mentions
+            $mentionedEmployeeNames = $this->extractMentionedEmployeeNames($cleanData['content']);
+            $mentionedEmployees = EmployeeProfile::whereIn('name', $mentionedEmployeeNames)->get();
+
+            foreach ($mentionedEmployees as $mentionedEmployee) {
+                $notification = Notifications::create([
+                    "title" => "You've been mentioned in a Freedom Wall Message",
+                    "description" => "{$employeeName} mentioned you in a message on the Freedom Wall.",
+                    "module_path" => '/freedom-wall-message',
+                ]);
+
+                UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $mentionedEmployee->id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($mentionedEmployee->id),
+                    "data" => new NotificationResource($notification)
+                ]);
             }
 
-            $freedom_wall_message = FreedomWallMessages::create($cleanData);
-
             return response()->json([
-                'data' => new FreedomWallMessagesResource($freedom_wall_message), 
-                'message' => 'Freedom wall message created successfully.',
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+                'data' => new FreedomWallMessagesResource($message),
+                'message' => 'Created message successfully.'
+            ], Response::HTTP_CREATED);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    private function extractMentionedEmployeeNames(string $content): array
+    {
+        preg_match_all('/@(\w+)/', $content, $matches);
+        return $matches[1];
+    }
+
+
 
     public function update($id, FreedomWallMessagesRequest $request)
     {
-        try{
+        try {
             $freedom_wall_message = FreedomWallMessages::find($id);
 
-            if(!$freedom_wall_message)
-            {
+            if (!$freedom_wall_message) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $freedom_wall_message -> update($cleanData);
+            $freedom_wall_message->update($cleanData);
 
             return response()->json([
                 'data' =>  new FreedomWallMessagesResource($freedom_wall_message),
-                'message'=> 'Freedom wall details updated.'
+                'message' => 'Freedom wall details updated.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, AuthPinApprovalRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -112,16 +143,15 @@ class FreedomWallMessagesController extends Controller
 
             $freedom_wall_message = FreedomWallMessages::findOrFail($id);
 
-            if(!$freedom_wall_message)
-            {
+            if (!$freedom_wall_message) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $freedom_wall_message -> delete();
+            $freedom_wall_message->delete();
 
             return response()->json(['message' => 'Freedom wall message deleted successfully.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
