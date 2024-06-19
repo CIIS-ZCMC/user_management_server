@@ -2040,7 +2040,7 @@ class LeaveApplicationController extends Controller
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' => 'Change Leave Application Date '
+                'action' => 'Change Leave Application Date'
             ]);
 
             //NOTIFICATIONS
