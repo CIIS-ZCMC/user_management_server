@@ -83,8 +83,9 @@ class LogCheckerController extends Controller
         }
 
         $biologs = $biologs ?? [];
-        $biologs = $this->array_flatten($biologs);
-
+        if(count($biologs)>=1){
+            $biologs = $this->array_flatten($biologs);
+ }
 
         return view('Retrievedlogs',compact('dtr','dtrlogs','biologs','name','employee_id'));
 
