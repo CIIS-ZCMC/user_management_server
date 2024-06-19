@@ -42,7 +42,7 @@ class DesignationController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $designations = Cache::remember('designations', $cacheExpiration, function () {
-                return Designation::all();
+                return Designation::orderBy('name', "asc")->get();
             });
 
             return response()->json([
@@ -408,7 +408,7 @@ class DesignationController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try {
             $user = $request->user;

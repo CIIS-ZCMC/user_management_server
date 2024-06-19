@@ -29,16 +29,28 @@ class ScheduleResource extends JsonResource
             ];
         }
 
+        // Assuming the schedule dates are needed for monthlyWorkingHours
+        $scheduleDates = array_map(function ($schedule) {
+            return $schedule['date'];
+        }, $schedules);
+
+        $totalWorkingHours = $this->total_working_hours ?? 0;
+        $monthlyWorkingHours = count($scheduleDates) > 0 ? $this->schedule->first()->monthlyWorkingHours($scheduleDates[0]) : 0;
+
         return [
             'id' => $this->id,
             'name' => $this->personalInformation->name(),
             'employee_id' => $this->employee_id,
             'biometric_id' => $this->biometric->biometric_id ?? null,
+            'employment_type' => $this->employmentType,
             'designation' => $this->findDesignation()->name,
-            'position' => $this->position(),
-            'total_working_hours' => $this->total_working_hours ?? 0, // Include total working hours here
+            'assigned_area' => $this->assignedArea->findDetails(),
+            'position_type' => $this->findDesignation()->position_type,
+            'shifting' => $this->shifting,
+            // 'position' => $this->position(),
+            'total_working_hours' => $totalWorkingHours,
+            'monthly_working_hours' => $monthlyWorkingHours,
             'schedule' => $schedules
         ];
-
     }
 }

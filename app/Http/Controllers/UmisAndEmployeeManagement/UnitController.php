@@ -5,10 +5,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\NotificationResource;
+use App\Models\Notifications;
 use App\Models\Role;
 use App\Models\Section;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemRole;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -114,7 +117,29 @@ class UnitController extends Controller
                 $access_right->delete();
             }
 
-            Helpers::notifications($employee_profile->id, "You been assigned as unit head of ".$unit->name." unit.");
+              
+            $title = "Congratulations!";
+            $description = "You have been assigned as unit head of " . $unit->name;
+            
+            
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/employees-per-area',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            Helpers::sendNotification([
+                "id" => $employee_profile->employee_id, // EMPLOYEE_ID eg. 2023010250
+                "data" => new NotificationResource($user_notification)
+            ]);
+
+
+            // Helpers::notifications($employee_profile->id, "You been assigned as unit head of ".$unit->name." unit.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([

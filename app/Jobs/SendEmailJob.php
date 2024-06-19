@@ -21,21 +21,25 @@ class SendEmailJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct($email_type, $email, $name, $data)
-    {   
+    {
         $subject = null;
         $body = null;
 
         switch ($email_type) {
             case "leave_request":
-                $subject = 'New Leave Request Submitted';
-                $body = View::make('leave.approving', $data)->render();
+                $subject = 'ZCMC - UMIS New Leave Request';
+                $body = View::make('leave.approving', ['data' => $data])->render();
                 break;
-            case "leave_update":
-                $subject = 'Leave Status Update';
-                $body = View::make('leave.mail', $data)->render();
+            case "overtime_request":
+                $subject = 'New Overtime Request Submitted';
+                $body = View::make('overtime.approving', ['data' => $data])->render();
+                break;
+            case "oic_request":
+                $subject = 'New OIC assigned';
+                $body = View::make('leave.oic', ['data' => $data])->render();
                 break;
             case "new_account":
-                $subject = 'Your Zcmc Portal Account.';
+                $subject = 'Your ZCMC Portal Account.';
                 $body = View::make('mail.credentials', $data)->render();
                 break;
             case "email_verification":
@@ -65,8 +69,8 @@ class SendEmailJob implements ShouldQueue
 
         $attempt = 0;
         Log::channel('custom-info')->info("Test");
-        
-        while($attempt < 3){
+
+        while ($attempt < 3) {
             if ($mail->send($this->email)) {
                 Helpers::infoLog("SendEmailJob", "handle", "Sent Email");
                 return;

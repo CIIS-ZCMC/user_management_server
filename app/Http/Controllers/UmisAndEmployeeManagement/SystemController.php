@@ -112,7 +112,7 @@ class SystemController extends Controller
      * finding a system record according to the ID given and if found
      * the system status will be updated.
      */
-    public function updateSystemStatus($id, AuthPinApprovalRequest $request)
+    public function updateSystemStatus($id, Request $request)
     {
         try{
             $user = $request->user;
@@ -208,7 +208,7 @@ class SystemController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
             $user = $request->user;
@@ -222,6 +222,12 @@ class SystemController extends Controller
 
             if(!$system){
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $system_role = $system->systemRoles;
+
+            if(count($system_role) > 0){
+                return response()->json(['message' => "Record is being used by other data."], Response::HTTP_FORBIDDEN);
             }
 
             $system -> delete();

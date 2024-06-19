@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
@@ -101,6 +102,8 @@ class MonitizationPostingController extends Controller
                 //         ->where('employee_leave_credits.total_leave_credits', '>=', 15);
                 // });
             })
+            ->where('ep.employment_type_id', '!=', 5)
+            ->where('ep.employee_id', '!=', null)
             ->get();
 
         $candidates = [];

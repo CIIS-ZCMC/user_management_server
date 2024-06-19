@@ -5,6 +5,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\EmployeeOvertimeCreditResource;
+use App\Http\Resources\NotificationResource;
 use App\Models\CtoApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CtoApplicationRequest;
@@ -13,6 +14,8 @@ use App\Models\CtoApplicationLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
@@ -60,7 +63,29 @@ class CtoApplicationController extends Controller
             //     ], Response::HTTP_OK);
             // }
 
-            $cto_application = CtoApplication::select('cto_applications.*')
+            if ($employeeId == 1) {
+                $cto_application = CtoApplication::select('cto_applications.*')
+                    ->groupBy(
+                        'id',
+                        'date',
+                        'applied_credits',
+                        'is_am',
+                        'is_pm',
+                        'status',
+                        'purpose',
+                        'recommending_officer',
+                        'approving_officer',
+                        'remarks',
+                        'employee_profile_id',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+            else
+            {
+                $cto_application = CtoApplication::select('cto_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
                     $query->whereIn('cto_applications.status', $recommending)
                         ->where('cto_applications.recommending_officer', $employeeId);
@@ -86,6 +111,9 @@ class CtoApplicationController extends Controller
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
+            }
+
+
 
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_application),
@@ -94,6 +122,41 @@ class CtoApplicationController extends Controller
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function exportCsv()
+    {
+        $cto_applications = CtoApplication::with('employeeProfile')
+            ->where('status', 'approved')
+            ->get();
+        // ->where('status', 'approved')
+
+
+        $response = [];
+
+        foreach ($cto_applications as $cto_application) {
+            $employeeName = $cto_application->employeeProfile->name();
+            $employeeid = $cto_application->employeeProfile->employee_id;
+            $date = $cto_application->date;
+            $is_am = $cto_application->is_am;
+            $is_pm = $cto_application->is_pm;
+            $remarks = $cto_application->remarks;
+            $credits = $cto_application->applied_credits;
+            $applied_date = $cto_application->created_at;
+            $response[] = [
+                'Employee Id' => $employeeid,
+                'Employee Name' => $employeeName,
+                'Date' => $date,
+                'is_am' => $is_am,
+                'is_pm' => $is_pm,
+                'Remarks' => $remarks,
+                'Date Filed' => $applied_date,
+                'Total Credits' => $credits,
+                'Total Days' => $credits,
+
+            ];
+        }
+        return ['data' => $response];
     }
 
     public function CtoApplicationUnderSameArea(Request $request)
@@ -139,11 +202,11 @@ class CtoApplicationController extends Controller
             $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
             $currentYear = Carbon::now()->year;
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $user->id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -178,6 +241,8 @@ class CtoApplicationController extends Controller
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
+            $employeeProfile = EmployeeProfile::find($data->employee_profile_id);
+            $officer = '';
 
             if ($request->status === 'approved') {
                 switch ($data->status) {
@@ -189,6 +254,7 @@ class CtoApplicationController extends Controller
                     case 'for approving approval':
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
+
                         break;
 
                         // default:
@@ -203,8 +269,10 @@ class CtoApplicationController extends Controller
 
                 if ($employee_profile->id === $cto_application_recommending) {
                     $status = 'declined by recommending officer';
+                    $officer = 'Recommending';
                 } else if ($employee_profile->id === $cto_application_approving) {
                     $status = 'declined by approving officer';
+                    $officer = 'Approving';
                 }
                 $log_action = 'Request Declined';
             }
@@ -217,21 +285,92 @@ class CtoApplicationController extends Controller
             $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
 
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $data->employee_profile_id)
-            ->where('is_expired', 0)
-            ->orderBy('valid_until', 'asc')
-            ->get();
+                ->where('is_expired', 0)
+                ->orderBy('valid_until', 'asc')
+                ->get();
 
 
             $currentYear = Carbon::now()->year;
 
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $data->employee_profile_id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
+
+            if ($data->status === 'approved') {
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Compensatory Time-Off request approved",
+                    "description" => "Your compensatory time-off request has been approved by your Approving Officer. ",
+                    "module_path" => '/cto',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            } else if ($data->status === 'declined by recommending officer' || $data->status === 'declined by approving officer') {
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Compensatory Time-Off request declined",
+                    "description" => "Your compensatory time-off request has been declined by your" . $officer . " Officer. ",
+                    "module_path" => '/cto',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            } else {
+                //NOTIFS
+                //NEXT APPROVING
+                $notification = Notifications::create([
+                    "title" =>  "New Compensatory Time-Off request",
+                    "description" => $employeeProfile->personalInformation->name() . " filed a new compensatory time-off request.",
+                    "module_path" => '/cto-requests',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->approving_officer,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->approving_officer),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Compensatory Time-Off request approved",
+                    "description" => "Your compensatory time-off request has been approved by your Recommending Officer. ",
+                    "module_path" => '/cto',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
 
             return response()->json([
                 'data' => CtoApplicationResource::collection(CtoApplication::where('id', $data->id)->get()),
@@ -366,6 +505,7 @@ class CtoApplicationController extends Controller
 
                 $totalEarnedCredits = $overtimeCredits->sum('earned_credit_by_hour');
                 $appliedCredits = $value->applied_credits;
+
                 if ($appliedCredits > $totalEarnedCredits) {
 
                     $failed[] = $value;
@@ -394,20 +534,6 @@ class CtoApplicationController extends Controller
 
                     $credits = $value->applied_credits;
                     $cto_application = CtoApplication::create($cleanData);
-
-                    $current_overtime_credit = $employee_credit->earned_credit_by_hour;
-                    $earned_credit = $employee_credit->earned_credit_by_hour;
-                    $used_credit = $employee_credit->used_credit_by_hour;
-                    // $employee_credit->where('valid_until', $first_valid_until)->update(['earned_credit_by_hour' => $earned_credit - $credits, 'used_credit_by_hour' => $used_credit + $credits]);
-                    // $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
-                    // $logs =  EmployeeOvertimeCreditLog::create([
-                    //     'employee_ot_credit_id' => $employee_credit->id,
-                    //     'cto_application_id' => $cto_application->id,
-                    //     'action' => 'deduct',
-                    //     'reason' => 'Apply',
-                    //     'previous_overtime_hours' => $current_overtime_credit,
-                    //     'hours' => $value->applied_credits
-                    // ]);
 
                     $appliedCredits = $credits;
                     $remainingCredits = $appliedCredits;
@@ -444,6 +570,28 @@ class CtoApplicationController extends Controller
                         'action' => 'Applied'
                     ]);
 
+                    $employeeProfile = EmployeeProfile::find($employeeId);
+                    $title = "New Compensatory Time Off request";
+                    $description = $employeeProfile->personalInformation->name() . " filed a new compensatory time-off request.";
+
+
+                    $notification = Notifications::create([
+                        "title" => $title,
+                        "description" => $description,
+                        "module_path" => '/cto-requests',
+                    ]);
+
+                    $user_notification = UserNotifications::create([
+                        'notification_id' => $notification->id,
+                        'employee_profile_id' => $hrmo_officer,
+                    ]);
+
+                    Helpers::sendNotification([
+                        "id" => Helpers::getEmployeeID($hrmo_officer),
+                        "data" => new NotificationResource($user_notification)
+                    ]);
+
+
                     $cto_applications[] = $cto_application;
                 }
             }
@@ -469,11 +617,11 @@ class CtoApplicationController extends Controller
 
             $currentYear = Carbon::now()->year;
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $employeeId)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -545,19 +693,19 @@ class CtoApplicationController extends Controller
             ]);
 
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)
-            ->where('is_expired', 0)
-            ->orderBy('valid_until', 'asc')
-            ->get();
+                ->where('is_expired', 0)
+                ->orderBy('valid_until', 'asc')
+                ->get();
 
 
             $currentYear = Carbon::now()->year;
 
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $cto_application->employee_profile_id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -650,6 +798,12 @@ class CtoApplicationController extends Controller
             if ($existingCredit) {
                 $existingCredit->earned_credit_by_hour += $creditValue;
                 $existingCredit->save();
+                $employee = EmployeeOvertimeCreditLog::create([
+                    'employee_ot_credit_id' => $employeeId,
+                    'action' => 'add',
+                    'reason' => 'Update Credit',
+                    'hours' => $creditValue
+                ]);
             } else {
 
                 $newCredit = EmployeeOvertimeCredit::create([
@@ -730,7 +884,7 @@ class CtoApplicationController extends Controller
             $totalCreditsEarnedNextYear = 0;
             $totalCreditsExpiringThisYear = 0;
             $totalCreditsExpiringNextYear = 0;
-            $totalUsableCredits=0;
+            $totalUsableCredits = 0;
             foreach ($employeeCredits as $employeeCredit) {
 
                 if (!$employeeName) {
@@ -739,14 +893,14 @@ class CtoApplicationController extends Controller
                     $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
-                 $validUntilYear = Carbon::parse($employeeCredit->valid_until)->year;
+                $validUntilYear = Carbon::parse($employeeCredit->valid_until)->year;
 
                 if ($validUntilYear === $currentYear) {
                     $totalCreditsExpiringThisYear += $employeeCredit->earned_credit_by_hour;
                 } elseif ($validUntilYear === $nextYear) {
                     $totalCreditsExpiringNextYear += $employeeCredit->earned_credit_by_hour;
                 }
-                $totalUsableCredits =  $totalCreditsExpiringThisYear +  $totalCreditsExpiringNextYear ;
+                $totalUsableCredits =  $totalCreditsExpiringThisYear +  $totalCreditsExpiringNextYear;
 
                 $logs = $employeeCredit->logs;
 
@@ -800,7 +954,15 @@ class CtoApplicationController extends Controller
     {
         try {
 
-            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->get()->groupBy('employee_profile_id');
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->whereNotNull('employee_id');
+                })
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->where('employment_type_id', '!=', 5);
+                })
+                ->get()
+                ->groupBy('employee_profile_id');
             $response = [];
             foreach ($overtimeCredits as $employeeProfileId => $credits) {
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();

@@ -59,16 +59,16 @@
         border:1px solid transparent;
 
         outline: none;
-        background-color:#A0DEFF;
-        color: rgb(85, 80, 80);
+        background-color:#0283ca;
+        color: rgb(255, 255, 255);
         cursor: pointer;
         border-radius: 5px;
-        transition: all ease-out 0.3s;
+        transition: all ease-out 0.4s;
     }
 
     #btnExport:hover {
-        background-color:#cee6f3;
-        color: #3468C0;
+        background-color:rgb(20, 89, 126);
+
         border: 1px solid #3468C0;
     }
 </style>

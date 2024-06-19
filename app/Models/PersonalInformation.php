@@ -10,7 +10,7 @@ class PersonalInformation extends Model
     use HasFactory;
 
     protected $table = 'personal_informations';
-    
+
     public $fillable = [
         'first_name',
         'middle_name',
@@ -31,31 +31,43 @@ class PersonalInformation extends Model
 
     public $timestamps = TRUE;
 
-    public function employeeName() 
+    public function employeeName()
     {
-        $nameExtension = $this->name_extension===NULL?'': $this->name_extion.', ';
-        $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
+        $nameExtension = $this->name_extension === NULL || $this->name_extension === "" ? ' ' : " " . $this->name_extension;
+        $nameTitle = $this->name_title === NULL || $this->name_title === "" ? ' ' : ', ' . $this->name_title;
+        $middleName = $this->middle_name === NULL || $this->middle_name === '' ? '' : $this->middle_name[0] . '. ';
 
-        $name = $this->first_name.' '.$this->last_name.$nameExtension.$nameTitle;
+
+        $name = $this->first_name . ' ' . $middleName . $this->last_name . $nameExtension . $nameTitle;
 
         return $name;
     }
-    
+    public function fullName()
+    {
+        $nameExtension = $this->name_extension === NULL || $this->name_extension === "" ? ' ' : " " . $this->name_extension;
+        $middleName = $this->middle_name === NULL || $this->middle_name === '' ? '' : $this->middle_name[0] . '. ';
+
+
+        $name = $this->first_name . ' ' . $middleName . $this->last_name . $nameExtension;
+
+        return $name;
+    }
+
     public function nameWithSurnameFirst()
     {
 
-        if ($this->middle_name === NULL ) {
-            return $this->last_name.', '.$this->first_name;
+        if ($this->middle_name === NULL) {
+            return $this->last_name . ', ' . $this->first_name;
         }
 
-          return $this->last_name.', '.$this->first_name.' '.$this->middle_name;
-            
+        return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name;
+
     }
 
     public function name()
     {
-        $nameExtension = $this->name_extension===NULL?'':''.$this->name_extion.'';
-        $name = $this->last_name.$nameExtension.', ' .$this->first_name;
+        $nameExtension = $this->name_extension === NULL ? '' : '' . $this->name_extion . '';
+        $name = $this->last_name . $nameExtension . ', ' . $this->first_name;
 
         return $name;
     }

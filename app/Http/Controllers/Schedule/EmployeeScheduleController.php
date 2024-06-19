@@ -26,7 +26,7 @@ class EmployeeScheduleController extends Controller
     private $PLURAL_MODULE_NAME = 'employee schedules';
     private $SINGULAR_MODULE_NAME = 'employee schedule';
 
-    /** 
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -36,13 +36,14 @@ class EmployeeScheduleController extends Controller
             $month = $request->month;   // Desired month (1 to 12)
             $year = $request->year;     // Desired year
             $assigned_area = $user->assignedArea->findDetails();
-            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+            // $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
             $this->updateAutomaticScheduleStatus();
 
             $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
 
             $query = EmployeeProfile::with([
+                'personalInformation',
                 'schedule' => function ($query) use ($year, $month) {
                     $query->with(['timeShift', 'holiday'])
                         ->whereYear('date', '=', $year)
@@ -59,12 +60,16 @@ class EmployeeScheduleController extends Controller
 
             $data = $query->get();
 
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
+
             // Calculate total working hours for each employee
             $data->each(function ($employee) {
                 $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
                     return $schedule->timeShift->total_hours ?? 0;
                 });
             });
+
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
@@ -83,13 +88,14 @@ class EmployeeScheduleController extends Controller
     {
         try {
             $user = $request->user;
-            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
+            $model = EmployeeSchedule::with(['employee', 'schedule.timeShift'])
+                ->where('employee_profile_id', $user->id)
+                ->get();
 
             return response()->json([
                 'data' => new EmployeeScheduleResource($model),
                 'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

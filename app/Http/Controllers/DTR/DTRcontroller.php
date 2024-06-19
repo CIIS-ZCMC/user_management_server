@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Response;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
+use Illuminate\Support\Facades\Storage;
 
 class DTRcontroller extends Controller
 {
@@ -57,7 +58,34 @@ class DTRcontroller extends Controller
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
+    
+    public function printDtrLogs(Request $request){
+        $user = $request->user;
+        $biometric_id = $user->biometric_id;//$user->biometric_id;
+        $date = $request->requestDate;
+        $dtr = $this->getUserDeviceLogs($biometric_id,$date);
+        $emp = EmployeeProfile::where('biometric_id',$biometric_id)->first();
+        $Name = $emp->personalInformation->name();
+        $designation = $emp->findDesignation();
+        $empID = $emp->employee_id;
 
+
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        $dompdf->loadHtml(view('dtrlog',compact('dtr','Name','designation','empID')));
+
+        $dompdf->setPaper('Letter', 'portrait');
+        $dompdf->render();
+
+        $filename = $date."Logs-".$Name.".pdf";
+        $dompdf->stream($filename);
+       
+      
+    }
     public function getBiometricLog(Request $request){
         try{
             $data = $request->input;
@@ -94,6 +122,10 @@ class DTRcontroller extends Controller
 
     }
     public function getValidatedEntry($firstin,$secondin){
+        if($firstin && $secondin){
+            return $firstin;
+        }
+
         if($firstin && !$secondin){
             return $firstin;
         }
@@ -171,7 +203,8 @@ class DTRcontroller extends Controller
                 'second_in' => ' --:--',
                 'second_out' => ' --:--',
                 'schedule'=>[],
-                'deviceLogs'=>$deviceLogs
+                'deviceLogs'=>$deviceLogs,
+                'rec'=>$selfRecord
             ];
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
@@ -203,11 +236,49 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function deleteDeviceLogs(){
+        foreach ($this->devices as $device) {
+            if ($tad = $this->device->bIO($device)) {
+                $tad->delete_data(['value' => 3]);
+            }
+        }
+    }
+
+    function getvalidatedData($bioEntry)
+{
+    // Check if the entry is an array of entries
+    if (isset($bioEntry[0])) {
+        return $bioEntry[0];
+    }
+    // Check if the entry is a single entry
+    elseif (isset($bioEntry)) {
+        return $bioEntry;
+    }
+    // Return null if no date_time is found
+    return null;
+}
+
+public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_id){
+
+
+
+
+}
+
+
+function isNotEmptyFields($logs) {
+    foreach ($logs as $log) {
+        if (in_array("", $log, true)) {
+            return false;
+        }
+    }
+    return true;
+}
     public function fetchDTRFromDevice()
     {
 
         try {
-
+            $loaded = [];
             foreach ($this->devices as $device) {
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
                     $logs = $tad->get_att_log();
@@ -215,70 +286,110 @@ class DTRcontroller extends Controller
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
+                  
+                    if($this->isNotEmptyFields($attendance_Logs)){
+                       
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
                     $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
                     );
-
+                   
+                    $this->SaveLogsLocal($Employee_Attendance, $device);
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
-                            return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
-                        });
-
+                            return date('Y-m-d', strtotime($attd['date_time'])) == $date_now  ;
+                        });                        
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
+
                                 $biometric_id = $bioEntry['biometric_id'];
 
-                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-                                $DaySchedule = $Schedule['daySchedule'];
-                                $BreakTime = $Schedule['break_Time_Req'];
+                                $getRecord = array_values(array_filter($check_Records, function($row) use($biometric_id) {
+                                    $date_times = $row['date_time'];
+
+                                    return $row['biometric_id'] == $biometric_id && !DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date_times)))
+                                        ->where(function ($query) use ($date_times) {
+                                            $query->where('first_in', $date_times)
+                                                ->orWhere('first_out', $date_times)
+                                                ->orWhere('second_in', $date_times)
+                                                ->orWhere('second_out', $date_times);
+                                        })
+                                        ->exists();
+                                }));
 
 
+                                if(isset($getRecord)){
 
-                                    if (count($DaySchedule) >= 1) {
-                                       if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
+                                    $getnotlogged = array_values(array_filter($getRecord,function($d){
+                                        return $d['entry_status'] == "CHECK-IN" || $d['entry_status'] == "CHECK-OUT" ;
+                                    }));
 
-                                        if (count($BreakTime) >= 1) {
+                                    $bioEntry =  $getnotlogged;
+                                }
 
-                                            /**
-                                             * With Schedule
-                                             * 4 sets of sched
-                                             */
-                                             $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
-                                        } else {
-                                            /**
-                                             * With Schedule
-                                             * 2 sets of sched
-                                             */
+                                 //   return $this->getvalidatedData($bioEntry);
+                                //Get attendance first  group per employee biometric_id
+                                //get the first successful entry.
+                                //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
+                                //
 
-                                            $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
-                                        }
-                                       }else {
+                                if($bioEntry){
+                                    $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
+                                    $DaySchedule = $Schedule['daySchedule'];
+                                   $BreakTime = $Schedule['break_Time_Req'];
+
+
+                                       if (count($DaySchedule) >= 1) {
+                                          if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
+
+                                           if (count($BreakTime) >= 1) {
+
+                                               /**
+                                                * With Schedule
+                                                * 4 sets of sched
+                                                */
+
+                                             $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $this->getvalidatedData($bioEntry), $biometric_id);
+                                           } else {
+                                               /**
+                                                * With Schedule
+                                                * 2 sets of sched
+                                                */
+
+                                               $this->DTR->NoBreaktimePull($DaySchedule, $this->getvalidatedData($bioEntry), $biometric_id);
+                                           }
+                                          }else {
+
+                                              /**
+                                            * No Schedule Pulling
+                                            */
+                                           $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
+                                          }
+
+                                       } else {
 
                                            /**
-                                         * No Schedule Pulling
-                                         */
-                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                            * No Schedule Pulling
+                                            */
+                                          $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                        }
+                                }
 
-                                    } else {
-
-                                        /**
-                                         * No Schedule Pulling
-                                         */
-                                       $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
-                                    }
                             }
 
                             //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
-                            $tad->delete_data(['value' => 3]);
+
+
+                            //ASSIGN DELETION FUNCTION ALGORITHM
+                            // 9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
+                        //    $tad->delete_data(['value' => 3]);
                         } else {
                             //yesterday Time
                             // Save the past 24 hours records
@@ -294,7 +405,32 @@ class DTRcontroller extends Controller
                             foreach ($late_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
 
-                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+
+                                $getRecord = array_values(array_filter($late_Records, function($row) use($biometric_id) {
+                                    $date_times = $row['date_time'];
+
+                                    return $row['biometric_id'] == $biometric_id && !DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date_times)))
+                                        ->where(function ($query) use ($date_times) {
+                                            $query->where('first_in', $date_times)
+                                                ->orWhere('first_out', $date_times)
+                                                ->orWhere('second_in', $date_times)
+                                                ->orWhere('second_out', $date_times);
+                                        })
+                                        ->exists();
+                                }));
+
+
+                                if(isset($getRecord)){
+
+                                    $getnotlogged = array_values(array_filter($getRecord,function($d){
+                                        return $d['entry_status'] == "CHECK-IN" || $d['entry_status'] == "CHECK-OUT" ;
+                                    }));
+
+                                    $bioEntry =  $getnotlogged;
+                                }
+
+
+                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
 
@@ -306,60 +442,65 @@ class DTRcontroller extends Controller
                                           * With Schedule
                                           * 4 sets of sched
                                           */
-                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime,$this->getvalidatedData($bioEntry), $biometric_id);
                                      } else {
                                          /**
                                           * With Schedule
                                           * 2 sets of sched
                                           */
-                                         $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                         $this->DTR->NoBreaktimePull($DaySchedule,$this->getvalidatedData($bioEntry), $biometric_id);
                                      }
                                     }else {
                                         /**
                                       * No Schedule Pulling
                                       */
-                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                     $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                     }
 
                                  } else {
                                      /**
                                       * No Schedule Pulling
                                       */
-                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                     $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                  }
                             }
-                            // /* Save DTR Logs */
+
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
-                            // /* Clear device data */
-                            $tad->delete_data(['value' => 3]);
+
                         }
-                    } else {
-                        //Save anomaly entries
-                        /**
-                         * Here we saved all entries that the device date and time and server
-                         * does not match..
-                         *
-                         */
-                        foreach ($Employee_Attendance as $key => $value) {
-                            DtrAnomalies::create([
-                                'biometric_id' => $value['biometric_id'],
-                                'name' => $value['name'],
-                                'dtr_entry' => $value['date_time'],
-                                'status' => $value['status'],
-                                'status_desc' => $value['status_description']
-                            ]);
-                        }
-                        $tad->delete_data(['value' => 3]);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            //         // End of Validation of Time
+               }  else {
+                //Save anomaly entries
+                /**
+                 * Here we saved all entries that the device date and time and server
+                 * does not match..
+                 *
+                 */
+                foreach ($Employee_Attendance as $key => $value) {
+                    DtrAnomalies::create([
+                        'biometric_id' => $value['biometric_id'],
+                        'name' => $value['name'],
+                        'dtr_entry' => $value['date_time'],
+                        'status' => $value['status'],
+                        'status_desc' => $value['status_description']
+                    ]);
+                }
+             }
                     }
-                    // End of Validation of Time
-                } // End Checking if Connected to Device
+                 
+            }
             }
         } catch (\Throwable $th) {
+            return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
 
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
+        return true;
     }
 
     public function formatDate($date)
@@ -564,11 +705,50 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
             $FrontDisplay = $request->frontview;
-            $ishalf = $request->ishalf;
+            $ishalf = 1;
 
             /*
             Multiple IDS for Multiple PDF generation
             */
+            $yr = date('Y',strtotime("$year_of-$month_of-1"));
+            $mnth = date('n',strtotime("$year_of-$month_of-1"));
+            $yrnow= date('Y');
+            $mnthnow = date('n');
+            $dynow = date('j');
+            if(!$FrontDisplay){
+                    if($yr <= $yrnow){
+                //print 31
+
+                if($mnth < $mnthnow){
+
+                    $ishalf = 0;
+                    //print 31
+                }else if($mnth == $mnthnow) {
+                    if($dynow >=20){
+                        //print 31
+
+                        $ishalf = 0;
+                    }else {
+                            //print 15
+                        $ishalf = 1;
+                    }
+                }else {
+                    if($dynow >=20){
+                        //print 31
+
+                        $ishalf = 0;
+                    }else {
+                        //print 15
+                        $ishalf = 1;
+                    }
+                }
+            }
+            }else {
+                $ishalf = 0;
+            }
+
+
+
             $id = json_decode($biometric_id);
 
             if (count($id) == 0) {
@@ -578,6 +758,7 @@ class DTRcontroller extends Controller
             }
 
             if (count($id) >= 2) {
+
                 return $this->GenerateMultiple($id, $month_of, $year_of, $view,$ishalf);
             }
 
@@ -670,6 +851,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay,$ishalf);
         } catch (\Throwable $th) {
+            return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -854,9 +1036,9 @@ class DTRcontroller extends Controller
             if($employee->leaveApplications){
                    //Leave Applications
             $leaveapp  = $employee->leaveApplications->filter(function ($row) {
-                return $row['status'] == "approved";
+                return $row['status'] == "received";
             });
-
+         
 
 
             $leavedata = [];
@@ -874,6 +1056,7 @@ class DTRcontroller extends Controller
 
             }
 
+          
 
             //Official business
             if($employee->officialBusinessApplications){
@@ -884,8 +1067,6 @@ class DTRcontroller extends Controller
                 foreach ($officialBusiness as $rows) {
                     $obData[] = [
                         'purpose' => $rows['purpose'],
-                        'time_from' => $rows['time_from'],
-                        'time_to' => $rows['time_to'],
                         'date_from' => $rows['date_from'],
                         'date_to' => $rows['date_to'],
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
@@ -955,8 +1136,15 @@ class DTRcontroller extends Controller
                 ]);
             }
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
-            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
+         //   $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
+
+             $recommending =  Help::getRecommendingAndApprovingOfficer($employee->assignedArea->findDetails(),$employee->id)['recommending_officer'] ?? null;
+             $approver = null;
+             if($recommending){
+                $appr = EmployeeProfile::findorFail($recommending);
+                $approver = $appr->personalInformation->employeeName();
+             }
+
 
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
@@ -984,6 +1172,7 @@ class DTRcontroller extends Controller
                     'ctoApp' => $ctoData ?? [],
                     'biometric_id'=>$biometric_id
                 ]);
+
             } else {
                 $options = new Options();
                 $options->set('isPhpEnabled', true);
@@ -1033,9 +1222,12 @@ class DTRcontroller extends Controller
 
     public function GenerateMultiple($id, $month_of, $year_of, $view,$ishalf)
     {
+
         $data = [];
         $emp_Details = [];
         foreach ($id as $key => $biometric_id) {
+
+
 
             if ($this->helper->isEmployee($biometric_id)) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -1092,6 +1284,8 @@ class DTRcontroller extends Controller
                                     'second_out' => $val->second_out
                                 ],
                             ];
+
+
                             $this->helper->saveTotalWorkingHours(
                                 $validate,
                                 $val,
@@ -1105,7 +1299,7 @@ class DTRcontroller extends Controller
                     return response()->json(['message' =>  $th->getMessage()]);
                 }
 
-                $ohf[] = isset($DaySchedule) ? $DaySchedule['total_hours'] . ' HOURS' : null;
+                $ohf[] = isset($DaySchedule['total_hours']) ? $DaySchedule['total_hours'] . ' HOURS' : "8 HOURS";
 
                 $emp_Details[] = [
                     'OHF' => $ohf,
@@ -1115,6 +1309,7 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id
                 ];
             }
+
         }
 
 
@@ -1292,13 +1487,12 @@ class DTRcontroller extends Controller
                 ->get();
 
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-
-                //Leave Applications
-                $leaveapp  = $employee->leaveApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
-                });
-
                 $leavedata = [];
+                if($employee->leaveApplications){
+                      //Leave Applications
+                $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    return $row['status'] == "received";
+                });
                 foreach ($leaveapp as $rows) {
                     $leavedata[] = [
                         'country' => $rows['country'],
@@ -1310,28 +1504,32 @@ class DTRcontroller extends Controller
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                     ];
                 }
+                }
 
-                //Official business
+                $obData = [];
+                if($employee->officialBusinessApplications){
+                     //Official business
                 $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
                     return $row['status'] == "approved";
                 })->toarray());
-                $obData = [];
+
                 foreach ($officialBusiness as $rows) {
                     $obData[] = [
                         'purpose' => $rows['purpose'],
-                        'time_from' => $rows['time_from'],
-                        'time_to' => $rows['time_to'],
                         'date_from' => $rows['date_from'],
                         'date_to' => $rows['date_to'],
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
                     ];
                 }
+                }
 
+        $otData = [];
                 //Official Time
-                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                if($employee->officialTimeApplications){
+                        $officialTime = $employee->officialTimeApplications->filter(function ($row) {
                     return $row['status'] == "approved";
                 });
-                $otData = [];
+
                 foreach ($officialTime as $rows) {
                     $otData[] = [
                         'date_from' => $rows['date_from'],
@@ -1341,10 +1539,14 @@ class DTRcontroller extends Controller
                     ];
                 }
 
-                $CTO =  $employee->CTOApplication->filter(function ($row) {
+                }
+
+                $ctoData = [];
+                if($employee->CTOApplication){
+                        $CTO =  $employee->CTOApplication->filter(function ($row) {
                     return $row['status'] == "approved";
                 });
-                $ctoData = [];
+
                 foreach ($CTO as $rows) {
                     $ctoData[] = [
                         'date' => date('Y-m-d', strtotime($rows['date'])),
@@ -1352,6 +1554,8 @@ class DTRcontroller extends Controller
                         'remarks' => $rows['remarks'],
                     ];
                 }
+                }
+
 
 
 
@@ -2147,115 +2351,43 @@ class DTRcontroller extends Controller
         }
     }
 
-    public function test()
-    {
-        $mail = new PHPMailer(true);
-        try {
-            $mail->isSMTP();
-            $mail->SMTPDebug = 2;
-            $mail->Host = gethostbyname('www.mail.gov.ph');
-            $mail->Port = 587;
-            $mail->SMTPSecure ='tls';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'innovations@doh.zcmc.gov.ph'; // Your email address
-            $mail->Password = 'Innov020623!~'; // Your email password
-            $mail->setFrom('innovations@doh.zcmc.gov.ph', 'ZCMC-Portal');
-            $mail->addAddress('reenjie17@gmail.com', 'Reenjay Caimor');
-            $mail->Subject = 'THIS IS JUST A TEST EMAIL ZCMC PORTAL';
-            $mail->CharSet = PHPMailer::CHARSET_UTF8;
-            $mail->isHTML(true);
-            $mail->Body = "Hi there. Im working!!";
-            $mail->AltBody = 'This is a plain text message body';
-            if ($mail->send()) {
-                return "send";
-            } else {
-                return "failed to sendd";
-            }
-        } catch (\Throwable $th) {
-            return $th;
+    public function SaveLogsLocal($attendancelog, $device){
+
+        $fileName = 'biometricLog_'.now()->format('Y_m_d').'.txt';
+        $header = " -- Biometric Logs as of : ".date('Y-m-d'). PHP_EOL;
+
+        $header2 = "biometric_id - date_time - Status - Employee - Punch State - Device Name - Ip-Address ". PHP_EOL;
+        $header3 = '-'.PHP_EOL;
+        $header4 = '-'.PHP_EOL;
+        $header5= '-'.PHP_EOL;
+        // Read existing content if file exists
+        $existingContent = '';
+        if (Storage::disk('local')->exists($fileName)) {
+            $existingContent = Storage::disk('local')->get($fileName);
+        } else {
+            $existingContent = $header.''.$header4.''.$header3.''.$header2.''.$header5;
         }
 
+        $newContent = '';
+        foreach ($attendancelog as $value) {
+            $datas = $value['biometric_id'].'_'.$value['date_time'].'_'.$value['status'].'_'.$value['name'].'_'.$value['status_description']['description'].'_'.$device['device_name'].'_'.$device['ip_address'];
+            // Check if data already exists in the file
+            if (strpos($existingContent, $datas) === false) {
+                $newContent .= $datas . PHP_EOL;
+            }
+        }
 
-        /*
-        **
-        * test on how to access request function on another controller for instance
-        */
-        // $dtrentry = "2024-03-20 8:41:00";
-        // $schedule = "2024-03-20 8:00:00";
-        // $isoncall = 1;
-        // $alloted_mins_Oncall = 0.5; // 30 minutes
+        // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
+        if (!empty($newContent)) {
+            Storage::disk('local')->put($fileName, $existingContent . $newContent);
+            return response()->json(['message' => 'File created/updated successfully!', 'file' => $fileName], 201);
+        } else {
+            return response()->json(['message' => 'No new data to add.'], 200);
+        }
+    }
 
-        // $dtr_date = date('Y-m-d', strtotime($dtrentry));
-        // $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
-
-        // /* With Schedule Entry */
-        // $in_Entry = $schedule;
-
-        // $time_stamp = strtotime($in_Entry);
-
-
-        // $new_Time_stamp = $time_stamp - (12 * 3600);
-        // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
-
-        // $newEntry = $schedule;
-        // if ($isoncall) {
-        //     //// Logic for ONCALL
-
-        //     $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
-
-        //     $calIn = date("Y-m-d H:i:s", $schedEntry);
-        //     $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
-        //     if ($calIn <= $dtrentry) {
-
-        //         //within 30 mins.
-        //         // then accept as 8am straight
-        //         $newEntry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
-        //     }
-
-        //     return $newEntry;
-        // } else {
-        //     // if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
-        //     //     DailyTimeRecords::create([
-        //     //         'biometric_id' => $biometric_id,
-        //     //         'dtr_date' => $dtr_date,
-        //     //         'first_in' => $dtrentry['date_time'],
-        //     //         'is_biometric' => 1,
-        //     //     ]);
-        //     // }
-        // }
-
-        // for ($i = 1; $i <= 30; $i++) {
-
-        //     $date = date('Y-m-d', strtotime('2024-02-' . $i));
-
-        //     if (date('D', strtotime($date)) != 'Sun') {
-        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
-
-        //         DailyTimeRecords::create([
-        //             'biometric_id' => 1,
-        //             'dtr_date' => $date,
-        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-        //             'interval_req' => null,
-        //             'required_working_hours' => null,
-        //             'required_working_minutes' => null,
-        //             'total_working_hours' => null,
-        //             'total_working_minutes' => null,
-        //             'overtime' => null,
-        //             'overtime_minutes' => null,
-        //             'undertime' => null,
-        //             'undertime_minutes' => null,
-        //             'overall_minutes_rendered' => null,
-        //             'total_minutes_reg' => null,
-        //             'is_biometric' => 1,
-        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-        //         ]);
-        //     }
-        // }
+    public function test()
+    {
+            return view('dtrlog');
     }
 }
