@@ -1928,7 +1928,7 @@ class LeaveApplicationController extends Controller
 
             $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN); 
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
             $hrmo_officer = Helpers::getHrmoOfficer();
             $start = Carbon::parse($request->date_from);
@@ -1992,6 +1992,68 @@ class LeaveApplicationController extends Controller
                 'data' => new LeaveApplicationResource($leave_application),
                 'credits' => $result ? $result : [],
                 'message' => 'Rescheduled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function changeDate($id, AuthPinApprovalRequest $request)
+    {
+        try {
+
+            $user = $request->user;
+            $employee_profile = $user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+            $updateData = [];
+
+            if (!is_null($request->date_from)) {
+                $updateData['date_from'] = $request->date_from;
+            }
+
+            if (!is_null($request->date_to)) {
+                $updateData['date_to'] = $request->date_to;
+            }
+            $leave_application->update($updateData);
+
+            $result = [];
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Change Leave Application Date '
+            ]);
+
+            //NOTIFICATIONS
+            $title = $leave_type->name . " request date change";
+            $description = "Your leave request for " . $leave_type->name . " on " . $leave_application->date_from . " has been successfully changed.";
+
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/leave-applications',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $leave_application->employee_profile_id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($leave_application->employee_profile_id),
+                "data" => new NotificationResource($user_notification)
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
+                'message' => 'The date on leave application has been successfully changed.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
