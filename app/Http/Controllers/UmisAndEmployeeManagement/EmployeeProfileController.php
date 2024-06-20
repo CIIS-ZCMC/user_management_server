@@ -87,6 +87,7 @@ use App\Http\Controllers\DTR\TwoFactorAuthController;
 use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Models\LeaveApplication;
 
 class EmployeeProfileController extends Controller
 {
@@ -2148,6 +2149,33 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function getUserListMentions(Request $request)
+    {
+        try {
+            $user = $request->user;
+
+
+
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
+
+            $filteredUsers = $employee_profiles->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->personalInformation->fullName(),
+                    'avatar'  => config("app.server_domain") . "/photo/profiles/" . $user->profile_url,
+                ];
+            });
+
+            return response()->json([
+                'data' => $filteredUsers,
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function retrieveEmployees($employees, $key, $id, $myId)
     {
 
@@ -2321,6 +2349,14 @@ class EmployeeProfileController extends Controller
                             }
                         }
                     }
+
+
+                    $sections = Section::where('division_id', $my_area['details']->id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+                    }
+
+
                     break;
                 case "Department":
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
@@ -2357,6 +2393,860 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function Areas(Request $request)
+    {
+        try {
+
+            $area = $request->sector;
+            $report_type = $request->report_type;
+            $status = $request->status;
+            $area_under = $request->area_under;
+            $area_id = $request->area_id;
+            $leave_type_id = $request->leave_type_id;
+            $leave_type_ids = explode(',', $request->leave_type_id);
+            $areas = [];
+
+            if ($report_type === 'area') {
+                switch ($area) {
+                    case "Division":
+                        $division = Division::where('id', $area_id)->first();
+                        if ($division) {
+                            $areaData = [
+                                'id' => $division->id . '-division',
+                                'name' => $division->name,
+                                'sector' => 'Division',
+                                'leave_with_pay_count' => 0,
+                                'leave_without_pay_count' => 0,
+                                'leave_count' => 0,
+                                'leave_types' => []
+                            ];
+
+                            // Initialize total leave counts
+                            $leave_with_pay_count_total = 0;
+                            $leave_without_pay_count_total = 0;
+                            $leave_count_total = 0;
+                            foreach ($leave_type_ids as $leave_type_id) {
+                                $leave_type = LeaveType::find($leave_type_id);
+                                if ($leave_type) {
+                                    // Calculate leave counts for the current leave type
+                                    $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->whereHas('employeeProfile', function ($query) use ($division) {
+                                            $query->whereHas('assignedArea', function ($q) use ($division) {
+                                                $q->where('division_id', $division->id);
+                                            });
+                                        })->count();
+
+                                    $leave_with_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->where('without_pay', false)
+                                        ->whereHas('employeeProfile', function ($query) use ($division) {
+                                            $query->whereHas('assignedArea', function ($q) use ($division) {
+                                                $q->where('division_id', $division->id);
+                                            });
+                                        })->count();
+
+                                    $leave_without_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->where('without_pay', true)
+                                        ->whereHas('employeeProfile', function ($query) use ($division) {
+                                            $query->whereHas('assignedArea', function ($q) use ($division) {
+                                                $q->where('division_id', $division->id);
+                                            });
+                                        })->count();
+
+                                    // Accumulate total leave counts
+                                    $leave_with_pay_count_total += $leave_with_pay_count;
+                                    $leave_without_pay_count_total += $leave_without_pay_count;
+                                    $leave_count_total += $leave_count;
+
+                                    // Push leave counts for the current leave type into areaData
+                                    $areaData['leave_types'][] = [
+                                        'leave_type_id' => $leave_type_id,
+                                        'leave_type_name' => $leave_type->name,
+                                        'leave_type_code' => $leave_type->code,
+                                        'leave_type_count' => $leave_count,
+                                    ];
+                                }
+                            }
+
+                            // Assign total leave counts to areaData
+                            $areaData['leave_with_pay_count'] = $leave_with_pay_count_total;
+                            $areaData['leave_without_pay_count'] = $leave_without_pay_count_total;
+                            $areaData['leave_count'] = $leave_count_total;
+                            // Push areaData into areas array
+                            $areas[] = $areaData;
+                        }
+                        if ($area_under === 'All') {
+                            $departments = Department::where('division_id', $area_id)->get();
+
+                            foreach ($departments as $department) {
+                                $departmentData = [
+                                    'id' => $department->id . '-department',
+                                    'name' => $department->name,
+                                    'sector' => 'Department',
+                                    'leave_with_pay_count' => 0,
+                                    'leave_without_pay_count' => 0,
+                                    'leave_count' => 0,
+                                    'leave_types' => []
+                                ];
+
+                                // Initialize total leave counts
+                                $leave_with_pay_count_total = 0;
+                                $leave_without_pay_count_total = 0;
+                                $leave_count_total = 0;
+
+                                // Loop through leave types
+                                foreach ($leave_type_ids as $leave_type_id) {
+                                    $leave_type = LeaveType::find($leave_type_id);
+                                    if ($leave_type) {
+                                        $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                            ->whereHas('employeeProfile', function ($query) use ($department) {
+                                                $query->whereHas('assignedArea', function ($q) use ($department) {
+                                                    $q->where('department_id', $department->id);
+                                                });
+                                            })->count();
+                                        $leave_with_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                            ->where('without_pay', false)
+                                            ->whereHas('employeeProfile', function ($query) use ($department) {
+                                                $query->whereHas('assignedArea', function ($q) use ($department) {
+                                                    $q->where('department_id', $department->id);
+                                                });
+                                            })->count();
+                                        $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                            ->whereHas('employeeProfile', function ($query) use ($department) {
+                                                $query->whereHas('assignedArea', function ($q) use ($department) {
+                                                    $q->where('department_id', $department->id);
+                                                });
+                                            })->count();
+                                    }
+
+                                    // Accumulate total leave counts
+                                    $leave_with_pay_count_total += $leave_with_pay_count;
+                                    $leave_without_pay_count_total += $leave_without_pay_count;
+                                    $leave_count_total += $leave_count;
+
+                                    // Push leave counts for the current leave type into areaData
+                                    $departmentData['leave_types'][] = [
+                                        'leave_type_id' => $leave_type_id,
+                                        'leave_type_name' => $leave_type->name,
+                                        'leave_type_code' => $leave_type->code,
+                                        'leave_type_count' => $leave_count,
+                                    ];
+                                }
+
+                                $departmentData['leave_with_pay_count'] = $leave_with_pay_count_total;
+                                $departmentData['leave_without_pay_count'] = $leave_without_pay_count_total;
+                                $departmentData['leave_count'] = $leave_count_total;
+                                // Push departmentData into areas array
+                                $areas[] = $departmentData;
+
+                                $sections = Section::where('department_id', $department->id)->get();
+                                foreach ($sections as $section) {
+                                    $sectionData = [
+                                        'id' => $department->id . '-department',
+                                        'name' => $department->name,
+                                        'sector' => 'Department',
+                                        'leave_with_pay_count' => 0,
+                                        'leave_without_pay_count' => 0,
+                                        'leave_count' => 0,
+                                        'leave_types' => []
+                                    ];
+
+                                    foreach ($leave_type_ids as $leave_type_id) {
+                                        $leave_type = LeaveType::find($leave_type_id);
+                                        if ($leave_type) {
+                                            $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                        $q->where('section_id', $section->id);
+                                                    });
+                                                })->count();
+                                            $leave_with_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                ->where('without_pay', false)
+                                                ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                        $q->where('section_id', $section->id);
+                                                    });
+                                                })->count();
+                                            $leave_without_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                ->where('without_pay', true)
+                                                ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                        $q->where('section_id', $section->id);
+                                                    });
+                                                })->count();
+                                        }
+
+                                        // Accumulate total leave counts
+                                        $leave_with_pay_count_total += $leave_with_pay_count;
+                                        $leave_without_pay_count_total += $leave_without_pay_count;
+                                        $leave_count_total += $leave_count;
+
+                                        // Push leave counts for the current leave type into areaData
+                                        $sectionData['leave_types'][] = [
+                                            'leave_type_id' => $leave_type_id,
+                                            'leave_type_name' => $leave_type->name,
+                                            'leave_type_code' => $leave_type->code,
+                                            'leave_type_count' => $leave_count,
+                                        ];
+                                    }
+                                    $sectionData['leave_with_pay_count'] = $leave_with_pay_count_total;
+                                    $sectionData['leave_without_pay_count'] = $leave_without_pay_count_total;
+                                    $sectionData['leave_count'] = $leave_count_total;
+                                    // Push sectionData into areas array
+                                    $areas[] = $sectionData;
+
+                                    $units = Unit::where('section_id', $section->id)->get();
+                                    foreach ($units as $unit) {
+                                        $sunitData = [
+                                            'id' => $department->id . '-department',
+                                            'name' => $department->name,
+                                            'sector' => 'Department',
+                                            'leave_with_pay_count' => 0,
+                                            'leave_without_pay_count' => 0,
+                                            'leave_count' => 0,
+                                            'leave_types' => []
+                                        ];
+                                        foreach ($leave_type_ids as $leave_type_id) {
+                                            $leave_type = LeaveType::find($leave_type_id);
+                                            if ($leave_type) {
+
+                                                $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                    ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                        $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                            $q->where('unit_id', $unit->id);
+                                                        });
+                                                    })->count();
+                                                $leave_with_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                    ->where('without_pay', false)
+                                                    ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                        $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                            $q->where('unit_id', $unit->id);
+                                                        });
+                                                    })->count();
+                                                $leave_without_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                    ->where('without_pay', true)
+                                                    ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                        $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                            $q->where('unit_id', $unit->id);
+                                                        });
+                                                    })->count();
+                                            }
+
+                                            $leave_with_pay_count_total += $leave_with_pay_count;
+                                            $leave_without_pay_count_total += $leave_without_pay_count;
+                                            $leave_count_total += $leave_count;
+
+                                            // Push leave counts for the current leave type into areaData
+                                            $unitData['leave_types'][] = [
+                                                'leave_type_id' => $leave_type_id,
+                                                'leave_type_name' => $leave_type->name,
+                                                'leave_type_code' => $leave_type->code,
+                                                'leave_type_count' => $leave_count,
+                                            ];
+                                        }
+                                        $unitData['leave_with_pay_count'] = $leave_with_pay_count_total;
+                                        $unitData['leave_without_pay_count'] = $leave_without_pay_count_total;
+                                        $unitData['leave_count'] = $leave_count_total;
+
+                                        $areas[] = $sunitData;
+                                    }
+                                }
+                            }
+
+                            $sections = Section::where('division_id', $area_id)->get();
+                            foreach ($sections as $section) {
+                                $sectionData = [
+                                    'id' => $section->id . '-section',
+                                    'name' => $section->name,
+                                    'sector' => 'Section',
+                                    'leave_with_pay_count' => 0,
+                                    'leave_without_pay_count' => 0,
+                                    'leave_count' => 0,
+                                    'leave_types' => []
+                                ];
+                                foreach ($leave_type_ids as $leave_type_id) {
+                                    $leave_type = LeaveType::find($leave_type_id);
+                                    if ($leave_type) {
+                                        $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                            ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                    $q->where('section_id', $section->id);
+                                                });
+                                            })->count();
+                                        $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                            ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                    $q->where('section_id', $section->id);
+                                                });
+                                            })->count();
+                                        $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                            ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                    $q->where('section_id', $section->id);
+                                                });
+                                            })->count();
+
+                                        // Accumulate total leave counts
+                                        $sectionData['leave_with_pay_count'] += $leave_with_pay_count;
+                                        $sectionData['leave_without_pay_count'] += $leave_without_pay_count;
+                                        $sectionData['leave_count'] += $leave_count;
+
+                                        // Push leave counts for the current leave type into sectionData
+                                        $sectionData['leave_types'][] = [
+                                            'leave_type_id' => $leave_type_id,
+                                            'leave_type_name' => $leave_type->name,
+                                            'leave_type_code' => $leave_type->code,
+                                            'leave_type_count' => $leave_count,
+                                        ];
+                                    }
+                                }
+                                $areas[] = $sectionData;
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $unitData = [
+                                        'id' => $unit->id . '-unit',
+                                        'name' => $unit->name,
+                                        'sector' => 'Unit',
+                                        'leave_with_pay_count' => 0,
+                                        'leave_without_pay_count' => 0,
+                                        'leave_count' => 0,
+                                        'leave_types' => []
+                                    ];
+                                    foreach ($leave_type_ids as $leave_type_id) {
+                                        $leave_type = LeaveType::find($leave_type_id);
+                                        if ($leave_type) {
+                                            $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                        $q->where('unit_id', $unit->id);
+                                                    });
+                                                })->count();
+                                            $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                                ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                        $q->where('unit_id', $unit->id);
+                                                    });
+                                                })->count();
+                                            $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                                ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                        $q->where('unit_id', $unit->id);
+                                                    });
+                                                })->count();
+
+                                            // Accumulate total leave counts
+                                            $unitData['leave_with_pay_count'] += $leave_with_pay_count;
+                                            $unitData['leave_without_pay_count'] += $leave_without_pay_count;
+                                            $unitData['leave_count'] += $leave_count;
+
+                                            // Push leave counts for the current leave type into unitData
+                                            $unitData['leave_types'][] = [
+                                                'leave_type_id' => $leave_type_id,
+                                                'leave_type_name' => $leave_type->name,
+                                                'leave_type_code' => $leave_type->code,
+                                                'leave_type_count' => $leave_count,
+                                            ];
+                                        }
+                                    }
+                                    $areas[] = $unitData;
+                                }
+                            }
+                        }
+                        break;
+                    case "Department":
+                        $department = Department::where('id', $area_id)->first();
+                        if ($department) {
+                            $departmentData = [
+                                'id' => $department->id . '-department',
+                                'name' => $department->name,
+                                'sector' => 'Department',
+                                'leave_with_pay_count' => 0,
+                                'leave_without_pay_count' => 0,
+                                'leave_count' => 0,
+                                'leave_types' => []
+                            ];
+                            // Initialize total leave counts
+                            $leave_with_pay_count_total = 0;
+                            $leave_without_pay_count_total = 0;
+                            $leave_count_total = 0;
+
+                            // Loop through leave types
+                            foreach ($leave_type_ids as $leave_type_id) {
+                                $leave_type = LeaveType::find($leave_type_id);
+                                if ($leave_type) {
+                                    $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->whereHas('employeeProfile', function ($query) use ($department) {
+                                            $query->whereHas('assignedArea', function ($q) use ($department) {
+                                                $q->where('department_id', $department->id);
+                                            });
+                                        })->count();
+                                    $leave_with_pay_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->where('without_pay', false)
+                                        ->whereHas('employeeProfile', function ($query) use ($department) {
+                                            $query->whereHas('assignedArea', function ($q) use ($department) {
+                                                $q->where('department_id', $department->id);
+                                            });
+                                        })->count();
+                                    $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                        ->whereHas('employeeProfile', function ($query) use ($department) {
+                                            $query->whereHas('assignedArea', function ($q) use ($department) {
+                                                $q->where('department_id', $department->id);
+                                            });
+                                        })->count();
+                                }
+
+                                // Accumulate total leave counts
+                                $leave_with_pay_count_total += $leave_with_pay_count;
+                                $leave_without_pay_count_total += $leave_without_pay_count;
+                                $leave_count_total += $leave_count;
+
+                                // Push leave counts for the current leave type into areaData
+                                $departmentData['leave_types'][] = [
+                                    'leave_type_id' => $leave_type_id,
+                                    'leave_type_name' => $leave_type->name,
+                                    'leave_type_code' => $leave_type->code,
+                                    'leave_type_count' => $leave_count,
+                                ];
+                            }
+
+                            $departmentData['leave_with_pay_count'] = $leave_with_pay_count_total;
+                            $departmentData['leave_without_pay_count'] = $leave_without_pay_count_total;
+                            $departmentData['leave_count'] = $leave_count_total;
+                            // Push departmentData into areas array
+                            $areas[] = $departmentData;
+                        }
+                        if ($area_under === 'All') {
+                            $sections = Section::where('division_id', $area_id)->get();
+                            foreach ($sections as $section) {
+                                $sectionData = [
+                                    'id' => $section->id . '-section',
+                                    'name' => $section->name,
+                                    'sector' => 'Section',
+                                    'leave_with_pay_count' => 0,
+                                    'leave_without_pay_count' => 0,
+                                    'leave_count' => 0,
+                                    'leave_types' => []
+                                ];
+                                foreach ($leave_type_ids as $leave_type_id) {
+                                    $leave_type = LeaveType::find($leave_type_id);
+                                    if ($leave_type) {
+                                        $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                            ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                    $q->where('section_id', $section->id);
+                                                });
+                                            })->count();
+                                        $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                            ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                    $q->where('section_id', $section->id);
+                                                });
+                                            })->count();
+                                        $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                            ->whereHas('employeeProfile', function ($query) use ($section) {
+                                                $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                    $q->where('section_id', $section->id);
+                                                });
+                                            })->count();
+
+                                        // Accumulate total leave counts
+                                        $sectionData['leave_with_pay_count'] += $leave_with_pay_count;
+                                        $sectionData['leave_without_pay_count'] += $leave_without_pay_count;
+                                        $sectionData['leave_count'] += $leave_count;
+
+                                        // Push leave counts for the current leave type into sectionData
+                                        $sectionData['leave_types'][] = [
+                                            'leave_type_id' => $leave_type_id,
+                                            'leave_type_name' => $leave_type->name,
+                                            'leave_type_code' => $leave_type->code,
+                                            'leave_type_count' => $leave_count,
+                                        ];
+                                    }
+                                }
+                                $areas[] = $sectionData;
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $unitData = [
+                                        'id' => $unit->id . '-unit',
+                                        'name' => $unit->name,
+                                        'sector' => 'Unit',
+                                        'leave_with_pay_count' => 0,
+                                        'leave_without_pay_count' => 0,
+                                        'leave_count' => 0,
+                                        'leave_types' => []
+                                    ];
+                                    foreach ($leave_type_ids as $leave_type_id) {
+                                        $leave_type = LeaveType::find($leave_type_id);
+                                        if ($leave_type) {
+                                            $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                                ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                        $q->where('unit_id', $unit->id);
+                                                    });
+                                                })->count();
+                                            $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                                ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                        $q->where('unit_id', $unit->id);
+                                                    });
+                                                })->count();
+                                            $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                                ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                    $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                        $q->where('unit_id', $unit->id);
+                                                    });
+                                                })->count();
+
+                                            // Accumulate total leave counts
+                                            $unitData['leave_with_pay_count'] += $leave_with_pay_count;
+                                            $unitData['leave_without_pay_count'] += $leave_without_pay_count;
+                                            $unitData['leave_count'] += $leave_count;
+
+                                            // Push leave counts for the current leave type into unitData
+                                            $unitData['leave_types'][] = [
+                                                'leave_type_id' => $leave_type_id,
+                                                'leave_type_name' => $leave_type->name,
+                                                'leave_type_code' => $leave_type->code,
+                                                'leave_type_count' => $leave_count,
+                                            ];
+                                        }
+                                    }
+                                    $areas[] = $unitData;
+                                }
+                            }
+                        }
+                        break;
+                    case "Section":
+                        $section = Section::where('id', $area_id)->first();
+                        if ($section) {
+                            $sectionData = [
+                                'id' => $section->id . '-section',
+                                'name' => $section->name,
+                                'sector' => 'Section',
+                                'leave_with_pay_count' => 0,
+                                'leave_without_pay_count' => 0,
+                                'leave_count' => 0,
+                                'leave_types' => []
+                            ];
+                            foreach ($leave_type_ids as $leave_type_id) {
+                                $leave_type = LeaveType::find($leave_type_id);
+                                if ($leave_type) {
+                                    $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->whereHas('employeeProfile', function ($query) use ($section) {
+                                            $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                $q->where('section_id', $section->id);
+                                            });
+                                        })->count();
+                                    $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                        ->whereHas('employeeProfile', function ($query) use ($section) {
+                                            $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                $q->where('section_id', $section->id);
+                                            });
+                                        })->count();
+                                    $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                        ->whereHas('employeeProfile', function ($query) use ($section) {
+                                            $query->whereHas('assignedArea', function ($q) use ($section) {
+                                                $q->where('section_id', $section->id);
+                                            });
+                                        })->count();
+
+                                    // Accumulate total leave counts
+                                    $sectionData['leave_with_pay_count'] += $leave_with_pay_count;
+                                    $sectionData['leave_without_pay_count'] += $leave_without_pay_count;
+                                    $sectionData['leave_count'] += $leave_count;
+
+                                    // Push leave counts for the current leave type into sectionData
+                                    $sectionData['leave_types'][] = [
+                                        'leave_type_id' => $leave_type_id,
+                                        'leave_type_name' => $leave_type->name,
+                                        'leave_type_code' => $leave_type->code,
+                                        'leave_type_count' => $leave_count,
+                                    ];
+                                }
+                            }
+                            $areas[] = $sectionData;
+                        }
+                        if ($area_under === 'All') {
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $unitData = [
+                                    'id' => $unit->id . '-unit',
+                                    'name' => $unit->name,
+                                    'sector' => 'Unit',
+                                    'leave_with_pay_count' => 0,
+                                    'leave_without_pay_count' => 0,
+                                    'leave_count' => 0,
+                                    'leave_types' => []
+                                ];
+                                foreach ($leave_type_ids as $leave_type_id) {
+                                    $leave_type = LeaveType::find($leave_type_id);
+                                    if ($leave_type) {
+                                        $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                            ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                    $q->where('unit_id', $unit->id);
+                                                });
+                                            })->count();
+                                        $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                            ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                    $q->where('unit_id', $unit->id);
+                                                });
+                                            })->count();
+                                        $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                            ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                                $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                    $q->where('unit_id', $unit->id);
+                                                });
+                                            })->count();
+
+                                        // Accumulate total leave counts
+                                        $unitData['leave_with_pay_count'] += $leave_with_pay_count;
+                                        $unitData['leave_without_pay_count'] += $leave_without_pay_count;
+                                        $unitData['leave_count'] += $leave_count;
+
+                                        // Push leave counts for the current leave type into unitData
+                                        $unitData['leave_types'][] = [
+                                            'leave_type_id' => $leave_type_id,
+                                            'leave_type_name' => $leave_type->name,
+                                            'leave_type_code' => $leave_type->code,
+                                            'leave_type_count' => $leave_count,
+                                        ];
+                                    }
+                                }
+                                $areas[] = $unitData;
+                            }
+                        }
+                        break;
+                    case "Unit":
+                        $unit = Unit::where('id', $area_id)->first();
+                        if ($unit) {
+                            $unitData = [
+                                'id' => $unit->id . '-unit',
+                                'name' => $unit->name,
+                                'sector' => 'Unit',
+                                'leave_with_pay_count' => 0,
+                                'leave_without_pay_count' => 0,
+                                'leave_count' => 0,
+                                'leave_types' => []
+                            ];
+                            foreach ($leave_type_ids as $leave_type_id) {
+                                $leave_type = LeaveType::find($leave_type_id);
+                                if ($leave_type) {
+                                    $leave_count = LeaveApplication::where('leave_type_id', $leave_type_id)
+                                        ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                            $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                $q->where('unit_id', $unit->id);
+                                            });
+                                        })->count();
+                                    $leave_with_pay_count = LeaveApplication::where('without_pay', false)
+                                        ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                            $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                $q->where('unit_id', $unit->id);
+                                            });
+                                        })->count();
+                                    $leave_without_pay_count = LeaveApplication::where('without_pay', true)
+                                        ->whereHas('employeeProfile', function ($query) use ($unit) {
+                                            $query->whereHas('assignedArea', function ($q) use ($unit) {
+                                                $q->where('unit_id', $unit->id);
+                                            });
+                                        })->count();
+
+                                    // Accumulate total leave counts
+                                    $unitData['leave_with_pay_count'] += $leave_with_pay_count;
+                                    $unitData['leave_without_pay_count'] += $leave_without_pay_count;
+                                    $unitData['leave_count'] += $leave_count;
+
+                                    // Push leave counts for the current leave type into unitData
+                                    $unitData['leave_types'][] = [
+                                        'leave_type_id' => $leave_type_id,
+                                        'leave_type_name' => $leave_type->name,
+                                        'leave_type_code' => $leave_type->code,
+                                        'leave_type_count' => $leave_count,
+                                    ];
+                                }
+                            }
+                            $areas[] = $unitData;
+                        }
+                        break;
+                }
+
+                // Sort the areas by leave_count in descending order
+                usort($areas, function ($a, $b) {
+                    return $b['leave_count'] - $a['leave_count'];
+                });
+                return response()->json(['areas' => $areas]);
+            } elseif ($report_type === 'employee') {
+                // Return leave applications with areas
+                $status = $request->status; // Assuming leave_status is passed in the request
+                $leave_applications = LeaveApplication::where('status', $status)->get();
+
+                foreach ($leave_applications as $leave_application) {
+                    $employee_profile_id = $leave_application->employee_profile_id;
+
+                    // Get employee's assigned areas
+                    $employee = AssignArea::where('employee_profile_id', $employee_profile_id)->first();
+                    $employee_areas = [];
+
+                    if ($employee) {
+                        switch ($area) {
+                            case "Division":
+                                $division = Division::where('id', $area_id)->first();
+                                if ($division) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $division->name, 'sector' => $area];
+                                }
+                                if ($area_under) {
+                                    $departments = Department::where('division_id', $area_id)->get();
+                                    foreach ($departments as $department) {
+                                        $employee_areas[] = ['id' => $department->id . '-department', 'name' => $department->name, 'sector' => 'Department'];
+                                        $sections = Section::where('department_id', $department->id)->get();
+                                        foreach ($sections as $section) {
+                                            $employee_areas[] = ['id' => $section->id . '-section', 'name' => $section->name, 'sector' => 'Section'];
+                                            $units = Unit::where('section_id', $section->id)->get();
+                                            foreach ($units as $unit) {
+                                                $employee_areas[] = ['id' => $unit->id . '-unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                            case "Department":
+                                $department = Department::where('id', $area_id)->first();
+                                if ($department) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $department->name, 'sector' => $area];
+                                }
+                                if ($area_under) {
+                                    $sections = Section::where('department_id', $area_id)->get();
+                                    foreach ($sections as $section) {
+                                        $employee_areas[] = ['id' => $section->id . '-section', 'name' => $section->name, 'sector' => 'Section'];
+                                        $units = Unit::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $employee_areas[] = ['id' => $unit->id . '-unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                        }
+                                    }
+                                }
+                                break;
+                            case "Section":
+                                $section = Section::where('id', $area_id)->first();
+                                if ($section) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $section->name, 'sector' => $area];
+                                }
+                                if ($area_under) {
+                                    $units = Unit::where('section_id', $area_id)->get();
+                                    foreach ($units as $unit) {
+                                        $employee_areas[] = ['id' => $unit->id . '-unit', 'name' => $unit->name, 'sector' => 'Unit'];
+                                    }
+                                }
+                                break;
+                            case "Unit":
+                                $unit = Unit::where('id', $area_id)->first();
+                                if ($unit) {
+                                    $employee_areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $unit->name, 'sector' => $area];
+                                }
+                                break;
+                        }
+                    }
+
+                    // Combine leave application with employee areas
+                    $areas[] = [
+                        'leave_application' => $leave_application,
+                        'employee_areas' => $employee_areas
+                    ];
+                }
+
+                return response()->json(['areas' => $areas]);
+            }
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getAreas(Request $request)
+    {
+        try {
+            $area = $request->sector;
+            $area_id = $request->area_id;
+            $areas = [];
+
+            switch ($area) {
+                case "division":
+                    $division = Division::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area, 'code' => $division->code];
+                    $departments = Department::where('division_id', $area_id)->get();
+
+                    foreach ($departments as $department) {
+                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'department', 'code' => $department->code];
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach ($sections as $section) {
+                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                            }
+                        }
+                    }
+                    $sections = Section::where('division_id', $area_id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                        }
+                    }
+                    break;
+                case "department":
+                    $department = Department::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area, 'code' => $department->code];
+                    $sections = Section::where('department_id', $area_id)->get();
+
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                        }
+                    }
+                    break;
+                case "section":
+                    $section = Section::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area, 'code' => $section->code];
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                    }
+                    break;
+                case "unit":
+                    $units = Unit::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area, 'code' => $unit->code];
+                    break;
+            }
+
+
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
 
     public function getEmployeeListByEmployementTypes(Request $request)
     {

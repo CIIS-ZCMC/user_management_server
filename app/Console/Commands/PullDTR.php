@@ -58,8 +58,9 @@ class PullDTR extends Command
             //Pull first before clearing devices.
                 if($this->dtrController->fetchDTRFromDevice()){
                      $this->dtrController->deleteDeviceLogs();
+                     Log::channel("custom-dtr-log")->info('DEVICE SUCCESSFULLY CLEARED @ '.$datenow);
                   }
-         Log::channel("custom-dtr-log")->info('DEVICE SUCCESSFULLY CLEARED.');
+       
         }
 
 

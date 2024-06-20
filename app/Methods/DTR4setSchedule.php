@@ -198,12 +198,12 @@ class DTR4setSchedule
         $o_all_min = $validate->total_working_minutes;
 
 
-
+     
 
         if ($f1 && !$f2 && !$f3 && !$f4) {
-
+       
             if ($status == 255) {
-
+             
                 if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$data]))) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
@@ -212,6 +212,7 @@ class DTR4setSchedule
                         $DaySchedule,
                         false
                     );
+                  
                 }
 
             }
@@ -235,12 +236,15 @@ class DTR4setSchedule
            */
 
         if ($f1 && $f2 && !$f3 && !$f4) {
+          
+         
             if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 $percent_Trendered = floor($rwm * 0.6);
-
+           
                 if ($o_all_min <= $percent_Trendered) { // if allmins rendered is less than the 60% time req . then accept a second entry
-
+                  
                     if ($status == 255) {
+                      
                         if ($this->helper->withinInterval($f2, $this->helper->sequence(0, [$data]))) {
                             $this->helper->saveIntervalValidation(
                                 $this->helper->sequence(0, [$data]),
@@ -254,7 +258,10 @@ class DTR4setSchedule
                             $validate
                         );
                     }
+
+                    
                 }
+
             }
         }
         /* check In_am and out_am and  in_pm and not set out_pm */

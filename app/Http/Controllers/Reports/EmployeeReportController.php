@@ -50,12 +50,82 @@ class EmployeeReportController extends Controller
                     ->get();
             } else {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                    ->where('aa.' . $sector . "_id", $area)
-                    ->where('pi.civil_status', $civilStatus)
-                    ->whereNotIn('employee_profiles.id', [1])
-                    ->get();
+                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                ->where('aa.'.$sector."_id", $area)
+                ->where('pi.blood_type', $type)
+                ->whereNotIn('employee_profiles.id', [1])
+                ->get();
+            }
+
+            return response()->json([
+                'data' => EmployeesDetailsReport::collection($employees),
+                'count' => COUNT($employees),
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'employeesByBloodType', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function allEmployeesCivilStatus($civil_status, Request $request)
+    {
+        try {
+            if ($civil_status == 0) {
+                $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', NULL)->get();
+            } else {
+                $employees = EmployeeProfile::select('employee_profiles.*')
+                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                ->where('pi.civil_status', $civil_status)
+                ->whereNotIn('employee_profiles.id', [1])
+                ->get();
+            }
+
+
+
+            return response()->json([
+                'data' => EmployeesDetailsReport::collection($employee_profiles),
+                'count' => COUNT($employee_profiles),
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'employeesCivilStatus', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function employeesByCivilStatus($civilStatus, $area_id, $sector, Request $request)
+    {
+        try {
+            $area = strip_tags($area_id);
+            $sector = Str::lower(strip_tags($sector));
+            $employees = [];
+
+
+            if ($area_id == 'null') {
+                $employees = EmployeeProfile::select('employee_profiles.*')
+                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                ->where('pi.civil_status', $civilStatus)
+                ->whereNotIn('employee_profiles.id', [1])
+                ->get();
+            } else if ($civilStatus == 'null') {
+                $employees = EmployeeProfile::select('employee_profiles.*')
+                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                ->where('aa.'.$sector."_id", $area)
+                ->whereNotIn('employee_profiles.id', [1])
+                ->get();
+            } else {
+                $employees = EmployeeProfile::select('employee_profiles.*')
+                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                ->where('aa.'.$sector."_id", $area)
+                ->where('pi.civil_status', $civilStatus)
+                ->whereNotIn('employee_profiles.id', [1])
+                ->get();
             }
 
             return response()->json([

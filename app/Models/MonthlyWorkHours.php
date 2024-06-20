@@ -23,6 +23,6 @@ class MonthlyWorkHours extends Model
 
     public function employmentType()
     {
-        return $this->belongsTo(EmploymentType::class);
+        return $this->belongsTo(EmploymentType::class, 'employment_type_id');
     }
 }

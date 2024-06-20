@@ -15,6 +15,17 @@ use Illuminate\Support\Facades\Route;
 */
 
 
+
+Route::controller(App\Http\Controllers\DTR\LogCheckerController::class)->group(
+    function () {
+        Route::get('/CheckLogs', 'index');
+        Route::get('/getlogs', 'getLogs')->name('check.logs');
+    }
+);
+
+
+
+
 Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
     function () {
         Route::get('/ftchdtrfrmdvc', 'fetchDTRFromDevice')->name('fetchdtrfromdevice');
@@ -26,10 +37,13 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         // Route::get('/modifyHolidays', 'modifyHolidays')->name('modifyHolidays');
         // Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
         Route::get('/testtest', 'test')->name('testtest');
-        
+
         Route::get('/leave-application', function () {
             return view('leave.mail');
         });
+
+
+
 
         Route::get('/leave-request', function () {
             return view('leave.approving');

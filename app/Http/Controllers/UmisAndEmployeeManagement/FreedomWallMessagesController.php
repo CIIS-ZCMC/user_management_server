@@ -4,14 +4,9 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthPinApprovalRequest;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Helpers\Helpers;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\FreedomWallMessagesRequest;
 use App\Http\Resources\FreedomWallMessagesResource;
 use App\Models\FreedomWallMessages;
@@ -19,8 +14,6 @@ use App\Models\Notifications;
 use App\Models\UserNotifications;
 use App\Http\Resources\NotificationResource;
 use App\Models\EmployeeProfile;
-use App\Models\EmploymentType;
-use App\Models\PersonalInformation;
 
 class FreedomWallMessagesController extends Controller
 {
@@ -36,7 +29,7 @@ class FreedomWallMessagesController extends Controller
     {
         try {
             // Retrieve all Freedom Wall messages with related employee profile and personal information
-            $freedom_wall_messages = FreedomWallMessages::with('employeeProfile.personalInformation')->get();
+            $freedom_wall_messages = FreedomWallMessages::with('employeeProfile.personalInformation')->orderBy('created_at', 'desc')->get();
 
             // Map the messages to the desired format
             $data = $freedom_wall_messages->map(function ($message) {
@@ -113,7 +106,7 @@ class FreedomWallMessagesController extends Controller
                 $notification = Notifications::create([
                     "title" => "You've been mentioned in a Freedom Wall Message",
                     "description" => "{$currentEmployeeName} mentioned you in a message on the Freedom Wall.",
-                    "module_path" => '/freedom-wall-message',
+                    "module_path" => '/calendar',
                 ]);
 
                 $user_notification = UserNotifications::create([
@@ -133,12 +126,14 @@ class FreedomWallMessagesController extends Controller
                 : null;
 
             return response()->json([
-                'profile_url' => $profile_url,
-                'name' => $currentEmployeeName,
-                'content_id' => $message->id,
-                'content' => $message->content,
-                'date' => $message->created_at->toDateTimeString(),
-            ], Response::HTTP_CREATED);
+                'data' => [
+                    'profile_url' => $profile_url,
+                    'name' => $currentEmployeeName,
+                    'content_id' => $message->id,
+                    'content' => $message->content,
+                    'date' => $message->created_at->toDateTimeString(),
+                ]
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             // Log error and return internal server error response
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -216,7 +211,52 @@ class FreedomWallMessagesController extends Controller
 
     /**
      * Filter a Freedom Wall messages by year.
-     * 
+     *
+     */
+    public function filterFreedomWallMessagesByYear(Request $request)
+    {
+        try {
+            $year = $request->input('year');
+
+            // Retrieve all Freedom Wall messages or filter by year
+            $freedom_wall_messages =  FreedomWallMessages::with('employeeProfile.personalInformation')
+                ->whereYear('created_at', $year)
+                ->get();;
+
+            // Map the messages to the desired format
+            $data = $freedom_wall_messages->map(function ($message) {
+                $employeeProfile = $message->employeeProfile;
+                $personalInformation = $employeeProfile->personalInformation;
+
+                // Generate the profile URL
+                $profile_url = $employeeProfile->profile_url
+                    ? config('app.server_domain') . "/photo/profiles/" . $employeeProfile->profile_url
+                    : null;
+
+                return [
+                    'profile_url' => $profile_url,
+                    'name' => $personalInformation->employeeName(),
+                    'content_id' => $message->id,
+                    'content' => $message->content,
+                    'date' => $message->created_at->toDateTimeString(),
+                ];
+            });
+
+            return response()->json([
+                'data' => $data,
+                'message' => 'Freedom wall messages retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            // Log error and return internal server error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    /**
+     * Filter a Freedom Wall messages by year.
+     *
      */
     public function filterFreedomWallMessagesByYear(Request $request)
     {
