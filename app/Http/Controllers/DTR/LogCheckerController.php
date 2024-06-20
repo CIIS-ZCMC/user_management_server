@@ -38,6 +38,17 @@ class LogCheckerController extends Controller
 
         return view("Checklogs");
     }
+    private  function array_flatten($array) {
+        $result = [];
+        foreach ($array as $element) {
+            if (is_array($element)) {
+                $result = array_merge($result, $element);
+            } else {
+                $result[] = $element;
+            }
+        }
+        return $result;
+    }
     public function getLogs(Request $request){
         $employee_id = $request->employee_ID;
         $datenow = date('Y-m-d');
@@ -83,8 +94,9 @@ class LogCheckerController extends Controller
         }
 
         $biologs = $biologs ?? [];
-        $biologs = $this->array_flatten($biologs);
-
+        if(count($biologs)>=1){
+            $biologs = $this->array_flatten($biologs);
+ }
 
         return view('Retrievedlogs',compact('dtr','dtrlogs','biologs','name','employee_id'));
 

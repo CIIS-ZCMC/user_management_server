@@ -45,12 +45,12 @@ class Department extends Model
 
     public function head()
     {
-        return $this->belongsTo(EmployeeProfile::class,'head_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'head_employee_profile_id');
     }
 
     public function trainingOfficer()
     {
-        return $this->belongsTo(EmployeeProfile::class,'training_officer_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'training_officer_employee_profile_id');
     }
 
     public function oic()
@@ -71,5 +71,10 @@ class Department extends Model
     public function departmentHead()
     {
         return $this->belongsTo(EmployeeProfile::class, 'head_employee_profile_id');
+    }
+
+    public function sections()
+    {
+        return $this->hasMany(Section::class);
     }
 }
