@@ -10,6 +10,7 @@ use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\AnnouncementsRequest;
 use App\Http\Resources\AnnouncementsResource;
+use App\Jobs\SchedAnnouncement;
 use App\Models\Announcements;
 use App\Models\EmployeeProfile;
 use App\Models\Notifications;
@@ -65,14 +66,21 @@ class AnnouncementsController extends Controller
     public function store(AnnouncementsRequest $request)
     {
         try{
-            DB::beginTransaction();
+            // DB::beginTransaction();
             $cleanData = [];
-
+          
+            
             foreach ($request->all() as $key => $value) {
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
+                if(isset($value)){
+                    if($key === 'scheduled_at'){
+                        $value = Carbon::parse($value);
+                    }
+                }
+               
                 if($key === 'attachments'){
                     $index = 1;
                     $array_list = [];
@@ -87,8 +95,22 @@ class AnnouncementsController extends Controller
                 }
                 $cleanData[$key] = $value;
             } 
+            if(isset($request->scheduled_at)){
+                // "2024-06-19T16:00:00.000Z"
+                // dd($cleanData['title']);
+                $cleanData['posted']=0;
+                $event = Announcements::create($cleanData);
+                SchedAnnouncement::dispatch($event)->delay(Carbon::parse($cleanData['scheduled_at']));
+                // DB::commit();
+                return response()->json([
+                    'data' => new AnnouncementsResource($event),
+                    'message' => 'Schedule an Announcement set'
+                ], Response::HTTP_OK);
+                // 
+            }
+            $cleanData['posted']=1;
             $event = Announcements::create($cleanData);
-
+            
             if($event){
                 $notification = Notifications::create([
                     'title'=>"Announcement!",
@@ -111,6 +133,7 @@ class AnnouncementsController extends Controller
                 'message' => 'Event created successfully'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            dd($th);
             DB::rollback();
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
