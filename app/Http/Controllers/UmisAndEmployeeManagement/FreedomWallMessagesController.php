@@ -207,4 +207,49 @@ class FreedomWallMessagesController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    /**
+     * Filter a Freedom Wall messages by year.
+     *
+     */
+    public function filterFreedomWallMessagesByYear(Request $request)
+    {
+        try {
+            $year = $request->input('year');
+
+            // Retrieve all Freedom Wall messages or filter by year
+            $freedom_wall_messages =  FreedomWallMessages::with('employeeProfile.personalInformation')
+                ->whereYear('created_at', $year)
+                ->get();;
+
+            // Map the messages to the desired format
+            $data = $freedom_wall_messages->map(function ($message) {
+                $employeeProfile = $message->employeeProfile;
+                $personalInformation = $employeeProfile->personalInformation;
+
+                // Generate the profile URL
+                $profile_url = $employeeProfile->profile_url
+                    ? config('app.server_domain') . "/photo/profiles/" . $employeeProfile->profile_url
+                    : null;
+
+                return [
+                    'profile_url' => $profile_url,
+                    'name' => $personalInformation->employeeName(),
+                    'content_id' => $message->id,
+                    'content' => $message->content,
+                    'date' => $message->created_at->toDateTimeString(),
+                ];
+            });
+
+            return response()->json([
+                'data' => $data,
+                'message' => 'Freedom wall messages retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            // Log error and return internal server error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
