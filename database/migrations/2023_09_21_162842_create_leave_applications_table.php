@@ -44,6 +44,8 @@ return new class extends Migration
             $table->boolean('is_effective')->default(false);
             $table->dateTime('cancelled_at')->nullable();
             $table->dateTime('received_at')->nullable();
+            $table->unsignedBigInteger('applied_by')->unsigned();
+            $table->foreign('applied_by')->references('id')->on('employee_profiles')->onDelete('cascade');
 
             $table->timestamps();
 

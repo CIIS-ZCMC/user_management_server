@@ -304,6 +304,8 @@ class EmployeeProfile extends Authenticatable
             ];
         }
 
+        
+
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
         $nurse_service = Division::where('code', 'NS')->first();
@@ -373,6 +375,7 @@ class EmployeeProfile extends Authenticatable
 
         /** for HR ADMIN */
         $assign_area = AssignArea::where('employee_profile_id', $this->id)->first();
+
         if ($assign_area->section_id !== null) {
             $hr_employee = Section::find($assign_area->section_id);
 
