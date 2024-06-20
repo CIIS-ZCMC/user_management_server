@@ -2152,7 +2152,7 @@ class EmployeeProfileController extends Controller
     public function getUserListMentions(Request $request)
     {
         try {
-           
+
 
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->where('deactivated_at', NULL)->get();
 
@@ -3713,6 +3713,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function updateEmployeeProfilePicture($id, Request $request)
     {
         try {

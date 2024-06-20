@@ -30,7 +30,7 @@ class Unit extends Model
     ];
 
     public $timestamps = TRUE;
-    
+
     public function assignArea()
     {
         return $this->hasMany(AssignArea::class);
@@ -69,5 +69,15 @@ class Unit extends Model
     public function oicTrails()
     {
         return $this->hasMany(OfficerInChargeTrail::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
     }
 }

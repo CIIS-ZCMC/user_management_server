@@ -1169,6 +1169,12 @@ class Helpers
         }
     }
 
+    public static function getEmployeeName($employeeProfileId)
+    {
+        $employeeProfile = EmployeeProfile::with('personalInformation')->find($employeeProfileId);
+        return $employeeProfile && $employeeProfile->personalInformation ? $employeeProfile->personalInformation->full_name : 'Unknown';
+    }
+
     public static function sendNotification($body)
     {
 
