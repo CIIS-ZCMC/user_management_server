@@ -160,6 +160,9 @@ Route::middleware('auth.cookie')->group(function () {
         Route::post('freedom-wall-message', 'FreedomWallMessagesController@store');
         Route::put('freedom-wall-messages/{id}', 'FreedomWallMessagesController@update');
         Route::delete('freedom-wall-messages/{id}', 'FreedomWallMessagesController@destroy');
+        Route::middleware('auth.permission:UMIS-SM view-all')->group(function () {
+            Route::post('freedom-wall-messages-filter-year', 'FreedomWallMessagesController@filterFreedomWallMessagesByYear');
+        });
     });
 
     /**
