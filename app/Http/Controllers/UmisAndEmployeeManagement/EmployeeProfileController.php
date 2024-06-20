@@ -2152,9 +2152,11 @@ class EmployeeProfileController extends Controller
     public function getUserListMentions(Request $request)
     {
         try {
+            $user = $request->user;
 
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->where('deactivated_at', NULL)->get();
+
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
 
             $filteredUsers = $employee_profiles->map(function ($user) {
                 return [
