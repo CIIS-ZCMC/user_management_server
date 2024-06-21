@@ -51,7 +51,8 @@ class LeaveApplication extends Model
         'applied_by'
     ];
 
-    public function oic(){
+    public function oic()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'employee_oic_id');
     }
 
@@ -78,7 +79,7 @@ class LeaveApplication extends Model
     public function employeeLeaveCredit()
     {
 
-        return $this->belongsTo(EmployeeLeaveCredit::class, 'employee_profile_id','id');
+        return $this->belongsTo(EmployeeLeaveCredit::class, 'employee_profile_id', 'id');
     }
 
     public function hrmoOfficer()
@@ -96,7 +97,7 @@ class LeaveApplication extends Model
          * looking for specification of Chief division head employee id and action Approved
          * does if nothing returns it will considered as false;
          */
-        if(!LeaveApplicationLog::where('action_by', $division_head->id)->where('action', 'Approved')->first()){
+        if (!LeaveApplicationLog::where('action_by', $division_head->id)->where('action', 'Approved')->first()) {
             return false;
         }
 
@@ -113,7 +114,7 @@ class LeaveApplication extends Model
          * looking for specification of HRMO division head employee id and action Approved
          * does if nothing returns it will considered as false;
          */
-        if(!LeaveApplicationLog::where('action_by', $section_supervisor->id)->where('action', 'Approved')->first()){
+        if (!LeaveApplicationLog::where('action_by', $section_supervisor->id)->where('action', 'Approved')->first()) {
             return false;
         }
 
@@ -130,6 +131,8 @@ class LeaveApplication extends Model
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 
-
-
+    public function appliedBy()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'applied_by');
+    }
 }

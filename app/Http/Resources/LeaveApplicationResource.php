@@ -155,6 +155,13 @@ class LeaveApplicationResource extends JsonResource
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
                 "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
+            "applied_by" => [
+                "employee_id" => $this->appliedBy->employee_id,
+                "name" => $this->approvingOfficer->personalInformation->name(),
+                "designation" => $this->approvingOfficer->assignedArea->designation->name,
+                "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
+                "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
+            ],
             "oic" => $oic,
             'attachments' => $this->leaveApplicationRequirements === null ? [] : LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
             'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs) : [],
