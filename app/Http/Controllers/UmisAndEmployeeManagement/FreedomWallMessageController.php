@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\AuthPinApprovalRequest;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Helpers\Helpers;
-use App\Http\Requests\FreedomWallMessagesRequest;
-use App\Http\Resources\FreedomWallMessagesResource;
-use App\Models\FreedomWallMessages;
-use App\Models\Notifications;
-use App\Models\UserNotifications;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\FreedomWallMessageResource;
 use App\Http\Resources\NotificationResource;
 use App\Models\EmployeeProfile;
+use App\Models\FreedomWallMessage;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
+use Illuminate\Http\Response;
+use Illuminate\Http\Request;
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\Like;
 
-class FreedomWallMessagesController extends Controller
+class FreedomWallMessageController extends Controller
 {
     private $CONTROLLER_NAME = 'Freedom Wall Messages';
 
@@ -28,18 +28,20 @@ class FreedomWallMessagesController extends Controller
     public function index(Request $request)
     {
         try {
-            // Retrieve all Freedom Wall messages with related employee profile and personal information
-            $freedom_wall_messages = FreedomWallMessages::with('employeeProfile.personalInformation')->orderBy('created_at', 'desc')->get();
+            $current_user = $request->user;
+            $currentEmployeeProfileId = $current_user->id;
 
-            // Map the messages to the desired format
-            $data = $freedom_wall_messages->map(function ($message) {
+            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->get();
+
+            $data = $freedom_wall_messages->map(function ($message) use ($currentEmployeeProfileId) {
                 $employeeProfile = $message->employeeProfile;
                 $personalInformation = $employeeProfile->personalInformation;
 
-                // Generate the profile URL
                 $profile_url = $employeeProfile->profile_url
                     ? config('app.server_domain') . "/photo/profiles/" . $employeeProfile->profile_url
                     : null;
+
+                $is_liked = $message->likes->contains('employee_profile_id', $currentEmployeeProfileId);
 
                 return [
                     'profile_url' => $profile_url,
@@ -47,6 +49,8 @@ class FreedomWallMessagesController extends Controller
                     'content_id' => $message->id,
                     'content' => $message->content,
                     'date' => $message->created_at->toDateTimeString(),
+                    'likes' => $message->likes->count(),
+                    'is_liked' => $is_liked,
                 ];
             });
 
@@ -55,11 +59,11 @@ class FreedomWallMessagesController extends Controller
                 'message' => 'Freedom wall messages retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            // Log error and return internal server error response
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Store a new Freedom Wall message.
@@ -90,7 +94,7 @@ class FreedomWallMessagesController extends Controller
             ];
 
             // Create the message
-            $message = FreedomWallMessages::create($cleanData);
+            $message = FreedomWallMessage::create($cleanData);
 
             // Handle mentions if provided
             $mentionedEmployees = collect();
@@ -145,14 +149,14 @@ class FreedomWallMessagesController extends Controller
      * Update an existing Freedom Wall message.
      *
      * @param int $id
-     * @param FreedomWallMessagesRequest $request
+     * @param FreedomWallMessageRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update($id, FreedomWallMessagesRequest $request)
+    public function update($id, Request $request)
     {
         try {
             // Find the message by ID
-            $freedom_wall_message = FreedomWallMessages::find($id);
+            $freedom_wall_message = FreedomWallMessage::find($id);
 
             if (!$freedom_wall_message) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -168,7 +172,7 @@ class FreedomWallMessagesController extends Controller
             $freedom_wall_message->update($cleanData);
 
             return response()->json([
-                'data' => new FreedomWallMessagesResource($freedom_wall_message),
+                'data' => new FreedomWallMessageResource($freedom_wall_message),
                 'message' => 'Freedom wall details updated.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -189,7 +193,7 @@ class FreedomWallMessagesController extends Controller
     {
         try {
             // Validate the authorization pin
-            $user = $request->user();
+            $user = $request->user;
             $cleanData['pin'] = strip_tags($request->input('password'));
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
@@ -197,7 +201,7 @@ class FreedomWallMessagesController extends Controller
             }
 
             // Find the message by ID and delete it
-            $freedom_wall_message = FreedomWallMessages::findOrFail($id);
+            $freedom_wall_message = FreedomWallMessage::findOrFail($id);
             $freedom_wall_message->delete();
 
             return response()->json(['message' => 'Freedom wall message deleted successfully.'], Response::HTTP_OK);
@@ -216,22 +220,25 @@ class FreedomWallMessagesController extends Controller
     public function filterByYear(Request $request)
     {
         try {
-            $year = $request->input('year');
+            $current_user = $request->user;
+            $year = $request->year;
 
-            // Retrieve all Freedom Wall messages or filter by year
-            $freedom_wall_messages =  FreedomWallMessages::with('employeeProfile.personalInformation')
+            $currentEmployeeProfileId = $current_user->id;
+
+            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')
                 ->whereYear('created_at', $year)
-                ->get();;
+                ->get();
 
-            // Map the messages to the desired format
-            $data = $freedom_wall_messages->map(function ($message) {
+
+            $data = $freedom_wall_messages->map(function ($message) use ($currentEmployeeProfileId) {
                 $employeeProfile = $message->employeeProfile;
                 $personalInformation = $employeeProfile->personalInformation;
 
-                // Generate the profile URL
                 $profile_url = $employeeProfile->profile_url
                     ? config('app.server_domain') . "/photo/profiles/" . $employeeProfile->profile_url
                     : null;
+
+                $is_liked = $message->likes->contains('employee_profile_id', $currentEmployeeProfileId);
 
                 return [
                     'profile_url' => $profile_url,
@@ -239,6 +246,8 @@ class FreedomWallMessagesController extends Controller
                     'content_id' => $message->id,
                     'content' => $message->content,
                     'date' => $message->created_at->toDateTimeString(),
+                    'likes' => $message->likes->count(),
+                    'is_liked' => $is_liked,
                 ];
             });
 
@@ -247,8 +256,67 @@ class FreedomWallMessagesController extends Controller
                 'message' => 'Freedom wall messages retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            // Log error and return internal server error response
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterByYear', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Like a Freedom Wall message.
+     *
+     * @param int $messageId
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function like($messageId, Request $request)
+    {
+        try {
+            $current_user = $request->user;
+            $currentEmployeeProfile = EmployeeProfile::find($current_user->id);
+
+            $like = Like::create([
+                'employee_profile_id' => $currentEmployeeProfile->id,
+                'freedom_wall_message_id' => intval($messageId),
+            ]);
+
+            return response()->json([
+                'data' => $like,
+                'message' => 'Message liked successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'like', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Unlike a Freedom Wall message.
+     *
+     * @param int $messageId
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unlike($messageId, Request $request)
+    {
+        try {
+            $current_user = $request->user;
+            $currentEmployeeProfile = EmployeeProfile::find($current_user->id);
+
+            $like = Like::where('employee_profile_id', $currentEmployeeProfile->id)
+                ->where('freedom_wall_message_id', intval($messageId))
+                ->first();
+
+            if ($like) {
+                $like->delete();
+                return response()->json([
+                    'data' => $like,
+                    'message' => 'Message unliked successfully.'
+                ], Response::HTTP_OK);
+            } else {
+                return response()->json(['message' => 'Like not found.'], Response::HTTP_NOT_FOUND);
+            }
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'unlike', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
