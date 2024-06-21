@@ -31,7 +31,7 @@ class FreedomWallMessageController extends Controller
             $current_user = $request->user;
             $currentEmployeeProfileId = $current_user->id;
 
-            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->get();
+            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->orderBy('created_at', 'desc')->get();
 
             $data = $freedom_wall_messages->map(function ($message) use ($currentEmployeeProfileId) {
                 $employeeProfile = $message->employeeProfile;
@@ -90,7 +90,7 @@ class FreedomWallMessageController extends Controller
             // Clean the input data
             $cleanData = [
                 'employee_profile_id' => $currentEmployeeProfile->id,
-                'content' => strip_tags($request->input('content')),
+                'content' => $request->input('content'),
             ];
 
             // Create the message
