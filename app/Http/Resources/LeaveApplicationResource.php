@@ -157,7 +157,7 @@ class LeaveApplicationResource extends JsonResource
             ],
             "applied_by" => $this->appliedBy ? [
                 "employee_id" => $this->appliedBy->employee_id,
-                "name" => $this->appliedBy->personalInformation->name(),
+                "name" => $this->appliedBy->personalInformation->fullName(),
                 "designation" => $this->appliedBy->assignedArea->designation->name,
                 "designation_code" => $this->appliedBy->assignedArea->designation->code,
                 "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->appliedBy->profile_url,
