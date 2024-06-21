@@ -1544,14 +1544,14 @@ class LeaveApplicationController extends Controller
             } else {
                 if ($leave_type->is_special) {
                     $cleanData['applied_credits'] = $daysDiff;
-                    $cleanData['employee_profile_id'] = $employee_profile->id;
+                    $cleanData['employee_profile_id'] = $employee_id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
                     if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                         $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                     }
 
-                    $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
+                    $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_id)->first();
 
                     if (!$isMCC) {
                         $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
@@ -1626,14 +1626,14 @@ class LeaveApplicationController extends Controller
                             $cleanData['applied_credits'] = $daysDiff;
                         }
 
-                        $cleanData['employee_profile_id'] = $employee_profile->id;
+                        $cleanData['employee_profile_id'] = $employee_id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
                         if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
                             $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                         }
 
-                        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
+                        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_id)->first();
 
                         if (!$isMCC) {
 
@@ -1805,21 +1805,8 @@ class LeaveApplicationController extends Controller
         try {
 
             $employee_profile = $request->user;
-            $employeeId = $employee_profile->id;
-            $recommending = ["for recommending approval", "for approving approval", "approved",  "received", "declined by recommending officer"];
-            $approving = ["for approving approval", "approved", "received", "declined by approving officer"];
-
             $leave_applications = LeaveApplication::select('leave_applications.*')
-                 ->whereNotNull('applied_by')
-                ->where(function ($query) use ($recommending, $employeeId) {
-                    $query->whereIn('leave_applications.status', $recommending)
-                        ->where('leave_applications.recommending_officer', $employeeId);
-                })
-                ->orWhere(function ($query) use ($approving, $employeeId) {
-                    $query->whereIn('leave_applications.status', $approving)
-                        ->where('leave_applications.approving_officer', $employeeId);
-                })
-
+                ->whereNotNull('applied_by')
                 ->groupBy(
                     'id',
                     'employee_profile_id',
