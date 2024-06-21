@@ -1846,6 +1846,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('countries', 'LeaveApplicationController@showCountries');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('hrmo-leave-applied-all', 'LeaveApplicationController@getAppliedByHrmo');
+        });
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-hrmo-all', 'LeaveApplicationController@hrmoApproval');
@@ -1907,6 +1910,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
             Route::post('change-leave-date/{id}', 'LeaveApplicationController@changeDate');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {
+            Route::post('hrmo-leave-application', 'LeaveApplicationController@storeHrmo');
         });
 
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {

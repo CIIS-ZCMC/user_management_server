@@ -47,6 +47,8 @@ class LeaveApplication extends Model
         'employee_oic_id',
         'received_at',
         'cancelled_at',
+        'created_at',
+        'applied_by'
     ];
 
     public function oic()
@@ -127,5 +129,10 @@ class LeaveApplication extends Model
     public function approvingOfficer()
     {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
+    }
+
+    public function appliedBy()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'applied_by');
     }
 }
