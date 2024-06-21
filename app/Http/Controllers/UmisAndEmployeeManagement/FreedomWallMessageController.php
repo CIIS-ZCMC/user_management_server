@@ -14,11 +14,13 @@ use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Models\Like;
+use Illuminate\Support\Facades\Cache; // Correct namespace for Cache
 
 class FreedomWallMessageController extends Controller
 {
     private $CONTROLLER_NAME = 'Freedom Wall Messages';
-
+    private $LIKE_UNLIKE_THROTTLE_KEY = 'like_unlike_throttle_';
+    private $THROTTLE_TIME_SECONDS = 60; // 1 minute
     /**
      * Retrieve all Freedom Wall messages.
      *
@@ -274,10 +276,41 @@ class FreedomWallMessageController extends Controller
             $current_user = $request->user;
             $currentEmployeeProfile = EmployeeProfile::find($current_user->id);
 
+            // Throttle check
+            $throttleKey = $this->LIKE_UNLIKE_THROTTLE_KEY . $currentEmployeeProfile->id;
+            if (Cache::has($throttleKey)) {
+                return response()->json(['message' => 'You are liking/unliking too frequently. Please wait a moment.'], Response::HTTP_TOO_MANY_REQUESTS);
+            }
+
+            // Create the like
             $like = Like::create([
                 'employee_profile_id' => $currentEmployeeProfile->id,
                 'freedom_wall_message_id' => intval($messageId),
             ]);
+
+            // Notify the owner of the message
+            $freedom_wall_message = FreedomWallMessage::find($messageId);
+            $ownerProfile = $freedom_wall_message->employeeProfile;
+            $ownerName = $ownerProfile->personalInformation->employeeName();
+
+            $notification = Notifications::create([
+                "title" => "Your message has a new like!",
+                "description" => "{$ownerName} liked your message on the Freedom Wall.",
+                "module_path" => '/freedom-wall-message',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $ownerProfile->id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($ownerProfile->id),
+                "data" => new NotificationResource($user_notification)
+            ]);
+
+            // Set the throttle cache
+            Cache::put($throttleKey, true, $this->THROTTLE_TIME_SECONDS);
 
             return response()->json([
                 'data' => $like,
@@ -288,6 +321,7 @@ class FreedomWallMessageController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Unlike a Freedom Wall message.
