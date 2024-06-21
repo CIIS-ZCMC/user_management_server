@@ -1804,7 +1804,6 @@ class LeaveApplicationController extends Controller
     {
         try {
 
-            $employee_profile = $request->user;
             $leave_applications = LeaveApplication::select('leave_applications.*')
                 ->whereNotNull('applied_by')
                 ->groupBy(
