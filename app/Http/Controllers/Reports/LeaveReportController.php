@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\LeaveApplication;
+use App\Models\LeaveType;
 use App\Models\Section;
 use App\Models\Unit;
 use Illuminate\Http\Request;
@@ -31,7 +32,6 @@ class LeaveReportController extends Controller
             $date_to = $request->date_to;
             $sort_by = $request->sort_by;
             $limit = $request->limit;
-
 
             // check type format
             switch ($report_format) {
@@ -171,7 +171,6 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
-
     private function getDepartmentData($department_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -225,7 +224,6 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
-
     private function getSectionData($section_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -271,7 +269,6 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
-
     private function getUnitData($unit_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -287,8 +284,6 @@ class LeaveReportController extends Controller
         if (!empty($area_under) && !empty($unit_id)) {
             $unit = Unit::find($unit_id);
             $areas = [$this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
-
-            // Currently, no further sub-divisions under units are mentioned, so just return the unit data
         }
 
         if (!empty($area_under) && empty($unit_id)) {
@@ -301,15 +296,40 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
-
     private function result($area, $sector, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $area_data = [
             'id' => $area->id . '-' . $sector,
             'name' => $area->name,
             'sector' => ucfirst($sector),
+            'leave_count' => 0, // Initialize leave count here
             'leave_types' => []
         ];
+
+        $leave_count_total = 0;
+        $leave_types = LeaveType::whereIn('id', $leave_type_ids)->get();
+
+        $leave_applications = LeaveApplication::whereIn('leave_type_id', $leave_type_ids)->with([
+            'employeeProfile' => function ($query) use ($area, $sector) {
+                $query->with('assignedAreas', function ($q) use ($area, $sector) {
+                    // Ensure correct column name based on your database schema
+                    $q->where($sector . '_id', $area->id);
+                }); // Eagerly load assigned areas within employeeProfile
+            }
+        ])->get();
+
+        // Check if any LeaveApplication models were retrieved
+        if ($leave_applications->count() > 0) {
+            $leave_count = $leave_applications->count();
+            $leave_count_total += $leave_count;
+        } else {
+            // Handle the case where no applications match the criteria
+            // (e.g., log a message or set leave_count to 0)
+            $leave_count = 0; // Or handle differently based on your needs
+        }
+
+
+        $area_data['leave_count'] = $leave_count_total;
 
         return $area_data;
     }
