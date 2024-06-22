@@ -280,6 +280,13 @@ class EmployeeProfileController extends Controller
             $employee_profile = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
 
             /**
+             * The code checks if $employee_profile is null immediately after querying the database. If it is, it returns a response with an error message.
+             */
+            if (!$employee_profile) {
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
+            }
+
+            /**
              * For Persist password even when it expired for set months of expiration.
              */
             if ($request->persist_password !== null && $request->persist_password === 1) {
