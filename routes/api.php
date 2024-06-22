@@ -2441,5 +2441,9 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-job-position/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesPerJobPositionAndArea');
         });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
+        });
     });
 });
