@@ -2447,7 +2447,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
+            Route::post('leave-application-report-filter', 'LeaveApplicationReportController@filterLeaveApplication');
         });
     });
 });
