@@ -33,6 +33,20 @@ class LeaveReportController extends Controller
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
+            if (
+                empty($sector) &&
+                empty($status) &&
+                empty($area_under) &&
+                empty($area_id) &&
+                empty($leave_type_ids) &&
+                empty($date_from) &&
+                empty($date_to) &&
+                empty($sort_by) &&
+                empty($limit)
+            ) {
+                $areas = $this->getAllData($report_format);
+            }
+
             // check type format
             switch ($report_format) {
                 case 'area':
@@ -63,6 +77,23 @@ class LeaveReportController extends Controller
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+    }
+
+    private function getAllData($report_format)
+    {
+        $areas = [];
+        switch ($report_format) {
+            case 'area':
+                $divisions = Division::all();
+                foreach ($divisions as $division) {
+                    $areas = array_merge($areas, $this->getDivisionData($division->id, '', '', [], '', '', '', ''));
+                }
+                break;
+            case 'employees':
+                break;
+        }
+
+        return $areas;
     }
 
     private function getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
@@ -295,8 +326,7 @@ class LeaveReportController extends Controller
 
         return $areas;
     }
-
-    private function result($area, $sector, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
+    private function result($area, $sector, $status, $leave_type_ids = [], $date_from, $date_to, $sort_by, $limit)
     {
         $area_data = [
             'id' => $area->id . '-' . $sector,
@@ -306,9 +336,6 @@ class LeaveReportController extends Controller
             'leave_types' => []
         ];
 
-        $leave_count_total = 0;
-        $leave_types = LeaveType::whereIn('id', $leave_type_ids)->get();
-
         $leave_applications = LeaveApplication::whereIn('leave_type_id', $leave_type_ids)->with([
             'employeeProfile' => function ($query) use ($area, $sector) {
                 $query->with('assignedAreas', function ($q) use ($area, $sector) {
@@ -316,20 +343,61 @@ class LeaveReportController extends Controller
                     $q->where($sector . '_id', $area->id);
                 }); // Eagerly load assigned areas within employeeProfile
             }
-        ])->get();
+        ]);
 
-        // Check if any LeaveApplication models were retrieved
-        if ($leave_applications->count() > 0) {
-            $leave_count = $leave_applications->count();
-            $leave_count_total += $leave_count;
-        } else {
-            // Handle the case where no applications match the criteria
-            // (e.g., log a message or set leave_count to 0)
-            $leave_count = 0; // Or handle differently based on your needs
+        // Apply status filter
+        if (!empty($status)) {
+            $leave_applications->orWhere('status', $status);
         }
 
+        // Apply leave type filter
+        if (!empty($leave_type_ids)) {
+            $leave_applications->whereHas('leaveType', function ($q) use ($leave_type_ids) {
+                $q->whereIn('id', $leave_type_ids);
+            });
+        }
+
+        // Apply date filters
+        if (!empty($date_from)) {
+            $leave_applications->where('start_date', '>=', $date_from);
+        }
+
+        if (!empty($date_to)) {
+            $leave_applications->where('end_date', '<=', $date_to);
+        }
+
+        // Apply sorting
+        if (!empty($sort_by)) {
+            $leave_applications->orderBy($sort_by);
+        }
+
+        // Apply limit
+        if (!empty($limit)) {
+            $leave_applications->limit($limit);
+        }
+
+        // Execute the query and get results
+        $leave_applications = $leave_applications->get();
+
+        // Process results
+        $leave_count_total = $leave_applications->count();
+
+        // Aggregate leave types data if needed
+        $leave_types_data = [];
+        foreach ($leave_applications as $application) {
+            $leave_type = $application->leaveType; // Adjust this if leaveType is a relationship method
+            if (!isset($leave_types_data[$leave_type->id])) {
+                $leave_types_data[$leave_type->id] = [
+                    'id' => $leave_type->id,
+                    'name' => $leave_type->name,
+                    'count' => 0
+                ];
+            }
+            $leave_types_data[$leave_type->id]['count']++;
+        }
 
         $area_data['leave_count'] = $leave_count_total;
+        $area_data['leave_types'] = array_values($leave_types_data);
 
         return $area_data;
     }

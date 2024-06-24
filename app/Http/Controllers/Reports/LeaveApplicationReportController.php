@@ -246,12 +246,14 @@ class LeaveApplicationReportController extends Controller
         }
 
         foreach ($leave_types as $leave_type) {
-            $query = LeaveApplication::where('leave_type_id', $leave_type->id)
-                ->whereHas('employeeProfile', function ($query) use ($area, $sector) {
-                    $query->whereHas('assignedArea', function ($q) use ($area, $sector) {
+            $query = LeaveApplication::whereIn('leave_type_id', $leave_type_ids)->with([
+                'employeeProfile' => function ($query) use ($area, $sector) {
+                    $query->with('assignedAreas', function ($q) use ($area, $sector) {
+                        // Ensure correct column name based on your database schema
                         $q->where($sector . '_id', $area->id);
-                    });
-                });
+                    }); // Eagerly load assigned areas within employeeProfile
+                }
+            ]);
 
             if ($status) {
                 $query->where('status', $status);
