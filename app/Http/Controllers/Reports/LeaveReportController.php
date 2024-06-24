@@ -13,12 +13,17 @@ use App\Models\Unit;
 use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 class LeaveReportController extends Controller
 {
     private $CONTROLLER_NAME = 'Leave Reports';
 
+    /**
+     * Filter leave reports based on provided criteria.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function filterLeave(Request $request)
     {
         try {
@@ -34,6 +39,7 @@ class LeaveReportController extends Controller
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
+            // Check if no filters are applied
             if (
                 empty($sector) &&
                 empty($status) &&
@@ -48,7 +54,7 @@ class LeaveReportController extends Controller
                 $areas = $this->getAllData($report_format);
             }
 
-            // check type format
+            // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
                     $areas = $this->getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
@@ -81,6 +87,12 @@ class LeaveReportController extends Controller
         }
     }
 
+    /**
+     * Retrieve all data based on report format.
+     *
+     * @param string $report_format
+     * @return array
+     */
     private function getAllData($report_format)
     {
         $areas = [];
@@ -102,6 +114,20 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Filter area data based on provided criteria.
+     *
+     * @param string $sector
+     * @param string $status
+     * @param string $area_under
+     * @param int $area_id
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -123,6 +149,20 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Filter employee data based on provided criteria.
+     *
+     * @param string $sector
+     * @param string $status
+     * @param string $area_under
+     * @param int $area_id
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $employees = [];
@@ -144,6 +184,19 @@ class LeaveReportController extends Controller
         return $employees;
     }
 
+    /**
+     * Retrieve division data based on provided criteria.
+     *
+     * @param int $division_id
+     * @param string $status
+     * @param string $area_under
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getDivisionData($division_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -228,6 +281,19 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Retrieve department data based on provided criteria.
+     *
+     * @param int $department_id
+     * @param string $status
+     * @param string $area_under
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getDepartmentData($department_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -281,6 +347,19 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Retrieve section data based on provided criteria.
+     *
+     * @param int $section_id
+     * @param string $status
+     * @param string $area_under
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getSectionData($section_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -326,6 +405,19 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Retrieve unit data based on provided criteria.
+     *
+     * @param int $unit_id
+     * @param string $status
+     * @param string $area_under
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getUnitData($unit_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $areas = [];
@@ -353,6 +445,19 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Retrieve employee data based on provided sector and criteria.
+     *
+     * @param string $sector
+     * @param int $area_id
+     * @param string $status
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function getEmployeeDataBySector($sector, $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $employees = [];
@@ -373,6 +478,19 @@ class LeaveReportController extends Controller
         return $employee_data;
     }
 
+    /**
+     * Format area data for the result.
+     *
+     * @param mixed $area
+     * @param string $sector
+     * @param string $status
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function result($area, $sector, $status, $leave_type_ids = [], $date_from, $date_to, $sort_by, $limit)
     {
         // Initialize the result array with area details and leave counts
@@ -481,6 +599,19 @@ class LeaveReportController extends Controller
         return $area_data;
     }
 
+    /**
+     * Format employee data for the result.
+     *
+     * @param EmployeeProfile $employee
+     * @param string $sector
+     * @param string $status
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
     private function resultEmployee($employee, $sector, $status, $leave_type_ids = [], $date_from, $date_to, $sort_by, $limit)
     {
         // Initialize the result array with employee details and leave counts
