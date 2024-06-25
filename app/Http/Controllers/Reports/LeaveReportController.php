@@ -172,19 +172,15 @@ class LeaveReportController extends Controller
         switch ($sector) {
             case 'division':
                 $employees = $this->getEmployeesByDivision($area_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                // $employees = $this->getEmployeeDataBySector('division', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 break;
             case 'department':
                 $employees = $this->getEmployeesByDepartment($area_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                // $employees = $this->getEmployeeDataBySector('department', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 break;
             case 'section':
                 $employees = $this->getEmployeesBySection($area_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                // $employees = $this->getEmployeeDataBySector('section', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 break;
             case 'unit':
                 $employees = $this->getEmployeesByUnit($area_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                // $employees = $this->getEmployeeDataBySector('unit', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 break;
         }
 
@@ -450,39 +446,6 @@ class LeaveReportController extends Controller
         }
 
         return $areas;
-    }
-
-    /**
-     * Retrieve employee data based on provided sector and criteria.
-     *
-     * @param string $sector
-     * @param int $area_id
-     * @param string $status
-     * @param array $leave_type_ids
-     * @param string $date_from
-     * @param string $date_to
-     * @param string $sort_by
-     * @param int $limit
-     * @return array
-     */
-    private function getEmployeeDataBySector($sector, $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
-    {
-        $employees = [];
-
-        if (!empty($area_id)) {
-            $employees = EmployeeProfile::whereHas('assignedAreas', function ($query) use ($sector, $area_id) {
-                $query->where($sector . '_id', $area_id);
-            })->get();
-        } else {
-            $employees = EmployeeProfile::all();
-        }
-
-        $employee_data = [];
-        foreach ($employees as $employee) {
-            $employee_data[] = $this->resultEmployee($employee, $sector, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-        }
-
-        return $employee_data;
     }
 
     /**
