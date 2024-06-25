@@ -962,7 +962,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('employee-profile/{id}/revoke/{access_right_id}', 'EmployeeProfileController@revokeRights');
         });
 
-        //reports
+        // Reports
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-filter', 'EmployeeProfileController@Areas');
         });
