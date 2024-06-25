@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\LeaveApplication;
@@ -170,7 +171,8 @@ class LeaveReportController extends Controller
         $employees = [];
         switch ($sector) {
             case 'division':
-                $employees = $this->getEmployeeDataBySector('division', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $employees = $this->getEmployeesByDivision($area_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                // $employees = $this->getEmployeeDataBySector('division', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 break;
             case 'department':
                 $employees = $this->getEmployeeDataBySector('department', $area_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
@@ -479,6 +481,283 @@ class LeaveReportController extends Controller
 
         return $employee_data;
     }
+
+    /**
+     * Retrieve employee data based on provided criteria.
+     *
+     * @param int $division_id
+     * @param string $status
+     * @param string $area_under
+     * @param array $leave_type_ids
+     * @param string $date_from
+     * @param string $date_to
+     * @param string $sort_by
+     * @param int $limit
+     * @return array
+     */
+    private function getEmployeesByDivision($division_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
+    {
+        $arr_employees = [];
+
+        if (empty($division_id) && empty($area_under)) {
+            $divisions = Division::all();
+
+            foreach ($divisions as $division) {
+                $departments = Department::where('division_id', $division->id)->get();
+                foreach ($departments as $department) {
+                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                        ->where('department_id', $department->id)
+                        ->get();
+
+                    foreach ($assignAreas as $assignArea) {
+                        $arr_employees[] = $this->resultEmployee(
+                            $assignArea->employeeProfile,
+                            'department',
+                            $status,
+                            $leave_type_ids,
+                            $date_from,
+                            $date_to,
+                            $sort_by,
+                            $limit
+                        );
+                    }
+
+                    $sections = Section::where('department_id', $department->id)->get();
+                    foreach ($sections as $section) {
+                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                            ->where('section_id', $section->id)
+                            ->get();
+
+                        foreach ($assignAreas as $assignArea) {
+                            $arr_employees[] = $this->resultEmployee(
+                                $assignArea->employeeProfile,
+                                'section',
+                                $status,
+                                $leave_type_ids,
+                                $date_from,
+                                $date_to,
+                                $sort_by,
+                                $limit
+                            );
+                        }
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                ->where('unit_id', $unit->id)
+                                ->get();
+
+                            foreach ($assignAreas as $assignArea) {
+                                $arr_employees[] = $this->resultEmployee(
+                                    $assignArea->employeeProfile,
+                                    'unit',
+                                    $status,
+                                    $leave_type_ids,
+                                    $date_from,
+                                    $date_to,
+                                    $sort_by,
+                                    $limit
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // Get sections directly under the division (if any) that are not under any department
+                $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
+                foreach ($sections as $section) {
+                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                        ->where('section_id', $section->id)
+                        ->get();
+
+                    foreach ($assignAreas as $assignArea) {
+                        $arr_employees[] = $this->resultEmployee(
+                            $assignArea->employeeProfile,
+                            'section',
+                            $status,
+                            $leave_type_ids,
+                            $date_from,
+                            $date_to,
+                            $sort_by,
+                            $limit
+                        );
+                    }
+
+                    // Get all units directly under the section
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                            ->where('unit_id', $unit->id)
+                            ->get();
+
+                        foreach ($assignAreas as $assignArea) {
+                            $arr_employees[] = $this->resultEmployee(
+                                $assignArea->employeeProfile,
+                                'unit',
+                                $status,
+                                $leave_type_ids,
+                                $date_from,
+                                $date_to,
+                                $sort_by,
+                                $limit
+                            );
+                        }
+                    }
+                }
+            }
+            return $arr_employees;
+        }
+
+        if (!empty($area_under) && !empty($division_id)) {
+            $division = Division::find($division_id);
+            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                ->where('division_id', $division_id)
+                ->get();
+
+            foreach ($assignAreas as $assignArea) {
+                $arr_employees[] = $this->resultEmployee(
+                    $assignArea->employeeProfile,
+                    'division',
+                    $status,
+                    $leave_type_ids,
+                    $date_from,
+                    $date_to,
+                    $sort_by,
+                    $limit
+                );
+            }
+
+            if ($area_under === 'all') {
+                $departments = Department::where('division_id', $division_id)->get();
+                foreach ($departments as $department) {
+                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                        ->where('department_id', $department->id)
+                        ->get();
+
+                    foreach ($assignAreas as $assignArea) {
+                        $arr_employees[] = $this->resultEmployee(
+                            $assignArea->employeeProfile,
+                            'department',
+                            $status,
+                            $leave_type_ids,
+                            $date_from,
+                            $date_to,
+                            $sort_by,
+                            $limit
+                        );
+                    }
+
+                    $sections = Section::where('department_id', $department->id)->get();
+                    foreach ($sections as $section) {
+                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                            ->where('section_id', $section->id)
+                            ->get();
+
+                        foreach ($assignAreas as $assignArea) {
+                            $arr_employees[] = $this->resultEmployee(
+                                $assignArea->employeeProfile,
+                                'section',
+                                $status,
+                                $leave_type_ids,
+                                $date_from,
+                                $date_to,
+                                $sort_by,
+                                $limit
+                            );
+                        }
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                ->where('unit_id', $unit->id)
+                                ->get();
+
+                            foreach ($assignAreas as $assignArea) {
+                                $arr_employees[] = $this->resultEmployee(
+                                    $assignArea->employeeProfile,
+                                    'unit',
+                                    $status,
+                                    $leave_type_ids,
+                                    $date_from,
+                                    $date_to,
+                                    $sort_by,
+                                    $limit
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // Get sections directly under the division (if any) that are not under any department
+                $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
+                foreach ($sections as $section) {
+                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                        ->where('section_id', $section->id)
+                        ->get();
+
+                    foreach ($assignAreas as $assignArea) {
+                        $arr_employees[] = $this->resultEmployee(
+                            $assignArea->employeeProfile,
+                            'section',
+                            $status,
+                            $leave_type_ids,
+                            $date_from,
+                            $date_to,
+                            $sort_by,
+                            $limit
+                        );
+                    }
+
+                    // Get all units directly under the section
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                            ->where('unit_id', $unit->id)
+                            ->get();
+
+                        foreach ($assignAreas as $assignArea) {
+                            $arr_employees[] = $this->resultEmployee(
+                                $assignArea->employeeProfile,
+                                'unit',
+                                $status,
+                                $leave_type_ids,
+                                $date_from,
+                                $date_to,
+                                $sort_by,
+                                $limit
+                            );
+                        }
+                    }
+                }
+            } elseif ($area_under === 'staff') {
+                $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                    ->where('division_id', $division_id)
+                    ->get();
+
+                $arr_employees[] = $this->resultEmployee(
+                    $assignArea->employeeProfile,
+                    'division',
+                    $status,
+                    $leave_type_ids,
+                    $date_from,
+                    $date_to,
+                    $sort_by,
+                    $limit
+                );
+            }
+        }
+
+        if (!empty($area_under) && empty($division_id)) {
+            $divisions = Division::all();
+            foreach ($divisions as $division) {
+                $arr_employees = array_merge($arr_employees, $this->getEmployeesByDivision($division->id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit));
+            }
+        }
+
+        return $arr_employees;
+    }
+
+
 
     /**
      * Format area data for the result.
