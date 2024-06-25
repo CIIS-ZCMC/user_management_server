@@ -34,7 +34,7 @@ class LeaveReportController extends Controller
             $status = $request->status;
             $area_under = strtolower($request->area_under);
             $area_id = $request->area_id;
-            $leave_type_ids = $request->leave_type_ids ? explode(',', $request->leave_type_ids) : [];
+            $leave_type_ids = $request->leave_type_ids ? $request->leave_type_ids : [];
             $date_from = $request->date_from;
             $date_to = $request->date_to;
             $sort_by = $request->sort_by;
@@ -994,7 +994,7 @@ class LeaveReportController extends Controller
 
         // Apply sorting if provided
         if (!empty($sort_by)) {
-            $leave_applications->orderBy($sort_by);
+            $leave_applications->orderBy('created_at', $sort_by);
         }
 
         // Apply limit if provided
@@ -1018,6 +1018,7 @@ class LeaveReportController extends Controller
                     $leave_types_data[$leave_type->id] = [
                         'id' => $leave_type->id,
                         'name' => $leave_type->name,
+                        'code' => $leave_type->code,
                         'count' => 0
                     ];
                 }
@@ -1033,6 +1034,7 @@ class LeaveReportController extends Controller
                     $leave_types_data[$leave_type->id] = [
                         'id' => $leave_type->id,
                         'name' => $leave_type->name,
+                        'code' => $leave_type->code,
                         'count' => 0
                     ];
                 }
@@ -1045,6 +1047,7 @@ class LeaveReportController extends Controller
                         $leave_types_data[$leave_type->id] = [
                             'id' => $leave_type->id,
                             'name' => $leave_type->name,
+                            'code' => $leave_type->code,
                             'count' => 0 // If no applications, count remains 0
                         ];
                     }
