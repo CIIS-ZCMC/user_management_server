@@ -862,12 +862,12 @@ class LeaveReportController extends Controller
         return $arr_employees;
     }
 
-
     /**
      * Retrieve employee data based on provided section criteria.
      *
      * @param int $section_id
      * @param string $status
+     * @param string $area_under
      * @param array $leave_type_ids
      * @param string $date_from
      * @param string $date_to
@@ -875,26 +875,63 @@ class LeaveReportController extends Controller
      * @param int $limit
      * @return array
      */
-    private function getEmployeesBySection($section_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
+    private function getEmployeesBySection($section_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $arr_employees = [];
+        if (!empty($area_under) && !empty($section_id)) {
+            if ($area_under === 'all') {
+                $assignedAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
+                    ->where('section_id', $section_id)
+                    ->get();
 
-        if (!empty($section_id)) {
-            $assignAreas = AssignArea::with(['employeeProfile', 'section'])
-                ->where('section_id', $section_id)
-                ->get();
+                foreach ($assignedAreas as $assignedArea) {
+                    $arr_employees[] = $this->resultEmployee(
+                        $assignedArea->employeeProfile,
+                        'section',
+                        $status,
+                        $leave_type_ids,
+                        $date_from,
+                        $date_to,
+                        $sort_by,
+                        $limit
+                    );
+                }
+                $units = Unit::where('section_id', $section_id)->get();
+                foreach ($units as $unit) {
+                    $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
+                        ->where('unit_id', $unit->id)
+                        ->get();
 
-            foreach ($assignAreas as $assignArea) {
-                $arr_employees[] = $this->resultEmployee(
-                    $assignArea->employeeProfile,
-                    'section',
-                    $status,
-                    $leave_type_ids,
-                    $date_from,
-                    $date_to,
-                    $sort_by,
-                    $limit
-                );
+                    foreach ($assignAreas as $assignArea) {
+                        $arr_employees[] = $this->resultEmployee(
+                            $assignArea->employeeProfile,
+                            'unit',
+                            $status,
+                            $leave_type_ids,
+                            $date_from,
+                            $date_to,
+                            $sort_by,
+                            $limit
+                        );
+                    }
+                }
+            } elseif ($area_under === 'staff') {
+                $assignedAreas =  AssignArea::with(['employeeProfile', 'section'])
+                    ->where('section_id', $section_id)
+                    ->get();
+
+                foreach ($assignedAreas as $assignedArea) {
+                    $arr_employees[] = $this->resultEmployee(
+                        $assignedArea->employeeProfile,
+                        'section',
+                        $status,
+                        $leave_type_ids,
+                        $date_from,
+                        $date_to,
+                        $sort_by,
+                        $limit
+                    );
+                }
             }
         }
 
@@ -906,6 +943,7 @@ class LeaveReportController extends Controller
      *
      * @param int $unit_id
      * @param string $status
+     * @param string $area_under
      * @param array $leave_type_ids
      * @param string $date_from
      * @param string $date_to
@@ -913,18 +951,17 @@ class LeaveReportController extends Controller
      * @param int $limit
      * @return array
      */
-    private function getEmployeesByUnit($unit_id, $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
+    private function getEmployeesByUnit($unit_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
         $arr_employees = [];
-
-        if (!empty($unit_id)) {
-            $assignAreas = AssignArea::with(['employeeProfile', 'unit'])
+        if (!empty($area_under) && !empty($unit_id)) {
+            $assignedAreas = AssignArea::with(['employeeProfile', 'unit'])
                 ->where('unit_id', $unit_id)
                 ->get();
 
-            foreach ($assignAreas as $assignArea) {
+            foreach ($assignedAreas as $assignedArea) {
                 $arr_employees[] = $this->resultEmployee(
-                    $assignArea->employeeProfile,
+                    $assignedArea->employeeProfile,
                     'unit',
                     $status,
                     $leave_type_ids,
