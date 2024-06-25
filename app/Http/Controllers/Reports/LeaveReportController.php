@@ -967,6 +967,13 @@ class LeaveReportController extends Controller
             'leave_types' => [] // Initialize leave types array
         ];
 
+        // Initialize additional leave count fields only if status is not empty
+        if (!empty($status)) {
+            $area_data['leave_count_received'] = 0;
+            $area_data['leave_count_cancelled'] = 0;
+            $area_data['leave_count_approved'] = 0;
+        }
+
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
             ->whereHas('employeeProfile.assignedAreas', function ($query) use ($area, $sector) {
@@ -1011,6 +1018,13 @@ class LeaveReportController extends Controller
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
         $leave_types_data = [];
+
+        // Only calculate specific leave counts if status is not empty
+        if (!empty($status)) {
+            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
+            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
+            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
+        }
 
         foreach ($leave_applications as $application) {
             $leave_type = $application->leaveType;
@@ -1059,8 +1073,16 @@ class LeaveReportController extends Controller
         $area_data['leave_count_without_pay'] = $leave_count_without_pay_total;
         $area_data['leave_types'] = array_values($leave_types_data);
 
+        // Only update specific leave counts if status is not empty
+        if (!empty($status)) {
+            $area_data['leave_count_received'] = $leave_count_total_received;
+            $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+            $area_data['leave_count_approved'] = $leave_count_total_approved;
+        }
+
         return $area_data;
     }
+
 
     /**
      * Format employee data for the result.
@@ -1092,6 +1114,12 @@ class LeaveReportController extends Controller
             'leave_types' => [] // Initialize leave types array
         ];
 
+        // Initialize additional leave count fields only if status is not empty
+        if (!empty($status)) {
+            $employee_data['leave_count_received'] = 0;
+            $employee_data['leave_count_cancelled'] = 0;
+            $employee_data['leave_count_approved'] = 0;
+        }
 
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
@@ -1134,6 +1162,13 @@ class LeaveReportController extends Controller
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
         $leave_types_data = [];
+
+        // Only calculate specific leave counts if status is not empty
+        if (!empty($status)) {
+            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
+            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
+            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
+        }
 
         foreach ($leave_applications as $application) {
             $leave_type = $application->leaveType;
@@ -1181,6 +1216,13 @@ class LeaveReportController extends Controller
         $employee_data['leave_count_with_pay'] = $leave_count_with_pay_total;
         $employee_data['leave_count_without_pay'] = $leave_count_without_pay_total;
         $employee_data['leave_types'] = array_values($leave_types_data);
+
+        // Only update specific leave counts if status is not empty
+        if (!empty($status)) {
+            $employee_data['leave_count_received'] = $leave_count_total_received;
+            $employee_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+            $employee_data['leave_count_approved'] = $leave_count_total_approved;
+        }
 
         return $employee_data;
     }
