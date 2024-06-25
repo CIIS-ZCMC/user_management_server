@@ -65,6 +65,7 @@ class LeaveReportController extends Controller
                 default:
                     return response()->json(
                         [
+                            'count' => count($areas),
                             'data' => $areas,
                             'message' => 'Invalid report format'
                         ],
@@ -73,6 +74,7 @@ class LeaveReportController extends Controller
             }
 
             return response()->json([
+                'count' => count($areas),
                 'data' => $areas,
                 'message' => 'Successfully retrieved data.'
             ], Response::HTTP_OK);
