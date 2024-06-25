@@ -120,7 +120,7 @@ class FreedomWallMessageController extends Controller
             // Create notifications for mentioned employees
             foreach ($mentionedEmployees as $mentionedEmployee) {
                 $notification = Notifications::create([
-                    "title" => "You've been mentioned in a Freedom Wall Message",
+                    "title" => "You've been mentioned in Message Board",
                     "description" => "{$currentEmployeeName} mentioned you in a message on the Freedom Wall.",
                     "module_path" => '/calendar',
                 ]);
