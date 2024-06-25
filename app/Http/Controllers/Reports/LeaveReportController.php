@@ -959,6 +959,7 @@ class LeaveReportController extends Controller
         $area_data = [
             'id' => $area->id . '-' . $sector,
             'name' => $area->name,
+            'code' => $area->code,
             'sector' => ucfirst($sector),
             'leave_count' => 0, // Initialize leave count
             'leave_count_with_pay' => 0,
@@ -1085,8 +1086,12 @@ class LeaveReportController extends Controller
             'leave_count' => 0, // Initialize leave count
             'leave_count_with_pay' => 0,
             'leave_count_without_pay' => 0,
+            'sector' => ucfirst($sector),
+            'area_name' => $employee->assignedArea->findDetails()['details']['name'],
+            'area_code' => $employee->assignedArea->findDetails()['details']['code'],
             'leave_types' => [] // Initialize leave types array
         ];
+
 
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
