@@ -154,8 +154,24 @@ class LeaveReportController extends Controller
                 break;
         }
 
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort areas based on the sort_by variable
+        $this->sortAreas($areas, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $areas = array_slice($areas, 0, $limit);
+        }
+
         return $areas;
     }
+
 
     /**
      * Filter employee data based on provided criteria.
@@ -187,6 +203,21 @@ class LeaveReportController extends Controller
             case 'unit':
                 $employees = $this->getEmployeesByUnit($area_id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 break;
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort employees based on the sort_by variable
+        $this->sortEmployees($employees, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $employees = array_slice($employees, 0, $limit);
         }
 
         return $employees;
@@ -990,7 +1021,6 @@ class LeaveReportController extends Controller
         return $area_data;
     }
 
-
     /**
      * Format employee data for the result.
      *
@@ -1052,17 +1082,7 @@ class LeaveReportController extends Controller
             $leave_applications->where('date_to', '<=', $date_to);
         }
 
-        // Apply sorting if provided
-        if (!empty($sort_by)) {
-            $leave_applications->orderBy('created_at', $sort_by);
-        }
-
-        // Apply limit if provided
-        if (!empty($limit)) {
-            $leave_applications->limit($limit);
-        }
-
-        // Execute the query and get results
+        // Get the leave applications
         $leave_applications = $leave_applications->get();
 
         // Process results to count leaves and aggregate leave types data
@@ -1133,5 +1153,41 @@ class LeaveReportController extends Controller
         }
 
         return $employee_data;
+    }
+
+    /**
+     * Sorts an array of areas based on a specified field and order.
+     *
+     * @param array $areas The array of areas to be sorted.
+     * @param string $sort_by The field to sort by (e.g., 'leave_count').
+     * @param string $order The order to sort by ('asc' or 'desc').
+     * @return void
+     */
+    private function sortAreas(&$areas, $sort_by, $order)
+    {
+        usort($areas, function ($a, $b) use ($sort_by, $order) {
+            if ($order === 'asc') {
+                return $a[$sort_by] <=> $b[$sort_by];
+            }
+            return $b[$sort_by] <=> $a[$sort_by];
+        });
+    }
+
+    /**
+     * Sorts an array of employees based on a specified field and order.
+     *
+     * @param array $employees The array of employees to be sorted.
+     * @param string $sort_by The field to sort by (e.g., 'leave_count').
+     * @param string $order The order to sort by ('asc' or 'desc').
+     * @return void
+     */
+    private function sortEmployees(&$employees, $sort_by, $order)
+    {
+        usort($employees, function ($a, $b) use ($sort_by, $order) {
+            if ($order === 'asc') {
+                return $a[$sort_by] <=> $b[$sort_by];
+            }
+            return $b[$sort_by] <=> $a[$sort_by];
+        });
     }
 }
