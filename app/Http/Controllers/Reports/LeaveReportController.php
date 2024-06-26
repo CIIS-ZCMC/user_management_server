@@ -60,7 +60,7 @@ class LeaveReportController extends Controller
                 case 'area':
                     $areas = $this->getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                     break;
-                case 'employees':
+                case 'employee':
                     $areas = $this->getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                     break;
                 default:
@@ -1104,7 +1104,7 @@ class LeaveReportController extends Controller
     {
         // Initialize the result array with employee details and leave counts
         $employee_data = [
-            'employee_id' => $employee->id,
+            'id' => $employee->id,
             'employee_profile_id' => $employee->personal_information_id,
             'employee_name' => $employee->personalInformation->employeeName(),
             'designation' => $employee->findDesignation(),
@@ -1149,7 +1149,7 @@ class LeaveReportController extends Controller
 
         // Apply sorting if provided
         if (!empty($sort_by)) {
-            $leave_applications->orderBy($sort_by);
+            $leave_applications->orderBy('created_at', $sort_by);
         }
 
         // Apply limit if provided
