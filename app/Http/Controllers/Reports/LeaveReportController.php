@@ -34,7 +34,10 @@ class LeaveReportController extends Controller
             $status = $request->status;
             $area_under = strtolower($request->area_under);
             $area_id = $request->area_id;
-            $leave_type_ids = $request->leave_type_ids ? $request->leave_type_ids : [];
+            $leave_type_ids = $request->leave_type_ids
+                ? array_map('intval', preg_split('/\s*,\s*/', $request->leave_type_ids))
+                : [];
+
             $date_from = $request->date_from;
             $date_to = $request->date_to;
             $sort_by = $request->sort_by;
@@ -90,6 +93,8 @@ class LeaveReportController extends Controller
         }
     }
 
+
+
     /**
      * Retrieve all data based on report format.
      *
@@ -106,7 +111,7 @@ class LeaveReportController extends Controller
                     $areas = array_merge($areas, $this->getDivisionData($division->id, '', '', [], '', '', '', ''));
                 }
                 break;
-            case 'employees':
+            case 'employee':
                 $employees = EmployeeProfile::all();
                 foreach ($employees as $employee) {
                     $areas = array_merge($areas, $this->getEmployeeData($employee->id, '', '', [], '', '', '', ''));
@@ -465,115 +470,6 @@ class LeaveReportController extends Controller
     {
         $arr_employees = [];
 
-        // if (empty($division_id) && empty($area_under)) {
-        //     $divisions = Division::all();
-
-        //     foreach ($divisions as $division) {
-        //         $departments = Department::where('division_id', $division->id)->get();
-        //         foreach ($departments as $department) {
-        //             $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                 ->where('department_id', $department->id)
-        //                 ->get();
-
-        //             foreach ($assignAreas as $assignArea) {
-        //                 $arr_employees[] = $this->resultEmployee(
-        //                     $assignArea->employeeProfile,
-        //                     'department',
-        //                     $status,
-        //                     $leave_type_ids,
-        //                     $date_from,
-        //                     $date_to,
-        //                     $sort_by,
-        //                     $limit
-        //                 );
-        //             }
-
-        //             $sections = Section::where('department_id', $department->id)->get();
-        //             foreach ($sections as $section) {
-        //                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                     ->where('section_id', $section->id)
-        //                     ->get();
-
-        //                 foreach ($assignAreas as $assignArea) {
-        //                     $arr_employees[] = $this->resultEmployee(
-        //                         $assignArea->employeeProfile,
-        //                         'section',
-        //                         $status,
-        //                         $leave_type_ids,
-        //                         $date_from,
-        //                         $date_to,
-        //                         $sort_by,
-        //                         $limit
-        //                     );
-        //                 }
-
-        //                 $units = Unit::where('section_id', $section->id)->get();
-        //                 foreach ($units as $unit) {
-        //                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                         ->where('unit_id', $unit->id)
-        //                         ->get();
-
-        //                     foreach ($assignAreas as $assignArea) {
-        //                         $arr_employees[] = $this->resultEmployee(
-        //                             $assignArea->employeeProfile,
-        //                             'unit',
-        //                             $status,
-        //                             $leave_type_ids,
-        //                             $date_from,
-        //                             $date_to,
-        //                             $sort_by,
-        //                             $limit
-        //                         );
-        //                     }
-        //                 }
-        //             }
-        //         }
-
-        //         // Get sections directly under the division (if any) that are not under any department
-        //         $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
-        //         foreach ($sections as $section) {
-        //             $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                 ->where('section_id', $section->id)
-        //                 ->get();
-
-        //             foreach ($assignAreas as $assignArea) {
-        //                 $arr_employees[] = $this->resultEmployee(
-        //                     $assignArea->employeeProfile,
-        //                     'section',
-        //                     $status,
-        //                     $leave_type_ids,
-        //                     $date_from,
-        //                     $date_to,
-        //                     $sort_by,
-        //                     $limit
-        //                 );
-        //             }
-
-        //             // Get all units directly under the section
-        //             $units = Unit::where('section_id', $section->id)->get();
-        //             foreach ($units as $unit) {
-        //                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                     ->where('unit_id', $unit->id)
-        //                     ->get();
-
-        //                 foreach ($assignAreas as $assignArea) {
-        //                     $arr_employees[] = $this->resultEmployee(
-        //                         $assignArea->employeeProfile,
-        //                         'unit',
-        //                         $status,
-        //                         $leave_type_ids,
-        //                         $date_from,
-        //                         $date_to,
-        //                         $sort_by,
-        //                         $limit
-        //                     );
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     return $arr_employees;
-        // }
-
         if (!empty($area_under) && !empty($division_id)) {
             if ($area_under === 'all') {
                 // $division = Division::find($division_id);
@@ -718,6 +614,14 @@ class LeaveReportController extends Controller
             }
         }
 
+        if (!empty($area_under) && empty($division_id)) {
+            $divisions = Division::all();
+            foreach ($divisions as $division) {
+                $arr_employees = array_merge($arr_employees, $this->getEmployeesByDivision($division->id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit));
+            }
+        }
+
+        return $arr_employees;
         if (!empty($area_under) && empty($division_id)) {
             $divisions = Division::all();
             foreach ($divisions as $division) {
@@ -1104,10 +1008,11 @@ class LeaveReportController extends Controller
     {
         // Initialize the result array with employee details and leave counts
         $employee_data = [
-            'id' => $employee->id,
-            'employee_profile_id' => $employee->personal_information_id,
+            'employee_id' => $employee->id,
             'employee_name' => $employee->personalInformation->employeeName(),
-            'designation' => $employee->findDesignation(),
+            'personal_information_id' => $employee->personal_information_id,
+            'designation' => $employee->findDesignation()['name'],
+            'designation_code' => $employee->findDesignation()['code'],
             'leave_count' => 0, // Initialize leave count
             'leave_count_with_pay' => 0,
             'leave_count_without_pay' => 0,
