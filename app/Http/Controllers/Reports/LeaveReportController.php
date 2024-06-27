@@ -300,7 +300,21 @@ class LeaveReportController extends Controller
      */
     private function getEmployeesWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
     {
-        $employees = EmployeeProfile::whereHas('leaveApplications')->get();
+        $employees = EmployeeProfile::whereHas('leaveApplications', function ($query) use ($status, $leave_type_ids, $date_from, $date_to) {
+            // Apply filters to the leave applications
+            if (!empty($leave_type_ids)) {
+                $query->whereIn('leave_type_id', $leave_type_ids);
+            }
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
+            if (!empty($date_from)) {
+                $query->where('date_from', '>=', $date_from);
+            }
+            if (!empty($date_to)) {
+                $query->where('date_to', '<=', $date_to);
+            }
+        })->get();
 
         $result = [];
         foreach ($employees as $employee) {
