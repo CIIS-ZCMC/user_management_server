@@ -43,6 +43,18 @@ class LeaveReportController extends Controller
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
+            /**
+             * 
+             * TESTING AREA
+             * 
+             */
+
+            // $division = Division::find(1);
+
+            // return $division;
+
+            // $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+
             // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
@@ -123,6 +135,10 @@ class LeaveReportController extends Controller
      */
     private function getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
+        if (empty($area_under) && empty($sector) && empty($area_id)) {
+            return $this->getAreasWithLeaveApplicationsOnly($status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
         $areas = [];
         switch ($sector) {
             case 'division':
@@ -155,6 +171,64 @@ class LeaveReportController extends Controller
         }
 
         return $areas;
+    }
+
+    /**
+     * Get areas with leave applications only.
+     *
+     * @param string|null $status
+     * @param array $leave_type_ids
+     * @param string|null $date_from
+     * @param string|null $date_to
+     * @param string|null $sort_by
+     * @param int|null $limit
+     * @return array
+     */
+    private function getAreasWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
+    {
+        $areas = AssignArea::whereHas('employeeProfile.leaveApplications', function ($query) use ($status, $leave_type_ids, $date_from, $date_to) {
+            // Apply filters to the leave applications
+            if (!empty($leave_type_ids)) {
+                $query->whereIn('leave_type_id', $leave_type_ids);
+            }
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
+            if (!empty($date_from)) {
+                $query->where('date_from', '>=', $date_from);
+            }
+            if (!empty($date_to)) {
+                $query->where('date_to', '<=', $date_to);
+            }
+        })->with(['division', 'department', 'section', 'unit'])->get();
+
+        $result = [];
+        $unique_areas = [];
+
+        foreach ($areas as $area) {
+            $details = $area->findDetails();
+            $area_key = $details['details']->id . '-' . $details['sector'];
+            if (!in_array($area_key, $unique_areas)) {
+                $result[] = $this->result($details['details'], strtolower($details['sector']), $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $unique_areas[] = $area_key;
+            }
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort areas based on the sort_by variable
+        $this->sortAreas($result, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $result = array_slice($result, 0, $limit);
+        }
+
+        return $result;
     }
 
 
