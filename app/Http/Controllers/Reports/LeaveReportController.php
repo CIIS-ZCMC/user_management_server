@@ -1008,13 +1008,6 @@ class LeaveReportController extends Controller
             'leave_types' => [] // Initialize leave types array
         ];
 
-        // Initialize additional leave count fields only if status is not empty
-        if (!empty($status)) {
-            $area_data['leave_count_received'] = 0;
-            $area_data['leave_count_cancelled'] = 0;
-            $area_data['leave_count_approved'] = 0;
-        }
-
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
             ->whereHas('employeeProfile.assignedAreas', function ($query) use ($area, $sector) {
@@ -1027,7 +1020,7 @@ class LeaveReportController extends Controller
             $leave_applications->whereIn('leave_type_id', $leave_type_ids);
         }
 
-        // Apply status filter if provided
+        // Apply status filter if provided, else return counts for all statuses
         if (!empty($status)) {
             $leave_applications->where('status', $status);
         }
@@ -1039,11 +1032,6 @@ class LeaveReportController extends Controller
 
         if (!empty($date_to)) {
             $leave_applications->where('date_to', '<=', $date_to);
-        }
-
-        // Apply sorting if provided
-        if (!empty($sort_by)) {
-            $leave_applications->orderBy('created_at', $sort_by);
         }
 
         // Apply limit if provided
@@ -1122,10 +1110,16 @@ class LeaveReportController extends Controller
             $area_data['leave_count_received'] = $leave_count_total_received;
             $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
             $area_data['leave_count_approved'] = $leave_count_total_approved;
+        } else {
+            // If no status is provided, return counts for all statuses
+            $area_data['leave_count_received'] = $leave_applications->where('status', 'received')->count();
+            $area_data['leave_count_cancelled'] = $leave_applications->where('status', 'cancelled')->count();
+            $area_data['leave_count_approved'] = $leave_applications->where('status', 'approved')->count();
         }
 
         return $area_data;
     }
+
 
     /**
      * Format employee data for the result.
@@ -1170,7 +1164,6 @@ class LeaveReportController extends Controller
             ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
             ->where('employee_profile_id', $employee->id);
 
-
         // Filter by leave type ids if provided
         if (!empty($leave_type_ids)) {
             $leave_applications->whereIn('leave_type_id', $leave_type_ids);
@@ -1190,6 +1183,11 @@ class LeaveReportController extends Controller
             $leave_applications->where('date_to', '<=', $date_to);
         }
 
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $leave_applications->limit($limit);
+        }
+
         // Get the leave applications
         $leave_applications = $leave_applications->get();
 
@@ -1201,6 +1199,11 @@ class LeaveReportController extends Controller
 
         // Only calculate specific leave counts if status is not empty
         if (!empty($status)) {
+            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
+            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
+            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
+        } else {
+            // If no status is provided, return counts for all statuses
             $leave_count_total_received = $leave_applications->where('status', 'received')->count();
             $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
             $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
@@ -1262,6 +1265,7 @@ class LeaveReportController extends Controller
 
         return $employee_data;
     }
+
 
     /**
      * Sorts an array of areas based on a specified field and order.
