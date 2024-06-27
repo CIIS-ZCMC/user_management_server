@@ -1109,6 +1109,9 @@ class LeaveReportController extends Controller
             }
         }
 
+        // Sort leave types by ID
+        ksort($leave_types_data);
+
         // Update area data with aggregated leave counts and leave types
         $area_data['leave_count'] = $leave_count_total;
         $area_data['leave_count_with_pay'] = $leave_count_with_pay_total;
@@ -1247,7 +1250,8 @@ class LeaveReportController extends Controller
                 }
             }
         }
-
+        // Sort leave types by ID
+        ksort($leave_types_data);
         // Update employee data with aggregated leave counts and leave types
         $employee_data['leave_count'] = $leave_count_total;
         $employee_data['leave_count_with_pay'] = $leave_count_with_pay_total;
