@@ -31,7 +31,7 @@ class FreedomWallMessageController extends Controller
             $current_user = $request->user;
             $currentEmployeeProfileId = $current_user->id;
 
-            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->get();
+            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->orderBy('created_at','asc')->get();
 
             $data = $freedom_wall_messages->map(function ($message) use ($currentEmployeeProfileId) {
                 $employeeProfile = $message->employeeProfile;

@@ -506,6 +506,7 @@ class LeaveReportController extends Controller
                 // $division = Division::find($division_id);
                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                     ->where('division_id', $division_id)
+                    ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
                     ->distinct()
                     ->get();
 
@@ -684,6 +685,7 @@ class LeaveReportController extends Controller
             if ($area_under === 'all') {
                 $assignedAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                     ->where('department_id', $department_id)
+                    ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -780,6 +782,7 @@ class LeaveReportController extends Controller
             if ($area_under === 'all') {
                 $assignedAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
                     ->where('section_id', $section_id)
+                    ->where('employee_profile_id', '!=', 1) // Use where clause with '<>' for not equal
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -855,6 +858,7 @@ class LeaveReportController extends Controller
         if (!empty($area_under) && !empty($unit_id)) {
             $assignedAreas = AssignArea::with(['employeeProfile', 'unit'])
                 ->where('unit_id', $unit_id)
+                ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
                 ->get();
 
             foreach ($assignedAreas as $assignedArea) {
@@ -1021,6 +1025,8 @@ class LeaveReportController extends Controller
         return $area_data;
     }
 
+
+
     /**
      * Format employee data for the result.
      *
@@ -1062,7 +1068,9 @@ class LeaveReportController extends Controller
 
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
+            ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
             ->where('employee_profile_id', $employee->id);
+
 
         // Filter by leave type ids if provided
         if (!empty($leave_type_ids)) {
