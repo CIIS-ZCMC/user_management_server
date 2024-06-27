@@ -41,6 +41,10 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('notification', 'NotificationController@store');
 });
 
+Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+    Route::post('testgenerate', 'GenerateReportController@test');
+});
+
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
