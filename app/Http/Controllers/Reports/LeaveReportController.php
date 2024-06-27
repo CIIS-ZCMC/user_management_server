@@ -43,21 +43,6 @@ class LeaveReportController extends Controller
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
-            // Check if no filters are applied
-            if (
-                empty($sector) &&
-                empty($status) &&
-                empty($area_under) &&
-                empty($area_id) &&
-                empty($leave_type_ids) &&
-                empty($date_from) &&
-                empty($date_to) &&
-                empty($sort_by) &&
-                empty($limit)
-            ) {
-                $areas = $this->getAllData($report_format);
-            }
-
             // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
@@ -189,6 +174,10 @@ class LeaveReportController extends Controller
      */
     private function getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
+        if (empty($area_under) && empty($sector) && empty($area_id)) {
+            return $this->getEmployeesWithLeaveApplicationsOnly($status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
         $employees = [];
         switch ($sector) {
             case 'division':
@@ -221,6 +210,45 @@ class LeaveReportController extends Controller
         }
 
         return $employees;
+    }
+
+
+    /**
+     * Get employees with leave applications only.
+     *
+     * @param string|null $status
+     * @param array $leave_type_ids
+     * @param string|null $date_from
+     * @param string|null $date_to
+     * @param string|null $sort_by
+     * @param int|null $limit
+     * @return array
+     */
+    private function getEmployeesWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
+    {
+        $employees = EmployeeProfile::whereHas('leaveApplications')->get();
+
+        $result = [];
+        foreach ($employees as $employee) {
+            $result[] = $this->resultEmployee($employee, '', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort employees based on the sort_by variable
+        $this->sortEmployees($result, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $result = array_slice($result, 0, $limit);
+        }
+
+        return $result;
     }
 
     /**
@@ -1024,8 +1052,6 @@ class LeaveReportController extends Controller
 
         return $area_data;
     }
-
-
 
     /**
      * Format employee data for the result.
