@@ -43,18 +43,6 @@ class LeaveReportController extends Controller
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
-            /**
-             * 
-             * TESTING AREA
-             * 
-             */
-
-            // $division = Division::find(1);
-
-            // return $division;
-
-            // $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
-
             // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
@@ -192,7 +180,7 @@ class LeaveReportController extends Controller
                 $query->whereIn('leave_type_id', $leave_type_ids);
             }
             if (!empty($status)) {
-                $query->where('status', $status);
+                $query->where('status', 'LIKE', '%' . $status . '%');
             }
             if (!empty($date_from)) {
                 $query->where('date_from', '>=', $date_from);
@@ -994,7 +982,6 @@ class LeaveReportController extends Controller
         return $arr_employees;
     }
 
-
     /**
      * Format area data for the result.
      *
@@ -1034,11 +1021,6 @@ class LeaveReportController extends Controller
             $leave_applications->whereIn('leave_type_id', $leave_type_ids);
         }
 
-        // Apply status filter if provided, else return counts for all statuses
-        if (!empty($status)) {
-            $leave_applications->where('status', $status);
-        }
-
         // Apply date filters if provided
         if (!empty($date_from)) {
             $leave_applications->where('date_from', '>=', $date_from);
@@ -1060,13 +1042,18 @@ class LeaveReportController extends Controller
         $leave_count_total = $leave_applications->count();
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
+
         $leave_types_data = [];
+
+        // Initialize specific leave counts
+        $leave_count_total_received = 0;
+        $leave_count_total_cancelled = 0;
+        $leave_count_total_approved = 0;
 
         // Only calculate specific leave counts if status is not empty
         if (!empty($status)) {
-            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
-            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
-            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
+            // Apply status filter
+            $leave_applications->where('status', $status);
         }
 
         foreach ($leave_applications as $application) {
@@ -1081,6 +1068,15 @@ class LeaveReportController extends Controller
                     ];
                 }
                 $leave_types_data[$leave_type->id]['count']++;
+            }
+
+            // Count specific leave statuses
+            if ($application->status == 'received') {
+                $leave_count_total_received++;
+            } elseif (stripos($application->status, 'cancelled') !== false) {
+                $leave_count_total_cancelled++;
+            } elseif ($application->status == 'approved') {
+                $leave_count_total_approved++;
             }
         }
 
@@ -1120,16 +1116,9 @@ class LeaveReportController extends Controller
         $area_data['leave_types'] = array_values($leave_types_data);
 
         // Only update specific leave counts if status is not empty
-        if (!empty($status)) {
-            $area_data['leave_count_received'] = $leave_count_total_received;
-            $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
-            $area_data['leave_count_approved'] = $leave_count_total_approved;
-        } else {
-            // If no status is provided, return counts for all statuses
-            $area_data['leave_count_received'] = $leave_applications->where('status', 'received')->count();
-            $area_data['leave_count_cancelled'] = $leave_applications->where('status', 'cancelled')->count();
-            $area_data['leave_count_approved'] = $leave_applications->where('status', 'approved')->count();
-        }
+        $area_data['leave_count_received'] = $leave_count_total_received;
+        $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+        $area_data['leave_count_approved'] = $leave_count_total_approved;
 
         return $area_data;
     }
