@@ -24,9 +24,9 @@ Route::
         namespace('App\Http\Controllers')->group(function () {
             Route::get('test', 'DashboardController@test');
 
-            Route::get('announcements', 'AnnouncementsController@index');
+            // Route::get('announcements', 'AnnouncementsController@index');
             Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-            Route::get('announcements/{id}', 'AnnouncementsController@show');
+            
 
             Route::get('events', 'EventsController@index');
             Route::get('events-search', 'EventsController@searchEvents');
@@ -40,8 +40,6 @@ Route::
             Route::get('news-search', 'NewsController@searchNews');
             Route::get('news/{id}', 'NewsController@show');
             Route::get('notification', 'NotificationController@store');
-
-
         });
 
 Route::
@@ -63,6 +61,8 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
 
+        Route::get('announcements/{id}', 'AnnouncementsController@show');
+        Route::get('announcements', 'AnnouncementsController@showAnnouncement');
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('notifications', 'NotificationController@getNotificationsById');
         });

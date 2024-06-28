@@ -4,6 +4,9 @@ namespace App\Jobs;
 
 use App\Helpers\Helpers;
 use App\Models\Announcements;
+use App\Models\EmployeeProfile;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,6 +36,24 @@ class SchedAnnouncement implements ShouldQueue
         //
         $this->announcements->posted = 1;
         $this->announcements->save();
+        if($this->announcements){
+            $notification = Notifications::create([
+                'title'=>"Announcement!",
+                'description'=>$this->announcements->title,
+                'module_path'=>"/announcement/".$this->announcements->id,
+            ]);
+            $employeeId = EmployeeProfile::all();
+            foreach($employeeId as $id){
+                UserNotifications::create([
+                    'seen'=>0,
+                    'notification_id'=>$notification->id,
+                    'employee_profile_id'=>$id->id
+                ]);
+            }
+        }
         Helpers::infoLog("Announcement Posted", "Announcement",$this->announcements->title);
     }
 }
+
+
+//the view for supervisors only check if supervisors
