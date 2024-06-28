@@ -267,10 +267,11 @@ class LeaveReportController extends Controller
         // Sort employees based on the sort_by variable
         $this->sortEmployees($employees, $sort_field, $sort_by);
 
-        // Apply limit if provided
-        if (!empty($limit)) {
-            $employees = array_slice($employees, 0, $limit);
+        // Apply limit if provided and it is a valid integer
+        if (isset($limit) && is_numeric($limit) && (int)$limit > 0) {
+            $employees = array_slice($employees, 0, (int)$limit);
         }
+
 
         return $employees;
     }
