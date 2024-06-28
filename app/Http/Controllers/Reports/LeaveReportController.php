@@ -153,10 +153,11 @@ class LeaveReportController extends Controller
         // Sort areas based on the sort_by variable
         $this->sortAreas($areas, $sort_field, $sort_by);
 
-        // Apply limit if provided
-        if (!empty($limit)) {
-            $areas = array_slice($areas, 0, $limit);
+        // Check if limit is defined and is a positive integer
+        if (isset($limit) && is_numeric($limit) && (int)$limit > 0) {
+            $areas = array_slice($areas, 0, (int)$limit);
         }
+
 
         return $areas;
     }
@@ -211,9 +212,9 @@ class LeaveReportController extends Controller
         // Sort areas based on the sort_by variable
         $this->sortAreas($result, $sort_field, $sort_by);
 
-        // Apply limit if provided
-        if (!empty($limit)) {
-            $result = array_slice($result, 0, $limit);
+        // Check if limit is defined and is a positive integer
+        if (isset($limit) && is_numeric($limit) && (int)$limit > 0) {
+            $areas = array_slice($areas, 0, (int)$limit);
         }
 
         return $result;
