@@ -43,21 +43,6 @@ class LeaveReportController extends Controller
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
-            // Check if no filters are applied
-            if (
-                empty($sector) &&
-                empty($status) &&
-                empty($area_under) &&
-                empty($area_id) &&
-                empty($leave_type_ids) &&
-                empty($date_from) &&
-                empty($date_to) &&
-                empty($sort_by) &&
-                empty($limit)
-            ) {
-                $areas = $this->getAllData($report_format);
-            }
-
             // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
@@ -138,6 +123,10 @@ class LeaveReportController extends Controller
      */
     private function getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
+        if (empty($area_under) && empty($sector) && empty($area_id)) {
+            return $this->getAreasWithLeaveApplicationsOnly($status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
         $areas = [];
         switch ($sector) {
             case 'division':
@@ -172,6 +161,64 @@ class LeaveReportController extends Controller
         return $areas;
     }
 
+    /**
+     * Get areas with leave applications only.
+     *
+     * @param string|null $status
+     * @param array $leave_type_ids
+     * @param string|null $date_from
+     * @param string|null $date_to
+     * @param string|null $sort_by
+     * @param int|null $limit
+     * @return array
+     */
+    private function getAreasWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
+    {
+        $areas = AssignArea::whereHas('employeeProfile.leaveApplications', function ($query) use ($status, $leave_type_ids, $date_from, $date_to) {
+            // Apply filters to the leave applications
+            if (!empty($leave_type_ids)) {
+                $query->whereIn('leave_type_id', $leave_type_ids);
+            }
+            if (!empty($status)) {
+                $query->where('status', 'LIKE', '%' . $status . '%');
+            }
+            if (!empty($date_from)) {
+                $query->where('date_from', '>=', $date_from);
+            }
+            if (!empty($date_to)) {
+                $query->where('date_to', '<=', $date_to);
+            }
+        })->with(['division', 'department', 'section', 'unit'])->get();
+
+        $result = [];
+        $unique_areas = [];
+
+        foreach ($areas as $area) {
+            $details = $area->findDetails();
+            $area_key = $details['details']->id . '-' . $details['sector'];
+            if (!in_array($area_key, $unique_areas)) {
+                $result[] = $this->result($details['details'], strtolower($details['sector']), $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $unique_areas[] = $area_key;
+            }
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort areas based on the sort_by variable
+        $this->sortAreas($result, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $result = array_slice($result, 0, $limit);
+        }
+
+        return $result;
+    }
+
 
     /**
      * Filter employee data based on provided criteria.
@@ -189,6 +236,10 @@ class LeaveReportController extends Controller
      */
     private function getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
+        if (empty($area_under) && empty($sector) && empty($area_id)) {
+            return $this->getEmployeesWithLeaveApplicationsOnly($status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
         $employees = [];
         switch ($sector) {
             case 'division':
@@ -221,6 +272,59 @@ class LeaveReportController extends Controller
         }
 
         return $employees;
+    }
+
+
+    /**
+     * Get employees with leave applications only.
+     *
+     * @param string|null $status
+     * @param array $leave_type_ids
+     * @param string|null $date_from
+     * @param string|null $date_to
+     * @param string|null $sort_by
+     * @param int|null $limit
+     * @return array
+     */
+    private function getEmployeesWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
+    {
+        $employees = EmployeeProfile::whereHas('leaveApplications', function ($query) use ($status, $leave_type_ids, $date_from, $date_to) {
+            // Apply filters to the leave applications
+            if (!empty($leave_type_ids)) {
+                $query->whereIn('leave_type_id', $leave_type_ids);
+            }
+            if (!empty($status)) {
+                $query->where('status', 'LIKE', '%' . $status . '%');
+            }
+            if (!empty($date_from)) {
+                $query->where('date_from', '>=', $date_from);
+            }
+            if (!empty($date_to)) {
+                $query->where('date_to', '<=', $date_to);
+            }
+        })->get();
+
+        $result = [];
+        foreach ($employees as $employee) {
+            $result[] = $this->resultEmployee($employee, '', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort employees based on the sort_by variable
+        $this->sortEmployees($result, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $result = array_slice($result, 0, $limit);
+        }
+
+        return $result;
     }
 
     /**
@@ -878,7 +982,6 @@ class LeaveReportController extends Controller
         return $arr_employees;
     }
 
-
     /**
      * Format area data for the result.
      *
@@ -906,13 +1009,6 @@ class LeaveReportController extends Controller
             'leave_types' => [] // Initialize leave types array
         ];
 
-        // Initialize additional leave count fields only if status is not empty
-        if (!empty($status)) {
-            $area_data['leave_count_received'] = 0;
-            $area_data['leave_count_cancelled'] = 0;
-            $area_data['leave_count_approved'] = 0;
-        }
-
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
             ->whereHas('employeeProfile.assignedAreas', function ($query) use ($area, $sector) {
@@ -925,11 +1021,6 @@ class LeaveReportController extends Controller
             $leave_applications->whereIn('leave_type_id', $leave_type_ids);
         }
 
-        // Apply status filter if provided
-        if (!empty($status)) {
-            $leave_applications->where('status', $status);
-        }
-
         // Apply date filters if provided
         if (!empty($date_from)) {
             $leave_applications->where('date_from', '>=', $date_from);
@@ -937,11 +1028,6 @@ class LeaveReportController extends Controller
 
         if (!empty($date_to)) {
             $leave_applications->where('date_to', '<=', $date_to);
-        }
-
-        // Apply sorting if provided
-        if (!empty($sort_by)) {
-            $leave_applications->orderBy('created_at', $sort_by);
         }
 
         // Apply limit if provided
@@ -956,13 +1042,18 @@ class LeaveReportController extends Controller
         $leave_count_total = $leave_applications->count();
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
+
         $leave_types_data = [];
+
+        // Initialize specific leave counts
+        $leave_count_total_received = 0;
+        $leave_count_total_cancelled = 0;
+        $leave_count_total_approved = 0;
 
         // Only calculate specific leave counts if status is not empty
         if (!empty($status)) {
-            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
-            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
-            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
+            // Apply status filter
+            $leave_applications->where('status', $status);
         }
 
         foreach ($leave_applications as $application) {
@@ -977,6 +1068,15 @@ class LeaveReportController extends Controller
                     ];
                 }
                 $leave_types_data[$leave_type->id]['count']++;
+            }
+
+            // Count specific leave statuses
+            if ($application->status == 'received') {
+                $leave_count_total_received++;
+            } elseif (stripos($application->status, 'cancelled') !== false) {
+                $leave_count_total_cancelled++;
+            } elseif ($application->status == 'approved') {
+                $leave_count_total_approved++;
             }
         }
 
@@ -1009,6 +1109,9 @@ class LeaveReportController extends Controller
             }
         }
 
+        // Sort leave types by ID
+        ksort($leave_types_data);
+
         // Update area data with aggregated leave counts and leave types
         $area_data['leave_count'] = $leave_count_total;
         $area_data['leave_count_with_pay'] = $leave_count_with_pay_total;
@@ -1016,15 +1119,12 @@ class LeaveReportController extends Controller
         $area_data['leave_types'] = array_values($leave_types_data);
 
         // Only update specific leave counts if status is not empty
-        if (!empty($status)) {
-            $area_data['leave_count_received'] = $leave_count_total_received;
-            $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
-            $area_data['leave_count_approved'] = $leave_count_total_approved;
-        }
+        $area_data['leave_count_received'] = $leave_count_total_received;
+        $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+        $area_data['leave_count_approved'] = $leave_count_total_approved;
 
         return $area_data;
     }
-
 
 
     /**
@@ -1060,17 +1160,14 @@ class LeaveReportController extends Controller
         ];
 
         // Initialize additional leave count fields only if status is not empty
-        if (!empty($status)) {
-            $employee_data['leave_count_received'] = 0;
-            $employee_data['leave_count_cancelled'] = 0;
-            $employee_data['leave_count_approved'] = 0;
-        }
+        $leave_count_total_received = 0;
+        $leave_count_total_cancelled = 0;
+        $leave_count_total_approved = 0;
 
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
             ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
             ->where('employee_profile_id', $employee->id);
-
 
         // Filter by leave type ids if provided
         if (!empty($leave_type_ids)) {
@@ -1079,7 +1176,7 @@ class LeaveReportController extends Controller
 
         // Apply status filter if provided
         if (!empty($status)) {
-            $leave_applications->where('status', $status);
+            $leave_applications->where('status', 'LIKE', '%' .  $status . '%');
         }
 
         // Apply date filters if provided
@@ -1091,6 +1188,11 @@ class LeaveReportController extends Controller
             $leave_applications->where('date_to', '<=', $date_to);
         }
 
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $leave_applications->limit($limit);
+        }
+
         // Get the leave applications
         $leave_applications = $leave_applications->get();
 
@@ -1099,13 +1201,6 @@ class LeaveReportController extends Controller
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
         $leave_types_data = [];
-
-        // Only calculate specific leave counts if status is not empty
-        if (!empty($status)) {
-            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
-            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
-            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
-        }
 
         foreach ($leave_applications as $application) {
             $leave_type = $application->leaveType;
@@ -1119,6 +1214,15 @@ class LeaveReportController extends Controller
                     ];
                 }
                 $leave_types_data[$leave_type->id]['count']++;
+            }
+
+            // Count specific leave statuses
+            if ($application->status == 'received') {
+                $leave_count_total_received++;
+            } elseif (stripos($application->status, 'cancelled') !== false) {
+                $leave_count_total_cancelled++;
+            } elseif ($application->status == 'approved') {
+                $leave_count_total_approved++;
             }
         }
 
@@ -1150,7 +1254,8 @@ class LeaveReportController extends Controller
                 }
             }
         }
-
+        // Sort leave types by ID
+        ksort($leave_types_data);
         // Update employee data with aggregated leave counts and leave types
         $employee_data['leave_count'] = $leave_count_total;
         $employee_data['leave_count_with_pay'] = $leave_count_with_pay_total;
@@ -1158,14 +1263,13 @@ class LeaveReportController extends Controller
         $employee_data['leave_types'] = array_values($leave_types_data);
 
         // Only update specific leave counts if status is not empty
-        if (!empty($status)) {
-            $employee_data['leave_count_received'] = $leave_count_total_received;
-            $employee_data['leave_count_cancelled'] = $leave_count_total_cancelled;
-            $employee_data['leave_count_approved'] = $leave_count_total_approved;
-        }
+        $employee_data['leave_count_received'] = $leave_count_total_received;
+        $employee_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+        $employee_data['leave_count_approved'] = $leave_count_total_approved;
 
         return $employee_data;
     }
+
 
     /**
      * Sorts an array of areas based on a specified field and order.
