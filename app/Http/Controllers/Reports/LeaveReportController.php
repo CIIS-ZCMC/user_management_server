@@ -1145,7 +1145,8 @@ class LeaveReportController extends Controller
     {
         // Initialize the result array with employee details and leave counts
         $employee_data = [
-            'employee_id' => $employee->id,
+            'id' => $employee->id,
+            'employee_id' => $employee->employee_id,
             'employee_name' => $employee->personalInformation->employeeName(),
             'personal_information_id' => $employee->personal_information_id,
             'designation' => $employee->findDesignation()['name'],
@@ -1209,6 +1210,7 @@ class LeaveReportController extends Controller
                     $leave_types_data[$leave_type->id] = [
                         'id' => $leave_type->id,
                         'name' => $leave_type->name,
+                        'code' => $leave_type->code,
                         'count' => 0
                     ];
                 }
@@ -1233,6 +1235,7 @@ class LeaveReportController extends Controller
                     $leave_types_data[$leave_type->id] = [
                         'id' => $leave_type->id,
                         'name' => $leave_type->name,
+                        'code' => $leave_type->code,
                         'count' => 0
                     ];
                 }
@@ -1245,6 +1248,7 @@ class LeaveReportController extends Controller
                         $leave_types_data[$leave_type->id] = [
                             'id' => $leave_type->id,
                             'name' => $leave_type->name,
+                            'code' => $leave_type->code,
                             'count' => 0 // If no applications, count remains 0
                         ];
                     }
