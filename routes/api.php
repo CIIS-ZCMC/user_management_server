@@ -2447,10 +2447,17 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employees-service-length', 'EmployeeReportController@allEmployeesServiceLength');
         });
 
+        // LEAVE REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
+        // ATTENDANCE REPORT
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendance');
+        });
+
+        // TEST ROUTE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
