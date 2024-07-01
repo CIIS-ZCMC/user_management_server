@@ -38,10 +38,16 @@ class SchedulerTask extends Command
 
             foreach ($employees as $employee) {
                 foreach ($next_month_schedules as $schedule) {
-                    EmployeeSchedule::create([
-                        'employee_profile_id' => $employee->id,
-                        'schedule_id' => $schedule->id
-                    ]);
+                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->where('schedule_id', $schedule->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        EmployeeSchedule::create([
+                            'employee_profile_id' => $employee->id,
+                            'schedule_id' => $schedule->id
+                        ]);
+                    }
                 }
             }
 
@@ -53,10 +59,16 @@ class SchedulerTask extends Command
 
             foreach ($employees as $employee) {
                 foreach ($next_month_schedules as $schedule) {
-                    EmployeeSchedule::create([
-                        'employee_profile_id' => $employee->id,
-                        'schedule_id' => $schedule->id
-                    ]);
+                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->where('schedule_id', $schedule->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        EmployeeSchedule::create([
+                            'employee_profile_id' => $employee->id,
+                            'schedule_id' => $schedule->id
+                        ]);
+                    }
                 }
             }
 
