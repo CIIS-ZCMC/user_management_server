@@ -43,28 +43,28 @@ class EmployeeReportController extends Controller
             $sector = Str::lower(strip_tags($sector));
             $employees = [];
 
-            if ( $type == 'null' || $type == null) {
+            if ($type == 'null' || $type == null) {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('aa.'.$sector."_id", $area)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('aa.' . $sector . "_id", $area)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             } else if ($area_id == 'null' || $area_id == null) {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('pi.blood_type', $type)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('pi.blood_type', $type)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             } else {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('aa.'.$sector."_id", $area)
-                ->where('pi.blood_type', $type)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('aa.' . $sector . "_id", $area)
+                    ->where('pi.blood_type', $type)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             }
 
             return response()->json([
@@ -72,8 +72,8 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($employees),
                 'message' => 'List of employee blood types retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesByBloodType', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesByBloodType', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -81,16 +81,16 @@ class EmployeeReportController extends Controller
     public function allEmployeesCivilStatus(Request $request)
     {
         try {
-          
+
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', NULL)->get();
-          
+
             return response()->json([
                 'data' => EmployeesDetailsReport::collection($employee_profiles),
                 'count' => COUNT($employee_profiles),
                 'message' => 'List of employee blood types retrieved'
             ], Response::HTTP_OK);
-        } catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesCivilStatus', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesCivilStatus', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -105,26 +105,26 @@ class EmployeeReportController extends Controller
 
             if ($area_id == 'null') {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('pi.civil_status', $civilStatus)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('pi.civil_status', $civilStatus)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             } else if ($civilStatus == 'null') {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('aa.'.$sector."_id", $area)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('aa.' . $sector . "_id", $area)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             } else {
                 $employees = EmployeeProfile::select('employee_profiles.*')
-                ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
-                ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
-                ->where('aa.'.$sector."_id", $area)
-                ->where('pi.civil_status', $civilStatus)
-                ->whereNotIn('employee_profiles.id', [1])
-                ->get();
+                    ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
+                    ->JOIN('personal_informations as pi', 'pi.id', 'employee_profiles.personal_information_id')
+                    ->where('aa.' . $sector . "_id", $area)
+                    ->where('pi.civil_status', $civilStatus)
+                    ->whereNotIn('employee_profiles.id', [1])
+                    ->get();
             }
 
             return response()->json([
@@ -143,11 +143,11 @@ class EmployeeReportController extends Controller
         try {
 
             // CHECK SHOW IN EMPLOYEE PROFILE
-            $personalInformation = PersonalInformation::with('workExperience')->with('employeeProfile')->whereNotIn('id',[1])
-            // ->whereHas('employeeProfile', function ($query) {
-            //     $query->where('employment_type_id', '!=', 5);
-            // })
-            ->get();
+            $personalInformation = PersonalInformation::with('workExperience')->with('employeeProfile')->whereNotIn('id', [1])
+                // ->whereHas('employeeProfile', function ($query) {
+                //     $query->where('employment_type_id', '!=', 5);
+                // })
+                ->get();
 
             // $totalMonths = 0; // Initialize total months variable
             // $totalYears = 0; // Initialize total months variable
@@ -160,13 +160,13 @@ class EmployeeReportController extends Controller
                 $totalZcmc = 0;
                 $total_job_order_service_months = 0;
                 $total_job_order_current_service_months = 0;
-            
+
                 if ($personalInfo->workExperience) {
                     foreach ($personalInfo->workExperience as $experience) {
                         $dateFrom = Carbon::parse($experience->date_from);
                         $dateTo = Carbon::parse($experience->date_to);
                         $months = $dateFrom->diffInMonths($dateTo);
-            
+
                         // Check if the experience is with Zamboanga City Medical Center and is a government office
                         if ($experience->company == "Zamboanga City Medical Center") {
 
@@ -177,38 +177,38 @@ class EmployeeReportController extends Controller
                             }
 
                             if ($experience->government_office === 'No') {
-                                
+
                                 $job_order_service_months = $dateFrom->diffInMonths($dateTo);
                                 $total_job_order_service_months += $job_order_service_months;
                             }
                         }
-            
+
                         $totalMonths += $months;
                     }
-                }  
-                
+                }
+
                 // Calculate current service months
                 $current_service_months = 0;
                 $employee_profile = $personalInfo->employeeProfile;
-            
+
                 if ($employee_profile->employmentType->id !== 5) {
                     $date_hired = Carbon::parse($employee_profile->date_hired);
                     $current_service_months = $date_hired->diffInMonths(Carbon::now());
                 }
-                
+
                 if ($employee_profile->employmentType->id === 5) {
                     $date_hired_jo = Carbon::parse($employee_profile->date_hired);
                     $total_job_order_current_service_months = $date_hired_jo->diffInMonths(Carbon::now());
                 }
-            
+
                 // Calculate total months and years
                 $total = $current_service_months + $totalMonths;
                 $totalYears = floor($total / 12);
-            
+
                 // Calculate total service in ZCMC
                 $totalMonthsInZcmc = $totalZcmc + $current_service_months;
                 $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
-            
+
                 // Total years in govt including zcmc
                 $total_with_zcmc = $totalMonths + $totalMonthsInZcmc;
                 $total_years_with_zcmc = floor($total_with_zcmc / 12);
@@ -216,34 +216,34 @@ class EmployeeReportController extends Controller
                 // Total years in zcmc as JO / current (id JO)
                 $total_jo_months =  $total_job_order_service_months + $total_job_order_current_service_months;
                 $total_jo_years =   floor($total_jo_months / 12);
-                
+
                 // Prepare data for output
                 $data[] = [
                     'id' => $personalInfo->id,
                     'name' => $personalInfo->name(),
                     'date_hired' => $employee_profile->date_hired,
-                    'total_govt_months' => $totalMonthsInZcmc, 
-                    'total_govt_years' => $totalYears , 
-                    'total_govt_months_with_zcmc' => $totalMonthsInZcmc, 
+                    'total_govt_months' => $totalMonthsInZcmc,
+                    'total_govt_years' => $totalYears,
+                    'total_govt_months_with_zcmc' => $totalMonthsInZcmc,
                     'total_govt_years_with_zcmc' => $total_years_with_zcmc,
                     'total_months_zcmc_regular' => $totalMonthsInZcmc,
                     'total_years_zcmc_regular' => $totalYearsInZcmc,
                     'total_months_zcmc_as_jo' => $total_jo_months,
                     'total_years_zcmc_as_jo' => $total_jo_years,
-                    
+
                 ];
             }
-            
-            // Now $data array contains the aggregated data for each personal 
-            
 
-         
+            // Now $data array contains the aggregated data for each personal 
+
+
+
             // $display[] = array_filter($data, function ($row) {
             //     return $row['id'] == 520;
             // });
 
             return response()->json([
-                'data' => $data 
+                'data' => $data
             ], 401);
 
             // $currentServiceMonths = 0;
@@ -316,7 +316,7 @@ class EmployeeReportController extends Controller
                     ->whereNotIn('employee_profiles.id', [1])
                     ->where('employee_id', '!=', null)
                     ->get();
-                    
+
                 $regular = $employees->filter(function ($row) {
                     return $row->employment_type_id !== 4 && $row->employment_type_id !== 5;
                 });
@@ -326,7 +326,6 @@ class EmployeeReportController extends Controller
                 $job_order = $employees->filter(function ($row) {
                     return $row->employment_type_id === 5;
                 });
-                    
             } else if ($employment_type_id == 'null') {
                 $employees = EmployeeProfile::select('employee_profiles.*')
                     ->JOIN('assigned_areas as aa', 'aa.employee_profile_id', 'employee_profiles.id')
@@ -390,7 +389,7 @@ class EmployeeReportController extends Controller
                 $employees = AssignArea::with('employeeProfile')->orWhere('designation_id', $designation_id)->get();
             }
 
-        
+
             return response()->json([
                 'data' => DesignationReportResource::collection($employees),
                 'count' => COUNT($employees),
