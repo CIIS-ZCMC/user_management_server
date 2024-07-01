@@ -31,7 +31,7 @@ class FreedomWallMessageController extends Controller
             $current_user = $request->user;
             $currentEmployeeProfileId = $current_user->id;
 
-            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->orderBy('created_at', 'desc')->get();
+            $freedom_wall_messages = FreedomWallMessage::with('employeeProfile.personalInformation', 'likes')->orderBy('created_at','asc')->get();
 
             $data = $freedom_wall_messages->map(function ($message) use ($currentEmployeeProfileId) {
                 $employeeProfile = $message->employeeProfile;
@@ -50,6 +50,16 @@ class FreedomWallMessageController extends Controller
                     'content' => $message->content,
                     'date' => $message->created_at->toDateTimeString(),
                     'likes' => $message->likes->count(),
+                    'like_list' => $message->likes->map(function ($like) {
+                        return [
+                            'id' => $like->id,
+                            'employee_profile_id' => $like->employee_profile_id,
+                            'name' => $like->employeeProfile->personalInformation->fullName(),
+                            'profile_url' => $like->employeeProfile->profile_url
+                                ? config('app.server_domain') . "/photo/profiles/" . $like->employeeProfile->profile_url
+                                : null,
+                        ];
+                    }),
                     'is_liked' => $is_liked,
                 ];
             });
@@ -136,6 +146,9 @@ class FreedomWallMessageController extends Controller
                     'content_id' => $message->id,
                     'content' => $message->content,
                     'date' => $message->created_at->toDateTimeString(),
+                    'likes' => 0,
+                    'like_list' => [],
+                    'is_liked' => false,
                 ]
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -273,14 +286,30 @@ class FreedomWallMessageController extends Controller
         try {
             $current_user = $request->user;
             $currentEmployeeProfile = EmployeeProfile::find($current_user->id);
-
+            
             $like = Like::create([
                 'employee_profile_id' => $currentEmployeeProfile->id,
                 'freedom_wall_message_id' => intval($messageId),
             ]);
-
+            
+            // Assuming $like->employeeProfile is the related model instance
+            $employeeProfile = $like->employeeProfile;
+            
             return response()->json([
-                'data' => $like,
+                'data' => [
+                    'id' => $like->id,
+                    'employee_profile_id' => $like->employee_profile_id,
+                    'freedom_wall_message_id' => $like->freedom_wall_message_id,
+                    'liked_by' => [
+                        'id' => $like->id,
+                        'employee_profile_id' => $like->employee_profile_id,
+                        'name' => $employeeProfile->personalInformation->fullName(),
+                        'profile_url' => $employeeProfile->profile_url
+                        ? config('app.server_domain') . "/photo/profiles/" . $employeeProfile->profile_url
+                        : null,
+                    ]
+                    
+                ],
                 'message' => 'Message liked successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -308,6 +337,7 @@ class FreedomWallMessageController extends Controller
 
             if ($like) {
                 $like->delete();
+                
                 return response()->json([
                     'data' => $like,
                     'message' => 'Message unliked successfully.'

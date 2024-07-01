@@ -152,9 +152,9 @@ class LeaveApplicationController extends Controller
 
     public function exportCsv()
     {
-        $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')
-            ->where('status', 'received')
-            ->get();
+        $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')->get();
+            // ->where('status', 'received')
+           
         // ->where('status', 'approved')
 
 
@@ -174,6 +174,7 @@ class LeaveApplicationController extends Controller
             $is_outpatient = $leave_application->is_outpatient;
             $date_filed = $leave_application->created_at;
             $credits = $leave_application->applied_credits;
+            $status = $leave_application->status;
             $response[] = [
                 'Employee Id' => $employeeid,
                 'Employee Name' => $employeeName,
@@ -189,6 +190,7 @@ class LeaveApplicationController extends Controller
                 'Date Filed' => $date_filed,
                 'Total Credits' => $credits,
                 'Total Days' => $credits,
+                'Status' => $status,
 
             ];
         }
