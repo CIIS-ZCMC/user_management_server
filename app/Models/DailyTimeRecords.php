@@ -31,4 +31,9 @@ class DailyTimeRecords extends Model
         'is_biometric',
         'is_time_adjustment'
     ];
+
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'biometric_id', 'biometric_id');
+    }
 }
