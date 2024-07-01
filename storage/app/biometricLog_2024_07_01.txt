@@ -1,0 +1,50 @@
+ -- Biometric Logs as of : 2024-07-01
+-
+-
+biometric_id - date_time - Status - Employee - Punch State - Device Name - Ip-Address 
+-
+133_2024-07-01 06:49:49_255_Torda, Ernesto_CHECK-IN_Admin Building Lobby_192.168.5.155
+146_2024-07-01 07:02:52_255_Delos Reyes, Analiza_CHECK-IN_Admin Building Lobby_192.168.5.155
+143_2024-07-01 07:08:14_255_Anunciacion, Margarita_CHECK-IN_Admin Building Lobby_192.168.5.155
+139_2024-07-01 07:09:22_255_Bautista, Roel_CHECK-IN_Admin Building Lobby_192.168.5.155
+134_2024-07-01 07:09:38_255_Maturan, Jovic_CHECK-IN_Admin Building Lobby_192.168.5.155
+136_2024-07-01 07:10:18_255_Camins, James Benedick_CHECK-IN_Admin Building Lobby_192.168.5.155
+125_2024-07-01 07:17:50_255_Arabes, Alain Carl_CHECK-IN_Admin Building Lobby_192.168.5.155
+477_2024-07-01 07:18:53_255_Sebastian, Eugene_CHECK-IN_Admin Building Lobby_192.168.5.155
+498_2024-07-01 07:22:57_255_Falcasantos, Dennis_CHECK-IN_Admin Building Lobby_192.168.5.155
+489_2024-07-01 07:25:32_255_Maque, Ricah_CHECK-IN_Admin Building Lobby_192.168.5.155
+494_2024-07-01 07:25:38_255_Yanos, Andrew_CHECK-IN_Admin Building Lobby_192.168.5.155
+141_2024-07-01 07:30:32_255_Alvia, Joshua_CHECK-IN_Admin Building Lobby_192.168.5.155
+500_2024-07-01 07:31:51_255_Gallardo, Louie Virgil_CHECK-IN_Admin Building Lobby_192.168.5.155
+500_2024-07-01 07:31:53_255_Gallardo, Louie Virgil_LOGGED_Admin Building Lobby_192.168.5.155
+140_2024-07-01 07:35:41_255_Delgado, Pauline Marie_CHECK-IN_Admin Building Lobby_192.168.5.155
+132_2024-07-01 07:38:42_255_Peligro, Charlou_CHECK-IN_Admin Building Lobby_192.168.5.155
+480_2024-07-01 07:41:24_255_Calisang, David Son_CHECK-IN_Admin Building Lobby_192.168.5.155
+511_2024-07-01 07:44:04_255_Mustaham, Micah Charles_CHECK-IN_Admin Building Lobby_192.168.5.155
+126_2024-07-01 07:44:44_255_Locson, Eugine_CHECK-IN_Admin Building Lobby_192.168.5.155
+129_2024-07-01 07:44:49_255_Alvia, Mia Marion_CHECK-IN_Admin Building Lobby_192.168.5.155
+138_2024-07-01 07:44:58_255_Boniao, Edsar Fernan_CHECK-IN_Admin Building Lobby_192.168.5.155
+135_2024-07-01 07:45:00_255_Coronel, Daisy_CHECK-IN_Admin Building Lobby_192.168.5.155
+142_2024-07-01 07:47:15_255_Garcia, Nerissa Ellenn_CHECK-IN_Admin Building Lobby_192.168.5.155
+142_2024-07-01 07:47:17_255_Garcia, Nerissa Ellenn_LOGGED_Admin Building Lobby_192.168.5.155
+486_2024-07-01 07:47:30_255_Nunag, Carl John Paul_CHECK-IN_Admin Building Lobby_192.168.5.155
+487_2024-07-01 07:50:41_255_Sidney, Anthony Rigdon_CHECK-IN_Admin Building Lobby_192.168.5.155
+123_2024-07-01 07:50:54_255_Cuña, Nikko_CHECK-IN_Admin Building Lobby_192.168.5.155
+127_2024-07-01 07:50:58_255_Adalia, Leilalyn_CHECK-IN_Admin Building Lobby_192.168.5.155
+475_2024-07-01 07:52:28_255_Madriaga, Bartolome_CHECK-IN_Admin Building Lobby_192.168.5.155
+476_2024-07-01 07:52:34_255_Martirez, Kenneth_CHECK-IN_Admin Building Lobby_192.168.5.155
+474_2024-07-01 07:52:37_255_Dayrit, Sergio Jose_CHECK-IN_Admin Building Lobby_192.168.5.155
+128_2024-07-01 07:52:39_255_Esperat, Richelle_CHECK-IN_Admin Building Lobby_192.168.5.155
+147_2024-07-01 07:53:52_255_Devarra, Romel_CHECK-IN_Admin Building Lobby_192.168.5.155
+137_2024-07-01 07:54:27_255_Madrigal, Maribel_CHECK-IN_Admin Building Lobby_192.168.5.155
+483_2024-07-01 07:54:36_255_Apao, Jenny Joy_CHECK-IN_Admin Building Lobby_192.168.5.155
+130_2024-07-01 07:55:14_255_Pantaleon, Ina Mariel_CHECK-IN_Admin Building Lobby_192.168.5.155
+124_2024-07-01 07:57:07_255_Aquino, Atheena May_CHECK-IN_Admin Building Lobby_192.168.5.155
+497_2024-07-01 07:58:24_255_Enriquez, Ruzcel_CHECK-IN_Admin Building Lobby_192.168.5.155
+144_2024-07-01 07:59:05_255_Pioquinto, Lenny_CHECK-IN_Admin Building Lobby_192.168.5.155
+490_2024-07-01 08:06:39_255_Amit, Tristan Jay_CHECK-IN_Admin Building Lobby_192.168.5.155
+490_2024-07-01 08:06:41_255_Amit, Tristan Jay_LOGGED_Admin Building Lobby_192.168.5.155
+485_2024-07-01 08:08:08_255_Sumalpong, Sharlene Fair_CHECK-IN_Admin Building Lobby_192.168.5.155
+496_2024-07-01 08:09:56_255_Dolar, Kim Horace_CHECK-IN_Admin Building Lobby_192.168.5.155
+496_2024-07-01 08:09:58_255_Dolar, Kim Horace_LOGGED_Admin Building Lobby_192.168.5.155
+495_2024-07-01 08:53:25_255_Punzalan, Jaime Kristoff_CHECK-IN_Admin Building Lobby_192.168.5.155
