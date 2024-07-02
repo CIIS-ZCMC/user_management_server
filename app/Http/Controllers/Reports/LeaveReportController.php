@@ -357,73 +357,110 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($division_id)) {
             $division = Division::find($division_id);
-            $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
 
             if ($area_under === 'all') {
                 $departments = Department::where('division_id', $division_id)->get();
                 foreach ($departments as $department) {
-                    $areas[] =  $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $areas[] =  $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] =  $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                         }
                     }
                 }
-                // Get sections directly under the division (if any) that are not under any department
+
                 $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
                 foreach ($sections as $section) {
-                    $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                    // Get all units directly under the section
+                    $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                     }
                 }
             } elseif ($area_under === 'staff') {
-                $division = Division::find($division_id);
-                $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
         if (!empty($area_under) && empty($division_id)) {
             $divisions = Division::all();
             foreach ($divisions as $division) {
-                $areas[] = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
                 if ($area_under === 'all') {
                     $departments = Department::where('division_id', $division->id)->get();
                     foreach ($departments as $department) {
-                        $areas[] =  $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
-                            $areas[] =  $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
-                                $areas[] =  $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                                $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                                if ($result) {
+                                    $areas[] = $result;
+                                }
                             }
                         }
                     }
-                    // Get sections directly under the division (if any) that are not under any department
                     $sections = Section::where('division_id', $division->id)->whereNull('department_id')->get();
                     foreach ($sections as $section) {
-                        $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                        // Get all units directly under the section
+                        $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                         }
                     }
                 } elseif ($area_under === 'staff') {
-                    // handle specific logic for employees if required
-                    $division = Division::find($division_id);
-                    $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                    $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
 
     /**
@@ -453,43 +490,68 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($department_id)) {
             $department = Department::find($department_id);
-            $areas = [$this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
 
             if ($area_under === 'all') {
                 $sections = Section::where('department_id', $department->id)->get();
                 foreach ($sections as $section) {
-                    $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                     }
                 }
             } elseif ($area_under === 'staff') {
-                $areas = [$this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
         if (!empty($area_under) && empty($department_id)) {
             $departments = Department::all();
             foreach ($departments as $department) {
-                $areas[] = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
 
                 if ($area_under === 'all') {
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                         }
                     }
                 } elseif ($area_under === 'staff') {
-                    $areas[] = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
 
     /**
@@ -519,35 +581,54 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($section_id)) {
             $section = Section::find($section_id);
-            $areas = [$this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
 
             if ($area_under === 'all') {
                 $units = Unit::where('section_id', $section->id)->get();
                 foreach ($units as $unit) {
-                    $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             } elseif ($area_under === 'staff') {
-                $areas = [$this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
         if (!empty($area_under) && empty($section_id)) {
             $sections = Section::all();
             foreach ($sections as $section) {
-                $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
 
                 if ($area_under === 'all') {
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                     }
                 } elseif ($area_under === 'staff') {
-                    $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
 
     /**
@@ -577,18 +658,26 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($unit_id)) {
             $unit = Unit::find($unit_id);
-            $areas = [$this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
         }
 
         if (!empty($area_under) && empty($unit_id)) {
             $units = Unit::all();
             foreach ($units as $unit) {
-                $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
+
 
     /**
      * Retrieve employee data based on provided criteria.
@@ -995,10 +1084,15 @@ class LeaveReportController extends Controller
      * @param string $date_to
      * @param string $sort_by
      * @param int $limit
-     * @return array
+     * @return array|null
      */
     private function result($area, $sector, $status, $leave_type_ids = [], $date_from, $date_to, $sort_by, $limit)
     {
+        // Check if $area is null or does not have the expected properties
+        if (is_null($area) || !isset($area->id) || !isset($area->name) || !isset($area->code)) {
+            return null;
+        }
+
         // Initialize the result array with area details and leave counts
         $area_data = [
             'id' => $area->id . '-' . $sector,
@@ -1044,6 +1138,9 @@ class LeaveReportController extends Controller
         $leave_count_total = $leave_applications->count();
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
+
+        // If there are no leave applications, return null
+
 
         $leave_types_data = [];
 
@@ -1125,8 +1222,10 @@ class LeaveReportController extends Controller
         $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
         $area_data['leave_count_approved'] = $leave_count_total_approved;
 
-        return $area_data;
+        // return $area_data;
+        return $leave_count_total > 0 ? $area_data : [];
     }
+
 
 
     /**
