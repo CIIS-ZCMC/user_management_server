@@ -41,15 +41,50 @@ class MResetAllPass extends Controller
                     $query->where('aa.section_id', 1);
                 })
                 ->get()->pluck('employee_profile_id');
+            
+                $nursing = EmployeeProfile::leftJoin('personal_informations as pi', 'employee_profiles.personal_information_id', '=', 'pi.id')
+                ->select('employee_profiles.*', 'pi.first_name', 'pi.last_name')
+                ->where('employee_profiles.created_at', '>=', '2024-07-01')->get();
+                // dd($nursing->pluck('id'));
+                
+                
+            $csvData = [];
+            
+            // Define multiple headers
+            $headers = [
+                'First Name', // Adjust headers as needed,
+                'Last Name',
+                'ID',
+                'PASSWORD', // Assuming 'middle_name' is a field in 'personal_informations'
+                // Add more headers as needed
+            ];
+            
+            // Add headers to CSV data array
+            $csvData[] = $headers;
 
-
-            foreach ($employees as $employee) {
+            foreach ($nursing as $employee) {
                 $password = Helpers::generatePassword();
                 $hashPassword = Hash::make($password . config('app.salt_value'));
 
-                // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
-                if (in_array($employee->id, [2374])) {
+                 // Prepare CSV data array
+               
 
+                    $rowData = [
+                        // Example data for each header, adjust as per your data structure
+                        $employee->last_name,
+                        $employee->first_name,
+                        $employee->employee_id,
+                        $password,
+                        // Add more data fields corresponding to each header
+                    ];
+                    $csvData[] = $rowData;
+
+                
+
+                // Return response to download the CSV file
+
+                $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
+                // if (in_array($employee->id, [2374])) {
                     $employee->authorization_pin = null;
                     $employee->password_encrypted = Crypt::encryptString($hashPassword);
                     $employee->save();
@@ -71,15 +106,25 @@ class MResetAllPass extends Controller
                     $name = $employee_profile->personalInformation->name();
 
 
-                    SendEmailJob::dispatch('new_account', $email, $name, $data);
+                    // SendEmailJob::dispatch('new_account', $email, $name, $data);
                     $temp[] = ['sent' => $email];
                     \Log::info('RESET', [
                         'employeeID' => $employee->employee_id,
                         'password' => $password,
                     ]);
-                }
+                // }
             }
+            // Generate a unique filename for the CSV file
+            $fileName = 'nursing_data_' . date('YmdHis') . '.csv';
 
+            // Save CSV data to a temporary file path
+            $filePath = storage_path('app/' . $fileName); // Adjust path as needed
+
+            $file = fopen($filePath, 'w');
+            foreach ($csvData as $row) {
+                fputcsv($file, $row);
+            }
+            fclose($file);
             \Log::info('P-Reset&sent Successfully', ["message" => '-------------------------------------------------------------------------------------------']);
             dd($temp);
         } catch (\Throwable $th) {
