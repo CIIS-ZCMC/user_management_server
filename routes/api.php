@@ -2452,9 +2452,14 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
-        // ATTENDANCE REPORT
+        // ATTENDANCE TARDINESS REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendance');
+            Route::post('attendance-tardiness-report-filter', 'AttendanceReportController@filterAttendanceTardiness');
+        });
+
+        // ATTENDANCE ABSENTEEISM  REPORT
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('attendance-absenteeism-report-filter', 'AttendanceReportController@filterAtendanceAbsenteeism');
         });
 
         // TEST ROUTE

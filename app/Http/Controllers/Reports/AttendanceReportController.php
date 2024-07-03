@@ -29,7 +29,7 @@ class AttendanceReportController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function filterAttendance(Request $request)
+    public function filterAttendanceTardiness(Request $request)
     {
         try {
             // Get filters from the request
