@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Constraint\IsEmpty;
 
 class EmployeeScheduleController extends Controller
 {
@@ -214,6 +215,16 @@ class EmployeeScheduleController extends Controller
     {
         try {
             $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
+
+            if ($model->isEmpty()) {
+                $data = EmployeeProfile::where('id', $id)->get();
+
+                return response()->json([
+                    'data' => null,
+                    'holiday' => Holiday::all(),
+                    'updated' => []
+                ], Response::HTTP_OK);
+            }
 
             return response()->json([
                 'data' => new EmployeeScheduleResource($model),
