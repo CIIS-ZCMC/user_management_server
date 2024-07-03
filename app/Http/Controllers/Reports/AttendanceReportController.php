@@ -11,9 +11,7 @@ use App\Models\AssignArea;
 use App\Models\Division;
 use App\Models\Department;
 use App\Models\Section;
-use App\Models\Unit;
-use App\Models\LeaveApplication;
-use App\Models\LeaveType;
+use App\Models\Unit;;
 
 /**
  * Class AttendanceReportController
