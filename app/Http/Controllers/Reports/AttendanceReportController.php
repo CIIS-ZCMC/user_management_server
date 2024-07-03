@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Reports;
 
+use Illuminate\Support\Facades\DB;
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -12,6 +13,7 @@ use App\Models\Division;
 use App\Models\Department;
 use App\Models\Section;
 use App\Models\Unit;;
+
 
 /**
  * Class AttendanceReportController
@@ -42,7 +44,7 @@ class AttendanceReportController extends Controller
             $period_type = $request->period_type; // quarterly or monthly
             $limit = $request->limit ?? 100; // default limit is 100
 
-            $result = $this->getEmployeeFilter(
+            $result = $this->getEmployeesTardinessFilter(
                 $area_id,
                 $area_under,
                 $sector,
@@ -60,7 +62,7 @@ class AttendanceReportController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             // Log the error and return an internal server error response
-            Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendance', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceTardiness', $th->getMessage());
             return response()->json(
                 [
                     'message' => $th->getMessage()
@@ -82,7 +84,7 @@ class AttendanceReportController extends Controller
      * @param int $limit
      * @return array
      */
-    private function getEmployeeFilter($area_id, $area_under, $sector, $employment_type, $start_date, $end_date, $period_type, $limit)
+    private function getEmployeesTardinessFilter($area_id, $area_under, $sector, $employment_type, $start_date, $end_date, $period_type, $limit)
     {
         $arr_data = [];
 
@@ -622,7 +624,7 @@ class AttendanceReportController extends Controller
             }
         } catch (\Exception $e) {
             // Log error and return empty array in case of exception
-            Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeeFilter', $e->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeesTardinessFilter', $e->getMessage());
             return response()->json(
                 ['message'  => $e->getMessage()],
                 Response::HTTP_INTERNAL_SERVER_ERROR
@@ -697,5 +699,46 @@ class AttendanceReportController extends Controller
         ];
 
         return $arr_data;
+    }
+
+    /**
+     * Filters attendance records based on given criteria.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function filterAttendanceAbsenteeism(Request $request)
+    {
+        try {
+            // Get filters from the request
+            $area_id = $request->area_id;
+            $area_under = $request->area_under;
+            $sector = $request->sector;
+            $employment_type = $request->employment_type_id;
+            $start_date = $request->start_date;
+            $end_date = $request->end_date;
+            $period_type = $request->period_type; // quarterly or monthly
+            $limit = $request->limit ?? 100; // default limit is 100
+
+
+            // return response()->json([
+            //     'count' => count($result),
+            //     'data' => $result,
+            //     'message' => 'Successfully retrieved data.'
+            // ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            // Log the error and return an internal server error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceAbsenteeism', $th->getMessage());
+            return response()->json(
+                [
+                    'message' => $th->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    private function getEmployeesAbsenteeismFilter($area_id, $area_under, $sector, $employment_type, $start_date, $end_date, $period_type, $limit)
+    {
     }
 }
