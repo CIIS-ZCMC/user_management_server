@@ -2463,7 +2463,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // ATTENDANCE ABSENTEEISM  REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-absenteeism-report-filter', 'AttendanceReportController@filterAtendanceAbsenteeism');
+            Route::post('attendance-absenteeism-report-filter', 'AttendanceReportController@filterAttendanceAbsenteeism');
         });
 
         // TEST ROUTE
