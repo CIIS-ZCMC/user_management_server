@@ -64,6 +64,7 @@ class ProcessUndertimeMonthly extends Command
             $previous_credit_vl = $employee_credit_vl->total_leave_credits;
 
             EmployeeLeaveCreditLogs::create([
+                'employee_leave_credit_id' => $employee_credit_vl->id,
                 'previous_credit' => $previous_credit_vl,
                 'leave_credits' => $deduction,
                 'reason' => 'undertime',
