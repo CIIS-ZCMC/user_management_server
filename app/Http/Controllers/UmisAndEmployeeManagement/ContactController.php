@@ -121,24 +121,17 @@ class ContactController extends Controller
             $cleanData = [];
 
 
-            
-            if (isset($request->password)) {
-                foreach ($request->contact as $key => $value) {
-                    if ($value === null || $key === 'password') {
-                        $cleanData[$key] = $value;
-                        continue;
-                    }
-                    $cleanData[$key] = $value;
-                }
-            } 
-
-            foreach ($request->all() as $key => $value) {
+           
+            foreach ($request->contact as $key => $value) {
                 if ($value === null || $key === 'password') {
                     $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = $value;
             }
+            
+
+            
 
             $contact->update($cleanData);
 
