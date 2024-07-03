@@ -506,7 +506,10 @@ class AttendanceReportController extends Controller
         } catch (\Exception $e) {
             // Log error and return empty array in case of exception
             Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeeFilter', $e->getMessage());
-            return [];
+            return response()->json(
+                ['message'  => $e->getMessage()],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
         return $arr_data;
@@ -536,6 +539,10 @@ class AttendanceReportController extends Controller
         } catch (\Exception $e) {
             // Log error and continue processing
             Helpers::errorLog($this->CONTROLLER_NAME, 'countTardinessDays', $e->getMessage());
+            return response()->json([
+                'message' => $e->getMessage(),
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            ]);
         }
 
         return [
