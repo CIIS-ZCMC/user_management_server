@@ -48,8 +48,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-          // ->whereIn('biometric_id', $biometricIds)
-          ->where('biometric_id', 490  )// 494
+         // ->whereIn('biometric_id', $biometricIds)
+          ->where('biometric_id', 493  )// 494
             ->get();
 
 
@@ -181,17 +181,12 @@ class GenerateReportController extends Controller
                 ];
             }
             }
-
-
-
                 if(count($empschedule)>=1){
                     $empschedule = array_map(function ($sc){
                    // return isset($sc['scheduleDate']) && (int)date('d', strtotime($sc['scheduleDate']));
                    return (int)date('d', strtotime($sc['scheduleDate']));
                 },$this->helper->Allschedule($biometric_id, $month_of, $year_of, null,null,null,null)['schedule']);
                 }
-
-
                 $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
                 // echo "Name :".$Employee?->personalInformation->name()."\n Biometric_id :".$Employee->biometric_id."\n"?? "\n"."\n";
 
@@ -220,8 +215,20 @@ class GenerateReportController extends Controller
                 }, $empschedule)));
 
 
+                $whole_month = $request->whole_month;
+                $first_half = $request->first_half;
+                $second_half = $request->second_half;
+                $init = 1;
+                if ($first_half){
+                    $days_In_Month = 15;
+                }else if ($second_half){
+                    $init = 16;
+                }
 
-                for ($i=1; $i <= $days_In_Month; $i++) {
+
+
+                for ($i=$init; $i <= $days_In_Month; $i++) {
+
 
 
                     $filteredleaveDates = [];
@@ -351,18 +358,33 @@ class GenerateReportController extends Controller
                     }
                 }
 
+
+
                 $presentCount = count(array_filter($attd,function($d){
                     return $d['total_working_minutes'] !==0;
                 }));
                 $Number_Absences = count($absences) -count($lwop) ;
+                $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null,null,null,null)['schedule'];
+
+                $scheds = array_map(function($d){
+                    return (int)date('d',strtotime($d['scheduleDate']));
+                },$schedule_);
+
+                $filtered_scheds = array_values(array_filter($scheds, function($value) use($init,$days_In_Month) {
+                    return $value >= $init && $value <= $days_In_Month;
+                }));
+
 
                 $data[] = [
+
                     'Biometric_id'=> $biometric_id,
                     'EmployeeNo'=>$Employee->employee_id,
                     'Name'=>$Employee->personalInformation->name(),
+                    'Payroll'=>$init." - ".$days_In_Month,
+                    'From'=>$init,
+                    'To'=>$days_In_Month,
                     'Month'=>$month_of,
                     'Year'=>$year_of,
-
                     'TotalWorkingMinutes'=>$total_Month_WorkingMinutes,
                     'TotalWorkingHours'=>$this->ToHours($total_Month_WorkingMinutes),
                     'TotalOvertimeMinutes'=>$total_Month_Overtime ,
@@ -373,10 +395,10 @@ class GenerateReportController extends Controller
                     'NoofAbsences'=> $Number_Absences,
                     'NoofInvalidEntry'=>count($invalidEntry),
                     'NoofDayOff'=>count($dayoff),
-                    'schedule'=>count($this->helper->Allschedule($biometric_id, $month_of, $year_of, null,null,null,null)['schedule']),
-                    'Attendance'=>$attd,
-                    'Invalid'=>$invalidEntry,
-                    'absences'=>$absences,
+                    'schedule'=>count($filtered_scheds),
+                   // 'Attendance'=>$attd,
+                    // 'Invalid'=>$invalidEntry,
+                    // 'absences'=>$absences,
                     // 'Leavewopay'=>$lwop,
                     //  'Leavewpay'=>$lwp,
                     //  'Absences'=>$absences,
