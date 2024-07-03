@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Http\Requests\ScheduleRequest;
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\EmployeeScheduleResource2;
 use App\Http\Resources\HolidayResource;
 use App\Http\Resources\ScheduleResource;
 use App\Models\EmployeeProfile;
@@ -217,6 +218,7 @@ class EmployeeScheduleController extends Controller
             return response()->json([
                 'data' => new EmployeeScheduleResource($model),
                 'holiday' => Holiday::all(),
+                'updated' => new EmployeeScheduleResource2($model)
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'edit', $th->getMessage());
@@ -303,6 +305,61 @@ class EmployeeScheduleController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['message' => 'Schedule Succesfully Deleted'], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    /**
+     * Generate Employee Schedule (Specific Month).
+     */
+    public function generate(Request $request)
+    {
+        try {
+            $date = Carbon::parse($request->date)->startOfMonth();
+
+            // Non Permanent Part-time employee
+            $nonPermanentEmployees = EmployeeProfile::whereNot('employment_type_id', 2)->where('shifting', 0)->get();
+            $nonPermanentSchedules = Helpers::generateSchedule($date, 1, 'AM');
+
+            foreach ($nonPermanentEmployees as $employee) {
+                foreach ($nonPermanentSchedules as $schedule) {
+                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->where('schedule_id', $schedule->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        EmployeeSchedule::create([
+                            'employee_profile_id' => $employee->id,
+                            'schedule_id' => $schedule->id
+                        ]);
+                    }
+                }
+            }
+
+            // Permanent Part-time employee
+            $permanentEmployees = EmployeeProfile::where('employment_type_id', 2)->where('shifting', 0)->get();
+            $permanentSchedules = Helpers::generateSchedule($date, 2, 'AM');
+            foreach ($permanentEmployees as $employee) {
+                foreach ($permanentSchedules as $schedule) {
+                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->where('schedule_id', $schedule->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        EmployeeSchedule::create([
+                            'employee_profile_id' => $employee->id,
+                            'schedule_id' => $schedule->id
+                        ]);
+                    }
+                }
+            }
+
+            // Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['message' => 'Successfully generated schedule for the month of ' . $date->format('F')], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
