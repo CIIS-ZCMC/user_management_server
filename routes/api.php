@@ -42,20 +42,23 @@ Route::
             Route::get('notification', 'NotificationController@store');
         });
 
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            Route::post('sign-in', 'EmployeeProfileController@signIn');
-            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-            Route::post('new-password', 'EmployeeProfileController@newPassword');
-            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-            Route::get('validate-token', 'CsrfTokenController@validateToken');
-            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
-        });
+Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+    Route::post('testgenerate', 'GenerateReportController@test');
+});
+
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::post('sign-in', 'EmployeeProfileController@signIn');
+    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
+    Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+    Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+    Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+});
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -966,7 +969,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('employee-profile/{id}/revoke/{access_right_id}', 'EmployeeProfileController@revokeRights');
         });
 
-        //reports
+        // Reports
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-filter', 'EmployeeProfileController@Areas');
         });
@@ -2423,7 +2426,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // CIVIL STATUS
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('employees-civil-status/{civil_status}', 'EmployeeReportController@allEmployeesCivilStatus');
+            Route::get('employees-civil-status', 'EmployeeReportController@allEmployeesCivilStatus');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -2448,6 +2451,19 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-by-job-position/{id}/area/{area_id}/sector/{sector}', 'EmployeeReportController@employeesPerJobPositionAndArea');
+        });
+
+        // SERVICE LENGTH
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-service-length', 'EmployeeReportController@allEmployeesServiceLength');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
     });
 });

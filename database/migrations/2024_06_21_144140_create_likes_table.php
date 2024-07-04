@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->unsignedBigInteger('employee_profile_id')->unsigned();
+            $table->unsignedBigInteger('freedom_wall_message_id')->unsigned();
             $table->foreign('freedom_wall_message_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });

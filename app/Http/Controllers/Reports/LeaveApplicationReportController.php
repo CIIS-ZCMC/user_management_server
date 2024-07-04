@@ -27,7 +27,7 @@ class LeaveApplicationReportController extends Controller
             $status = $request->status;
             $area_under = $request->area_under;
             $area_id = $request->area_id;
-            $leave_type_ids = $request->leave_type_ids ? explode(',', $request->leave_type_ids) : [];
+            $leave_type_ids = $request->leave_type_ids ? $request->leave_type_ids : [];
             $date_from = $request->date_from;
             $date_to = $request->date_to;
             $sort_by = $request->sort_by;
@@ -46,7 +46,7 @@ class LeaveApplicationReportController extends Controller
                 } elseif (strtolower($report_format) === 'employee') {
                     $areas = $this->getEmployeeReport($status, $area, $area_id, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                 } else {
-                    return response()->json(['message' => 'Invalid report format'], Response::HTTP_OK);
+                    return response()->json(['message' => 'Invalid report format'], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -246,12 +246,14 @@ class LeaveApplicationReportController extends Controller
         }
 
         foreach ($leave_types as $leave_type) {
-            $query = LeaveApplication::where('leave_type_id', $leave_type->id)
-                ->whereHas('employeeProfile', function ($query) use ($area, $sector) {
-                    $query->whereHas('assignedArea', function ($q) use ($area, $sector) {
+            $query = LeaveApplication::whereIn('leave_type_id', $leave_type_ids)->with([
+                'employeeProfile' => function ($query) use ($area, $sector) {
+                    $query->with('assignedAreas', function ($q) use ($area, $sector) {
+                        // Ensure correct column name based on your database schema
                         $q->where($sector . '_id', $area->id);
-                    });
-                });
+                    }); // Eagerly load assigned areas within employeeProfile
+                }
+            ]);
 
             if ($status) {
                 $query->where('status', $status);
