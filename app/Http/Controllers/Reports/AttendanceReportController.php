@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use App\Models\AssignArea;
 use App\Models\Division;
 use App\Models\Department;
+use App\Models\EmployeeSchedule;
 use App\Models\Section;
 use App\Models\Unit;;
 
@@ -97,6 +98,10 @@ class AttendanceReportController extends Controller
                             ->orWhere('undertime_minutes', '>', 0);
                     })
                     ->get();
+
+                foreach ($assignAreas as $assignArea) {
+                    $arr_data[] = $this->resultTardinessFilter($assignArea->employeeProfile, $sector, $period_type, $start_date, $end_date);
+                }
             } else {
                 switch ($sector) {
                     case 'division':
@@ -142,6 +147,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
                                         'division',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
 
@@ -187,6 +195,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultTardinessFilter(
                                             $assignArea->employeeProfile,
                                             'department',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
 
@@ -232,6 +243,9 @@ class AttendanceReportController extends Controller
                                             $arr_data[] = $this->resultTardinessFilter(
                                                 $assignArea->employeeProfile,
                                                 'section',
+                                                $period_type,
+                                                $start_date,
+                                                $end_date
                                             );
                                         }
 
@@ -277,6 +291,9 @@ class AttendanceReportController extends Controller
                                                 $arr_data[] = $this->resultTardinessFilter(
                                                     $assignArea->employeeProfile,
                                                     'unit',
+                                                    $period_type,
+                                                    $start_date,
+                                                    $end_date
                                                 );
                                             }
                                         }
@@ -325,6 +342,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultTardinessFilter(
                                             $assignArea->employeeProfile,
                                             'section',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
 
@@ -371,6 +391,9 @@ class AttendanceReportController extends Controller
                                             $arr_data[] = $this->resultTardinessFilter(
                                                 $assignArea->employeeProfile,
                                                 'unit',
+                                                $period_type,
+                                                $start_date,
+                                                $end_date
                                             );
                                         }
                                     }
@@ -387,8 +410,6 @@ class AttendanceReportController extends Controller
                                         $q->where('employment_type_id', $employment_type);
                                     });
                                 }
-
-
                                 if ($period_type) {
                                     $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
                                         switch ($period_type) {
@@ -418,6 +439,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
                                         'division',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
                                 break;
@@ -467,6 +491,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignedArea->employeeProfile,
                                         'department',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
                                 $sections = Section::where('department_id', $area_id)->get();
@@ -511,6 +538,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultTardinessFilter(
                                             $assignArea->employeeProfile,
                                             'section',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
 
@@ -555,6 +585,9 @@ class AttendanceReportController extends Controller
                                             $arr_data[] = $this->resultTardinessFilter(
                                                 $assignArea->employeeProfile,
                                                 'unit',
+                                                $period_type,
+                                                $start_date,
+                                                $end_date
                                             );
                                         }
                                     }
@@ -601,6 +634,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignedArea->employeeProfile,
                                         'department',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
                                 break;
@@ -649,6 +685,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
                                         'section',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
                                 $units = Unit::where('section_id', $area_id)->get();
@@ -692,6 +731,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultTardinessFilter(
                                             $assignArea->employeeProfile,
                                             'unit',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
                                 }
@@ -737,6 +779,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
                                         'section',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
                                 break;
@@ -784,15 +829,15 @@ class AttendanceReportController extends Controller
                             $arr_data[] = $this->resultTardinessFilter(
                                 $assignArea->employeeProfile,
                                 'unit',
+                                $period_type,
+                                $start_date,
+                                $end_date
                             );
                         }
                         break;
                 }
             }
 
-            foreach ($assignAreas as $assignArea) {
-                $arr_data[] = $this->resultTardinessFilter($assignArea->employeeProfile, $sector);
-            }
 
             // Sort by highest tardiness days by default
             usort($arr_data, function ($a, $b) {
@@ -819,28 +864,42 @@ class AttendanceReportController extends Controller
      * @param \App\Models\EmployeeProfile $employee
      * @return array
      */
-    private function countTardinessDays($employee)
+    private function countTardinessDays($employee, $start_date = null, $end_date = null)
     {
         $tardinessDays = 0;
         $undertimeDays = 0;
 
         try {
             foreach ($employee->dailyTimeRecords as $record) {
-                if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
-                    $tardinessDays++;
-                }
+                $has_schedule = $start_date && $end_date ? Helpers::hasSchedule($start_date, $end_date, $employee->id) : true;
 
-                if ($record->undertime_minutes > 0) {
-                    $undertimeDays++;
+                if ($start_date && $end_date) {
+                    if (!$has_schedule) {
+                        return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+                    }
+
+                    if (Carbon::parse($record->dtr_date)->between($start_date, $end_date)) {
+                        if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
+                            $tardinessDays++;
+                        }
+                        if ($record->undertime_minutes > 0 && (Carbon::parse($record->dtr_date)->between($start_date, $end_date))) {
+                            $undertimeDays++;
+                        }
+                    }
+                } else {
+                    if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
+                        $tardinessDays++;
+                    }
+                    if ($record->undertime_minutes > 0) {
+                        $undertimeDays++;
+                    }
                 }
             }
         } catch (\Exception $e) {
-            // Log error and continue processing
             Helpers::errorLog($this->CONTROLLER_NAME, 'countTardinessDays', $e->getMessage());
             return response()->json([
-                'message' => $e->getMessage(),
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            ]);
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         return [
@@ -849,6 +908,7 @@ class AttendanceReportController extends Controller
         ];
     }
 
+
     /**
      * Formats the employee data for the report.
      *
@@ -856,11 +916,13 @@ class AttendanceReportController extends Controller
      * @param string $sector
      * @return array
      */
-    private function resultTardinessFilter($employee, $sector)
+    private function resultTardinessFilter($employee, $sector, $period_type, $start_date, $end_date)
     {
+        $date_range =  [Carbon::parse($start_date), Carbon::parse($end_date)];
+
         $dailyTimeRecords = $employee->dailyTimeRecords ?? [];
-        $total_undertime_minutes = $dailyTimeRecords->sum('undertime_minutes');
-        $tardinessAndUndertime = $this->countTardinessDays($employee);
+        $total_undertime_minutes = $dailyTimeRecords->whereBetween('dtr_date', $date_range)->sum('undertime_minutes');
+        $tardinessAndUndertime = $this->countTardinessDays($employee, $start_date, $end_date);
 
         $arr_data = [
             'id' => $employee->id,
@@ -938,6 +1000,7 @@ class AttendanceReportController extends Controller
         }
     }
 
+
     private function getEmployeesAbsenteeismFilter($area_id, $area_under, $sector, $employment_type, $start_date, $end_date, $period_type, $without_official_leave, $without_pay, $limit)
     {
         $arr_data = [];
@@ -1003,6 +1066,9 @@ class AttendanceReportController extends Controller
                                 $arr_data[] = $this->resultAbsenteeismFilter(
                                     $assignArea->employeeProfile,
                                     'division',
+                                    $period_type,
+                                    $start_date,
+                                    $end_date
                                 );
                             }
 
@@ -1064,6 +1130,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultAbsenteeismFilter(
                                         $assignArea->employeeProfile,
                                         'department',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
 
@@ -1125,6 +1194,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultAbsenteeismFilter(
                                             $assignArea->employeeProfile,
                                             'section',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
 
@@ -1186,6 +1258,9 @@ class AttendanceReportController extends Controller
                                             $arr_data[] = $this->resultAbsenteeismFilter(
                                                 $assignArea->employeeProfile,
                                                 'unit',
+                                                $period_type,
+                                                $start_date,
+                                                $end_date
                                             );
                                         }
                                     }
@@ -1251,6 +1326,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultAbsenteeismFilter(
                                         $assignArea->employeeProfile,
                                         'section',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
 
@@ -1313,6 +1391,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultAbsenteeismFilter(
                                             $assignArea->employeeProfile,
                                             'unit',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
                                 }
@@ -1376,6 +1457,9 @@ class AttendanceReportController extends Controller
                                 $arr_data[] = $this->resultAbsenteeismFilter(
                                     $assignArea->employeeProfile,
                                     'division',
+                                    $period_type,
+                                    $start_date,
+                                    $end_date
                                 );
                             }
                             break;
@@ -1441,6 +1525,9 @@ class AttendanceReportController extends Controller
                                 $arr_data[] = $this->resultAbsenteeismFilter(
                                     $assignedArea->employeeProfile,
                                     'department',
+                                    $period_type,
+                                    $start_date,
+                                    $end_date
                                 );
                             }
                             $sections = Section::where('department_id', $area_id)->get();
@@ -1501,6 +1588,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultAbsenteeismFilter(
                                         $assignArea->employeeProfile,
                                         'section',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
 
@@ -1562,6 +1652,9 @@ class AttendanceReportController extends Controller
                                         $arr_data[] = $this->resultAbsenteeismFilter(
                                             $assignArea->employeeProfile,
                                             'unit',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
                                         );
                                     }
                                 }
@@ -1625,6 +1718,9 @@ class AttendanceReportController extends Controller
                                 $arr_data[] = $this->resultAbsenteeismFilter(
                                     $assignedArea->employeeProfile,
                                     'department',
+                                    $period_type,
+                                    $start_date,
+                                    $end_date
                                 );
                             }
                             break;
@@ -1690,6 +1786,9 @@ class AttendanceReportController extends Controller
                                 $arr_data[] = $this->resultAbsenteeismFilter(
                                     $assignArea->employeeProfile,
                                     'section',
+                                    $period_type,
+                                    $start_date,
+                                    $end_date
                                 );
                             }
                             $units = Unit::where('section_id', $area_id)->get();
@@ -1750,6 +1849,9 @@ class AttendanceReportController extends Controller
                                     $arr_data[] = $this->resultAbsenteeismFilter(
                                         $assignArea->employeeProfile,
                                         'unit',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
                                     );
                                 }
                             }
@@ -1812,6 +1914,9 @@ class AttendanceReportController extends Controller
                                 $arr_data[] = $this->resultAbsenteeismFilter(
                                     $assignArea->employeeProfile,
                                     'section',
+                                    $period_type,
+                                    $start_date,
+                                    $end_date
                                 );
                             }
                             break;
@@ -1876,6 +1981,9 @@ class AttendanceReportController extends Controller
                         $arr_data[] = $this->resultAbsenteeismFilter(
                             $assignArea->employeeProfile,
                             'unit',
+                            $period_type,
+                            $start_date,
+                            $end_date
                         );
                     }
                     break;
@@ -1892,6 +2000,73 @@ class AttendanceReportController extends Controller
         return $arr_data;
     }
 
+    private function calculateTotalHoursMissed($employee, $start_date = null, $end_date = null)
+    {
+        $total_hours_missed = 0;
+        $remaining_minutes = 0;
+        try {
+            $query = $employee->dailyTimeRecords();
+
+            if ($start_date && $end_date) {
+                $query->whereBetween('dtr_date', [$start_date, $end_date]);
+            }
+
+            $dailyTimeRecords = $query->get();
+
+            foreach ($dailyTimeRecords as $record) {
+                $has_schedule = $start_date && $end_date ? Helpers::hasSchedule($start_date, $end_date, $employee->id) : true;
+
+                if ($has_schedule && ($record->undertime_minutes > 0)) {
+                    $total_hours_missed = floor($record->undertime_minutes / 60);
+                    $remaining_minutes = $record->undertime_minutes % 60;
+                }
+            }
+        } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'calculateTotalHoursMissed', $e->getMessage());
+            return response()->json([
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return [
+            'total_hours_missed' => $total_hours_missed,
+            'remaining_minutes' => $remaining_minutes
+        ];
+    }
+
+    private function calculateDaysAbsent($employee, $start_date = null, $end_date = null)
+    {
+        $days_absent = 0;
+
+        try {
+            $query = $employee->dailyTimeRecords();
+
+            if ($start_date && $end_date) {
+                $query->whereBetween('dtr_date', [$start_date, $end_date]);
+            }
+
+            $dailyTimeRecords = $query->get();
+
+            foreach ($dailyTimeRecords as $record) {
+                $has_schedule = $start_date && $end_date ? Helpers::hasSchedule($start_date, $end_date, $employee->id) : true;
+
+                if ($has_schedule) {
+                    if ($record->total_working_minutes === 0) {
+                        $days_absent++;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'calculateDaysAbsent', $e->getMessage());
+            return response()->json([
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return $days_absent;
+    }
+
+
     /**
      * Formats the employee data for the report.
      *
@@ -1899,18 +2074,23 @@ class AttendanceReportController extends Controller
      * @param string $sector
      * @return array
      */
-    private function resultAbsenteeismFilter($employee, $sector)
+    private function resultAbsenteeismFilter($employee, $sector,  $period_type, $start_date = null, $end_date = null)
     {
+        $total_hours_missed = $this->calculateTotalHoursMissed($employee, $start_date, $end_date);
+        $days_absent = $this->calculateDaysAbsent($employee, $start_date, $end_date);
         $arr_data = [
             'id' => $employee->id,
             'employee_id' => $employee->employee_id,
             'employee_name' => $employee->personalInformation->employeeName(),
-            'employment_type' => $employee->employment_type_id,
+            'employment_type' => $employee->employmentType->id,
+            'employment_type_name' => $employee->employmentType->name,
             'designation_name' => $employee->findDesignation()['name'],
             'designation_code' => $employee->findDesignation()['code'],
             'sector' => $sector,
             'area_name' => $employee->assignedArea->findDetails()['details']['name'],
             'area_code' => $employee->assignedArea->findDetails()['details']['code'],
+            'total_hours_missed' => $total_hours_missed['total_hours_missed'],
+            'days_absent' => $days_absent,
         ];
 
         return $arr_data;
