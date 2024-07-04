@@ -10,9 +10,11 @@ use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\AnnouncementsRequest;
 use App\Http\Resources\AnnouncementsResource;
+use App\Jobs\SchedAnnouncement;
 use App\Models\Announcements;
 use App\Models\EmployeeProfile;
 use App\Models\Notifications;
+use App\Models\SpecialAccessRole;
 use App\Models\UserNotifications;
 use Illuminate\Support\Facades\DB;
 
@@ -65,14 +67,21 @@ class AnnouncementsController extends Controller
     public function store(AnnouncementsRequest $request)
     {
         try{
-            DB::beginTransaction();
+            // DB::beginTransaction();
             $cleanData = [];
-
+          
+            
             foreach ($request->all() as $key => $value) {
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
+                if(isset($value)){
+                    if($key === 'scheduled_at'){
+                        $value = Carbon::parse($value);
+                    }
+                }
+               
                 if($key === 'attachments'){
                     $index = 1;
                     $array_list = [];
@@ -87,13 +96,26 @@ class AnnouncementsController extends Controller
                 }
                 $cleanData[$key] = $value;
             } 
+            if(isset($request->scheduled_at)){
+                // "2024-06-19T16:00:00.000Z"
+                // dd($cleanData['title']);
+                $cleanData['posted']=0;
+                $event = Announcements::create($cleanData);
+                SchedAnnouncement::dispatch($event)->delay(Carbon::parse($cleanData['scheduled_at']));
+                // DB::commit();
+                return response()->json([
+                    'data' => new AnnouncementsResource($event),
+                    'message' => 'Schedule an Announcement set'
+                ], Response::HTTP_OK);
+                // 
+            }
+            $cleanData['posted']=1;
             $event = Announcements::create($cleanData);
-
             if($event){
                 $notification = Notifications::create([
                     'title'=>"Announcement!",
                     'description'=>$event->title,
-                    'module_path'=>'/announcement',
+                    'module_path'=>"/announcement/$event->id",
                 ]);
                 $employeeId = EmployeeProfile::all();
                 foreach($employeeId as $id){
@@ -111,24 +133,36 @@ class AnnouncementsController extends Controller
                 'message' => 'Event created successfully'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            dd($th);
             DB::rollback();
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function show($id, Request $request)
+    public function showAnnouncement( Request $request)
     {
         try{
-            $event = Announcements::findOrFail($id);
-
+            $supervisor_ids = [1,2,3,5,6,7,8];
+            $event = null;
+            
+            $isSupervisor = SpecialAccessRole::where('employee_profile_id', $request->user->id)
+                ->whereIn('system_role_id', $supervisor_ids)->get();
+               
+                if(count($isSupervisor) > 0){
+                    $event = Announcements::where('posted', 1)->orderBy('created_at', 'desc')->get();
+                }else{
+                    $event = Announcements::where('forsupervisors', 0)
+                                          ->where('posted', 1)
+                                          ->orderBy('created_at', 'desc')
+                                          ->get();
+                }
             if(!$event)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
             return response()->json([
-                'data' => new AnnouncementsResource($event),
+                'data' => new AnnouncementsResource($event[0]),
                 'message' => 'Employee Announcements retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -136,6 +170,35 @@ class AnnouncementsController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function show($id, Request $request)
+    {
+        try{
+            $supervisor_ids = [1,2,3,5,6,7,8];
+            $event = null;
+            $isSupervisor = SpecialAccessRole::where('employee_profile_id', $request->user->id)
+                ->whereIn('system_role_id', $supervisor_ids)->get();
+            if (count($isSupervisor) > 0) {
+                $event = Announcements::where('posted', 1)->findOrFail($id);
+            } else {
+                $event = Announcements::where('forsupervisors', 0)
+                                        ->where('posted', 1)
+                                        ->findOrFail($id);
+            }
+            if(!$event)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+            return response()->json([
+                'data' => new AnnouncementsResource($event),
+                'message' => 'Employee Announcements retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            dd($th);
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     
     public function update($id, AnnouncementsRequest $request)
     {
