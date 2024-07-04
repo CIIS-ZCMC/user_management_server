@@ -227,11 +227,14 @@ class EmployeeScheduleController extends Controller
 
             if ($data->isEmpty()) {
                 $data = EmployeeProfile::find($id);
+                $MWH = MonthlyWorkHours::where('employment_type_id', $data->employment_type_id)->where('month_year', Carbon::now()->format('m-Y'))->first();
 
                 return response()->json([
                     'data' => null,
-                    'updated' => [],
-                    'total_working_hours' => 0,
+                    'updated' => [
+                        'total_working_hours' => 0,
+                        'monthly_working_hours' => $MWH->work_hours
+                    ],
                     'holiday' => Holiday::all(),
                 ], Response::HTTP_OK);
             }
