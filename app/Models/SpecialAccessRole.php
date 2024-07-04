@@ -26,6 +26,6 @@ class SpecialAccessRole extends Model
 
     public function systemRole()
     {
-        return $this->belongsTo(SystemRole::class);
+        return $this->belongsTo(SystemRole::class, 'system_role_id');
     }
 }
