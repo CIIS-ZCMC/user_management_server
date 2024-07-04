@@ -12,6 +12,7 @@ use App\Helpers\Helpers;
 
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
+use App\Models\MonthlyWorkHours;
 use App\Models\Schedule;
 use App\Models\TimeShift;
 use Carbon\Carbon;
@@ -214,22 +215,31 @@ class EmployeeScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
-            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
+            // $data = EmployeeSchedule::where('employee_profile_id', $id)->get();
+            $data = EmployeeSchedule::where('employee_profile_id', $id)
+                ->with(['schedule'])
+                ->get();
 
-            if ($model->isEmpty()) {
-                $data = EmployeeProfile::where('id', $id)->get();
+            // Calculate total working hours for each employee
+            $data->each(function ($employeeSchedule) {
+                $employeeSchedule->total_working_hours = $employeeSchedule->schedule->timeShift->total_hours ?? 0;
+            });
+
+            if ($data->isEmpty()) {
+                $data = EmployeeProfile::find($id);
 
                 return response()->json([
                     'data' => null,
+                    'updated' => [],
+                    'total_working_hours' => 0,
                     'holiday' => Holiday::all(),
-                    'updated' => []
                 ], Response::HTTP_OK);
             }
 
             return response()->json([
-                'data' => new EmployeeScheduleResource($model),
+                'data' => new EmployeeScheduleResource($data),
+                'updated' => new EmployeeScheduleResource2($data),
                 'holiday' => Holiday::all(),
-                'updated' => new EmployeeScheduleResource2($model)
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'edit', $th->getMessage());
