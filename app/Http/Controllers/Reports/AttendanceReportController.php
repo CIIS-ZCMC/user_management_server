@@ -89,57 +89,22 @@ class AttendanceReportController extends Controller
         $arr_data = [];
 
         try {
-            switch ($sector) {
-                case 'division':
-                    switch ($area_under) {
-                        case 'all':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                ->where('division_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultTardinessFilter(
-                                    $assignArea->employeeProfile,
-                                    'division',
-                                );
-                            }
-
-                            $departments = Department::where('division_id', $area_id)->get();
-                            foreach ($departments as $department) {
+            if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type)) {
+                // If no filters are provided, return all employees with tardiness records
+                $assignAreas = AssignArea::with(['employeeProfile'])
+                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
+                        $q->whereNotNull('first_in')
+                            ->orWhere('undertime_minutes', '>', 0);
+                    })
+                    ->get();
+            } else {
+                switch ($sector) {
+                    case 'division':
+                        switch ($area_under) {
+                            case 'all':
                                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                    ->where('department_id', $department->id)
+                                    ->where('division_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
                                     ->limit($limit);
 
                                 if ($employment_type) {
@@ -147,7 +112,6 @@ class AttendanceReportController extends Controller
                                         $q->where('employment_type_id', $employment_type);
                                     });
                                 }
-
 
                                 if ($period_type) {
                                     $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
@@ -177,14 +141,14 @@ class AttendanceReportController extends Controller
                                 foreach ($assignAreas as $assignArea) {
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
-                                        'department',
+                                        'division',
                                     );
                                 }
 
-                                $sections = Section::where('department_id', $department->id)->get();
-                                foreach ($sections as $section) {
+                                $departments = Department::where('division_id', $area_id)->get();
+                                foreach ($departments as $department) {
                                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                        ->where('section_id', $section->id)
+                                        ->where('department_id', $department->id)
                                         ->limit($limit);
 
                                     if ($employment_type) {
@@ -222,10 +186,149 @@ class AttendanceReportController extends Controller
                                     foreach ($assignAreas as $assignArea) {
                                         $arr_data[] = $this->resultTardinessFilter(
                                             $assignArea->employeeProfile,
+                                            'department',
+                                        );
+                                    }
+
+                                    $sections = Section::where('department_id', $department->id)->get();
+                                    foreach ($sections as $section) {
+                                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                            ->where('section_id', $section->id)
+                                            ->limit($limit);
+
+                                        if ($employment_type) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        }
+
+
+                                        if ($period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                switch ($period_type) {
+                                                    case 'monthly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                        break;
+                                                    case 'quarterly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                        break;
+                                                    case 'yearly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                        break;
+                                                }
+                                            });
+                                        }
+
+                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                        if ($start_date && $end_date && !$period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                            });
+                                        }
+
+                                        $assignAreas = $assignAreas->get();
+
+                                        foreach ($assignAreas as $assignArea) {
+                                            $arr_data[] = $this->resultTardinessFilter(
+                                                $assignArea->employeeProfile,
+                                                'section',
+                                            );
+                                        }
+
+                                        $units = Unit::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                                ->where('unit_id', $unit->id)
+                                                ->limit($limit);
+
+                                            if ($employment_type) {
+                                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                    $q->where('employment_type_id', $employment_type);
+                                                });
+                                            }
+
+
+                                            if ($period_type) {
+                                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                    switch ($period_type) {
+                                                        case 'monthly':
+                                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                            break;
+                                                        case 'quarterly':
+                                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                            break;
+                                                        case 'yearly':
+                                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                            break;
+                                                    }
+                                                });
+                                            }
+
+                                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                            if ($start_date && $end_date && !$period_type) {
+                                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                                });
+                                            }
+
+                                            $assignAreas = $assignAreas->get();
+
+                                            foreach ($assignAreas as $assignArea) {
+                                                $arr_data[] = $this->resultTardinessFilter(
+                                                    $assignArea->employeeProfile,
+                                                    'unit',
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Get sections directly under the division (if any) that are not under any department
+                                $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                                foreach ($sections as $section) {
+                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                        ->where('section_id', $section->id)
+                                        ->limit($limit);
+
+                                    if ($employment_type) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    }
+
+                                    if ($period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                            switch ($period_type) {
+                                                case 'monthly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                    break;
+                                                case 'quarterly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                    break;
+                                                case 'yearly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                    break;
+                                            }
+                                        });
+                                    }
+
+                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                    if ($start_date && $end_date && !$period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        });
+                                    }
+
+                                    $assignAreas = $assignAreas->get();
+
+                                    foreach ($assignAreas as $assignArea) {
+                                        $arr_data[] = $this->resultTardinessFilter(
+                                            $assignArea->employeeProfile,
                                             'section',
                                         );
                                     }
 
+                                    // Get all units directly under the section
                                     $units = Unit::where('section_id', $section->id)->get();
                                     foreach ($units as $unit) {
                                         $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
@@ -272,13 +375,11 @@ class AttendanceReportController extends Controller
                                         }
                                     }
                                 }
-                            }
-
-                            // Get sections directly under the division (if any) that are not under any department
-                            $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-                            foreach ($sections as $section) {
+                                break;
+                            case 'staff':
                                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                    ->where('section_id', $section->id)
+                                    ->where('division_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
                                     ->limit($limit);
 
                                 if ($employment_type) {
@@ -286,6 +387,7 @@ class AttendanceReportController extends Controller
                                         $q->where('employment_type_id', $employment_type);
                                     });
                                 }
+
 
                                 if ($period_type) {
                                     $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
@@ -315,15 +417,62 @@ class AttendanceReportController extends Controller
                                 foreach ($assignAreas as $assignArea) {
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
-                                        'section',
+                                        'division',
                                     );
                                 }
+                                break;
+                        }
+                        break;
+                    case 'department':
+                        switch ($area_under) {
+                            case 'all':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
+                                    ->where('department_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->limit($limit);
 
-                                // Get all units directly under the section
-                                $units = Unit::where('section_id', $section->id)->get();
-                                foreach ($units as $unit) {
-                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                        ->where('unit_id', $unit->id)
+                                if ($employment_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                }
+
+
+                                if ($period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        switch ($period_type) {
+                                            case 'monthly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                break;
+                                            case 'quarterly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                break;
+                                            case 'yearly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                break;
+                                        }
+                                    });
+                                }
+
+                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                if ($start_date && $end_date && !$period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    });
+                                }
+
+                                $assignAreas = $assignAreas->get();
+
+                                foreach ($assignAreas as $assignedArea) {
+                                    $arr_data[] = $this->resultTardinessFilter(
+                                        $assignedArea->employeeProfile,
+                                        'department',
+                                    );
+                                }
+                                $sections = Section::where('department_id', $area_id)->get();
+                                foreach ($sections as $section) {
+                                    $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
+                                        ->where('section_id', $section->id)
                                         ->limit($limit);
 
                                     if ($employment_type) {
@@ -361,109 +510,60 @@ class AttendanceReportController extends Controller
                                     foreach ($assignAreas as $assignArea) {
                                         $arr_data[] = $this->resultTardinessFilter(
                                             $assignArea->employeeProfile,
-                                            'unit',
+                                            'section',
                                         );
                                     }
+
+                                    $units = Unit::where('section_id', $section->id)->get();
+                                    foreach ($units as $unit) {
+                                        $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
+                                            ->where('unit_id', $unit->id)
+                                            ->limit($limit);
+
+                                        if ($employment_type) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        }
+
+                                        if ($period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                switch ($period_type) {
+                                                    case 'monthly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                        break;
+                                                    case 'quarterly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                        break;
+                                                    case 'yearly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                        break;
+                                                }
+                                            });
+                                        }
+
+                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                        if ($start_date && $end_date && !$period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                            });
+                                        }
+
+                                        $assignAreas = $assignAreas->get();
+
+                                        foreach ($assignAreas as $assignArea) {
+                                            $arr_data[] = $this->resultTardinessFilter(
+                                                $assignArea->employeeProfile,
+                                                'unit',
+                                            );
+                                        }
+                                    }
                                 }
-                            }
-                            break;
-                        case 'staff':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                ->where('division_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultTardinessFilter(
-                                    $assignArea->employeeProfile,
-                                    'division',
-                                );
-                            }
-                            break;
-                    }
-                    break;
-                case 'department':
-                    switch ($area_under) {
-                        case 'all':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                ->where('department_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignedArea) {
-                                $arr_data[] = $this->resultTardinessFilter(
-                                    $assignedArea->employeeProfile,
-                                    'department',
-                                );
-                            }
-                            $sections = Section::where('department_id', $area_id)->get();
-                            foreach ($sections as $section) {
+                                break;
+                            case 'staff':
                                 $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                    ->where('section_id', $section->id)
+                                    ->where('department_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
                                     ->limit($limit);
 
                                 if ($employment_type) {
@@ -472,6 +572,53 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
+                                if ($period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        switch ($period_type) {
+                                            case 'monthly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                break;
+                                            case 'quarterly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                break;
+                                            case 'yearly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                break;
+                                        }
+                                    });
+                                }
+
+                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                if ($start_date && $end_date && !$period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    });
+                                }
+
+                                $assignAreas = $assignAreas->get();
+
+                                foreach ($assignAreas as $assignedArea) {
+                                    $arr_data[] = $this->resultTardinessFilter(
+                                        $assignedArea->employeeProfile,
+                                        'department',
+                                    );
+                                }
+                                break;
+                        }
+                        break;
+                    case 'section':
+                        switch ($area_under) {
+                            case 'all':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
+                                    ->where('section_id', $area_id)
+                                    ->where('employee_profile_id', '!=', 1)
+                                    ->limit($limit);
+
+                                if ($employment_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                }
 
                                 if ($period_type) {
                                     $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
@@ -504,8 +651,7 @@ class AttendanceReportController extends Controller
                                         'section',
                                     );
                                 }
-
-                                $units = Unit::where('section_id', $section->id)->get();
+                                $units = Unit::where('section_id', $area_id)->get();
                                 foreach ($units as $unit) {
                                     $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                                         ->where('unit_id', $unit->id)
@@ -549,103 +695,11 @@ class AttendanceReportController extends Controller
                                         );
                                     }
                                 }
-                            }
-                            break;
-                        case 'staff':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                ->where('department_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignedArea) {
-                                $arr_data[] = $this->resultTardinessFilter(
-                                    $assignedArea->employeeProfile,
-                                    'department',
-                                );
-                            }
-                            break;
-                    }
-                    break;
-                case 'section':
-                    switch ($area_under) {
-                        case 'all':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '!=', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultTardinessFilter(
-                                    $assignArea->employeeProfile,
-                                    'section',
-                                );
-                            }
-                            $units = Unit::where('section_id', $area_id)->get();
-                            foreach ($units as $unit) {
-                                $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                    ->where('unit_id', $unit->id)
+                                break;
+                            case 'staff':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
+                                    ->where('section_id', $area_id)
+                                    ->where('employee_profile_id', '!=', 1)
                                     ->limit($limit);
 
                                 if ($employment_type) {
@@ -682,103 +736,71 @@ class AttendanceReportController extends Controller
                                 foreach ($assignAreas as $assignArea) {
                                     $arr_data[] = $this->resultTardinessFilter(
                                         $assignArea->employeeProfile,
-                                        'unit',
+                                        'section',
                                     );
                                 }
-                            }
-                            break;
-                        case 'staff':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '!=', 1)
-                                ->limit($limit);
+                                break;
+                        }
 
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
+                        break;
+                    case 'unit':
+                        $assignAreas = AssignArea::with(['employeeProfile', 'unit'])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->limit($limit);
 
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
+                        if ($employment_type) {
+                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                $q->where('employment_type_id', $employment_type);
+                            });
+                        }
 
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
+                        if ($period_type) {
+                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                switch ($period_type) {
+                                    case 'monthly':
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                        break;
+                                    case 'quarterly':
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                        break;
+                                    case 'yearly':
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                        break;
+                                }
+                            });
+                        }
 
-                            $assignAreas = $assignAreas->get();
+                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                        if ($start_date && $end_date && !$period_type) {
+                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                            });
+                        }
 
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultTardinessFilter(
-                                    $assignArea->employeeProfile,
-                                    'section',
-                                );
-                            }
-                            break;
-                    }
+                        $assignAreas = $assignAreas->get();
 
-                    break;
-                case 'unit':
-                    $assignAreas = AssignArea::with(['employeeProfile', 'unit'])
-                        ->where('unit_id', $area_id)
-                        ->where('employee_profile_id', '<>', 1)
-                        ->limit($limit);
-
-                    if ($employment_type) {
-                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                            $q->where('employment_type_id', $employment_type);
-                        });
-                    }
-
-                    if ($period_type) {
-                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                            switch ($period_type) {
-                                case 'monthly':
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                    break;
-                                case 'quarterly':
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                    break;
-                                case 'yearly':
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                    break;
-                            }
-                        });
-                    }
-
-                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                    if ($start_date && $end_date && !$period_type) {
-                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                        });
-                    }
-
-                    $assignAreas = $assignAreas->get();
-
-                    foreach ($assignAreas as $assignArea) {
-                        $arr_data[] = $this->resultTardinessFilter(
-                            $assignArea->employeeProfile,
-                            'unit',
-                        );
-                    }
-                    break;
+                        foreach ($assignAreas as $assignArea) {
+                            $arr_data[] = $this->resultTardinessFilter(
+                                $assignArea->employeeProfile,
+                                'unit',
+                            );
+                        }
+                        break;
+                }
             }
+
+            foreach ($assignAreas as $assignArea) {
+                $arr_data[] = $this->resultTardinessFilter($assignArea->employeeProfile, $sector);
+            }
+
+            // Sort by highest tardiness days by default
+            usort($arr_data, function ($a, $b) {
+                return $b['tardiness_days'] <=> $a['tardiness_days'];
+            });
+
+            // Limit the results
+            $arr_data = array_slice($arr_data, 0, $limit);
         } catch (\Exception $e) {
             // Log error and return empty array in case of exception
             Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeesTardinessFilter', $e->getMessage());
@@ -859,7 +881,7 @@ class AttendanceReportController extends Controller
     }
 
     /**
-     * ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     *  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
      *  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
      *  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
      */
