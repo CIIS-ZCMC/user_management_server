@@ -132,7 +132,7 @@ class AttendanceReportController extends Controller
                                 }
 
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->wheereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -149,7 +149,7 @@ class AttendanceReportController extends Controller
 
                                 // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wheereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
                                         $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
@@ -850,7 +850,6 @@ class AttendanceReportController extends Controller
                         break;
                 }
             }
-
 
             // Sort by highest tardiness days by default
             usort($arr_data, function ($a, $b) {
