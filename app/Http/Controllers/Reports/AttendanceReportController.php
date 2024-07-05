@@ -110,22 +110,20 @@ class AttendanceReportController extends Controller
                 ->groupBy('employee_id');
 
             if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type)) {
-                $rows = DailyTimeRecords::where($filterEmployeesWithUndertimeOrTardiness)
-                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
-                        $q->where($filterEmployeesWithUndertimeOrTardiness)
-                            ->whereNotIn('id', $latestDtrSubquery);
-                    })->get();
+                $rows = DailyTimeRecords::whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($latestDtrSubquery, $filterEmployeesWithUndertimeOrTardiness) {
+                    $q->where($filterEmployeesWithUndertimeOrTardiness);
+                    $q->whereNotIn('id', $latestDtrSubquery)->distinct();
+                })->get();
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
+                return $arr_data;
             } else if (!is_null($employment_type) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($start_date) && is_null($end_date) && is_null($period_type))) {
-                $rows = DailyTimeRecords::with('employeeProfile')
-                    ->where($filterEmployeesWithUndertimeOrTardiness)
-                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
-                        $q->where($filterEmployeesWithUndertimeOrTardiness)
-                            ->whereNotIn('id', $latestDtrSubquery);
-                    })
+                $rows = DailyTimeRecords::with('employeeProfile')->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                        ->whereNotIn('id', $latestDtrSubquery);
+                })
                     ->whereHas('employeeProfile', function ($q) use ($employment_type) {
                         $q->where('employment_type_id', $employment_type);
                     })->get();
@@ -134,10 +132,11 @@ class AttendanceReportController extends Controller
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
             } else if ((!is_null($start_date) && !is_null($end_date)) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($period_type))) {
-                $rows = DailyTimeRecords::where($filterEmployeesWithUndertimeOrTardiness)
-                    ->whereNotIn('id', $latestDtrSubquery)
-                    ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)])
-                    ->get();
+                $rows = DailyTimeRecords::whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($latestDtrSubquery, $filterEmployeesWithUndertimeOrTardiness, $start_date, $end_date) {
+                    $q->where($filterEmployeesWithUndertimeOrTardiness);
+                    $q->whereNotIn('id', $latestDtrSubquery)->distinct();
+                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                })->get();
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
@@ -208,7 +207,6 @@ class AttendanceReportController extends Controller
                                         ->limit($limit);
 
                                     $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
-
                                         $q->where($filterEmployeesWithUndertimeOrTardiness)
                                             ->whereNotIn('id', $latestDtrSubquery);
                                     });
