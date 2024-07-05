@@ -38,7 +38,7 @@ class AttendanceReportController extends Controller
         try {
             // Get filters from the request
             $area_id = $request->area_id;
-            $area_under = strtolower($request->area_under);
+            $area_under = $request->area_under;
             $sector = $request->sector;
             $employment_type = $request->employment_type_id;
             $start_date = $request->start_date;
@@ -111,12 +111,10 @@ class AttendanceReportController extends Controller
 
             if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type)) {
                 $rows = DailyTimeRecords::where($filterEmployeesWithUndertimeOrTardiness)
-                    // ->whereNotIn('id', $latestDtrSubquery)
                     ->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
                         $q->where($filterEmployeesWithUndertimeOrTardiness)
                             ->whereNotIn('id', $latestDtrSubquery);
                     })->get();
-
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
