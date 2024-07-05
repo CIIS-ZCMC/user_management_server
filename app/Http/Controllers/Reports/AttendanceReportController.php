@@ -121,7 +121,6 @@ class AttendanceReportController extends Controller
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
-                return $arr_data;
             } else if (!is_null($employment_type) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($start_date) && is_null($end_date) && is_null($period_type))) {
                 $rows = AssignArea::with(['employeeProfile'])
                     ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
@@ -135,24 +134,27 @@ class AttendanceReportController extends Controller
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
             } else if ((!is_null($start_date) && !is_null($end_date)) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($period_type))) {
-                // Filter by date range
-                $rows = AssignArea::with(['employeeProfile'])
-                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $latestDtrSubquery) {
-                        $q->whereBetween('dtr_date', [$start_date, $end_date]);
-                        // Call the subquery to get the latest record for each employee within the date range
-                        $q->whereIn('id', function ($subquery) use ($latestDtrSubquery) {
-                            $subquery->select('latest_id')
-                                ->from(DB::raw('(' . $latestDtrSubquery->toSql() . ') AS tmp'))
-                                ->groupBy('employee_id');
-                        });
-                        // Include the undertime_minutes filter
-                        $q->orWhere('undertime_minutes', '>', 0);
-                    })
-                    ->get();
+                // $rows = AssignArea::with(['dailyTimeRecords'])
+                //     ->whereHas('dailyTimeRecords.employeeProfile', function ($q) use ($start_date, $end_date) {
+                //         $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                //         $q->orWhere('undertime_minutes', '>', 0);
+                //     })
+                //     ->get();
 
-                foreach ($rows as $row) {
-                    $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
-                }
+                // return $rows[0];
+
+                // foreach ($rows as $row) {
+                //     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
+                // }
+
+                // $rows = AssignArea::with(['employeeProfile', 'dailyTimeRecords'])
+                //     ->where('employee_profile_id', '<>', 1)
+                //     ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
+                //         $q->orWhere('undertime_minutes', '>', 0);
+                //     })
+                //     ->get();
+
+                return $rows;
             } else {
                 switch ($sector) {
                     case 'division':
