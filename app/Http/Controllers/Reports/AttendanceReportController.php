@@ -154,7 +154,7 @@ class AttendanceReportController extends Controller
                 //     })
                 //     ->get();
 
-                return $rows;
+                // return $rows;
             } else {
                 switch ($sector) {
                     case 'division':
