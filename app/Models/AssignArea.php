@@ -106,4 +106,16 @@ class AssignArea extends Model
             'sector' => 'Unit'
         ];
     }
+
+    public function dailyTimeRecords()
+    {
+        return $this->hasManyThrough(
+            DailyTimeRecords::class,
+            EmployeeProfile::class,
+            'id', // Foreign key on EmployeeProfile table
+            'biometric_id', // Foreign key on DailyTimeRecords table
+            'employee_profile_id', // Local key on AssignArea table
+            'biometric_id' // Local key on EmployeeProfile table
+        );
+    }
 }

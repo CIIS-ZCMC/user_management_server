@@ -12,9 +12,11 @@ use App\Models\AssignArea;
 use App\Models\DailyTimeRecords;
 use App\Models\Division;
 use App\Models\Department;
+use App\Models\EmployeeProfile;
 use App\Models\EmployeeSchedule;
 use App\Models\Section;
-use App\Models\Unit;;
+use App\Models\Unit;
+use PhpParser\Node\Expr\Assign;;
 
 
 /**
@@ -56,7 +58,6 @@ class AttendanceReportController extends Controller
                 $period_type,
                 $limit
             );
-
             return response()->json([
                 'count' => empty($result) ? 0 : count($result),
                 'data' => $result,
@@ -110,36 +111,39 @@ class AttendanceReportController extends Controller
                 ->groupBy('employee_id');
 
             if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type)) {
-                $rows = DailyTimeRecords::whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($latestDtrSubquery, $filterEmployeesWithUndertimeOrTardiness) {
-                    $q->where($filterEmployeesWithUndertimeOrTardiness);
-                    $q->whereNotIn('id', $latestDtrSubquery)->distinct();
-                })->get();
+                $rows = AssignArea::with(['employeeProfile'])
+                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
+                        $q->orWhere('undertime_minutes', '>', 0);
+                    })
+                    ->get();
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
                 return $arr_data;
             } else if (!is_null($employment_type) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($start_date) && is_null($end_date) && is_null($period_type))) {
-                $rows = DailyTimeRecords::with('employeeProfile')->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
-                    $q->where($filterEmployeesWithUndertimeOrTardiness)
-                        ->whereNotIn('id', $latestDtrSubquery);
-                })->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                    $q->where('employment_type_id', $employment_type);
-                })->get();
+                $rows = AssignArea::with(['employeeProfile'])
+                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
+                        $q->orWhere('undertime_minutes', '>', 0);
+                    })->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                        $q->where('employment_type_id', $employment_type);
+                    })
+                    ->get();
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
             } else if ((!is_null($start_date) && !is_null($end_date)) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($period_type))) {
-                $rows = DailyTimeRecords::whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($latestDtrSubquery, $filterEmployeesWithUndertimeOrTardiness, $start_date, $end_date) {
-                    $q->where($filterEmployeesWithUndertimeOrTardiness);
-                    $q->whereNotIn('id', $latestDtrSubquery);
-                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                })->get();
+
+                $rows = AssignArea::with(['employeeProfile', 'dailyTimeRecords' => function ($query) use ($start_date, $end_date) {
+                    $query->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                }])->get();
+
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
+                return $arr_data;
             } else {
                 switch ($sector) {
                     case 'division':
