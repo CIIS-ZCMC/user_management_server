@@ -58,7 +58,7 @@ class AttendanceReportController extends Controller
             );
 
             return response()->json([
-                'count' => count($result),
+                'count' => empty($result) ? 0 : count($result),
                 'data' => $result,
                 'message' => 'Successfully retrieved data.'
             ], Response::HTTP_OK);
@@ -86,22 +86,54 @@ class AttendanceReportController extends Controller
      * @param int $limit
      * @return array
      */
+    /**
+     * Retrieves filtered employee data based on the given criteria.
+     *
+     * @param int $area_id
+     * @param string $sector
+     * @param int|null $employment_type
+     * @param string|null $start_date
+     * @param string|null $end_date
+     * @param string $period_type
+     * @param int $limit
+     * @return array
+     */
     private function getEmployeesTardinessFilter($area_id, $area_under, $sector, $employment_type, $start_date, $end_date, $period_type, $limit)
     {
         $arr_data = [];
 
         try {
+            // General filter for employees with undertime_minutes or tardiness
+            $filterEmployeesWithUndertimeOrTardiness = function ($query) {
+                $query->where('undertime_minutes', '>', 0)
+                    ->orWhere(function ($query) {
+                        $query->whereNotNull('first_in')
+                            ->whereRaw('TIME_TO_SEC(first_in) > TIME_TO_SEC(CONCAT(dtr_date, " 08:00:00"))')
+                            ->orWhere(function ($query) {
+                                $query->whereNotNull('second_in')
+                                    ->whereRaw('TIME_TO_SEC(second_in) > TIME_TO_SEC(CONCAT(dtr_date, " 13:00:00"))');
+                            });
+                    });
+            };
+
+            // Subquery to get the latest id for each employee
+            $latestDtrSubquery = DB::table('daily_time_records')
+                ->select(DB::raw('MAX(id) as latest_id'))
+                ->groupBy('employee_id');
+
             if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type)) {
-                $rows = DailyTimeRecords::where('undertime_minutes', '>', 0)->get();
+                $rows = DailyTimeRecords::where($filterEmployeesWithUndertimeOrTardiness)
+                    ->whereNotIn('id', $latestDtrSubquery)
+                    ->get();
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
             } else if (!is_null($employment_type) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($start_date) && is_null($end_date) && is_null($period_type))) {
-                // If no filters are provided, return all employees with tardiness records
                 $rows = DailyTimeRecords::with('employeeProfile')
-                    ->where('undertime_minutes', '>', 0)
-                    ->wherehas('employeeProfile', function ($q) use ($employment_type) {
+                    ->where($filterEmployeesWithUndertimeOrTardiness)
+                    ->whereNotIn('id', $latestDtrSubquery)
+                    ->whereHas('employeeProfile', function ($q) use ($employment_type) {
                         $q->where('employment_type_id', $employment_type);
                     })->get();
 
@@ -109,8 +141,10 @@ class AttendanceReportController extends Controller
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
             } else if ((!is_null($start_date) && !is_null($end_date)) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($period_type))) {
-                $rows = DailyTimeRecords::where('undertime_minutes', '>', 0)
-                    ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)])->get();
+                $rows = DailyTimeRecords::where($filterEmployeesWithUndertimeOrTardiness)
+                    ->whereNotIn('id', $latestDtrSubquery)
+                    ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)])
+                    ->get();
 
                 foreach ($rows as $row) {
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
@@ -132,7 +166,9 @@ class AttendanceReportController extends Controller
                                 }
 
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -147,10 +183,11 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery)
+                                            ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
 
@@ -178,9 +215,10 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
-
                                     if ($period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery);
                                             switch ($period_type) {
                                                 case 'monthly':
                                                     $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -195,10 +233,11 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
-                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                     if ($start_date && $end_date && !$period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery)
+                                                ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                         });
                                     }
 
@@ -226,9 +265,10 @@ class AttendanceReportController extends Controller
                                             });
                                         }
 
-
                                         if ($period_type) {
-                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                    ->whereNotIn('id', $latestDtrSubquery);
                                                 switch ($period_type) {
                                                     case 'monthly':
                                                         $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -243,10 +283,11 @@ class AttendanceReportController extends Controller
                                             });
                                         }
 
-                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                         if ($start_date && $end_date && !$period_type) {
-                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                    ->whereNotIn('id', $latestDtrSubquery)
+                                                    ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                             });
                                         }
 
@@ -274,9 +315,10 @@ class AttendanceReportController extends Controller
                                                 });
                                             }
 
-
                                             if ($period_type) {
-                                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                        ->whereNotIn('id', $latestDtrSubquery);
                                                     switch ($period_type) {
                                                         case 'monthly':
                                                             $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -291,10 +333,11 @@ class AttendanceReportController extends Controller
                                                 });
                                             }
 
-                                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                             if ($start_date && $end_date && !$period_type) {
-                                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                        ->whereNotIn('id', $latestDtrSubquery)
+                                                        ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                                 });
                                             }
 
@@ -312,105 +355,6 @@ class AttendanceReportController extends Controller
                                         }
                                     }
                                 }
-
-                                // Get sections directly under the division (if any) that are not under any department
-                                $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-                                foreach ($sections as $section) {
-                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                        ->where('section_id', $section->id)
-                                        ->limit($limit);
-
-                                    if ($employment_type) {
-                                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                            $q->where('employment_type_id', $employment_type);
-                                        });
-                                    }
-
-                                    if ($period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                            switch ($period_type) {
-                                                case 'monthly':
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                                    break;
-                                                case 'quarterly':
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                                    break;
-                                                case 'yearly':
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                                    break;
-                                            }
-                                        });
-                                    }
-
-                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                                    if ($start_date && $end_date && !$period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                        });
-                                    }
-
-                                    $assignAreas = $assignAreas->get();
-
-                                    foreach ($assignAreas as $assignArea) {
-                                        $arr_data[] = $this->resultTardinessFilter(
-                                            $assignArea->employeeProfile,
-                                            'section',
-                                            $period_type,
-                                            $start_date,
-                                            $end_date
-                                        );
-                                    }
-
-                                    // Get all units directly under the section
-                                    $units = Unit::where('section_id', $section->id)->get();
-                                    foreach ($units as $unit) {
-                                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                            ->where('unit_id', $unit->id)
-                                            ->limit($limit);
-
-                                        if ($employment_type) {
-                                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                                $q->where('employment_type_id', $employment_type);
-                                            });
-                                        }
-
-
-                                        if ($period_type) {
-                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                                switch ($period_type) {
-                                                    case 'monthly':
-                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                                        break;
-                                                    case 'quarterly':
-                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                                        break;
-                                                    case 'yearly':
-                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                                        break;
-                                                }
-                                            });
-                                        }
-
-                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                                        if ($start_date && $end_date && !$period_type) {
-                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                            });
-                                        }
-
-                                        $assignAreas = $assignAreas->get();
-
-                                        foreach ($assignAreas as $assignArea) {
-                                            $arr_data[] = $this->resultTardinessFilter(
-                                                $assignArea->employeeProfile,
-                                                'unit',
-                                                $period_type,
-                                                $start_date,
-                                                $end_date
-                                            );
-                                        }
-                                    }
-                                }
                                 break;
                             case 'staff':
                                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
@@ -424,7 +368,9 @@ class AttendanceReportController extends Controller
                                     });
                                 }
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -439,10 +385,11 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery)
+                                            ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
 
@@ -474,9 +421,10 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -491,10 +439,11 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery)
+                                            ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
 
@@ -521,9 +470,10 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
-
                                     if ($period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery);
                                             switch ($period_type) {
                                                 case 'monthly':
                                                     $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -538,10 +488,11 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
-                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                     if ($start_date && $end_date && !$period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery)
+                                                ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                         });
                                     }
 
@@ -570,7 +521,9 @@ class AttendanceReportController extends Controller
                                         }
 
                                         if ($period_type) {
-                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                    ->whereNotIn('id', $latestDtrSubquery);
                                                 switch ($period_type) {
                                                     case 'monthly':
                                                         $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -585,10 +538,11 @@ class AttendanceReportController extends Controller
                                             });
                                         }
 
-                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                         if ($start_date && $end_date && !$period_type) {
-                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                    ->whereNotIn('id', $latestDtrSubquery)
+                                                    ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                             });
                                         }
 
@@ -619,7 +573,9 @@ class AttendanceReportController extends Controller
                                 }
 
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -634,10 +590,11 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery)
+                                            ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
 
@@ -654,6 +611,7 @@ class AttendanceReportController extends Controller
                                 }
                                 break;
                         }
+
                         break;
                     case 'section':
                         switch ($area_under) {
@@ -670,7 +628,9 @@ class AttendanceReportController extends Controller
                                 }
 
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -685,10 +645,11 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery)
+                                            ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
 
@@ -716,7 +677,9 @@ class AttendanceReportController extends Controller
                                     }
 
                                     if ($period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery);
                                             switch ($period_type) {
                                                 case 'monthly':
                                                     $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -731,10 +694,11 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
-                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                     if ($start_date && $end_date && !$period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery)
+                                                ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                         });
                                     }
 
@@ -764,7 +728,9 @@ class AttendanceReportController extends Controller
                                 }
 
                                 if ($period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
                                         switch ($period_type) {
                                             case 'monthly':
                                                 $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -779,10 +745,11 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                                 if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery)
+                                            ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                                     });
                                 }
 
@@ -814,7 +781,9 @@ class AttendanceReportController extends Controller
                         }
 
                         if ($period_type) {
-                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                    ->whereNotIn('id', $latestDtrSubquery);
                                 switch ($period_type) {
                                     case 'monthly':
                                         $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
@@ -829,10 +798,11 @@ class AttendanceReportController extends Controller
                             });
                         }
 
-                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
                         if ($start_date && $end_date && !$period_type) {
-                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                    ->whereNotIn('id', $latestDtrSubquery)
+                                    ->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
                             });
                         }
 
@@ -870,17 +840,20 @@ class AttendanceReportController extends Controller
         return $arr_data;
     }
 
+
+
     /**
      * Counts the days of tardiness based on late check-ins and undertime.
      *
      * @param \App\Models\EmployeeProfile $employee
+     * @param string|null $start_date
+     * @param string|null $end_date
      * @return array
      */
     private function countTardinessDays($employee, $start_date = null, $end_date = null)
     {
         $tardinessDays = 0;
         $undertimeDays = 0;
-
         try {
             foreach ($employee->dailyTimeRecords as $record) {
                 $has_schedule = $start_date && $end_date ? Helpers::hasSchedule($start_date, $end_date, $employee->id) : true;
@@ -891,17 +864,29 @@ class AttendanceReportController extends Controller
                     }
 
                     if (Carbon::parse($record->dtr_date)->between($start_date, $end_date)) {
+                        // Check for morning and afternoon tardiness
                         if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
                             $tardinessDays++;
                         }
-                        if ($record->undertime_minutes > 0 && (Carbon::parse($record->dtr_date)->between($start_date, $end_date))) {
+                        if ($record->second_in && Carbon::parse($record->second_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(13))) {
+                            $tardinessDays++;
+                        }
+
+                        // Check for undertime
+                        if ($record->undertime_minutes > 0) {
                             $undertimeDays++;
                         }
                     }
                 } else {
+                    // Check for morning and afternoon tardiness
                     if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
                         $tardinessDays++;
                     }
+                    if ($record->second_in && Carbon::parse($record->second_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(13))) {
+                        $tardinessDays++;
+                    }
+
+                    // Check for undertime
                     if ($record->undertime_minutes > 0) {
                         $undertimeDays++;
                     }
@@ -920,20 +905,40 @@ class AttendanceReportController extends Controller
         ];
     }
 
-
     /**
      * Formats the employee data for the report.
      *
      * @param \App\Models\EmployeeProfile $employee
      * @param string $sector
-     * @return array
+     * @return array|null
      */
     private function resultTardinessFilter($employee, $sector, $period_type, $start_date, $end_date)
     {
         $date_range =  [Carbon::parse($start_date), Carbon::parse($end_date)];
 
         $dailyTimeRecords = $employee->dailyTimeRecords ?? [];
-        $total_undertime_minutes = $dailyTimeRecords->whereBetween('dtr_date', $date_range)->sum('undertime_minutes');
+
+        // Subquery to get the latest dtr_id for the employee
+        $latest_dtr_id = $employee->dailyTimeRecords()->max('id');
+
+        // Get the daily time records excluding the latest one
+        if ($start_date && $end_date) {
+            $dailyTimeRecords = $employee->dailyTimeRecords()
+                ->whereBetween('dtr_date', $date_range)
+                ->where('id', '<>', $latest_dtr_id)
+                ->get();
+        } else {
+            $dailyTimeRecords = $employee->dailyTimeRecords()
+                ->where('id', '<>', $latest_dtr_id)
+                ->get();
+        }
+
+        if ($start_date && $end_date) {
+            $total_undertime_minutes = $dailyTimeRecords->whereBetween('dtr_date', $date_range)->sum('undertime_minutes');
+        } else {
+            $total_undertime_minutes = $dailyTimeRecords->sum('undertime_minutes');
+        }
+
         $tardinessAndUndertime = $this->countTardinessDays($employee, $start_date, $end_date);
 
         $arr_data = [
