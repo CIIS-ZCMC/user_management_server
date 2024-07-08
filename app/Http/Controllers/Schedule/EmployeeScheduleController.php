@@ -14,14 +14,11 @@ use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\MonthlyWorkHours;
 use App\Models\Schedule;
-use App\Models\TimeShift;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use PHPUnit\Framework\Constraint\IsEmpty;
 
 class EmployeeScheduleController extends Controller
 {
@@ -62,6 +59,10 @@ class EmployeeScheduleController extends Controller
             }
 
             $data = $query->get();
+            // $data = $query->paginate(10);
+            // $data = $query->whereHas('assignedArea', function ($query) {
+            //     $query->where('unit_id', 16);
+            // })->get();
 
             $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
@@ -74,8 +75,15 @@ class EmployeeScheduleController extends Controller
             });
 
             return response()->json([
+                // 'data' => ScheduleResource::collection($data->items()),
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
+                // 'pagination' => [
+                //     'current_page' => $data->currentPage(),
+                //     'last_page' => $data->lastPage(),
+                //     'per_page' => $data->perPage(),
+                //     'total' => $data->total(),
+                // ],
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
@@ -341,44 +349,32 @@ class EmployeeScheduleController extends Controller
     public function generate(Request $request)
     {
         try {
+            $sector = $request->sector;
+            $area_id = $request->area_id;
             $date = Carbon::parse($request->date)->startOfMonth();
 
+            if ($sector === 0 && $area_id === null) {
+                return response()->json(['message' => 'Please Select Area'], 200);
+            }
+
+            $ids = EmployeeProfile::whereHas('assignedArea', function ($query) use ($area_id, $sector) {
+                $query->where($sector . '_id', $area_id);
+            })->pluck('id');
+
+
             // Non Permanent Part-time employee
-            $nonPermanentEmployees = EmployeeProfile::whereNot('employment_type_id', 2)->where('shifting', 0)->get();
-            $nonPermanentSchedules = Helpers::generateSchedule($date, 1, 'AM');
+            $nonPermanentEmployees = EmployeeProfile::whereNot('employment_type_id', 2)
+                ->where('shifting', 0)
+                ->whereIn('id', $ids)
+                ->get();
+            $this->generateAndAssignSchedules($nonPermanentEmployees, 1, 'AM', $date);
 
-            foreach ($nonPermanentEmployees as $employee) {
-                foreach ($nonPermanentSchedules as $schedule) {
-                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
-                        ->where('schedule_id', $schedule->id)
-                        ->exists();
-
-                    if (!$exists) {
-                        EmployeeSchedule::create([
-                            'employee_profile_id' => $employee->id,
-                            'schedule_id' => $schedule->id
-                        ]);
-                    }
-                }
-            }
-
-            // Permanent Part-time employee
-            $permanentEmployees = EmployeeProfile::where('employment_type_id', 2)->where('shifting', 0)->get();
-            $permanentSchedules = Helpers::generateSchedule($date, 2, 'AM');
-            foreach ($permanentEmployees as $employee) {
-                foreach ($permanentSchedules as $schedule) {
-                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
-                        ->where('schedule_id', $schedule->id)
-                        ->exists();
-
-                    if (!$exists) {
-                        EmployeeSchedule::create([
-                            'employee_profile_id' => $employee->id,
-                            'schedule_id' => $schedule->id
-                        ]);
-                    }
-                }
-            }
+            // Generate and assign schedules for permanent part-time employees (employment_type_id = 2)
+            $permanentEmployees = EmployeeProfile::where('employment_type_id', 2)
+                ->where('shifting', 0)
+                ->whereIn('id', $ids)
+                ->get();
+            $this->generateAndAssignSchedules($permanentEmployees, 2, 'AM', $date);
 
             // Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['message' => 'Successfully generated schedule for the month of ' . $date->format('F')], Response::HTTP_OK);
@@ -386,6 +382,58 @@ class EmployeeScheduleController extends Controller
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function remove(Request $request)
+    {
+        try {
+            $date = $request->date;
+            $sector = $request->sector;
+            $area_id = $request->area_id;
+
+            // Retrieve schedule IDs for the given date range
+            $to_delete_ids = Schedule::where('date', 'like', $date . '%')->pluck('id');
+
+            if ($sector === 0 && $area_id === null) {
+                EmployeeSchedule::whereIn('schedule_id', $to_delete_ids)->delete();
+                return response()->json(['message' => 'Employee schedules deleted successfully'], 200);
+            }
+
+            // Narrower delete scope based on sector and area_id
+            EmployeeSchedule::whereHas('employee.assignedArea', function ($query) use ($area_id, $sector) {
+                $query->where($sector . '_id', $area_id);
+            })->whereIn('schedule_id', $to_delete_ids)->delete();
+
+
+            // Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['message' => 'Employee schedules deleted successfully'], 200);
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    private function generateAndAssignSchedules($employees, $employmentTypeId, $shiftType, $date)
+    {
+        $schedules = Helpers::generateSchedule($date, $employmentTypeId, $shiftType);
+
+        foreach ($employees as $employee) {
+            foreach ($schedules as $schedule) {
+                // Check if EmployeeSchedule already exists for this employee and schedule
+                $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                    ->where('schedule_id', $schedule->id)
+                    ->exists();
+
+                if (!$exists) {
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+            }
         }
     }
 
