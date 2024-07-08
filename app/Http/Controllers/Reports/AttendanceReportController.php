@@ -50,25 +50,16 @@ class AttendanceReportController extends Controller
             $period_type = $request->period_type; // quarterly or monthly
             $limit = $request->limit; // default limit is 100
 
-            // process if by area or by employees
-            switch ($report_format) {
-                case 'area':
-                    break;
-                case 'employees':
-                    $result = $this->getEmployeesTardinessFilter(
-                        $area_id,
-                        $area_under,
-                        $sector,
-                        $employment_type,
-                        $start_date,
-                        $end_date,
-                        $period_type,
-                        $limit
-                    );
-                    break;
-                default:
-            }
-
+            $result = $this->getEmployeesTardinessFilter(
+                $area_id,
+                $area_under,
+                $sector,
+                $employment_type,
+                $start_date,
+                $end_date,
+                $period_type,
+                $limit
+            );
 
             return response()->json([
                 'count' => empty($result) ? 0 : count($result),
@@ -1043,6 +1034,7 @@ class AttendanceReportController extends Controller
         ];
     }
 
+
     /**
      * Formats the employee data for the report.
      *
@@ -1114,7 +1106,6 @@ class AttendanceReportController extends Controller
     {
         try {
             // Get filters from the request
-            $report_format = $request->report_format;
             $area_id = $request->area_id;
             $area_under = $request->area_under;
             $sector = $request->sector;
