@@ -385,7 +385,7 @@ class GenerateReportController extends Controller
             $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
             $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime,$Rates);
             $absentRate = $this->computed->AbsentRates($Number_Absences,$Rates);
-            $NetSalary = $this->computed->NetSalary($undertimeRate,$absentRate,$basicSalary['Total']);
+            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($undertimeRate,$absentRate,$basicSalary['Total']);
             $data[] = [
 
                 'Biometric_id' => $biometric_id,

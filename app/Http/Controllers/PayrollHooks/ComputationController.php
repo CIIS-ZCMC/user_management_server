@@ -82,7 +82,7 @@ class ComputationController extends Controller
         return round($Rates['Daily'] * $Number_Absences,2) ;
     }
 
-    public function NetSalary($undertimeRate,$absentRate,$grosssalary){
+    public function NetSalaryFromTimeDeduction($undertimeRate,$absentRate,$grosssalary){
         $deduction = $undertimeRate + $absentRate;
         return round( $grosssalary - $deduction,2);
 

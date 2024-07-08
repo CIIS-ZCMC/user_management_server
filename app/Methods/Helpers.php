@@ -1334,7 +1334,7 @@ AND id IN (
                 }
 
 
-                if (!isset($entry['entry_status']) ) {
+               if (!isset($entry['entry_status']) ) {
 
 
 
@@ -1368,6 +1368,7 @@ AND id IN (
                 $Employee_Attendance[] = $entry; // Add entry to the main array
 
                 $previousTimestamp = $currentTimestamp;
+
             }
 
             $processedLogs[$employee_ID] = true;

@@ -1,0 +1,116 @@
+ -- Biometric Logs as of : 2024-07-08
+-
+-
+biometric_id - date_time - Status - Employee - Punch State - Device Name - Ip-Address 
+-
+135_2024-07-08 12:00:53_255_Coronel, Daisy_CHECK-OUT_Admin Building Lobby_192.168.5.155
+135_2024-07-08 12:22:20_255_Coronel, Daisy_CHECK-IN_Admin Building Lobby_192.168.5.155
+131_2024-07-08 12:00:58_255_Asuncion, Cherrypie_CHECK-OUT_Admin Building Lobby_192.168.5.155
+131_2024-07-08 12:24:59_255_Asuncion, Cherrypie_CHECK-IN_Admin Building Lobby_192.168.5.155
+495_2024-07-08 12:02:51_255_Punzalan, Jaime Kristoff_CHECK-OUT_Admin Building Lobby_192.168.5.155
+495_2024-07-08 12:58:34_255_Punzalan, Jaime Kristoff_CHECK-IN_Admin Building Lobby_192.168.5.155
+494_2024-07-08 12:03:04_255_Yanos, Andrew_CHECK-OUT_Admin Building Lobby_192.168.5.155
+494_2024-07-08 12:14:43_255_Yanos, Andrew_CHECK-IN_Admin Building Lobby_192.168.5.155
+473_2024-07-08 12:04:29_255_Climaco, Arvic_CHECK-OUT_Admin Building Lobby_192.168.5.155
+473_2024-07-08 12:12:02_255_Climaco, Arvic_CHECK-IN_Admin Building Lobby_192.168.5.155
+479_2024-07-08 12:04:35_255_Arconada, Rommel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+479_2024-07-08 12:11:15_255_Arconada, Rommel_CHECK-IN_Admin Building Lobby_192.168.5.155
+482_2024-07-08 12:05:11_255_Dela Cruz, Darwin_CHECK-OUT_Admin Building Lobby_192.168.5.155
+482_2024-07-08 12:11:10_255_Dela Cruz, Darwin_CHECK-IN_Admin Building Lobby_192.168.5.155
+124_2024-07-08 12:05:15_255_Aquino, Atheena May_CHECK-OUT_Admin Building Lobby_192.168.5.155
+480_2024-07-08 12:05:19_255_Calisang, David Son_CHECK-OUT_Admin Building Lobby_192.168.5.155
+480_2024-07-08 12:11:05_255_Calisang, David Son_CHECK-IN_Admin Building Lobby_192.168.5.155
+139_2024-07-08 12:05:26_255_Bautista, Roel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+139_2024-07-08 12:18:23_255_Bautista, Roel_CHECK-IN_Admin Building Lobby_192.168.5.155
+488_2024-07-08 12:05:33_255_Mabalot, Norman Jake_CHECK-IN_Admin Building Lobby_192.168.5.155
+488_2024-07-08 12:58:54_255_Mabalot, Norman Jake_CHECK-OUT_Admin Building Lobby_192.168.5.155
+472_2024-07-08 12:05:36_255_Carreon, Manuel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+472_2024-07-08 12:10:25_255_Carreon, Manuel_CHECK-IN_Admin Building Lobby_192.168.5.155
+472_2024-07-08 12:10:31_255_Carreon, Manuel_LOGGED_Admin Building Lobby_192.168.5.155
+472_2024-07-08 12:12:42_255_Carreon, Manuel_LOGGED_Admin Building Lobby_192.168.5.155
+140_2024-07-08 12:06:31_255_Delgado, Pauline Marie_CHECK-OUT_Admin Building Lobby_192.168.5.155
+140_2024-07-08 12:12:44_255_Delgado, Pauline Marie_CHECK-IN_Admin Building Lobby_192.168.5.155
+148_2024-07-08 12:06:36_255_Bazan, Belinda_CHECK-OUT_Admin Building Lobby_192.168.5.155
+148_2024-07-08 12:26:46_255_Bazan, Belinda_CHECK-IN_Admin Building Lobby_192.168.5.155
+129_2024-07-08 12:06:44_255_Alvia, Mia Marion_CHECK-OUT_Admin Building Lobby_192.168.5.155
+129_2024-07-08 12:12:32_255_Alvia, Mia Marion_CHECK-IN_Admin Building Lobby_192.168.5.155
+141_2024-07-08 12:06:46_255_Alvia, Joshua_CHECK-OUT_Admin Building Lobby_192.168.5.155
+141_2024-07-08 12:13:02_255_Alvia, Joshua_CHECK-IN_Admin Building Lobby_192.168.5.155
+477_2024-07-08 12:07:35_255_Sebastian, Eugene_CHECK-OUT_Admin Building Lobby_192.168.5.155
+477_2024-07-08 12:19:46_255_Sebastian, Eugene_CHECK-IN_Admin Building Lobby_192.168.5.155
+483_2024-07-08 12:07:49_255_Apao, Jenny Joy_CHECK-IN_Admin Building Lobby_192.168.5.155
+483_2024-07-08 12:13:57_255_Apao, Jenny Joy_CHECK-OUT_Admin Building Lobby_192.168.5.155
+487_2024-07-08 12:08:05_255_Sidney, Anthony Rigdon_CHECK-OUT_Admin Building Lobby_192.168.5.155
+487_2024-07-08 12:39:34_255_Sidney, Anthony Rigdon_CHECK-IN_Admin Building Lobby_192.168.5.155
+485_2024-07-08 12:08:07_255_Sumalpong, Sharlene Fair_CHECK-IN_Admin Building Lobby_192.168.5.155
+485_2024-07-08 12:12:25_255_Sumalpong, Sharlene Fair_CHECK-OUT_Admin Building Lobby_192.168.5.155
+485_2024-07-08 12:14:37_255_Sumalpong, Sharlene Fair_LOGGED_Admin Building Lobby_192.168.5.155
+123_2024-07-08 12:08:12_255_Cuña, Nikko_CHECK-OUT_Admin Building Lobby_192.168.5.155
+123_2024-07-08 12:22:24_255_Cuña, Nikko_CHECK-IN_Admin Building Lobby_192.168.5.155
+133_2024-07-08 12:10:02_255_Torda, Ernesto_CHECK-OUT_Admin Building Lobby_192.168.5.155
+133_2024-07-08 12:47:31_255_Torda, Ernesto_CHECK-IN_Admin Building Lobby_192.168.5.155
+481_2024-07-08 12:11:01_255_Acorin, Ariel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+481_2024-07-08 12:37:32_255_Acorin, Ariel_CHECK-IN_Admin Building Lobby_192.168.5.155
+138_2024-07-08 12:11:41_255_Boniao, Edsar Fernan_CHECK-OUT_Admin Building Lobby_192.168.5.155
+138_2024-07-08 12:21:40_255_Boniao, Edsar Fernan_CHECK-IN_Admin Building Lobby_192.168.5.155
+475_2024-07-08 12:14:17_255_Madriaga, Bartolome_CHECK-IN_Admin Building Lobby_192.168.5.155
+137_2024-07-08 12:15:02_255_Madrigal, Maribel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+137_2024-07-08 12:22:07_255_Madrigal, Maribel_CHECK-IN_Admin Building Lobby_192.168.5.155
+143_2024-07-08 12:15:05_255_Anunciacion, Margarita_CHECK-OUT_Admin Building Lobby_192.168.5.155
+143_2024-07-08 12:22:17_255_Anunciacion, Margarita_CHECK-IN_Admin Building Lobby_192.168.5.155
+147_2024-07-08 12:15:15_255_Devarra, Romel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+147_2024-07-08 12:35:04_255_Devarra, Romel_CHECK-IN_Admin Building Lobby_192.168.5.155
+474_2024-07-08 12:15:17_255_Dayrit, Sergio Jose_CHECK-IN_Admin Building Lobby_192.168.5.155
+474_2024-07-08 12:48:05_255_Dayrit, Sergio Jose_CHECK-OUT_Admin Building Lobby_192.168.5.155
+144_2024-07-08 12:15:20_255_Pioquinto, Lenny_CHECK-OUT_Admin Building Lobby_192.168.5.155
+144_2024-07-08 12:35:29_255_Pioquinto, Lenny_CHECK-IN_Admin Building Lobby_192.168.5.155
+478_2024-07-08 12:16:56_255_Tagalicud, Ryan_CHECK-OUT_Admin Building Lobby_192.168.5.155
+478_2024-07-08 12:24:30_255_Tagalicud, Ryan_CHECK-IN_Admin Building Lobby_192.168.5.155
+127_2024-07-08 12:17:51_255_Adalia, Leilalyn_CHECK-OUT_Admin Building Lobby_192.168.5.155
+127_2024-07-08 12:28:14_255_Adalia, Leilalyn_CHECK-IN_Admin Building Lobby_192.168.5.155
+476_2024-07-08 12:17:59_255_Martirez, Kenneth_CHECK-OUT_Admin Building Lobby_192.168.5.155
+476_2024-07-08 12:23:02_255_Martirez, Kenneth_CHECK-IN_Admin Building Lobby_192.168.5.155
+130_2024-07-08 12:18:54_255_Pantaleon, Ina Mariel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+130_2024-07-08 12:18:56_255_Pantaleon, Ina Mariel_LOGGED_Admin Building Lobby_192.168.5.155
+130_2024-07-08 12:27:12_255_Pantaleon, Ina Mariel_CHECK-IN_Admin Building Lobby_192.168.5.155
+130_2024-07-08 12:27:13_255_Pantaleon, Ina Mariel_LOGGED_Admin Building Lobby_192.168.5.155
+128_2024-07-08 12:19:13_255_Esperat, Richelle_CHECK-OUT_Admin Building Lobby_192.168.5.155
+128_2024-07-08 12:27:00_255_Esperat, Richelle_CHECK-IN_Admin Building Lobby_192.168.5.155
+134_2024-07-08 12:19:56_255_Maturan, Jovic_CHECK-OUT_Admin Building Lobby_192.168.5.155
+134_2024-07-08 12:27:41_255_Maturan, Jovic_CHECK-IN_Admin Building Lobby_192.168.5.155
+126_2024-07-08 12:20:05_255_Locson, Eugine_CHECK-OUT_Admin Building Lobby_192.168.5.155
+126_2024-07-08 12:27:02_255_Locson, Eugine_CHECK-IN_Admin Building Lobby_192.168.5.155
+132_2024-07-08 12:21:17_255_Peligro, Charlou_CHECK-IN_Admin Building Lobby_192.168.5.155
+132_2024-07-08 12:28:03_255_Peligro, Charlou_CHECK-OUT_Admin Building Lobby_192.168.5.155
+136_2024-07-08 12:28:06_255_Camins, James Benedick_CHECK-OUT_Admin Building Lobby_192.168.5.155
+136_2024-07-08 12:38:08_255_Camins, James Benedick_CHECK-IN_Admin Building Lobby_192.168.5.155
+497_2024-07-08 12:34:26_255_Enriquez, Ruzcel_CHECK-OUT_Admin Building Lobby_192.168.5.155
+497_2024-07-08 12:48:42_255_Enriquez, Ruzcel_CHECK-IN_Admin Building Lobby_192.168.5.155
+146_2024-07-08 12:40:52_255_Delos Reyes, Analiza_CHECK-OUT_Admin Building Lobby_192.168.5.155
+146_2024-07-08 12:47:13_255_Delos Reyes, Analiza_CHECK-IN_Admin Building Lobby_192.168.5.155
+145_2024-07-08 12:41:05_255_Fernando, Michelle_CHECK-OUT_Admin Building Lobby_192.168.5.155
+145_2024-07-08 12:46:03_255_Fernando, Michelle_CHECK-IN_Admin Building Lobby_192.168.5.155
+592_2024-07-08 13:14:43_255_Zaragoza, Danica_CHECK-IN_Admin Building Lobby_192.168.5.155
+602_2024-07-08 13:15:37_255_Asuncion, John PhiliP_CHECK-IN_Admin Building Lobby_192.168.5.155
+608_2024-07-08 13:36:33_255_De Leon,, Sheila_CHECK-IN_Admin Building Lobby_192.168.5.155
+563_2024-07-08 13:38:59_255_Lago, Jayson_CHECK-IN_Admin Building Lobby_192.168.5.155
+563_2024-07-08 13:39:01_255_Lago, Jayson_LOGGED_Admin Building Lobby_192.168.5.155
+595_2024-07-08 13:39:04_255_Aguilar, Romelita_CHECK-IN_Admin Building Lobby_192.168.5.155
+493_2024-07-08 09:27:43_255_Caimor, Reenjay_CHECK-OUT_IISU_192.168.5.159
+493_2024-07-08 12:07:29_255_Caimor, Reenjay_CHECK-IN_IISU_192.168.5.159
+493_2024-07-08 12:19:46_255_Caimor, Reenjay_CHECK-OUT_IISU_192.168.5.159
+499_2024-07-08 12:00:27_255_Falcasantos, Krizelle Ma_CHECK-OUT_IISU_192.168.5.159
+499_2024-07-08 12:46:11_255_Falcasantos, Krizelle Ma_CHECK-IN_IISU_192.168.5.159
+492_2024-07-08 12:00:38_255_Barretto, Alyana Claire_CHECK-OUT_IISU_192.168.5.159
+492_2024-07-08 12:05:48_255_Barretto, Alyana Claire_CHECK-IN_IISU_192.168.5.159
+489_2024-07-08 12:00:41_255_Maque, Ricah_CHECK-OUT_IISU_192.168.5.159
+489_2024-07-08 12:06:09_255_Maque, Ricah_CHECK-IN_IISU_192.168.5.159
+500_2024-07-08 12:00:43_255_Gallardo, Louie Virgil_CHECK-OUT_IISU_192.168.5.159
+500_2024-07-08 12:05:32_255_Gallardo, Louie Virgil_CHECK-IN_IISU_192.168.5.159
+511_2024-07-08 12:00:53_255_Mustaham, Micah Charles_CHECK-OUT_IISU_192.168.5.159
+511_2024-07-08 12:05:44_255_Mustaham, Micah Charles_CHECK-IN_IISU_192.168.5.159
+486_2024-07-08 12:01:17_255_Nunag, Carl John Paul_CHECK-OUT_IISU_192.168.5.159
+486_2024-07-08 12:07:24_255_Nunag, Carl John Paul_CHECK-IN_IISU_192.168.5.159
+496_2024-07-08 12:02:33_255_Dolar, Kim Horace_CHECK-OUT_IISU_192.168.5.159
+496_2024-07-08 12:46:25_255_Dolar, Kim Horace_CHECK-IN_IISU_192.168.5.159
+490_2024-07-08 12:03:09_255_Amit, Tristan Jay_CHECK-OUT_IISU_192.168.5.159
