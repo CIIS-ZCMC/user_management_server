@@ -40,7 +40,6 @@ class AttendanceReportController extends Controller
         try {
             $result = [];
             // Get filters from the request
-            $report_format = $request->report_format;
             $area_id = $request->area_id;
             $area_under = $request->area_under;
             $sector = $request->sector;
@@ -1113,9 +1112,9 @@ class AttendanceReportController extends Controller
             $start_date = $request->start_date;
             $end_date = $request->end_date;
             $period_type = $request->period_type; // quarterly or monthly
-            $without_official_leave = $request->without_official_leave;
-            $without_pay = $request->without_pay;
-            $limit = $request->limit ?? 100; // default limit is 100
+            $without_official_leave = (bool) $request->without_official_leave;
+            $without_pay = (bool) $request->without_pay;
+            $limit = $request->limit;
 
             $result = $this->getEmployeesAbsenteeismFilter(
                 $area_id,
@@ -1152,78 +1151,499 @@ class AttendanceReportController extends Controller
     {
         $arr_data = [];
         try {
-            switch ($sector) {
-                case 'division':
-                    switch ($area_under) {
-                        case 'all':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                ->where('division_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
 
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
+            // General filter for employees with undertime_minutes or tardiness
+            $filterEmployeesWithUndertimeOrTardiness = function ($query) {
+                $query->where('undertime_minutes', '>', 0)
+                    ->orWhere(function ($query) {
+                        $query->whereNotNull('first_in')
+                            ->whereRaw('TIME_TO_SEC(first_in) > TIME_TO_SEC(CONCAT(dtr_date, " 08:00:00"))')
+                            ->orWhere(function ($query) {
+                                $query->whereNotNull('second_in')
+                                    ->whereRaw('TIME_TO_SEC(second_in) > TIME_TO_SEC(CONCAT(dtr_date, " 13:00:00"))');
+                            });
+                    });
+            };
 
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
+            // Subquery to get the latest id for each employee
+            $latestDtrSubquery = DB::table('daily_time_records')
+                ->select(DB::raw('MAX(id) as latest_id'))
+                ->groupBy('employee_id');
 
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
+            if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type) && is_null($without_official_leave) && is_null($without_pay)) {
+                $rows = AssignArea::with(['employeeProfile'])
+                    ->where('employee_profile_id', '<>', 1)
+                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
+                        $q->where('undertime_minutes', '>', 0);
+                    })->get();
 
-                            if ($without_official_leave) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                });
-                            }
+                foreach ($rows as $row) {
+                    $arr_data[] = $this->resultAbsenteeismFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
+                }
+            } else if (is_null($area_id) && is_null($area_under) && is_null($sector) && !is_null($employment_type) && is_null($start_date) && is_null($end_date) && is_null($period_type) && is_null($without_official_leave) && is_null($without_pay)) {
+                $rows = AssignArea::with(['employeeProfile'])
+                    ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
+                        $q->orWhere('undertime_minutes', '>', 0);
+                    })->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                        $q->where('employment_type_id', $employment_type);
+                    })
+                    ->get();
 
-                            if ($without_pay) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                    $q->where('without_pay', 1)
-                                        ->whereBetween('date_from', [$start_date, $end_date])
-                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                });
-                            }
+                foreach ($rows as $row) {
+                    $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
+                }
+            } else if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && !is_null($start_date) && !is_null($end_date) && is_null($period_type) && is_null($without_official_leave) && is_null($without_pay)) {
+                $rows =  EmployeeProfile::whereHas('dailyTimeRecords', function ($query) use ($start_date, $end_date) {
+                    $query->whereBetween('dtr_date', [$start_date, $end_date]);
+                })
+                    ->with(['dailyTimeRecords' => function ($query) use ($start_date, $end_date) {
+                        $query->whereBetween('dtr_date', [$start_date, $end_date]);
+                    }])
+                    ->get();
 
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultAbsenteeismFilter(
-                                    $assignArea->employeeProfile,
-                                    'division',
-                                    $period_type,
-                                    $start_date,
-                                    $end_date
-                                );
-                            }
-
-                            $departments = Department::where('division_id', $area_id)->get();
-                            foreach ($departments as $department) {
+                // Process each employee
+                foreach ($rows as $employee) {
+                    if ($employee) {
+                        $formatted_data = $this->resultTardinessFilter($employee, $sector, $period_type, $start_date, $end_date);
+                        if (is_array($formatted_data)) {
+                            $arr_data[] = $formatted_data;
+                        }
+                    }
+                }
+            } else if (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($employment_type) && !is_null($start_date) && !is_null($end_date) && is_null($period_type) && !is_null($without_official_leave) && is_null($without_pay)) {
+            } else {
+                switch ($sector) {
+                    case 'division':
+                        switch ($area_under) {
+                            case 'all':
                                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                    ->where('department_id', $department->id)
+                                    ->where('division_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
                                     ->limit($limit);
+
+                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                        ->whereNotIn('id', $latestDtrSubquery);
+                                });
+
+                                if ($employment_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                }
+
+                                if ($period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        switch ($period_type) {
+                                            case 'monthly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                break;
+                                            case 'quarterly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                break;
+                                            case 'yearly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                break;
+                                        }
+                                    });
+                                }
+
+                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                if ($start_date && $end_date && !$period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    });
+                                }
+
+                                if ($without_official_leave) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('date_from', [$start_date, $end_date])
+                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                        });
+                                    });
+                                }
+
+                                if ($without_pay) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($without_pay) {
+                                        $q->where('without_pay', $without_pay);
+                                    });
+                                }
+
+                                $assignAreas = $assignAreas->get();
+
+                                foreach ($assignAreas as $assignArea) {
+                                    $arr_data[] = $this->resultAbsenteeismFilter(
+                                        $assignArea->employeeProfile,
+                                        'division',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
+                                    );
+                                }
+
+                                $departments = Department::where('division_id', $area_id)->get();
+                                foreach ($departments as $department) {
+                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                        ->where('department_id', $department->id)
+                                        ->limit($limit);
+
+                                    $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
+                                    });
+
+                                    if ($employment_type) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    }
+
+                                    if ($period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                            switch ($period_type) {
+                                                case 'monthly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                    break;
+                                                case 'quarterly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                    break;
+                                                case 'yearly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                    break;
+                                            }
+                                        });
+                                    }
+
+                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                    if ($start_date && $end_date && !$period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        });
+                                    }
+
+                                    if ($without_official_leave) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                            $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                $q->whereBetween('date_from', [$start_date, $end_date])
+                                                    ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                            });
+                                        });
+                                    }
+
+                                    if ($without_pay) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                            $q->where('without_pay', 1)
+                                                ->whereBetween('date_from', [$start_date, $end_date])
+                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                        });
+                                    }
+
+                                    $assignAreas = $assignAreas->get();
+
+                                    foreach ($assignAreas as $assignArea) {
+                                        $arr_data[] = $this->resultAbsenteeismFilter(
+                                            $assignArea->employeeProfile,
+                                            'department',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
+                                        );
+                                    }
+
+                                    $sections = Section::where('department_id', $department->id)->get();
+                                    foreach ($sections as $section) {
+                                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                            ->where('section_id', $section->id)
+                                            ->limit($limit);
+
+                                        $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery);
+                                        });
+
+                                        if ($employment_type) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        }
+
+                                        if ($period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                switch ($period_type) {
+                                                    case 'monthly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                        break;
+                                                    case 'quarterly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                        break;
+                                                    case 'yearly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                        break;
+                                                }
+                                            });
+                                        }
+
+                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                        if ($start_date && $end_date && !$period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                            });
+                                        }
+
+                                        if ($without_official_leave) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                    $q->whereBetween('date_from', [$start_date, $end_date])
+                                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                                });
+                                            });
+                                        }
+
+                                        if ($without_pay) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                $q->where('without_pay', 1)
+                                                    ->whereBetween('date_from', [$start_date, $end_date])
+                                                    ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                            });
+                                        }
+
+                                        $assignAreas = $assignAreas->get();
+
+                                        foreach ($assignAreas as $assignArea) {
+                                            $arr_data[] = $this->resultAbsenteeismFilter(
+                                                $assignArea->employeeProfile,
+                                                'section',
+                                                $period_type,
+                                                $start_date,
+                                                $end_date
+                                            );
+                                        }
+
+                                        $units = Unit::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                                ->where('unit_id', $unit->id)
+                                                ->limit($limit);
+
+                                            $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                                $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                    ->whereNotIn('id', $latestDtrSubquery);
+                                            });
+
+                                            if ($employment_type) {
+                                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                    $q->where('employment_type_id', $employment_type);
+                                                });
+                                            }
+
+                                            if ($period_type) {
+                                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                    switch ($period_type) {
+                                                        case 'monthly':
+                                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                            break;
+                                                        case 'quarterly':
+                                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                            break;
+                                                        case 'yearly':
+                                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                            break;
+                                                    }
+                                                });
+                                            }
+
+                                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                            if ($start_date && $end_date && !$period_type) {
+                                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                                });
+                                            }
+
+                                            if ($without_official_leave) {
+                                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                        $q->whereBetween('date_from', [$start_date, $end_date])
+                                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                                    });
+                                                });
+                                            }
+
+                                            if ($without_pay) {
+                                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                    $q->where('without_pay', 1)
+                                                        ->whereBetween('date_from', [$start_date, $end_date])
+                                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                                });
+                                            }
+
+                                            $assignAreas = $assignAreas->get();
+
+                                            foreach ($assignAreas as $assignArea) {
+                                                $arr_data[] = $this->resultAbsenteeismFilter(
+                                                    $assignArea->employeeProfile,
+                                                    'unit',
+                                                    $period_type,
+                                                    $start_date,
+                                                    $end_date
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Get sections directly under the division (if any) that are not under any department
+                                $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                                foreach ($sections as $section) {
+                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                        ->where('section_id', $section->id)
+                                        ->limit($limit);
+
+                                    $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
+                                    });
+
+                                    if ($employment_type) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    }
+
+                                    if ($period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                            switch ($period_type) {
+                                                case 'monthly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                    break;
+                                                case 'quarterly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                    break;
+                                                case 'yearly':
+                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                    break;
+                                            }
+                                        });
+                                    }
+
+                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                    if ($start_date && $end_date && !$period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        });
+                                    }
+
+                                    if ($without_official_leave) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                            $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                $q->whereBetween('date_from', [$start_date, $end_date])
+                                                    ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                            });
+                                        });
+                                    }
+
+                                    if ($without_pay) {
+                                        $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                            $q->where('without_pay', 1)
+                                                ->whereBetween('date_from', [$start_date, $end_date])
+                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                        });
+                                    }
+
+                                    $assignAreas = $assignAreas->get();
+
+                                    foreach ($assignAreas as $assignArea) {
+                                        $arr_data[] = $this->resultAbsenteeismFilter(
+                                            $assignArea->employeeProfile,
+                                            'section',
+                                            $period_type,
+                                            $start_date,
+                                            $end_date
+                                        );
+                                    }
+
+                                    // Get all units directly under the section
+                                    $units = Unit::where('section_id', $section->id)->get();
+                                    foreach ($units as $unit) {
+                                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                            ->where('unit_id', $unit->id)
+                                            ->limit($limit);
+
+                                        $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery);
+                                        });
+
+                                        if ($employment_type) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        }
+
+                                        if ($period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                                switch ($period_type) {
+                                                    case 'monthly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                        break;
+                                                    case 'quarterly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                        break;
+                                                    case 'yearly':
+                                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                        break;
+                                                }
+                                            });
+                                        }
+
+                                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                        if ($start_date && $end_date && !$period_type) {
+                                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                            });
+                                        }
+
+                                        if ($without_official_leave) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                                $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                    $q->whereBetween('date_from', [$start_date, $end_date])
+                                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                                });
+                                            });
+                                        }
+
+                                        if ($without_pay) {
+                                            $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                                $q->where('without_pay', 1)
+                                                    ->whereBetween('date_from', [$start_date, $end_date])
+                                                    ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                            });
+                                        }
+
+                                        $assignAreas = $assignAreas->get();
+
+                                        foreach ($assignAreas as $assignArea) {
+                                            $arr_data[] = $this->resultAbsenteeismFilter(
+                                                $assignArea->employeeProfile,
+                                                'unit',
+                                                $period_type,
+                                                $start_date,
+                                                $end_date
+                                            );
+                                        }
+                                    }
+                                }
+                                break;
+                            case 'staff':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                    ->where('division_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->limit($limit);
+
+                                $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                        ->whereNotIn('id', $latestDtrSubquery);
+                                });
 
                                 if ($employment_type) {
                                     $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
@@ -1276,18 +1696,95 @@ class AttendanceReportController extends Controller
                                 foreach ($assignAreas as $assignArea) {
                                     $arr_data[] = $this->resultAbsenteeismFilter(
                                         $assignArea->employeeProfile,
+                                        'division',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
+                                    );
+                                }
+                                break;
+                        }
+                        break;
+                    case 'department':
+                        switch ($area_under) {
+                            case 'all':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
+                                    ->where('department_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->limit($limit);
+
+                                $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                        ->whereNotIn('id', $latestDtrSubquery);
+                                });
+
+                                if ($employment_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                }
+
+                                if ($period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        switch ($period_type) {
+                                            case 'monthly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                break;
+                                            case 'quarterly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                break;
+                                            case 'yearly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                break;
+                                        }
+                                    });
+                                }
+
+                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                if ($start_date && $end_date && !$period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    });
+                                }
+
+                                if ($without_official_leave) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('date_from', [$start_date, $end_date])
+                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                        });
+                                    });
+                                }
+
+                                if ($without_pay) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                        $q->where('without_pay', 1)
+                                            ->whereBetween('date_from', [$start_date, $end_date])
+                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                    });
+                                }
+
+                                $assignAreas = $assignAreas->get();
+
+                                foreach ($assignAreas as $assignedArea) {
+                                    $arr_data[] = $this->resultAbsenteeismFilter(
+                                        $assignedArea->employeeProfile,
                                         'department',
                                         $period_type,
                                         $start_date,
                                         $end_date
                                     );
                                 }
-
-                                $sections = Section::where('department_id', $department->id)->get();
+                                $sections = Section::where('department_id', $area_id)->get();
                                 foreach ($sections as $section) {
-                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                    $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                                         ->where('section_id', $section->id)
                                         ->limit($limit);
+
+                                    $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
+                                    });
 
                                     if ($employment_type) {
                                         $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
@@ -1349,9 +1846,14 @@ class AttendanceReportController extends Controller
 
                                     $units = Unit::where('section_id', $section->id)->get();
                                     foreach ($units as $unit) {
-                                        $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
+                                        $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                                             ->where('unit_id', $unit->id)
                                             ->limit($limit);
+
+                                        $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                                ->whereNotIn('id', $latestDtrSubquery);
+                                        });
 
                                         if ($employment_type) {
                                             $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
@@ -1412,276 +1914,90 @@ class AttendanceReportController extends Controller
                                         }
                                     }
                                 }
-                            }
-
-                            // Get sections directly under the division (if any) that are not under any department
-                            $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-                            foreach ($sections as $section) {
-                                $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                    ->where('section_id', $section->id)
-                                    ->limit($limit);
-
-                                if ($employment_type) {
-                                    $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                }
-
-                                if ($period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                        switch ($period_type) {
-                                            case 'monthly':
-                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                                break;
-                                            case 'quarterly':
-                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                                break;
-                                            case 'yearly':
-                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                                break;
-                                        }
-                                    });
-                                }
-
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                                if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                    });
-                                }
-
-                                if ($without_official_leave) {
-                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('date_from', [$start_date, $end_date])
-                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                        });
-                                    });
-                                }
-
-                                if ($without_pay) {
-                                    $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->where('without_pay', 1)
-                                            ->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                }
-
-                                $assignAreas = $assignAreas->get();
-
-                                foreach ($assignAreas as $assignArea) {
-                                    $arr_data[] = $this->resultAbsenteeismFilter(
-                                        $assignArea->employeeProfile,
-                                        'section',
-                                        $period_type,
-                                        $start_date,
-                                        $end_date
-                                    );
-                                }
-
-                                // Get all units directly under the section
-                                $units = Unit::where('section_id', $section->id)->get();
-                                foreach ($units as $unit) {
-                                    $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                        ->where('unit_id', $unit->id)
-                                        ->limit($limit);
-
-                                    if ($employment_type) {
-                                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                            $q->where('employment_type_id', $employment_type);
-                                        });
-                                    }
-
-                                    if ($period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                            switch ($period_type) {
-                                                case 'monthly':
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                                    break;
-                                                case 'quarterly':
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                                    break;
-                                                case 'yearly':
-                                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                                    break;
-                                            }
-                                        });
-                                    }
-
-                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                                    if ($start_date && $end_date && !$period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                        });
-                                    }
-
-                                    if ($without_official_leave) {
-                                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                                $q->whereBetween('date_from', [$start_date, $end_date])
-                                                    ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                            });
-                                        });
-                                    }
-
-                                    if ($without_pay) {
-                                        $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                            $q->where('without_pay', 1)
-                                                ->whereBetween('date_from', [$start_date, $end_date])
-                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                        });
-                                    }
-
-                                    $assignAreas = $assignAreas->get();
-
-                                    foreach ($assignAreas as $assignArea) {
-                                        $arr_data[] = $this->resultAbsenteeismFilter(
-                                            $assignArea->employeeProfile,
-                                            'unit',
-                                            $period_type,
-                                            $start_date,
-                                            $end_date
-                                        );
-                                    }
-                                }
-                            }
-                            break;
-                        case 'staff':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-                                ->where('division_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            if ($without_official_leave) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                });
-                            }
-
-                            if ($without_pay) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                    $q->where('without_pay', 1)
-                                        ->whereBetween('date_from', [$start_date, $end_date])
-                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultAbsenteeismFilter(
-                                    $assignArea->employeeProfile,
-                                    'division',
-                                    $period_type,
-                                    $start_date,
-                                    $end_date
-                                );
-                            }
-                            break;
-                    }
-                    break;
-                case 'department':
-                    switch ($area_under) {
-                        case 'all':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                ->where('department_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            if ($without_official_leave) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                });
-                            }
-
-                            if ($without_pay) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                    $q->where('without_pay', 1)
-                                        ->whereBetween('date_from', [$start_date, $end_date])
-                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignedArea) {
-                                $arr_data[] = $this->resultAbsenteeismFilter(
-                                    $assignedArea->employeeProfile,
-                                    'department',
-                                    $period_type,
-                                    $start_date,
-                                    $end_date
-                                );
-                            }
-                            $sections = Section::where('department_id', $area_id)->get();
-                            foreach ($sections as $section) {
+                                break;
+                            case 'staff':
                                 $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                    ->where('section_id', $section->id)
+                                    ->where('department_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
                                     ->limit($limit);
+
+                                $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                        ->whereNotIn('id', $latestDtrSubquery);
+                                });
+
+                                if ($employment_type) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                }
+
+                                if ($period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                        switch ($period_type) {
+                                            case 'monthly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                                break;
+                                            case 'quarterly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                                break;
+                                            case 'yearly':
+                                                $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                                break;
+                                        }
+                                    });
+                                }
+
+                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                if ($start_date && $end_date && !$period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    });
+                                }
+
+                                if ($without_official_leave) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('date_from', [$start_date, $end_date])
+                                                ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                        });
+                                    });
+                                }
+
+                                if ($without_pay) {
+                                    $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                        $q->where('without_pay', 1)
+                                            ->whereBetween('date_from', [$start_date, $end_date])
+                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
+                                    });
+                                }
+
+                                $assignAreas = $assignAreas->get();
+
+                                foreach ($assignAreas as $assignedArea) {
+                                    $arr_data[] = $this->resultAbsenteeismFilter(
+                                        $assignedArea->employeeProfile,
+                                        'department',
+                                        $period_type,
+                                        $start_date,
+                                        $end_date
+                                    );
+                                }
+                                break;
+                        }
+                        break;
+                    case 'section':
+                        switch ($area_under) {
+                            case 'all':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
+                                    ->where('section_id', $area_id)
+                                    ->where('employee_profile_id', '!=', 1)
+                                    ->limit($limit);
+
+                                $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                        ->whereNotIn('id', $latestDtrSubquery);
+                                });
 
                                 if ($employment_type) {
                                     $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
@@ -1740,13 +2056,17 @@ class AttendanceReportController extends Controller
                                         $end_date
                                     );
                                 }
-
-                                $units = Unit::where('section_id', $section->id)->get();
+                                $units = Unit::where('section_id', $area_id)->get();
                                 foreach ($units as $unit) {
                                     $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                                         ->where('unit_id', $unit->id)
                                         ->limit($limit);
 
+                                    $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                        $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                            ->whereNotIn('id', $latestDtrSubquery);
+                                    });
+
                                     if ($employment_type) {
                                         $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                             $q->where('employment_type_id', $employment_type);
@@ -1769,13 +2089,6 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
-                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                                    if ($start_date && $end_date && !$period_type) {
-                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                        });
-                                    }
-
                                     if ($without_official_leave) {
                                         $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
                                             $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
@@ -1793,6 +2106,13 @@ class AttendanceReportController extends Controller
                                         });
                                     }
 
+                                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                    if ($start_date && $end_date && !$period_type) {
+                                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                        });
+                                    }
+
                                     $assignAreas = $assignAreas->get();
 
                                     foreach ($assignAreas as $assignArea) {
@@ -1805,144 +2125,17 @@ class AttendanceReportController extends Controller
                                         );
                                     }
                                 }
-                            }
-                            break;
-                        case 'staff':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                ->where('department_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            if ($without_official_leave) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                });
-                            }
-
-                            if ($without_pay) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                    $q->where('without_pay', 1)
-                                        ->whereBetween('date_from', [$start_date, $end_date])
-                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignedArea) {
-                                $arr_data[] = $this->resultAbsenteeismFilter(
-                                    $assignedArea->employeeProfile,
-                                    'department',
-                                    $period_type,
-                                    $start_date,
-                                    $end_date
-                                );
-                            }
-                            break;
-                    }
-                    break;
-                case 'section':
-                    switch ($area_under) {
-                        case 'all':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '!=', 1)
-                                ->limit($limit);
-
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
-
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
-
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
-
-                            if ($without_official_leave) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                });
-                            }
-
-                            if ($without_pay) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                    $q->where('without_pay', 1)
-                                        ->whereBetween('date_from', [$start_date, $end_date])
-                                        ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                });
-                            }
-
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultAbsenteeismFilter(
-                                    $assignArea->employeeProfile,
-                                    'section',
-                                    $period_type,
-                                    $start_date,
-                                    $end_date
-                                );
-                            }
-                            $units = Unit::where('section_id', $area_id)->get();
-                            foreach ($units as $unit) {
-                                $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-                                    ->where('unit_id', $unit->id)
+                                break;
+                            case 'staff':
+                                $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
+                                    ->where('section_id', $area_id)
+                                    ->where('employee_profile_id', '!=', 1)
                                     ->limit($limit);
+
+                                $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                                    $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                        ->whereNotIn('id', $latestDtrSubquery);
+                                });
 
                                 if ($employment_type) {
                                     $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
@@ -1966,6 +2159,13 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
+                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                                if ($start_date && $end_date && !$period_type) {
+                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                                    });
+                                }
+
                                 if ($without_official_leave) {
                                     $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
                                         $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
@@ -1983,157 +2183,91 @@ class AttendanceReportController extends Controller
                                     });
                                 }
 
-                                // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                                if ($start_date && $end_date && !$period_type) {
-                                    $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                    });
-                                }
-
                                 $assignAreas = $assignAreas->get();
 
                                 foreach ($assignAreas as $assignArea) {
                                     $arr_data[] = $this->resultAbsenteeismFilter(
                                         $assignArea->employeeProfile,
-                                        'unit',
+                                        'section',
                                         $period_type,
                                         $start_date,
                                         $end_date
                                     );
                                 }
-                            }
-                            break;
-                        case 'staff':
-                            $assignAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '!=', 1)
-                                ->limit($limit);
+                                break;
+                        }
 
-                            if ($employment_type) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                    $q->where('employment_type_id', $employment_type);
-                                });
-                            }
+                        break;
+                    case 'unit':
+                        $assignAreas = AssignArea::with(['employeeProfile', 'unit'])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->limit($limit);
 
-                            if ($period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                                    switch ($period_type) {
-                                        case 'monthly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                            break;
-                                        case 'quarterly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                            break;
-                                        case 'yearly':
-                                            $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                            break;
-                                    }
-                                });
-                            }
+                        $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($filterEmployeesWithUndertimeOrTardiness, $latestDtrSubquery) {
+                            $q->where($filterEmployeesWithUndertimeOrTardiness)
+                                ->whereNotIn('id', $latestDtrSubquery);
+                        });
 
-                            // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                            if ($start_date && $end_date && !$period_type) {
-                                $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                                });
-                            }
+                        if ($employment_type) {
+                            $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                $q->where('employment_type_id', $employment_type);
+                            });
+                        }
 
-                            if ($without_official_leave) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                                    $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                        $q->whereBetween('date_from', [$start_date, $end_date])
-                                            ->orWhereBetween('date_to', [$start_date, $end_date]);
-                                    });
-                                });
-                            }
+                        if ($period_type) {
+                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
+                                switch ($period_type) {
+                                    case 'monthly':
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
+                                        break;
+                                    case 'quarterly':
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
+                                        break;
+                                    case 'yearly':
+                                        $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
+                                        break;
+                                }
+                            });
+                        }
 
-                            if ($without_pay) {
-                                $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                                    $q->where('without_pay', 1)
-                                        ->whereBetween('date_from', [$start_date, $end_date])
+                        // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
+                        if ($start_date && $end_date && !$period_type) {
+                            $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
+                            });
+                        }
+
+                        if ($without_official_leave) {
+                            $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
+                                $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
+                                    $q->whereBetween('date_from', [$start_date, $end_date])
                                         ->orWhereBetween('date_to', [$start_date, $end_date]);
                                 });
-                            }
+                            });
+                        }
 
-                            $assignAreas = $assignAreas->get();
-
-                            foreach ($assignAreas as $assignArea) {
-                                $arr_data[] = $this->resultAbsenteeismFilter(
-                                    $assignArea->employeeProfile,
-                                    'section',
-                                    $period_type,
-                                    $start_date,
-                                    $end_date
-                                );
-                            }
-                            break;
-                    }
-
-                    break;
-                case 'unit':
-                    $assignAreas = AssignArea::with(['employeeProfile', 'unit'])
-                        ->where('unit_id', $area_id)
-                        ->where('employee_profile_id', '<>', 1)
-                        ->limit($limit);
-
-                    if ($employment_type) {
-                        $assignAreas = $assignAreas->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                            $q->where('employment_type_id', $employment_type);
-                        });
-                    }
-
-                    if ($period_type) {
-                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date, $period_type) {
-                            switch ($period_type) {
-                                case 'monthly':
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfMonth(), Carbon::parse($end_date)->endOfMonth()]);
-                                    break;
-                                case 'quarterly':
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->firstOfQuarter(), Carbon::parse($end_date)->lastOfQuarter()]);
-                                    break;
-                                case 'yearly':
-                                    $q->whereBetween('dtr_date', [Carbon::parse($start_date)->startOfYear(), Carbon::parse($end_date)->endOfYear()]);
-                                    break;
-                            }
-                        });
-                    }
-
-                    // Optionally, you can handle the case where $start_date and $end_date are set but $period_type is not.
-                    if ($start_date && $end_date && !$period_type) {
-                        $assignAreas = $assignAreas->wherehas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                            $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                        });
-                    }
-
-                    if ($without_official_leave) {
-                        $assignAreas = $assignAreas->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($start_date, $end_date) {
-                            $q->whereDoesntHave('leaveApplications', function ($q) use ($start_date, $end_date) {
-                                $q->whereBetween('date_from', [$start_date, $end_date])
+                        if ($without_pay) {
+                            $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
+                                $q->where('without_pay', 1)
+                                    ->whereBetween('date_from', [$start_date, $end_date])
                                     ->orWhereBetween('date_to', [$start_date, $end_date]);
                             });
-                        });
-                    }
+                        }
 
-                    if ($without_pay) {
-                        $assignAreas = $assignAreas->whereHas('employeeProfile.leaveApplications', function ($q) use ($start_date, $end_date) {
-                            $q->where('without_pay', 1)
-                                ->whereBetween('date_from', [$start_date, $end_date])
-                                ->orWhereBetween('date_to', [$start_date, $end_date]);
-                        });
-                    }
+                        $assignAreas = $assignAreas->get();
 
-                    $assignAreas = $assignAreas->get();
-
-                    foreach ($assignAreas as $assignArea) {
-                        $arr_data[] = $this->resultAbsenteeismFilter(
-                            $assignArea->employeeProfile,
-                            'unit',
-                            $period_type,
-                            $start_date,
-                            $end_date
-                        );
-                    }
-                    break;
+                        foreach ($assignAreas as $assignArea) {
+                            $arr_data[] = $this->resultAbsenteeismFilter(
+                                $assignArea->employeeProfile,
+                                'unit',
+                                $period_type,
+                                $start_date,
+                                $end_date
+                            );
+                        }
+                        break;
+                }
             }
         } catch (\Exception $e) {
             // Log error and return empty array in case of exception
@@ -2212,7 +2346,6 @@ class AttendanceReportController extends Controller
 
         return $days_absent;
     }
-
 
     /**
      * Formats the employee data for the report.

@@ -43,24 +43,32 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
-        $month_of = $request->month_of;
-        $year_of = $request->year_of;
+        // Retrieve month and year from the request
+        $month_of = (int) $request->month_of;
+        $year_of = (int) $request->year_of;
+
+        // Get biometric IDs from daily_time_records table for the specified month and year
         $biometricIds = DB::table('daily_time_records')
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
-        $profiles = DB::table('employee_profiles')
-            // ->whereIn('biometric_id', $biometricIds)
-            ->where('biometric_id', 493) // 494
-            ->get();
 
+        // Get employee profiles matching the biometric IDs
+        $profiles = DB::table('employee_profiles')
+            // Uncomment this line to filter by biometric IDs
+            // ->whereIn('biometric_id', $biometricIds)
+            ->where('biometric_id', 493) // Example biometric ID for testing
+            ->get();
 
         $data = [];
 
+        // Iterate through each employee profile
         foreach ($profiles as $row) {
+            // Retrieve the employee profile using the model
             $Employee = EmployeeProfile::find($row->id);
             $biometric_id = $row->biometric_id;
 
+            // Get daily time records for the employee in the specified month and year
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
                 ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
@@ -74,8 +82,10 @@ class GenerateReportController extends Controller
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
                 ->get();
+
             $empschedule = [];
 
+            // Process each daily time record
             foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
@@ -85,6 +95,7 @@ class GenerateReportController extends Controller
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
 
+                // Save total working hours if schedule is valid
                 if (count($DaySchedule) >= 1) {
                     $validate = [
                         (object)[
@@ -105,21 +116,14 @@ class GenerateReportController extends Controller
                 }
             }
 
-
-
-
-
+            // Retrieve the employee profile again to access related data
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
-
-
+            // Process leave applications
             if ($employee->leaveApplications) {
-                //Leave Applications
-                $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                $leaveapp = $employee->leaveApplications->filter(function ($row) {
                     return $row['status'] == "received";
                 });
-
-
 
                 $leavedata = [];
                 foreach ($leaveapp as $rows) {
@@ -135,13 +139,11 @@ class GenerateReportController extends Controller
                 }
             }
 
-
-
-            //Official business
+            // Process official business applications
             if ($employee->officialBusinessApplications) {
                 $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
                     return $row['status'] == "approved";
-                })->toarray());
+                })->toArray());
                 $obData = [];
                 foreach ($officialBusiness as $rows) {
                     $obData[] = [
@@ -153,8 +155,8 @@ class GenerateReportController extends Controller
                 }
             }
 
+            // Process official time applications
             if ($employee->officialTimeApplications) {
-                //Official Time
                 $officialTime = $employee->officialTimeApplications->filter(function ($row) {
                     return $row['status'] == "approved";
                 });
@@ -169,6 +171,7 @@ class GenerateReportController extends Controller
                 }
             }
 
+            // Process CTO applications
             if ($employee->ctoApplications) {
                 $CTO =  $employee->ctoApplications->filter(function ($row) {
                     return $row['status'] == "approved";
@@ -182,15 +185,17 @@ class GenerateReportController extends Controller
                     ];
                 }
             }
+
+            // Filter schedules for the month
             if (count($empschedule) >= 1) {
                 $empschedule = array_map(function ($sc) {
-                    // return isset($sc['scheduleDate']) && (int)date('d', strtotime($sc['scheduleDate']));
                     return (int)date('d', strtotime($sc['scheduleDate']));
                 }, $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule']);
             }
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-            // echo "Name :".$Employee?->personalInformation->name()."\n Biometric_id :".$Employee->biometric_id."\n"?? "\n"."\n";
 
+            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+
+            // Initialize variables for attendance data
             $attd = [];
             $lwop = [];
             $lwp = [];
@@ -202,7 +207,7 @@ class GenerateReportController extends Controller
             $total_Month_Undertime = 0;
             $invalidEntry = [];
 
-
+            // Determine present and absent days
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
                     return  $d->day;
@@ -215,7 +220,7 @@ class GenerateReportController extends Controller
                 }
             }, $empschedule)));
 
-
+            // Determine the range of days to process
             $whole_month = $request->whole_month;
             $first_half = $request->first_half;
             $second_half = $request->second_half;
@@ -226,12 +231,10 @@ class GenerateReportController extends Controller
                 $init = 16;
             }
 
-
-
+            // Iterate through each day of the month
             for ($i = $init; $i <= $days_In_Month; $i++) {
 
-
-
+                // Filter leave dates
                 $filteredleaveDates = [];
                 $leaveStatus = [];
                 foreach ($leavedata as $row) {
@@ -253,10 +256,9 @@ class GenerateReportController extends Controller
                     return $dateToCompare === $dateToMatch;
                 });
 
-
                 $leave_Count = count($leaveApplication);
 
-                //Check obD ates
+                // Filter official business dates
                 $filteredOBDates = [];
                 foreach ($obData as $row) {
                     foreach ($row['dates_covered'] as $date) {
@@ -270,7 +272,7 @@ class GenerateReportController extends Controller
                 });
                 $ob_Count = count($obApplication);
 
-                //Check otDates
+                // Filter official time dates
                 $filteredOTDates = [];
                 foreach ($otData as $row) {
                     foreach ($row['dates_covered'] as $date) {
@@ -284,6 +286,7 @@ class GenerateReportController extends Controller
                 });
                 $ot_Count = count($otApplication);
 
+                // Filter CTO dates
                 $ctoApplication = array_filter($ctoData, function ($row) use ($year_of, $month_of, $i) {
                     $dateToCompare = date('Y-m-d', strtotime($row['date']));
                     $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
@@ -291,42 +294,35 @@ class GenerateReportController extends Controller
                 });
                 $cto_Count = count($ctoApplication);
 
-
+                // Process leave without pay
                 if ($leave_Count) {
-
                     if (array_values($leaveApplication)[0]['status']) {
-                        //  echo $i."-LwoPay \n";
                         $lwop[] = [
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                         ];
-                        // deduct to salary
                     } else {
-                        //  echo $i."-LwPay \n";
                         $lwp[] = [
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                         ];
                         $total_Month_WorkingMinutes += 480;
                     }
-                } else if ($ob_Count ||  $ot_Count) {
-                    // echo $i."-ob or ot Paid \n";
+                }
+                // Process official business or official time
+                else if ($ob_Count ||  $ot_Count) {
                     $obot[] = [
                         'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-
                     ];
                     $total_Month_WorkingMinutes += 480;
-                } else
-
-                    if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
-
+                }
+                // Process attendance
+                else if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
                     $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
                         return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                     }));
-                    // echo $i."-P \n";
-
 
                     if (
-                        ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
-                        (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out)  || //3-4
+                        ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entries
+                        (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // 3-4
                         ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
                         ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
                     ) {
@@ -337,26 +333,26 @@ class GenerateReportController extends Controller
                     } else {
                         $invalidEntry[] =  $this->Attendance($year_of, $month_of, $i, $recordDTR);
                     }
-                } else if (
+                }
+                // Process absences
+                else if (
                     in_array($i, $AbsentDays) &&
                     in_array($i, $empschedule) &&
                     strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) <  strtotime(date('Y-m-d'))
                 ) {
-                    //echo $i."-A  \n";
-
                     $absences[] = [
                         'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                     ];
-                } else {
-                    //   echo $i."-DO\n";
+                }
+                // Process day off
+                else {
                     $dayoff[] = [
                         'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                     ];
                 }
             }
 
-
-
+            // Calculate attendance statistics
             $presentCount = count(array_filter($attd, function ($d) {
                 return $d['total_working_minutes'] !== 0;
             }));
@@ -371,9 +367,8 @@ class GenerateReportController extends Controller
                 return $value >= $init && $value <= $days_In_Month;
             }));
 
-
+            // Prepare data for the response
             $data[] = [
-
                 'Biometric_id' => $biometric_id,
                 'EmployeeNo' => $Employee->employee_id,
                 'Name' => $Employee->personalInformation->name(),
@@ -393,15 +388,10 @@ class GenerateReportController extends Controller
                 'NoofInvalidEntry' => count($invalidEntry),
                 'NoofDayOff' => count($dayoff),
                 'schedule' => count($filtered_scheds),
-                // 'Attendance'=>$attd,
-                // 'Invalid'=>$invalidEntry,
-                // 'absences'=>$absences,
-                // 'Leavewopay'=>$lwop,
-                //  'Leavewpay'=>$lwp,
-                //  'Absences'=>$absences,
-                //  'Dayoff'=>$dayoff
             ];
         }
+
+        // Return the processed data
         return $data;
     }
 }
