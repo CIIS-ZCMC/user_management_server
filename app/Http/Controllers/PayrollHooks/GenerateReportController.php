@@ -9,13 +9,9 @@ use App\Models\DailyTimeRecord;
 use Illuminate\Support\Facades\DB;
 use App\Methods\Helpers;
 use App\Models\LeaveType;
-<<<<<<< HEAD
-
-=======
 use App\Models\SalaryGrade;
 use App\Http\Controllers\PayrollHooks\ComputationController;
 //SalaryGrade
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
 class GenerateReportController extends Controller
 {
     protected $helper;
@@ -24,10 +20,7 @@ class GenerateReportController extends Controller
     public function __construct()
     {
         $this->helper = new Helpers();
-<<<<<<< HEAD
-=======
         $this->computed = new ComputationController();
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
     }
 
 
@@ -36,11 +29,8 @@ class GenerateReportController extends Controller
         $hours = $minutes / 60;
         return $hours;
     }
-<<<<<<< HEAD
-=======
 
 
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
     public function Attendance($year_of, $month_of, $i, $recordDTR)
     {
         return [
@@ -59,559 +49,379 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
-<<<<<<< HEAD
         // Retrieve month and year from the request
-        $month_of = (int) $request->month_of;
-        $year_of = (int) $request->year_of;
+        $monthOf = (int)$request->month_of;
+        $yearOf = (int)$request->year_of;
 
         // Get biometric IDs from daily_time_records table for the specified month and year
-=======
-        $month_of = $request->month_of;
-        $year_of = $request->year_of;
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
         $biometricIds = DB::table('daily_time_records')
-            ->whereYear('dtr_date', $year_of)
-            ->whereMonth('dtr_date', $month_of)
+            ->whereYear('dtr_date', $yearOf)
+            ->whereMonth('dtr_date', $monthOf)
             ->pluck('biometric_id');
 
         // Get employee profiles matching the biometric IDs
-        $profiles = DB::table('employee_profiles')
-<<<<<<< HEAD
+        $employeeProfiles = DB::table('employee_profiles')
             // Uncomment this line to filter by biometric IDs
             // ->whereIn('biometric_id', $biometricIds)
-            ->where('biometric_id', 493) // Example biometric ID for testing
-=======
-            // ->whereIn('biometric_id', $biometricIds)
-            ->where('biometric_id', 493) // 494
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
+            ->where('biometric_id', 511) // Example biometric ID for testing
             ->get();
 
-        $data = [];
+        $reportData = [];
 
-<<<<<<< HEAD
         // Iterate through each employee profile
-        foreach ($profiles as $row) {
-            // Retrieve the employee profile using the model
-            $Employee = EmployeeProfile::find($row->id);
-            $biometric_id = $row->biometric_id;
+        foreach ($employeeProfiles as $profile) {
+            $employee = EmployeeProfile::find($profile->id);
+            $biometricId = $profile->biometric_id;
 
             // Get daily time records for the employee in the specified month and year
-=======
-        $data = [];
-
-        foreach ($profiles as $row) {
-            $Employee = EmployeeProfile::find($row->id);
-            $biometric_id = $row->biometric_id;
-
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-            $dtr = DB::table('daily_time_records')
+            $dailyTimeRecords = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                    $query->where('biometric_id', $biometric_id)
-                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                ->where(function ($query) use ($biometricId, $monthOf, $yearOf) {
+                    $query->where('biometric_id', $biometricId)
+                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $monthOf)
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $yearOf);
                 })
-                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                    $query->where('biometric_id', $biometric_id)
-                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                ->orWhere(function ($query) use ($biometricId, $monthOf, $yearOf) {
+                    $query->where('biometric_id', $biometricId)
+                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $monthOf)
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $yearOf);
                 })
                 ->get();
-<<<<<<< HEAD
 
-            $empschedule = [];
+            $employeeSchedules = [];
 
             // Process each daily time record
-=======
-            $empschedule = [];
-
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-            foreach ($dtr as $val) {
+            foreach ($dailyTimeRecords as $record) {
                 $bioEntry = [
-                    'first_entry' => $val->first_in ?? $val->second_in,
-                    'date_time' => $val->first_in ?? $val->second_in
+                    'first_entry' => $record->first_in ?? $record->second_in,
+                    'date_time' => $record->first_in ?? $record->second_in
                 ];
-                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-                $DaySchedule = $Schedule['daySchedule'];
-                $empschedule[] = $DaySchedule;
+                $schedule = $this->helper->CurrentSchedule($biometricId, $bioEntry, false);
+                $daySchedule = $schedule['daySchedule'];
+                $employeeSchedules[] = $daySchedule;
 
-<<<<<<< HEAD
                 // Save total working hours if schedule is valid
-=======
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                if (count($DaySchedule) >= 1) {
+                if (count($daySchedule) >= 1) {
                     $validate = [
                         (object)[
-                            'id' => $val->id,
-                            'first_in' => $val->first_in,
-                            'first_out' => $val->first_out,
-                            'second_in' => $val->second_in,
-                            'second_out' => $val->second_out
+                            'id' => $record->id,
+                            'first_in' => $record->first_in,
+                            'first_out' => $record->first_out,
+                            'second_in' => $record->second_in,
+                            'second_out' => $record->second_out
                         ],
                     ];
                     $this->helper->saveTotalWorkingHours(
                         $validate,
-                        $val,
-                        $val,
-                        $DaySchedule,
+                        $record,
+                        $record,
+                        $daySchedule,
                         true
                     );
                 }
             }
 
             // Retrieve the employee profile again to access related data
-            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+            $employee = EmployeeProfile::where('biometric_id', $biometricId)->first();
 
             // Process leave applications
+            $leaveData = [];
             if ($employee->leaveApplications) {
-                $leaveapp = $employee->leaveApplications->filter(function ($row) {
-                    return $row['status'] == "received";
+                $leaveApplications = $employee->leaveApplications->filter(function ($application) {
+                    return $application['status'] == "received";
                 });
 
-<<<<<<< HEAD
-=======
-            if ($employee->leaveApplications) {
-                //Leave Applications
-                $leaveapp  = $employee->leaveApplications->filter(function ($row) {
-                    return $row['status'] == "received";
-                });
-
-
-
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                $leavedata = [];
-                foreach ($leaveapp as $rows) {
-                    $leavedata[] = [
-                        'country' => $rows['country'],
-                        'city' => $rows['city'],
-                        'from' => $rows['date_from'],
-                        'to' => $rows['date_to'],
-                        'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
-                        'without_pay' => $rows['without_pay'],
-                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                foreach ($leaveApplications as $leave) {
+                    $leaveData[] = [
+                        'country' => $leave['country'],
+                        'city' => $leave['city'],
+                        'from' => $leave['date_from'],
+                        'to' => $leave['date_to'],
+                        'leaveType' => LeaveType::find($leave['leave_type_id'])->name ?? "",
+                        'withoutPay' => $leave['without_pay'],
+                        'datesCovered' => $this->helper->getDateIntervals($leave['date_from'], $leave['date_to'])
                     ];
                 }
             }
 
-<<<<<<< HEAD
             // Process official business applications
-=======
-
-
-            //Official business
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
+            $officialBusinessData = [];
             if ($employee->officialBusinessApplications) {
-                $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
-                })->toArray());
-                $obData = [];
-                foreach ($officialBusiness as $rows) {
-                    $obData[] = [
-                        'purpose' => $rows['purpose'],
-                        'date_from' => $rows['date_from'],
-                        'date_to' => $rows['date_to'],
-                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
+                $officialBusinessApplications = $employee->officialBusinessApplications->filter(function ($application) {
+                    return $application['status'] == "approved";
+                })->toArray();
+
+                foreach ($officialBusinessApplications as $officialBusiness) {
+                    $officialBusinessData[] = [
+                        'purpose' => $officialBusiness['purpose'],
+                        'dateFrom' => $officialBusiness['date_from'],
+                        'dateTo' => $officialBusiness['date_to'],
+                        'datesCovered' => $this->helper->getDateIntervals($officialBusiness['date_from'], $officialBusiness['date_to']),
                     ];
                 }
             }
 
-<<<<<<< HEAD
             // Process official time applications
+            $officialTimeData = [];
             if ($employee->officialTimeApplications) {
-=======
-            if ($employee->officialTimeApplications) {
-                //Official Time
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
+                $officialTimeApplications = $employee->officialTimeApplications->filter(function ($application) {
+                    return $application['status'] == "approved";
                 });
-                $otData = [];
-                foreach ($officialTime as $rows) {
-                    $otData[] = [
-                        'date_from' => $rows['date_from'],
-                        'date_to' => $rows['date_to'],
-                        'purpose' => $rows['purpose'],
-                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+
+                foreach ($officialTimeApplications as $officialTime) {
+                    $officialTimeData[] = [
+                        'dateFrom' => $officialTime['date_from'],
+                        'dateTo' => $officialTime['date_to'],
+                        'purpose' => $officialTime['purpose'],
+                        'datesCovered' => $this->helper->getDateIntervals($officialTime['date_from'], $officialTime['date_to'])
                     ];
                 }
             }
 
-<<<<<<< HEAD
             // Process CTO applications
-=======
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
+            $ctoData = [];
             if ($employee->ctoApplications) {
-                $CTO =  $employee->ctoApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
+                $ctoApplications = $employee->ctoApplications->filter(function ($application) {
+                    return $application['status'] == "approved";
                 });
-                $ctoData = [];
-                foreach ($CTO as $rows) {
+
+                foreach ($ctoApplications as $cto) {
                     $ctoData[] = [
-                        'date' => date('Y-m-d', strtotime($rows['date'])),
-                        'purpose' => $rows['purpose'],
-                        'remarks' => $rows['remarks'],
+                        'date' => date('Y-m-d', strtotime($cto['date'])),
+                        'purpose' => $cto['purpose'],
+                        'remarks' => $cto['remarks'],
                     ];
                 }
             }
-<<<<<<< HEAD
-=======
-            if (count($empschedule) >= 1) {
-                $empschedule = array_map(function ($sc) {
-                    // return isset($sc['scheduleDate']) && (int)date('d', strtotime($sc['scheduleDate']));
-                    return (int)date('d', strtotime($sc['scheduleDate']));
-                }, $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule']);
-            }
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-            // echo "Name :".$Employee?->personalInformation->name()."\n Biometric_id :".$Employee->biometric_id."\n"?? "\n"."\n";
-
-            $attd = [];
-            $lwop = [];
-            $lwp = [];
-            $obot = [];
-            $absences = [];
-            $dayoff = [];
-            $total_Month_WorkingMinutes = 0;
-            $total_Month_Overtime = 0;
-            $total_Month_Undertime = 0;
-            $invalidEntry = [];
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
 
             // Filter schedules for the month
-            if (count($empschedule) >= 1) {
-                $empschedule = array_map(function ($sc) {
-                    return (int)date('d', strtotime($sc['scheduleDate']));
-                }, $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule']);
+            if (count($employeeSchedules) >= 1) {
+                $employeeSchedules = array_map(function ($schedule) {
+                    return (int)date('d', strtotime($schedule['scheduleDate']));
+                }, $this->helper->Allschedule($biometricId, $monthOf, $yearOf, null, null, null, null)['schedule']);
             }
 
-<<<<<<< HEAD
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $monthOf, $yearOf);
 
             // Initialize variables for attendance data
-            $attd = [];
-            $lwop = [];
-            $lwp = [];
-            $obot = [];
+            $attendanceData = [];
+            $leaveWithoutPay = [];
+            $leaveWithPay = [];
+            $officialBusinessOrTime = [];
             $absences = [];
-            $dayoff = [];
-            $total_Month_WorkingMinutes = 0;
-            $total_Month_Overtime = 0;
-            $total_Month_Undertime = 0;
-            $invalidEntry = [];
+            $dayOff = [];
+            $totalMonthWorkingMinutes = 0;
+            $totalMonthOvertime = 0;
+            $totalMonthUndertime = 0;
+            $invalidEntries = [];
 
             // Determine present and absent days
-=======
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-            $presentDays = array_map(function ($d) use ($empschedule) {
-                if (in_array($d->day, $empschedule)) {
-                    return  $d->day;
+            $presentDays = array_map(function ($day) use ($employeeSchedules) {
+                if (in_array($day->day, $employeeSchedules)) {
+                    return  $day->day;
                 }
-            }, $dtr->toArray());
+            }, $dailyTimeRecords->toArray());
 
-            $AbsentDays = array_values(array_filter(array_map(function ($d) use ($presentDays) {
-                if (!in_array($d, $presentDays) && $d != null) {
-                    return  $d;
+            $absentDays = array_values(array_filter(array_map(function ($day) use ($presentDays) {
+                if (!in_array($day, $presentDays) && $day != null) {
+                    return  $day;
                 }
-            }, $empschedule)));
+            }, $employeeSchedules)));
 
-<<<<<<< HEAD
             // Determine the range of days to process
-=======
-
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-            $whole_month = $request->whole_month;
-            $first_half = $request->first_half;
-            $second_half = $request->second_half;
-            $init = 1;
-            if ($first_half) {
-                $days_In_Month = 15;
-            } else if ($second_half) {
-                $init = 16;
+            $wholeMonth = $request->whole_month;
+            $firstHalf = $request->first_half;
+            $secondHalf = $request->second_half;
+            $startDay = 1;
+            if ($firstHalf) {
+                $daysInMonth = 15;
+            } else if ($secondHalf) {
+                $startDay = 16;
             }
 
-<<<<<<< HEAD
             // Iterate through each day of the month
-            for ($i = $init; $i <= $days_In_Month; $i++) {
+            for ($day = $startDay; $day <= $daysInMonth; $day++) {
 
                 // Filter leave dates
-=======
-
-
-            for ($i = $init; $i <= $days_In_Month; $i++) {
-
-
-
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                $filteredleaveDates = [];
-                $leaveStatus = [];
-                foreach ($leavedata as $row) {
-                    foreach ($row['dates_covered'] as $date) {
-                        $filteredleaveDates[] = [
+                $filteredLeaveDates = [];
+                foreach ($leaveData as $leave) {
+                    foreach ($leave['datesCovered'] as $date) {
+                        $filteredLeaveDates[] = [
                             'dateReg' => strtotime($date),
-                            'status' => $row['without_pay']
+                            'status' => $leave['withoutPay']
                         ];
                     }
                 }
 
-                $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
-                    $year_of,
-                    $month_of,
-                    $i,
-                ) {
+                $leaveApplication = array_filter($filteredLeaveDates, function ($timestamp) use ($yearOf, $monthOf, $day) {
                     $dateToCompare = date('Y-m-d', $timestamp['dateReg']);
-                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    $dateToMatch = date('Y-m-d', strtotime("$yearOf-$monthOf-$day"));
                     return $dateToCompare === $dateToMatch;
                 });
 
-                $leave_Count = count($leaveApplication);
+                $leaveCount = count($leaveApplication);
 
-<<<<<<< HEAD
                 // Filter official business dates
-=======
-                $leave_Count = count($leaveApplication);
-
-                //Check obD ates
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                $filteredOBDates = [];
-                foreach ($obData as $row) {
-                    foreach ($row['dates_covered'] as $date) {
-                        $filteredOBDates[] = strtotime($date);
+                $filteredOfficialBusinessDates = [];
+                foreach ($officialBusinessData as $business) {
+                    foreach ($business['datesCovered'] as $date) {
+                        $filteredOfficialBusinessDates[] = strtotime($date);
                     }
                 }
-                $obApplication = array_filter($filteredOBDates, function ($timestamp) use ($year_of, $month_of, $i) {
+
+                $officialBusinessApplication = array_filter($filteredOfficialBusinessDates, function ($timestamp) use ($yearOf, $monthOf, $day) {
                     $dateToCompare = date('Y-m-d', $timestamp);
-                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    $dateToMatch = date('Y-m-d', strtotime("$yearOf-$monthOf-$day"));
                     return $dateToCompare === $dateToMatch;
                 });
-                $ob_Count = count($obApplication);
 
-<<<<<<< HEAD
+                $officialBusinessCount = count($officialBusinessApplication);
+
                 // Filter official time dates
-=======
-                //Check otDates
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                $filteredOTDates = [];
-                foreach ($otData as $row) {
-                    foreach ($row['dates_covered'] as $date) {
-                        $filteredOTDates[] = strtotime($date);
+                $filteredOfficialTimeDates = [];
+                foreach ($officialTimeData as $time) {
+                    foreach ($time['datesCovered'] as $date) {
+                        $filteredOfficialTimeDates[] = strtotime($date);
                     }
                 }
-                $otApplication = array_filter($filteredOTDates, function ($timestamp) use ($year_of, $month_of, $i) {
+
+                $officialTimeApplication = array_filter($filteredOfficialTimeDates, function ($timestamp) use ($yearOf, $monthOf, $day) {
                     $dateToCompare = date('Y-m-d', $timestamp);
-                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    $dateToMatch = date('Y-m-d', strtotime("$yearOf-$monthOf-$day"));
                     return $dateToCompare === $dateToMatch;
                 });
-                $ot_Count = count($otApplication);
 
-<<<<<<< HEAD
+                $officialTimeCount = count($officialTimeApplication);
+
                 // Filter CTO dates
-=======
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                $ctoApplication = array_filter($ctoData, function ($row) use ($year_of, $month_of, $i) {
+                $ctoApplication = array_filter($ctoData, function ($row) use ($yearOf, $monthOf, $day) {
                     $dateToCompare = date('Y-m-d', strtotime($row['date']));
-                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    $dateToMatch = date('Y-m-d', strtotime("$yearOf-$monthOf-$day"));
                     return $dateToCompare === $dateToMatch;
                 });
-                $cto_Count = count($ctoApplication);
 
-<<<<<<< HEAD
+                $ctoCount = count($ctoApplication);
+
                 // Process leave without pay
-                if ($leave_Count) {
+                if ($leaveCount) {
                     if (array_values($leaveApplication)[0]['status']) {
-                        $lwop[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        $leaveWithoutPay[] = [
+                            'dateRecord' => date('Y-m-d', strtotime("$yearOf-$monthOf-$day")),
                         ];
                     } else {
-=======
-
-                if ($leave_Count) {
-
-                    if (array_values($leaveApplication)[0]['status']) {
-                        //  echo $i."-LwoPay \n";
-                        $lwop[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        $leaveWithPay[] = [
+                            'dateRecord' => date('Y-m-d', strtotime("$yearOf-$monthOf-$day")),
                         ];
-                        // deduct to salary
-                    } else {
-                        //  echo $i."-LwPay \n";
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                        $lwp[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
-                        $total_Month_WorkingMinutes += 480;
+                        $totalMonthWorkingMinutes += 480;
                     }
-<<<<<<< HEAD
                 }
                 // Process official business or official time
-                else if ($ob_Count ||  $ot_Count) {
-                    $obot[] = [
-                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                else if ($officialBusinessCount ||  $officialTimeCount) {
+                    $officialBusinessOrTime[] = [
+                        'dateRecord' => date('Y-m-d', strtotime("$yearOf-$monthOf-$day")),
                     ];
-                    $total_Month_WorkingMinutes += 480;
+                    $totalMonthWorkingMinutes += 480;
                 }
                 // Process attendance
-                else if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
-                    $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
-                        return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                else if (in_array($day, $presentDays) && in_array($day, $employeeSchedules)) {
+                    $recordDTR = array_values(array_filter($dailyTimeRecords->toArray(), function ($d) use ($yearOf, $monthOf, $day) {
+                        return $d->dtr_date == date('Y-m-d', strtotime("$yearOf-$monthOf-$day"));
                     }));
 
                     if (
                         ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entries
                         (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // 3-4
-=======
-                } else if ($ob_Count ||  $ot_Count) {
-                    // echo $i."-ob or ot Paid \n";
-                    $obot[] = [
-                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-
-                    ];
-                    $total_Month_WorkingMinutes += 480;
-                } else
-
-                    if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
-
-                    $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
-                        return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                    }));
-                    // echo $i."-P \n";
-
-
-                    if (
-                        ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
-                        (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out)  || //3-4
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
                         ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
                         ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
                     ) {
-                        $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                        $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                        $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                        $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                        $attendanceData[] = $this->Attendance($yearOf, $monthOf, $day, $recordDTR);
+                        $totalMonthWorkingMinutes += $recordDTR[0]->total_working_minutes;
+                        $totalMonthOvertime += $recordDTR[0]->overtime_minutes;
+                        $totalMonthUndertime += $recordDTR[0]->undertime_minutes;
                     } else {
-                        $invalidEntry[] =  $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                        $invalidEntries[] =  $this->Attendance($yearOf, $monthOf, $day, $recordDTR);
                     }
-<<<<<<< HEAD
                 }
                 // Process absences
                 else if (
-                    in_array($i, $AbsentDays) &&
-                    in_array($i, $empschedule) &&
-                    strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) <  strtotime(date('Y-m-d'))
+                    in_array($day, $absentDays) &&
+                    in_array($day, $employeeSchedules) &&
+                    strtotime(date('Y-m-d', strtotime("$yearOf-$monthOf-$day"))) < strtotime(date('Y-m-d'))
                 ) {
                     $absences[] = [
-                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        'dateRecord' => date('Y-m-d', strtotime("$yearOf-$monthOf-$day")),
                     ];
                 }
                 // Process day off
                 else {
-                    $dayoff[] = [
-                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                    $dayOff[] = [
+                        'dateRecord' => date('Y-m-d', strtotime("$yearOf-$monthOf-$day")),
                     ];
                 }
             }
 
             // Calculate attendance statistics
-=======
-                } else if (
-                    in_array($i, $AbsentDays) &&
-                    in_array($i, $empschedule) &&
-                    strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) <  strtotime(date('Y-m-d'))
-                ) {
-                    //echo $i."-A  \n";
-
-                    $absences[] = [
-                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                    ];
-                } else {
-                    //   echo $i."-DO\n";
-                    $dayoff[] = [
-                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                    ];
-                }
-            }
-
-
-
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-            $presentCount = count(array_filter($attd, function ($d) {
+            $presentCount = count(array_filter($attendanceData, function ($d) {
                 return $d['total_working_minutes'] !== 0;
             }));
-            $Number_Absences = count($absences) - count($lwop);
-            $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
+            $numberOfAbsences = count($absences) - count($leaveWithoutPay);
+            $employeeSchedules = $this->helper->Allschedule($biometricId, $monthOf, $yearOf, null, null, null, null)['schedule'];
 
-            $scheds = array_map(function ($d) {
-                return (int)date('d', strtotime($d['scheduleDate']));
-            }, $schedule_);
+            $scheduledDays = array_map(function ($schedule) {
+                return (int)date('d', strtotime($schedule['scheduleDate']));
+            }, $employeeSchedules);
 
-            $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($init, $days_In_Month) {
-                return $value >= $init && $value <= $days_In_Month;
+            $filteredSchedules = array_values(array_filter($scheduledDays, function ($value) use ($startDay, $daysInMonth) {
+                return $value >= $startDay && $value <= $daysInMonth;
             }));
 
-<<<<<<< HEAD
-            // Prepare data for the response
-            $data[] = [
-=======
-            $employeeAssignedAreas =  $employee->assignedAreas->first();
+            $employeeAssignedAreas = $employee->assignedAreas->first();
             $salaryGrade = $employeeAssignedAreas->salary_grade_id;
-            $salaryStep  = $employeeAssignedAreas->salary_grade_step;
+            $salaryStep = $employeeAssignedAreas->salary_grade_step;
 
-            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep,count($filtered_scheds));
-            $GrossSalary = $this->computed->GrossSalary($presentCount,$basicSalary['GrandTotal']);
-            $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
-            $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime,$Rates);
-            $absentRate = $this->computed->AbsentRates($Number_Absences,$Rates);
-            $NetSalary = $this->computed->NetSalary($undertimeRate,$absentRate,$basicSalary['Total']);
-            $data[] = [
+            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filteredSchedules));
+            $grossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal']);
+            $rates = $this->computed->Rates($basicSalary['GrandTotal']);
+            $undertimeRate = $this->computed->UndertimeRates($totalMonthUndertime, $rates);
+            $absentRate = $this->computed->AbsentRates($numberOfAbsences, $rates);
+            $netSalary = $this->computed->NetSalary($undertimeRate, $absentRate, $basicSalary['Total']);
 
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-                'Biometric_id' => $biometric_id,
-                'EmployeeNo' => $Employee->employee_id,
-                'Name' => $Employee->personalInformation->name(),
-                'Payroll' => $init . " - " . $days_In_Month,
-                'From' => $init,
-                'To' => $days_In_Month,
-                'Month' => $month_of,
-                'Year' => $year_of,
-                'TotalWorkingMinutes' => $total_Month_WorkingMinutes,
-                'TotalWorkingHours' => $this->ToHours($total_Month_WorkingMinutes),
-                'TotalOvertimeMinutes' => $total_Month_Overtime,
-                'TotalUndertimeMinutes' => $total_Month_Undertime,
-                'NoofPresentDays' => $presentCount,
-                'NoofLeaveWoPay' => count($lwop),
-                'NoofLeaveWPay' => count($lwp),
-                'NoofAbsences' => $Number_Absences,
-                'NoofInvalidEntry' => count($invalidEntry),
-                'NoofDayOff' => count($dayoff),
-                'schedule' => count($filtered_scheds),
-<<<<<<< HEAD
+            $reportData[] = [
+                'biometricId' => $biometricId,
+                'employeeNo' => $employee->employee_id,
+                'name' => $employee->personalInformation->name(),
+                'payrollPeriod' => "$startDay - $daysInMonth",
+                'from' => $startDay,
+                'to' => $daysInMonth,
+                'month' => $monthOf,
+                'year' => $yearOf,
+                'totalWorkingMinutes' => $totalMonthWorkingMinutes,
+                'totalWorkingHours' => $this->ToHours($totalMonthWorkingMinutes),
+                'totalOvertimeMinutes' => $totalMonthOvertime,
+                'totalUndertimeMinutes' => $totalMonthUndertime,
+                'noOfPresentDays' => $presentCount,
+                'noOfLeaveWithoutPay' => count($leaveWithoutPay),
+                'noOfLeaveWithPay' => count($leaveWithPay),
+                'noOfAbsences' => $numberOfAbsences,
+                'noOfInvalidEntries' => count($invalidEntries),
+                'noOfDayOffs' => count($dayOff),
+                'schedule' => count($filteredSchedules),
+                'grandBasicSalary' => $basicSalary['GrandTotal'],
+                'rates' => $rates,
+                'grossSalary' => $basicSalary['Total'],
+                'timeDeductions' => [
+                    'absentRate' => $absentRate,
+                    'undertimeRate' => $undertimeRate,
+                ],
+                'deductionsFromGrossSalary' => [
+                    'deductedWithAbsent' => $grossSalary,
+                    'deductedWithUndertime' => $basicSalary['Total'] - $undertimeRate
+                ],
+                'netSalary' => $netSalary
             ];
         }
 
         // Return the processed data
-=======
-                'GrandBasicSalary'=> $basicSalary['GrandTotal'],
-                'Rates'=>$Rates,
-                'GrossSalary'=>$basicSalary['Total'],
-                'TimeDeductions'=>[
-                    'AbsentRate'=>$absentRate ,
-                'UndertimeRate'=>$undertimeRate,
-                ],
-                'Deducted_from_GrossSal'=>[
-                    'DeductedwAbsent'=>$GrossSalary,
-                    'DeductedwUndertime'=> $basicSalary['Total'] - $undertimeRate
-                ],
-                'NetSalary'=> $NetSalary
-
-
-                // 'Attendance'=>$attd,
-                // 'Invalid'=>$invalidEntry,
-                // 'absences'=>$absences,
-                // 'Leavewopay'=>$lwop,
-                //  'Leavewpay'=>$lwp,
-                //  'Absences'=>$absences,
-                //  'Dayoff'=>$dayoff
-            ];
-        }
->>>>>>> 535db82cdff42b0395e44973eee864c032c663b4
-        return $data;
+        return $reportData;
     }
 }
