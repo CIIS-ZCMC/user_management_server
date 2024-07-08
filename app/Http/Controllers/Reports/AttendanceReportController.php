@@ -134,27 +134,23 @@ class AttendanceReportController extends Controller
                     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
                 }
             } else if ((!is_null($start_date) && !is_null($end_date)) && (is_null($area_id) && is_null($area_under) && is_null($sector) && is_null($period_type))) {
-                // $rows = AssignArea::with(['dailyTimeRecords'])
-                //     ->whereHas('dailyTimeRecords.employeeProfile', function ($q) use ($start_date, $end_date) {
-                //         $q->whereBetween('dtr_date', [Carbon::parse($start_date), Carbon::parse($end_date)]);
-                //         $q->orWhere('undertime_minutes', '>', 0);
-                //     })
-                //     ->get();
+                $rows =  EmployeeProfile::whereHas('dailyTimeRecords', function ($query) use ($start_date, $end_date) {
+                    $query->whereBetween('dtr_date', [$start_date, $end_date]);
+                })
+                    ->with(['dailyTimeRecords' => function ($query) use ($start_date, $end_date) {
+                        $query->whereBetween('dtr_date', [$start_date, $end_date]);
+                    }])
+                    ->get();
 
-                // return $rows[0];
-
-                // foreach ($rows as $row) {
-                //     $arr_data[] = $this->resultTardinessFilter($row->employeeProfile, $sector, $period_type, $start_date, $end_date);
-                // }
-
-                // $rows = AssignArea::with(['employeeProfile', 'dailyTimeRecords'])
-                //     ->where('employee_profile_id', '<>', 1)
-                //     ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
-                //         $q->orWhere('undertime_minutes', '>', 0);
-                //     })
-                //     ->get();
-
-                // return $rows;
+                // Process each employee
+                foreach ($rows as $employee) {
+                    if ($employee) {
+                        $formatted_data = $this->resultTardinessFilter($employee, $sector, $period_type, $start_date, $end_date);
+                        if (is_array($formatted_data)) {
+                            $arr_data[] = $formatted_data;
+                        }
+                    }
+                }
             } else {
                 switch ($sector) {
                     case 'division':
@@ -980,7 +976,6 @@ class AttendanceReportController extends Controller
 
         return $arr_data;
     }
-
     /**
      * Counts the days of tardiness based on late check-ins and undertime.
      *
@@ -993,42 +988,34 @@ class AttendanceReportController extends Controller
     {
         $tardinessDays = 0;
         $undertimeDays = 0;
+
         try {
+            // Convert start_date and end_date to Carbon instances
+            $startDate = $start_date ? Carbon::parse($start_date) : null;
+            $endDate = $end_date ? Carbon::parse($end_date) : null;
+
             foreach ($employee->dailyTimeRecords as $record) {
-                $has_schedule = $start_date && $end_date ? Helpers::hasSchedule($start_date, $end_date, $employee->id) : true;
+                // Check if the record date is within the specified date range
+                $recordDate = Carbon::parse($record->dtr_date);
+                if ($startDate && $endDate) {
+                    if (!$recordDate->between($startDate, $endDate)) {
+                        continue;
+                    }
+                }
 
-                if ($start_date && $end_date) {
-                    if (!$has_schedule) {
-                        return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-                    }
+                // Check for morning tardiness (after 8 AM)
+                if ($record->first_in && Carbon::parse($record->first_in)->gt($recordDate->copy()->startOfDay()->addHours(8))) {
+                    $tardinessDays++;
+                }
 
-                    if (Carbon::parse($record->dtr_date)->between($start_date, $end_date)) {
-                        // Check for morning and afternoon tardiness
-                        if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
-                            $tardinessDays++;
-                        }
-                        if ($record->second_in && Carbon::parse($record->second_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(13))) {
-                            $tardinessDays++;
-                        }
+                // Check for afternoon tardiness (after 1 PM)
+                if ($record->second_in && Carbon::parse($record->second_in)->gt($recordDate->copy()->startOfDay()->addHours(13))) {
+                    $tardinessDays++;
+                }
 
-                        // Check for undertime
-                        if ($record->undertime_minutes > 0) {
-                            $undertimeDays++;
-                        }
-                    }
-                } else {
-                    // Check for morning and afternoon tardiness
-                    if ($record->first_in && Carbon::parse($record->first_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(8))) {
-                        $tardinessDays++;
-                    }
-                    if ($record->second_in && Carbon::parse($record->second_in)->gt(Carbon::parse($record->dtr_date)->startOfDay()->addHours(13))) {
-                        $tardinessDays++;
-                    }
-
-                    // Check for undertime
-                    if ($record->undertime_minutes > 0) {
-                        $undertimeDays++;
-                    }
+                // Check for undertime
+                if ($record->undertime_minutes > 0) {
+                    $undertimeDays++;
                 }
             }
         } catch (\Exception $e) {
@@ -1044,6 +1031,7 @@ class AttendanceReportController extends Controller
         ];
     }
 
+
     /**
      * Formats the employee data for the report.
      *
@@ -1055,7 +1043,7 @@ class AttendanceReportController extends Controller
     {
         $date_range =  [Carbon::parse($start_date), Carbon::parse($end_date)];
 
-        $dailyTimeRecords = $employee->dailyTimeRecords ?? [];
+        $dailyTimeRecords = $employee->dailyTimeRecords() ?? [];
 
         // Subquery to get the latest dtr_id for the employee
         $latest_dtr_id = $employee->dailyTimeRecords()->max('id');
@@ -1088,7 +1076,7 @@ class AttendanceReportController extends Controller
             'employment_type_name' => $employee->employmentType->name,
             'designation_name' => $employee->findDesignation()['name'],
             'designation_code' => $employee->findDesignation()['code'],
-            'sector' => $sector,
+            'sector' => $employee->assignedArea->findDetails()['sector'],
             'area_name' => $employee->assignedArea->findDetails()['details']['name'],
             'area_code' => $employee->assignedArea->findDetails()['details']['code'],
             'total_undertime_minutes' => $total_undertime_minutes,
