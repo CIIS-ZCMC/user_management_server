@@ -29,39 +29,51 @@ class SchedulerTask extends Command
      */
     public function handle()
     {
-        try{
+        try {
             /**
              * Non Permanent Part time employee
              */
-            $employees = EmployeeProfile::whereNot('employment_type_id', 2)->where('is_shifting', 0)->get();
+            $employees = EmployeeProfile::whereNot('employment_type_id', 2)->where('shifting', 0)->get();
             $next_month_schedules = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), 1, 'AM');
 
-            foreach($employees as $employee){
-                foreach($next_month_schedules as $schedule){
-                    EmployeeSchedule::create([
-                        'employee_profile_id' => $employee->id,
-                        'schedule_id' => $schedule->id
-                    ]);
+            foreach ($employees as $employee) {
+                foreach ($next_month_schedules as $schedule) {
+                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->where('schedule_id', $schedule->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        EmployeeSchedule::create([
+                            'employee_profile_id' => $employee->id,
+                            'schedule_id' => $schedule->id
+                        ]);
+                    }
                 }
             }
 
             /**
              * Permanent Part time employee
              */
-            $employees = EmployeeProfile::where('employment_type_id', 2)->where('is_shifting', 0)->get();
+            $employees = EmployeeProfile::where('employment_type_id', 2)->where('shifting', 0)->get();
             $next_month_schedules = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), 2, 'AM');
 
-            foreach($employees as $employee){
-                foreach($next_month_schedules as $schedule){
-                    EmployeeSchedule::create([
-                        'employee_profile_id' => $employee->id,
-                        'schedule_id' => $schedule->id
-                    ]);
+            foreach ($employees as $employee) {
+                foreach ($next_month_schedules as $schedule) {
+                    $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->where('schedule_id', $schedule->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        EmployeeSchedule::create([
+                            'employee_profile_id' => $employee->id,
+                            'schedule_id' => $schedule->id
+                        ]);
+                    }
                 }
             }
-            
-            Helpers::infoLog('SchedulerTask', 'PASSED', "Next Month Schedule Generated.");
-        }catch(\Exception $e){
+
+            Helpers::infoLog('SchedulerTask', 'PASSED', "Next Month  Schedule Generated.");
+        } catch (\Exception $e) {
             Helpers::errorLog('SchedulerTask', 'FAILED', $e->getMessage());
         }
     }

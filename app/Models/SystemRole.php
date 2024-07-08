@@ -29,6 +29,11 @@ class SystemRole extends Model
         return $this->belongsTo(System::class);
     }
 
+    public function specialAccessRights()
+    {
+        return $this->hasMany(SpecialAccessRole::class);
+    }
+
     public function roleModulePermissions()
     {
         return $this->hasMany(RoleModulePermission::class);
