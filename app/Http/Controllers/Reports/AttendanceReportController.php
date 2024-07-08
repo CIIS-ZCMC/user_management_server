@@ -126,7 +126,7 @@ class AttendanceReportController extends Controller
                 $rows = AssignArea::with(['employeeProfile'])
                     ->where('employee_profile_id', '<>', 1)
                     ->whereHas('employeeProfile.dailyTimeRecords', function ($q) {
-                        $q->orWhere('undertime_minutes', '>', 0);
+                        $q->where('undertime_minutes', '>', 0);
                     })
                     ->get();
 
@@ -1043,7 +1043,6 @@ class AttendanceReportController extends Controller
         ];
     }
 
-
     /**
      * Formats the employee data for the report.
      *
@@ -1115,6 +1114,7 @@ class AttendanceReportController extends Controller
     {
         try {
             // Get filters from the request
+            $report_format = $request->report_format;
             $area_id = $request->area_id;
             $area_under = $request->area_under;
             $sector = $request->sector;
