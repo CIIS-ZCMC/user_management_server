@@ -315,6 +315,13 @@ function isNotEmptyFields($logs) {
 
                                 $biometric_id = $bioEntry['biometric_id'];
 
+                                $dtrrecs = DailyTimeRecords::where('biometric_id',$biometric_id)->where('dtr_date',$date_now);
+                                if( $dtrrecs->exists()){
+                                    $dtrrecs->update([
+                                        'is_generated'=>0
+                                    ]);
+                                }
+
                                 $getRecord = array_values(array_filter($check_Records, function($row) use($biometric_id) {
                                     $date_times = $row['date_time'];
 
@@ -810,27 +817,31 @@ function isNotEmptyFields($logs) {
                 //Change based on entries only and its schedules
 
                 //Generate DTR if not exist and if theres logs
-            if(count($dtr) == 0  ){
-
-
+            if(count($dtr) == 0 ){
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('active',1);
-               return $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+                $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+            }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
             }
+
             foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
 
+                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                $DaySchedule = $Schedule['daySchedule'];
+                $BreakTime = $Schedule['break_Time_Req'];
+
+                //Set for Shifting only
 
                 $dtrdate = $val->dtr_date;
-                if(!$val->is_time_adjustment){
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('dtr_date', $dtrdate)
                 ->where('active',1);
-                //xxxxxxxxxxxxxxxxxxxxxx
-
+                //xxxxxxxxxxxxxxxxxxxxxxxx
                 if($dvc_logs->exists()){
                     $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
                     if($checkdtr->exists()){
@@ -838,11 +849,8 @@ function isNotEmptyFields($logs) {
                     }else {
                         $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
                     }
+
                 }
-                }
-                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-                $DaySchedule = $Schedule['daySchedule'];
-                $BreakTime = $Schedule['break_Time_Req'];
 
 
                 $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
@@ -1290,7 +1298,13 @@ function isNotEmptyFields($logs) {
                     $time_stamps_req = [
                         'total_hours' => 8
                     ];
-
+                    if(count($dtr) == 0 ){
+                        $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                        ->where('active',1);
+                        $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+                    }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+                        $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+                    }
 
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
@@ -1305,6 +1319,21 @@ function isNotEmptyFields($logs) {
                         $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                         $DaySchedule = $Schedule['daySchedule'];
                         $BreakTime = $Schedule['break_Time_Req'];
+
+                        $dtrdate = $val->dtr_date;
+                        $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                        ->where('dtr_date', $dtrdate)
+                        ->where('active',1);
+                        //xxxxxxxxxxxxxxxxxxxxxxxx
+                        if($dvc_logs->exists()){
+                            $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                            if($checkdtr->exists()){
+                               $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                            }else {
+                                $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
+                            }
+
+                        }
 
                         $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
 

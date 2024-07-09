@@ -66,11 +66,12 @@ class ComputationController extends Controller
             $per_week = $per_day * 5;
 
             return [
-                'Weekly'=>round($per_week,2),
-                'Daily'=>round($per_day,2),
-                'Hourly'=>round($per_hour,2),
-                'Minutes'=>round($per_minutes,2),
+                'Weekly' => floor($per_week * 100) / 100,
+                'Daily' => floor($per_day * 100) / 100,
+                'Hourly' => floor($per_hour * 100) / 100,
+                'Minutes' => floor($per_minutes * 100) / 100,
             ];
+
 
     }
 

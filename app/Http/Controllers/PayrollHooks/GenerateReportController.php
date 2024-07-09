@@ -5,22 +5,27 @@ namespace App\Http\Controllers\PayrollHooks;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EmployeeProfile;
-use App\Models\DailyTimeRecord;
+use App\Models\DailyTimeRecords;
 use Illuminate\Support\Facades\DB;
 use App\Methods\Helpers;
 use App\Models\LeaveType;
 use App\Models\SalaryGrade;
+use App\Models\DeviceLogs;
 use App\Http\Controllers\PayrollHooks\ComputationController;
+use App\Http\Controllers\DTR\DeviceLogsController;
 //SalaryGrade
 class GenerateReportController extends Controller
 {
     protected $helper;
     protected $computed;
 
+    protected $DeviceLog ;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->computed = new ComputationController();
+        $this->DeviceLog = new DeviceLogsController();
     }
 
 
@@ -49,6 +54,21 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
+        for ($i=0; $i < 2; $i++) {
+          $this->GenerateDataReport($request);
+        }
+        return $this->GenerateDataReport($request);
+    }
+
+    public function AsyncrounousRun_GenerateDataReport(Request $request)
+    {
+        for ($i=0; $i < 2; $i++) {
+          $this->GenerateDataReport($request);
+        }
+        return $this->GenerateDataReport($request);
+    }
+
+    public function GenerateDataReport(Request $request){
         $month_of = $request->month_of;
         $year_of = $request->year_of;
         $biometricIds = DB::table('daily_time_records')
@@ -59,14 +79,10 @@ class GenerateReportController extends Controller
             // ->whereIn('biometric_id', $biometricIds)
             ->where('biometric_id', 493) // 494
             ->get();
-
-
         $data = [];
-
         foreach ($profiles as $row) {
             $Employee = EmployeeProfile::find($row->id);
             $biometric_id = $row->biometric_id;
-
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
                 ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
@@ -82,7 +98,18 @@ class GenerateReportController extends Controller
                 ->get();
             $empschedule = [];
 
-            foreach ($dtr as $val) {
+            if(count($dtr) == 0 ){
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('active',1);
+                     $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+            }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+
+                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+            }
+
+
+
+        foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
@@ -90,6 +117,26 @@ class GenerateReportController extends Controller
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
+
+
+                $dtrdate = '2024-07-04';// $val->dtr_date;
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('dtr_date', $dtrdate)
+                ->where('active',1);
+                //xxxxxxxxxxxxxxxxxxxxxx
+                if($dvc_logs->exists()){
+                    $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                    if($checkdtr->exists()){
+
+                       $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                    }else {
+                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
+                    }
+
+                }
+
+
+
 
                 if (count($DaySchedule) >= 1) {
                     $validate = [
@@ -110,6 +157,8 @@ class GenerateReportController extends Controller
                     );
                 }
             }
+
+
 
 
 
@@ -420,7 +469,6 @@ class GenerateReportController extends Controller
                 ],
                 'NetSalary'=> $NetSalary
 
-
                 // 'Attendance'=>$attd,
                 // 'Invalid'=>$invalidEntry,
                 // 'absences'=>$absences,
@@ -429,7 +477,15 @@ class GenerateReportController extends Controller
                 //  'Absences'=>$absences,
                 //  'Dayoff'=>$dayoff
             ];
+
+
+
+
+
         }
+
         return $data;
+
+
     }
 }

@@ -8,6 +8,8 @@ use App\Models\DeviceLogs;
 use App\Models\EmployeeProfile;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
+use Illuminate\Support\Facades\DB;
+
 class DeviceLogsController extends Controller
 {
 
@@ -19,6 +21,25 @@ class DeviceLogsController extends Controller
         $this->helper = new Helpers();
 
     }
+
+    public function CheckDTR($biometric_id) {
+        $data = DB::table('device_logs')
+                  ->where('biometric_id', $biometric_id)
+                  ->whereNotIn('dtr_date', function($query) use ($biometric_id) {
+                      $query->select('dtr_date')
+                            ->from('daily_time_records')
+                            ->where('biometric_id', $biometric_id);
+                  })
+                  ->orderBy('id', 'asc')
+                  ->get();
+
+        // Convert the collection to an array of associative arrays
+        return $data->map(function($item) {
+            return (array) $item;
+        })->toArray();
+    }
+
+
     public function Save($attendancelog, $device){
 
         foreach ($attendancelog as $key => $row) {
@@ -51,19 +72,37 @@ class DeviceLogsController extends Controller
                 ]);
             }
         }
+    }
 
+    private function  ensureArray($data) {
+        if (is_array($data)) {
 
+            return $data;
+        } elseif ($data instanceof \Illuminate\Support\Collection) {
 
+            return $data->toArray();
+        } elseif (is_object($data)) {
 
+            return (array) $data;
+        } else {
+
+            return [];
+        }
     }
 
 
     public function getEntryLineup($dvlog) {
+
+        $data = $this->ensureArray($dvlog);
+        usort($data, function ($a, $b) {
+            return $a['id'] - $b['id'];
+        });
+
         $Employee_Attendance = [];
         $processedLogs = [];
 
         $logsByDate = [];
-        foreach ($dvlog as $log) {
+        foreach ($data as $log) {
             $date = $log['dtr_date'];
             $biometric_id = $log['biometric_id'];
             $logsByDate[$date][$biometric_id][] = $log;
@@ -96,17 +135,17 @@ class DeviceLogsController extends Controller
                         $currentDateTime = $entry['date_time'];
                         if (in_array($currentDateTime, $mapdtr)) {
                             if ($currentDateTime == $mapdtr['first_in']) {
-                                $entry['entry_status'] = "CHECK-OUT";
-                                $lastStatus = "CHECK-OUT";
-                            } elseif ($currentDateTime == $mapdtr['first_out']) {
                                 $entry['entry_status'] = "CHECK-IN";
                                 $lastStatus = "CHECK-IN";
-                            } elseif ($currentDateTime == $mapdtr['second_in']) {
+                            } elseif ($currentDateTime == $mapdtr['first_out']) {
                                 $entry['entry_status'] = "CHECK-OUT";
                                 $lastStatus = "CHECK-OUT";
+                            } elseif ($currentDateTime == $mapdtr['second_in']) {
+                                $entry['entry_status'] = "CHECK-IN";
+                                $lastStatus = "CHECK-IN";
                             } elseif ($currentDateTime == $mapdtr['second_out']) {
-                                $entry['entry_status'] = "LOGGED";
-                                $lastStatus = "LOGGED";
+                                $entry['entry_status'] = "CHECK-OUT";
+                                $lastStatus = "CHECK-OUT";
                             }
                         }
                     }
@@ -150,22 +189,160 @@ class DeviceLogsController extends Controller
         }));
     }
 
+    private function HasBreakTime($sched){
+        if (isset($sched->third_entry)) {
+            return true;
+        }
+        return false;
+    }
+    private function CheckEntry($data,$count,$entity){
+        if (isset($data[$count]) && isset($data[$count][$entity])){
+            return true;
+        }
+        return false;
+    }
+    private function isPM($datetime){
+       if( date('A',strtotime($datetime)) === "PM"){
+        return true;
+       }
+       return false;
+    }
+    private function first_in($datetime,$is_shifter){
+        if($this->CheckEntry($datetime,0,'date_time')){
+            $allowed = [
+                'AM'
+            ];
 
+            if($is_shifter){
+
+                //compare to sched
+                return $datetime[0]['date_time'];
+            }
+
+            if(in_array(date('A',strtotime($datetime[0]['date_time'])),$allowed)){
+               return $datetime[0]['date_time'];
+            }
+        }
+
+        return null;
+    }
+
+    private function first_out($datetime,$is_shifter){
+
+        if($this->CheckEntry($datetime,1,'date_time')){
+            $allowed = [
+                'AM',
+                'PM'
+            ];
+
+            if($is_shifter){
+
+
+                //compare to sched
+                return $datetime[1]['date_time'];
+            }
+
+            if(in_array(date('A',strtotime($datetime[1]['date_time'])),$allowed)){
+                //Check if first in is PM, then if PM dont display
+                if($this->isPM($datetime[0]['date_time'])){
+                    return;
+                }
+
+               return $datetime[1]['date_time'];
+            }
+           }
+
+           return null;
+    }
+
+    private function second_in($datetime,$hasbreak){
+        $allowed = [
+            'PM'
+        ];
+        if ($this->CheckEntry($datetime,2,'date_time')){
+
+            if(in_array(date('A',strtotime($datetime[2]['date_time'])),$allowed)){
+                return $datetime[2]['date_time'];
+             }
+           }else {
+          if($hasbreak){
+            if(in_array(date('A',strtotime($datetime[0]['date_time'])),$allowed)){
+                return $datetime[0]['date_time'];
+            }
+         }
+           }
+
+           return null;
+
+    }
+
+    private function second_out($datetime,$hasbreak){
+        $allowed = [
+            'PM'
+        ];
+        if($this->CheckEntry($datetime,3,'date_time')){
+
+            if(in_array(date('A',strtotime($datetime[3]['date_time'])),$allowed)){
+                return $datetime[3]['date_time'];
+             }
+           }else {
+            if($hasbreak){
+                if($this->isPM($datetime[0]['date_time'])){
+                    if(in_array(date('A',strtotime($datetime[1]['date_time'])),$allowed)){
+                        return $datetime[1]['date_time'];
+                     }
+                }
+            }
+           }
+
+           return null;
+    }
     public function RegenerateEntry($deviceLogs,$biometric_id){
         $Entry = $this->getEntryLineup($deviceLogs);
+        $schedule = json_decode($Entry[0]['schedule']);
+        $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
+
+        if(!isset($schedule)){
+            return;
+        }
+
+        if($this->HasBreakTime($schedule)){
+            //Add here if its lunch
+          $dtr = [
+            'first_in'=>$this->first_in($Entry  ?? null,false),
+            'first_out'=>$this->first_out($Entry ?? null,false),
+            'second_in'=>$this->second_in($Entry ?? null,true),
+            'second_out'=>$this->second_out($Entry ?? null,true),
+            'is_generated'=>1
+          ];
+
+
+        }else {
+
+
+           $dtr = [
+            'first_in'=>$this->first_in($Entry ?? null,true),
+            'first_out'=>$this->first_out($Entry ?? null,true),
+            'is_generated'=>1
+          ];
+        }
 
         DailyTimeRecords::where('biometric_id',$biometric_id)
         ->where('dtr_date',$Entry[0]['dtr_date'])
-        ->update([
-            'first_in'=>$Entry[0]['date_time'] ?? null,
-            'first_out'=>$Entry[1]['date_time'] ?? null,
-            'second_in'=>$Entry[2]['date_time'] ?? null,
-            'second_out'=>$Entry[3]['date_time'] ?? null,
-        ]);
+        ->where('is_generated',0)
+        ->update($dtr);
+
+
     }
     public function GenerateEntry($deviceLogs,$dtrdate,$generateEntry){
-
+        /**
+         * TO DO..
+         * disallow pulling of DTR if no schedule attached..
+         *
+         */
         $Entry = $this->getEntryLineup($deviceLogs);
+
+
         if($generateEntry){
             foreach ($Entry as $attendance_Log) {
                 $dtrDates[] = $attendance_Log['dtr_date'];
@@ -182,6 +359,7 @@ class DeviceLogsController extends Controller
                     'first_out'=>$ent[1]['date_time'] ?? null,
                     'second_in'=>$ent[2]['date_time'] ?? null,
                     'second_out'=>$ent[3]['date_time'] ?? null,
+                    'is_generated'=>1
                 ]);
             }
             return;
@@ -193,6 +371,7 @@ class DeviceLogsController extends Controller
             'first_out'=>$Entry[1]['date_time'] ?? null,
             'second_in'=>$Entry[2]['date_time'] ?? null,
             'second_out'=>$Entry[3]['date_time'] ?? null,
+            'is_generated'=>1
         ]);
     }
 }
