@@ -14,7 +14,7 @@ use App\Models\TimeShift;
 use PHPUnit\Framework\MockObject\Stub\ReturnArgument;
 use PHPUnit\Framework\MockObject\Stub\ReturnSelf;
 
-class Helpers
+class ReportHelpers
 {
 
     public function getDateIntervals($from, $to)
