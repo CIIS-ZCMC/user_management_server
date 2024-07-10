@@ -774,6 +774,7 @@ class AttendanceReportController extends Controller
         }));
 
         $report_data = [
+            'id' => $employee->id,
             'employee_biometric_id' => $employee_biometric_id,
             'employee_id' => $employee->employee_id,
             'employee_name' => $employee->personalInformation->employeeName(),
