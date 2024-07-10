@@ -54,19 +54,63 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
+  
         for ($i=0; $i < 2; $i++) {
-          $this->GenerateDataReport($request);
-        }
-        return $this->GenerateDataReport($request);
+            $this->GenerateDataReport($request);
+           }
+   return  $this->GenerateDataReport($request);
     }
 
     public function AsyncrounousRun_GenerateDataReport(Request $request)
     {
         for ($i=0; $i < 2; $i++) {
-          $this->GenerateDataReport($request);
-        }
-        return $this->GenerateDataReport($request);
+                     $this->GenerateDataReport($request);
+                    }
+            return  $this->GenerateDataReport($request);
+                    
+//         $firsthalf = new Request([
+//                 'month_of'=>$request->month_of,
+//                 'year_of'=>$request->year_of,
+//                 'whole_month'=>0,
+//                 'first_half'=>1,
+//                 'second_half'=>0
+//         ]);
+
+//         $secondhalf = new Request([
+//             'month_of'=>$request->month_of,
+//             'year_of'=>$request->year_of,
+//             'whole_month'=>0,
+//             'first_half'=>0,
+//             'second_half'=>1
+//     ]);
+    
+//     $whole = new Request([
+//         'month_of'=>$request->month_of,
+//         'year_of'=>$request->year_of,
+//         'whole_month'=>1,
+//         'first_half'=>0,
+//         'second_half'=>0
+// ]);
+    
+//         $second_half = clone $request;
+//         $second_half->merge(['second_half' => 1]);
+//         $whole= clone $request;
+//         $whole->merge(['second_half' => 1]);
+//         $whole_month = [];
+//         $first_half = [];
+//         $second_half = [];
+//         for ($i=0; $i < 2; $i++) {
+//          $this->GenerateDataReport($whole);
+//         }
+        
+//         return [
+//             'first_half'=> $this->GenerateDataReport($firsthalf),
+//             'second_half'=>$this->GenerateDataReport($secondhalf),
+//             'whole'=>$this->GenerateDataReport($whole),
+//         ];
     }
+
+
 
     public function GenerateDataReport(Request $request){
         $month_of = $request->month_of;
@@ -80,6 +124,17 @@ class GenerateReportController extends Controller
             ->where('biometric_id', 493) // 494
             ->get();
         $data = [];
+
+        $whole_month = $request->whole_month;
+        $first_half = $request->first_half;
+        $second_half = $request->second_half;
+        $init = 1;
+        if ($first_half) {
+            $days_In_Month = 15;
+        } else if ($second_half) {
+            $init = 16;
+        }
+
         foreach ($profiles as $row) {
             $Employee = EmployeeProfile::find($row->id);
             $biometric_id = $row->biometric_id;
@@ -119,7 +174,7 @@ class GenerateReportController extends Controller
                 $empschedule[] = $DaySchedule;
 
 
-                $dtrdate = '2024-07-04';// $val->dtr_date;
+                $dtrdate =  $val->dtr_date;
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('dtr_date', $dtrdate)
                 ->where('active',1);
@@ -134,8 +189,6 @@ class GenerateReportController extends Controller
                     }
 
                 }
-
-
 
 
                 if (count($DaySchedule) >= 1) {
@@ -165,8 +218,6 @@ class GenerateReportController extends Controller
 
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-
-
             if ($employee->leaveApplications) {
                 //Leave Applications
                 $leaveapp  = $employee->leaveApplications->filter(function ($row) {
@@ -268,19 +319,6 @@ class GenerateReportController extends Controller
                     return  $d;
                 }
             }, $empschedule)));
-
-
-            $whole_month = $request->whole_month;
-            $first_half = $request->first_half;
-            $second_half = $request->second_half;
-            $init = 1;
-            if ($first_half) {
-                $days_In_Month = 15;
-            } else if ($second_half) {
-                $init = 16;
-            }
-
-
 
             for ($i = $init; $i <= $days_In_Month; $i++) {
 
@@ -434,17 +472,17 @@ class GenerateReportController extends Controller
             $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
             $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime,$Rates);
             $absentRate = $this->computed->AbsentRates($Number_Absences,$Rates);
-            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($undertimeRate,$absentRate,$basicSalary['Total']);
+            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$basicSalary['Total']);
             $data[] = [
-
                 'Biometric_id' => $biometric_id,
                 'EmployeeNo' => $Employee->employee_id,
-                'Name' => $Employee->personalInformation->name(),
+                'Name' => $Employee->personalInformation->name(),              
                 'Payroll' => $init . " - " . $days_In_Month,
                 'From' => $init,
                 'To' => $days_In_Month,
                 'Month' => $month_of,
                 'Year' => $year_of,
+                'Is_out'=> $this->computed->OutofPayroll($NetSalary,$init,$days_In_Month),
                 'TotalWorkingMinutes' => $total_Month_WorkingMinutes,
                 'TotalWorkingHours' => $this->ToHours($total_Month_WorkingMinutes),
                 'TotalOvertimeMinutes' => $total_Month_Overtime,
@@ -463,11 +501,8 @@ class GenerateReportController extends Controller
                     'AbsentRate'=>$absentRate ,
                 'UndertimeRate'=>$undertimeRate,
                 ],
-                'Deducted_from_GrossSal'=>[
-                    'DeductedwAbsent'=>$GrossSalary,
-                    'DeductedwUndertime'=> $basicSalary['Total'] - $undertimeRate
-                ],
                 'NetSalary'=> $NetSalary
+
 
                 // 'Attendance'=>$attd,
                 // 'Invalid'=>$invalidEntry,

@@ -266,9 +266,11 @@ class DeviceLogsController extends Controller
              }
            }else {
           if($hasbreak){
+            if($this->CheckEntry($datetime,0,'date_time')){
             if(in_array(date('A',strtotime($datetime[0]['date_time'])),$allowed)){
                 return $datetime[0]['date_time'];
             }
+        }
          }
            }
 
@@ -287,11 +289,14 @@ class DeviceLogsController extends Controller
              }
            }else {
             if($hasbreak){
-                if($this->isPM($datetime[0]['date_time'])){
+                if($this->CheckEntry($datetime,1,'date_time')){
+                       if($this->isPM($datetime[0]['date_time'])){
                     if(in_array(date('A',strtotime($datetime[1]['date_time'])),$allowed)){
                         return $datetime[1]['date_time'];
                      }
                 }
+                }
+
             }
            }
 
@@ -299,6 +304,11 @@ class DeviceLogsController extends Controller
     }
     public function RegenerateEntry($deviceLogs,$biometric_id){
         $Entry = $this->getEntryLineup($deviceLogs);
+
+        $bioEntry = $Entry[0]['date_time'] ?? $Entry[2]['date_time'];
+        $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+        $DaySchedule = $Schedule['daySchedule'];
+        $BreakTime = $Schedule['break_Time_Req'];
         $schedule = json_decode($Entry[0]['schedule']);
         $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
 
@@ -306,7 +316,7 @@ class DeviceLogsController extends Controller
             return;
         }
 
-        if($this->HasBreakTime($schedule)){
+        if($BreakTime){
             //Add here if its lunch
           $dtr = [
             'first_in'=>$this->first_in($Entry  ?? null,false),
@@ -315,18 +325,13 @@ class DeviceLogsController extends Controller
             'second_out'=>$this->second_out($Entry ?? null,true),
             'is_generated'=>1
           ];
-
-
         }else {
-
-
            $dtr = [
             'first_in'=>$this->first_in($Entry ?? null,true),
             'first_out'=>$this->first_out($Entry ?? null,true),
             'is_generated'=>1
           ];
         }
-
         DailyTimeRecords::where('biometric_id',$biometric_id)
         ->where('dtr_date',$Entry[0]['dtr_date'])
         ->where('is_generated',0)
@@ -341,8 +346,6 @@ class DeviceLogsController extends Controller
          *
          */
         $Entry = $this->getEntryLineup($deviceLogs);
-
-
         if($generateEntry){
             foreach ($Entry as $attendance_Log) {
                 $dtrDates[] = $attendance_Log['dtr_date'];
@@ -355,10 +358,10 @@ class DeviceLogsController extends Controller
                 DailyTimeRecords::create([
                     'dtr_date'=>$dates,
                     'biometric_id'=>$ent[0]['biometric_id'] ?? null,
-                    'first_in'=>$ent[0]['date_time'] ?? null,
-                    'first_out'=>$ent[1]['date_time'] ?? null,
-                    'second_in'=>$ent[2]['date_time'] ?? null,
-                    'second_out'=>$ent[3]['date_time'] ?? null,
+                    'first_in'=>$this->first_in($Entry  ?? null,false),
+                    'first_out'=>$this->first_out($Entry ?? null,false),
+                    'second_in'=>$this->second_in($Entry ?? null,true),
+                    'second_out'=>$this->second_out($Entry ?? null,true),
                     'is_generated'=>1
                 ]);
             }
@@ -367,10 +370,10 @@ class DeviceLogsController extends Controller
         DailyTimeRecords::create([
             'dtr_date'=>$dtrdate,
             'biometric_id'=>$Entry[0]['biometric_id'] ?? null,
-            'first_in'=>$Entry[0]['date_time'] ?? null,
-            'first_out'=>$Entry[1]['date_time'] ?? null,
-            'second_in'=>$Entry[2]['date_time'] ?? null,
-            'second_out'=>$Entry[3]['date_time'] ?? null,
+            'first_in'=>$this->first_in($Entry  ?? null,false),
+            'first_out'=>$this->first_out($Entry ?? null,false),
+            'second_in'=>$this->second_in($Entry ?? null,true),
+            'second_out'=>$this->second_out($Entry ?? null,true),
             'is_generated'=>1
         ]);
     }

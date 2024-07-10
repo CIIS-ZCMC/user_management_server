@@ -910,6 +910,7 @@ function isNotEmptyFields($logs) {
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where('is_generated',1)
                 ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
                     $query->where('biometric_id', $biometric_id)
                         ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
@@ -920,6 +921,7 @@ function isNotEmptyFields($logs) {
                         ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
+                ->where('is_generated',1)
                 ->get();
 
             $dt_records = [];
