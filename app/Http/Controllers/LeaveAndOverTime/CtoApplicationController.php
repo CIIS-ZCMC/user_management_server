@@ -82,35 +82,33 @@ class CtoApplicationController extends Controller
                     )
                     ->orderBy('created_at', 'desc')
                     ->get();
-            }
-            else
-            {
+            } else {
                 $cto_application = CtoApplication::select('cto_applications.*')
-                ->where(function ($query) use ($recommending, $approving, $employeeId) {
-                    $query->whereIn('cto_applications.status', $recommending)
-                        ->where('cto_applications.recommending_officer', $employeeId);
-                })
-                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
-                    $query->whereIn('cto_applications.status', $approving)
-                        ->where('cto_applications.approving_officer', $employeeId);
-                })
-                ->groupBy(
-                    'id',
-                    'date',
-                    'applied_credits',
-                    'is_am',
-                    'is_pm',
-                    'status',
-                    'purpose',
-                    'recommending_officer',
-                    'approving_officer',
-                    'remarks',
-                    'employee_profile_id',
-                    'created_at',
-                    'updated_at',
-                )
-                ->orderBy('created_at', 'desc')
-                ->get();
+                    ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                        $query->whereIn('cto_applications.status', $recommending)
+                            ->where('cto_applications.recommending_officer', $employeeId);
+                    })
+                    ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                        $query->whereIn('cto_applications.status', $approving)
+                            ->where('cto_applications.approving_officer', $employeeId);
+                    })
+                    ->groupBy(
+                        'id',
+                        'date',
+                        'applied_credits',
+                        'is_am',
+                        'is_pm',
+                        'status',
+                        'purpose',
+                        'recommending_officer',
+                        'approving_officer',
+                        'remarks',
+                        'employee_profile_id',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
             }
 
 
@@ -189,6 +187,10 @@ class CtoApplicationController extends Controller
                     'message' => 'Retrieved CTO applications in the same area'
                 ], Response::HTTP_OK);
             }
+            return response()->json([
+                'data' => [],
+                'message' => 'Retrieved CTO applications in the same area'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
