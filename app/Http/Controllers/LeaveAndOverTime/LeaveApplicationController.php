@@ -1312,7 +1312,7 @@ class LeaveApplicationController extends Controller
                         ->where('leave_type_id', $request->leave_type_id)->first();
 
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
-                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
+                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $checkSchedule['totalWithSchedules']) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
                         $totalHours = Helpers::getTotalHours($start, $end, $employeeId);
@@ -1419,7 +1419,7 @@ class LeaveApplicationController extends Controller
                     EmployeeLeaveCreditLogs::create([
                         'employee_leave_credit_id' => $employee_credit->id,
                         'previous_credit' => $previous_credit,
-                        'leave_credits' => $daysDiff,
+                        'leave_credits' => $checkSchedule['totalWithSchedules'],
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
@@ -1566,7 +1566,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'Employee already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
                 if ($leave_type->is_special) {
-                    $cleanData['applied_credits'] = $daysDiff;
+                    $cleanData['applied_credits'] = $checkSchedule['totalWithSchedules'];
                     $cleanData['employee_profile_id'] = $employee_id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
@@ -1637,7 +1637,7 @@ class LeaveApplicationController extends Controller
                         ->where('leave_type_id', $request->leave_type_id)->first();
 
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
-                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
+                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $checkSchedule['totalWithSchedules']) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
                         $totalHours = Helpers::getTotalHours($start, $end, $employee_id);
@@ -1646,7 +1646,7 @@ class LeaveApplicationController extends Controller
                             $totalDeductCredits = $totalDeductCredits / 8;
                             $cleanData['applied_credits'] = $totalDeductCredits;
                         } else {
-                            $cleanData['applied_credits'] = $daysDiff;
+                            $cleanData['applied_credits'] = $checkSchedule['totalWithSchedules'];
                         }
 
                         $cleanData['employee_profile_id'] = $employee_id;
@@ -1698,8 +1698,8 @@ class LeaveApplicationController extends Controller
                         $previous_credit = $employee_credit->total_leave_credits;
 
                         $employee_credit->update([
-                            'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
-                            'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
+                            'total_leave_credits' => $employee_credit->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                            'used_leave_credits' => $employee_credit->used_leave_credits + $checkSchedule['totalWithSchedules']
                         ]);
 
 
@@ -1712,8 +1712,8 @@ class LeaveApplicationController extends Controller
                             $previous_credit_vl = $employee_credit_vl->total_leave_credits;
 
                             $employee_credit_vl->update([
-                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $daysDiff,
-                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
+                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
                             ]);
                         }
                     }
@@ -1747,7 +1747,7 @@ class LeaveApplicationController extends Controller
                     EmployeeLeaveCreditLogs::create([
                         'employee_leave_credit_id' => $employee_credit->id,
                         'previous_credit' => $previous_credit,
-                        'leave_credits' => $daysDiff,
+                        'leave_credits' => $checkSchedule['totalWithSchedules'],
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
