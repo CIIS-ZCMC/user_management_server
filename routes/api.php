@@ -20,27 +20,26 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            Route::get('test', 'DashboardController@test');
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('test', 'DashboardController@test');
 
     Route::get('announcementslist', 'AnnouncementsController@index');
     Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
     Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-            Route::get('events', 'EventsController@index');
-            Route::get('events-search', 'EventsController@searchEvents');
-            Route::get('events/{id}', 'EventsController@show');
+    Route::get('events', 'EventsController@index');
+    Route::get('events-search', 'EventsController@searchEvents');
+    Route::get('events/{id}', 'EventsController@show');
 
-            Route::get('memorandums', 'MemorandumsController@index');
-            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-            Route::get('memorandums/{id}', 'MemorandumsController@show');
+    Route::get('memorandums', 'MemorandumsController@index');
+    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+    Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-            Route::get('news', 'NewsController@index');
-            Route::get('news-search', 'NewsController@searchNews');
-            Route::get('news/{id}', 'NewsController@show');
-            Route::get('notification', 'NotificationController@store');
-        });
+    Route::get('news', 'NewsController@index');
+    Route::get('news-search', 'NewsController@searchNews');
+    Route::get('news/{id}', 'NewsController@show');
+    Route::get('notification', 'NotificationController@store');
+});
 
 Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
     Route::post('testgenerate', 'GenerateReportController@test');
@@ -2465,12 +2464,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // ATTENDANCE TARDINESS REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-tardiness-report-filter', 'AttendanceReportController@filterAttendanceTardiness');
-        });
-
-        // ATTENDANCE ABSENTEEISM  REPORT
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-absenteeism-report-filter', 'AttendanceReportController@filterAttendanceAbsenteeism');
+            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendanceReport');
         });
 
         // TEST ROUTE
