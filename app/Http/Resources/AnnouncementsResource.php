@@ -18,8 +18,11 @@ class AnnouncementsResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
+            'scheduled_at'=>$this->scheduled_at,
             'attachments' => $this->attachments,
-            'created_at' => $this->created_at
+            'created_at' => $this->created_at,
+            'forsupervisors'=>$this->forsupervisors,
+            'posted'=>$this->posted
         ];
     }
 }

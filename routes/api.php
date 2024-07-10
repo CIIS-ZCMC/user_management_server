@@ -20,25 +20,30 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
-Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('test', 'DashboardController@test');
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            Route::get('test', 'DashboardController@test');
 
-    Route::get('announcements', 'AnnouncementsController@index');
+    Route::get('announcementslist', 'AnnouncementsController@index');
     Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
     Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-    Route::get('events', 'EventsController@index');
-    Route::get('events-search', 'EventsController@searchEvents');
-    Route::get('events/{id}', 'EventsController@show');
+            Route::get('events', 'EventsController@index');
+            Route::get('events-search', 'EventsController@searchEvents');
+            Route::get('events/{id}', 'EventsController@show');
 
-    Route::get('memorandums', 'MemorandumsController@index');
-    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-    Route::get('memorandums/{id}', 'MemorandumsController@show');
+            Route::get('memorandums', 'MemorandumsController@index');
+            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+            Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-    Route::get('news', 'NewsController@index');
-    Route::get('news-search', 'NewsController@searchNews');
-    Route::get('news/{id}', 'NewsController@show');
-    Route::get('notification', 'NotificationController@store');
+            Route::get('news', 'NewsController@index');
+            Route::get('news-search', 'NewsController@searchNews');
+            Route::get('news/{id}', 'NewsController@show');
+            Route::get('notification', 'NotificationController@store');
+        });
+
+Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+    Route::post('testgenerate', 'GenerateReportController@test');
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
@@ -59,6 +64,8 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
 
+        Route::get('announcements/{id}', 'AnnouncementsController@show');
+        Route::get('announcements', 'AnnouncementsController@showAnnouncement');
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('notifications', 'NotificationController@getNotificationsById');
         });
@@ -2229,6 +2236,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('schedules-employment-type', 'ScheduleController@EmploymentType');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::post('generate-employee-schedule', 'EmployeeScheduleController@generate');
         });
 
         /**
