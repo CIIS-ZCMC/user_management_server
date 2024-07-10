@@ -898,7 +898,9 @@ class LeaveApplicationController extends Controller
             $position = $employee_profile->position();
             $status = '';
             $log_status = '';
-
+            $the_same_approver_id = '';
+            $hrmo_flag = false;
+            $approving_flag=false;
             //FOR NOTIFICATION
             $next_approving = null;
             $emp_id = $leave_application->employee_profile_id;
@@ -909,13 +911,25 @@ class LeaveApplicationController extends Controller
             switch ($leave_application->status) {
                 case 'applied':
                     if ($employee_profile->id === $leave_application->hrmo_officer) {
-                        $status = 'for recommending approval';
-                        $log_status = 'Approved by HRMO';
-                        $leave_application->update(['status' => $status]);
+                        if ($leave_application->hrmo_officer === $leave_application->recommending_officer) {
+                            $status = 'for approving approval';
+                            $log_status = 'Approved by HRMO';
+                            $the_same_approver_id = 'Approved by Recommending Officer';
+                            $leave_application->update(['status' => $status]);
 
-                        //FOR NOTIFICATION
-                        $next_approving = $leave_application->recommending_officer;
-                        $message = 'HRMO';
+                            //FOR NOTIFICATION
+                            $next_approving = $leave_application->approving_officer;
+                            $message = 'HRMO';
+                            $hrmo_flag = true;
+                        } else {
+                            $status = 'for recommending approval';
+                            $log_status = 'Approved by HRMO';
+                            $leave_application->update(['status' => $status]);
+
+                            //FOR NOTIFICATION
+                            $next_approving = $leave_application->recommending_officer;
+                            $message = 'HRMO';
+                        }
                     } else {
                         return response()->json([
                             'message' => 'You have no access to approve this request.',
@@ -924,13 +938,27 @@ class LeaveApplicationController extends Controller
                     break;
                 case 'for recommending approval':
                     if ($employee_profile->id === $leave_application->recommending_officer) {
-                        $status = 'for approving approval';
-                        $log_status = 'Approved by Recommending Officer';
-                        $leave_application->update(['status' => $status]);
+                        if ($leave_application->recommending_officer === $leave_application->approving_officer) {
+                            $status = 'approved';
+                            $log_status = 'Approved by Recommending Officer';
+                            $the_same_approver_id = 'Approved by Approving Officer';
+                            $leave_application->update(['status' => $status]);
 
-                        //FOR NOTIFICATION
-                        $next_approving = $leave_application->approving_officer;
-                        $message = 'Recommending Officer';
+                            //FOR NOTIFICATION
+                            // $next_approving=$leave_application->recommending_officer;
+                            $message = 'Approving Officer';
+                            $approving_flag=true;
+                        }
+                        else{
+                            $status = 'for approving approval';
+                            $log_status = 'Approved by Recommending Officer';
+                            $leave_application->update(['status' => $status]);
+
+                            //FOR NOTIFICATION
+                            $next_approving = $leave_application->approving_officer;
+                            $message = 'Recommending Officer';
+                        }
+
                     } else {
                         return response()->json([
                             'message' => 'You have no access to approve this request.',
@@ -954,11 +982,40 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            LeaveApplicationLog::create([
-                'action_by' => $employee_profile->id,
-                'leave_application_id' => $leave_application->id,
-                'action' => $log_status
-            ]);
+            if ($hrmo_flag) {
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $log_status
+                ]);
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $the_same_approver_id
+                ]);
+            }
+            elseif($approving_flag)
+            {
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $log_status
+                ]);
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $the_same_approver_id
+                ]);
+
+            }
+            else {
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $log_status
+                ]);
+            }
+
 
             if ($leave_application->status === 'approved') {
                 //EMPLOYEE
