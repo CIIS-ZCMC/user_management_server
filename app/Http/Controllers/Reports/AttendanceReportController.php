@@ -69,6 +69,8 @@ class AttendanceReportController extends Controller
             $month_of = (int) $request->month_of;
             $year_of = (int) $request->year_of;
             $limit = $request->limit; // default limit is 100
+            $report_type = $request->report_type ?? 'tardiness'; // new parameter for report type [tardiness/absences]
+            $sort_order = $request->sort_order ?? 'desc'; // new parameter for sort order [asc/desc]
 
             if ($request->only(['month_of', 'year_of'])) {
                 $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
@@ -545,6 +547,16 @@ class AttendanceReportController extends Controller
                         }
                         break;
                 }
+            }
+            // Sort data based on the type of report and sort order
+            if ($report_type == 'tardiness') {
+                usort($arr_data, function ($a, $b) use ($sort_order) {
+                    return $sort_order == 'asc' ? $a['total_days_with_tardiness'] <=> $b['total_days_with_tardiness'] : $b['total_days_with_tardiness'] <=> $a['total_days_with_tardiness'];
+                });
+            } else if ($report_type == 'absences') {
+                usort($arr_data, function ($a, $b) use ($sort_order) {
+                    return $sort_order == 'asc' ? $a['total_absent_days'] <=> $b['total_absent_days'] : $b['total_absent_days'] <=> $a['total_absent_days'];
+                });
             }
 
 
