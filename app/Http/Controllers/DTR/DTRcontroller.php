@@ -24,10 +24,12 @@ use App\Models\Schedule;
 use App\Helpers\Helpers as Help;
 use App\Methods\DTRPull;
 use App\Models\LeaveType;
+use App\Models\DeviceLogs;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Response;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
+use App\Http\Controllers\DTR\DeviceLogsController;
 use Illuminate\Support\Facades\Storage;
 
 class DTRcontroller extends Controller
@@ -44,12 +46,15 @@ class DTRcontroller extends Controller
 
     private $CONTROLLER_NAME = "DTRcontroller";
 
+    protected $DeviceLog ;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
         $this->DTR = new DTRPull();
+        $this->DeviceLog = new DeviceLogsController();
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
@@ -58,7 +63,7 @@ class DTRcontroller extends Controller
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
-    
+
     public function printDtrLogs(Request $request){
         $user = $request->user;
         $biometric_id = $user->biometric_id;//$user->biometric_id;
@@ -83,8 +88,8 @@ class DTRcontroller extends Controller
 
         $filename = $date."Logs-".$Name.".pdf";
         $dompdf->stream($filename);
-       
-      
+
+
     }
     public function getBiometricLog(Request $request){
         try{
@@ -286,27 +291,36 @@ function isNotEmptyFields($logs) {
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
-                  
+
                     if($this->isNotEmptyFields($attendance_Logs)){
-                       
+
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
                     $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
                     );
-                   
+
+                    $this->DeviceLog->Save($Employee_Attendance, $device);
                     $this->SaveLogsLocal($Employee_Attendance, $device);
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now  ;
-                        });                        
+                        });
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
 
                                 $biometric_id = $bioEntry['biometric_id'];
+
+                                $dtrrecs = DailyTimeRecords::where('biometric_id',$biometric_id)->where('dtr_date',$date_now);
+                                if( $dtrrecs->exists()){
+                                    $dtrrecs->update([
+                                        'is_generated'=>0
+                                    ]);
+                                }
 
                                 $getRecord = array_values(array_filter($check_Records, function($row) use($biometric_id) {
                                     $date_times = $row['date_time'];
@@ -490,7 +504,7 @@ function isNotEmptyFields($logs) {
                 }
              }
                     }
-                 
+
             }
             }
         } catch (\Throwable $th) {
@@ -800,6 +814,17 @@ function isNotEmptyFields($logs) {
 
 
 
+                //Change based on entries only and its schedules
+
+                //Generate DTR if not exist and if theres logs
+            if(count($dtr) == 0 ){
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('active',1);
+                $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+            }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+            }
+
             foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
@@ -809,6 +834,23 @@ function isNotEmptyFields($logs) {
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $BreakTime = $Schedule['break_Time_Req'];
+
+                //Set for Shifting only
+
+                $dtrdate = $val->dtr_date;
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('dtr_date', $dtrdate)
+                ->where('active',1);
+                //xxxxxxxxxxxxxxxxxxxxxxxx
+                if($dvc_logs->exists()){
+                    $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                    if($checkdtr->exists()){
+                       $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                    }else {
+                        $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
+                    }
+
+                }
 
 
                 $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
@@ -868,6 +910,7 @@ function isNotEmptyFields($logs) {
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where('is_generated',1)
                 ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
                     $query->where('biometric_id', $biometric_id)
                         ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
@@ -878,6 +921,7 @@ function isNotEmptyFields($logs) {
                         ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
+                ->where('is_generated',1)
                 ->get();
 
             $dt_records = [];
@@ -1038,7 +1082,7 @@ function isNotEmptyFields($logs) {
             $leaveapp  = $employee->leaveApplications->filter(function ($row) {
                 return $row['status'] == "received";
             });
-         
+
 
 
             $leavedata = [];
@@ -1056,7 +1100,7 @@ function isNotEmptyFields($logs) {
 
             }
 
-          
+
 
             //Official business
             if($employee->officialBusinessApplications){
@@ -1256,7 +1300,13 @@ function isNotEmptyFields($logs) {
                     $time_stamps_req = [
                         'total_hours' => 8
                     ];
-
+                    if(count($dtr) == 0 ){
+                        $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                        ->where('active',1);
+                        $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+                    }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+                        $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+                    }
 
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
@@ -1271,6 +1321,21 @@ function isNotEmptyFields($logs) {
                         $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                         $DaySchedule = $Schedule['daySchedule'];
                         $BreakTime = $Schedule['break_Time_Req'];
+
+                        $dtrdate = $val->dtr_date;
+                        $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                        ->where('dtr_date', $dtrdate)
+                        ->where('active',1);
+                        //xxxxxxxxxxxxxxxxxxxxxxxx
+                        if($dvc_logs->exists()){
+                            $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                            if($checkdtr->exists()){
+                               $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                            }else {
+                                $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
+                            }
+
+                        }
 
                         $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
 
@@ -2385,6 +2450,8 @@ function isNotEmptyFields($logs) {
             return response()->json(['message' => 'No new data to add.'], 200);
         }
     }
+
+
 
     public function test()
     {

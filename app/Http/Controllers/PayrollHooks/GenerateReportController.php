@@ -5,22 +5,27 @@ namespace App\Http\Controllers\PayrollHooks;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EmployeeProfile;
-use App\Models\DailyTimeRecord;
+use App\Models\DailyTimeRecords;
 use Illuminate\Support\Facades\DB;
 use App\Methods\Helpers;
 use App\Models\LeaveType;
 use App\Models\SalaryGrade;
+use App\Models\DeviceLogs;
 use App\Http\Controllers\PayrollHooks\ComputationController;
+use App\Http\Controllers\DTR\DeviceLogsController;
 //SalaryGrade
 class GenerateReportController extends Controller
 {
     protected $helper;
     protected $computed;
 
+    protected $DeviceLog ;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->computed = new ComputationController();
+        $this->DeviceLog = new DeviceLogsController();
     }
 
 
@@ -49,6 +54,65 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
+  
+        for ($i=0; $i < 2; $i++) {
+            $this->GenerateDataReport($request);
+           }
+   return  $this->GenerateDataReport($request);
+    }
+
+    public function AsyncrounousRun_GenerateDataReport(Request $request)
+    {
+        for ($i=0; $i < 2; $i++) {
+                     $this->GenerateDataReport($request);
+                    }
+            return  $this->GenerateDataReport($request);
+                    
+//         $firsthalf = new Request([
+//                 'month_of'=>$request->month_of,
+//                 'year_of'=>$request->year_of,
+//                 'whole_month'=>0,
+//                 'first_half'=>1,
+//                 'second_half'=>0
+//         ]);
+
+//         $secondhalf = new Request([
+//             'month_of'=>$request->month_of,
+//             'year_of'=>$request->year_of,
+//             'whole_month'=>0,
+//             'first_half'=>0,
+//             'second_half'=>1
+//     ]);
+    
+//     $whole = new Request([
+//         'month_of'=>$request->month_of,
+//         'year_of'=>$request->year_of,
+//         'whole_month'=>1,
+//         'first_half'=>0,
+//         'second_half'=>0
+// ]);
+    
+//         $second_half = clone $request;
+//         $second_half->merge(['second_half' => 1]);
+//         $whole= clone $request;
+//         $whole->merge(['second_half' => 1]);
+//         $whole_month = [];
+//         $first_half = [];
+//         $second_half = [];
+//         for ($i=0; $i < 2; $i++) {
+//          $this->GenerateDataReport($whole);
+//         }
+        
+//         return [
+//             'first_half'=> $this->GenerateDataReport($firsthalf),
+//             'second_half'=>$this->GenerateDataReport($secondhalf),
+//             'whole'=>$this->GenerateDataReport($whole),
+//         ];
+    }
+
+
+
+    public function GenerateDataReport(Request $request){
         $month_of = $request->month_of;
         $year_of = $request->year_of;
         $biometricIds = DB::table('daily_time_records')
@@ -59,14 +123,21 @@ class GenerateReportController extends Controller
             // ->whereIn('biometric_id', $biometricIds)
             ->where('biometric_id', 493) // 494
             ->get();
-
-
         $data = [];
+
+        $whole_month = $request->whole_month;
+        $first_half = $request->first_half;
+        $second_half = $request->second_half;
+        $init = 1;
+        if ($first_half) {
+            $days_In_Month = 15;
+        } else if ($second_half) {
+            $init = 16;
+        }
 
         foreach ($profiles as $row) {
             $Employee = EmployeeProfile::find($row->id);
             $biometric_id = $row->biometric_id;
-
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
                 ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
@@ -82,7 +153,18 @@ class GenerateReportController extends Controller
                 ->get();
             $empschedule = [];
 
-            foreach ($dtr as $val) {
+            if(count($dtr) == 0 ){
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('active',1);
+                     $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+            }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+
+                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+            }
+
+
+
+        foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
@@ -90,6 +172,24 @@ class GenerateReportController extends Controller
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
+
+
+                $dtrdate =  $val->dtr_date;
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('dtr_date', $dtrdate)
+                ->where('active',1);
+                //xxxxxxxxxxxxxxxxxxxxxx
+                if($dvc_logs->exists()){
+                    $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                    if($checkdtr->exists()){
+
+                       $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                    }else {
+                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
+                    }
+
+                }
+
 
                 if (count($DaySchedule) >= 1) {
                     $validate = [
@@ -115,9 +215,9 @@ class GenerateReportController extends Controller
 
 
 
+
+
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-
-
             if ($employee->leaveApplications) {
                 //Leave Applications
                 $leaveapp  = $employee->leaveApplications->filter(function ($row) {
@@ -219,19 +319,6 @@ class GenerateReportController extends Controller
                     return  $d;
                 }
             }, $empschedule)));
-
-
-            $whole_month = $request->whole_month;
-            $first_half = $request->first_half;
-            $second_half = $request->second_half;
-            $init = 1;
-            if ($first_half) {
-                $days_In_Month = 15;
-            } else if ($second_half) {
-                $init = 16;
-            }
-
-
 
             for ($i = $init; $i <= $days_In_Month; $i++) {
 
@@ -385,17 +472,17 @@ class GenerateReportController extends Controller
             $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
             $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime,$Rates);
             $absentRate = $this->computed->AbsentRates($Number_Absences,$Rates);
-            $NetSalary = $this->computed->NetSalary($undertimeRate,$absentRate,$basicSalary['Total']);
+            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$basicSalary['Total']);
             $data[] = [
-
                 'Biometric_id' => $biometric_id,
                 'EmployeeNo' => $Employee->employee_id,
-                'Name' => $Employee->personalInformation->name(),
+                'Name' => $Employee->personalInformation->name(),              
                 'Payroll' => $init . " - " . $days_In_Month,
                 'From' => $init,
                 'To' => $days_In_Month,
                 'Month' => $month_of,
                 'Year' => $year_of,
+                'Is_out'=> $this->computed->OutofPayroll($NetSalary,$init,$days_In_Month),
                 'TotalWorkingMinutes' => $total_Month_WorkingMinutes,
                 'TotalWorkingHours' => $this->ToHours($total_Month_WorkingMinutes),
                 'TotalOvertimeMinutes' => $total_Month_Overtime,
@@ -414,10 +501,6 @@ class GenerateReportController extends Controller
                     'AbsentRate'=>$absentRate ,
                 'UndertimeRate'=>$undertimeRate,
                 ],
-                'Deducted_from_GrossSal'=>[
-                    'DeductedwAbsent'=>$GrossSalary,
-                    'DeductedwUndertime'=> $basicSalary['Total'] - $undertimeRate
-                ],
                 'NetSalary'=> $NetSalary
 
 
@@ -429,7 +512,15 @@ class GenerateReportController extends Controller
                 //  'Absences'=>$absences,
                 //  'Dayoff'=>$dayoff
             ];
+
+
+
+
+
         }
+
         return $data;
+
+
     }
 }

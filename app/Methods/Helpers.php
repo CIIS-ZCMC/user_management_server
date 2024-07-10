@@ -796,7 +796,7 @@ AND id IN (
         if ($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry) {
             $first_Sched_firstin = $time_stamps_req['first_entry'];
             $first_Sched_firstout = $time_stamps_req['second_entry'];
-
+            $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
             $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
             $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
 
@@ -1334,7 +1334,7 @@ AND id IN (
                 }
 
 
-                if (!isset($entry['entry_status']) ) {
+               if (!isset($entry['entry_status']) ) {
 
 
 
@@ -1368,6 +1368,7 @@ AND id IN (
                 $Employee_Attendance[] = $entry; // Add entry to the main array
 
                 $previousTimestamp = $currentTimestamp;
+
             }
 
             $processedLogs[$employee_ID] = true;
