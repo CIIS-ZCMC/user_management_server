@@ -133,15 +133,20 @@ class EmployeeScheduleController extends Controller
             $employee = $cleanData['employee'];
             $selected_date = $cleanData['selected_date'];   // Selected Date;
 
-            $schedule = null;
-            $employee_schedules = null;
+            $employee = $cleanData['employee'] ?? null;
+            $selected_date = $cleanData['selected_date'] ?? null;
 
-            if ($selected_date === "") {
+            if ($employee !== null && $selected_date === "") {
+                // Ensure $employee is a valid employee ID
                 $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
                 foreach ($existing_employee_ids as $employee_id) {
-                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->first();
-                    $employee_schedules->delete();
+                    // Retrieve and delete all schedules for the employee
+                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->get();
+
+                    foreach ($employee_schedules as $schedule) {
+                        $schedule->delete();
+                    }
                 }
             } else {
                 // Delete existing data for the selected dates and time shifts
@@ -155,6 +160,7 @@ class EmployeeScheduleController extends Controller
                     $timeShiftId = $selectedDate['time_shift_id'];
 
                     foreach ($selectedDate['date'] as $date) {
+                        return $date;
 
                         $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
                             $query->where('time_shift_id', $timeShiftId)
