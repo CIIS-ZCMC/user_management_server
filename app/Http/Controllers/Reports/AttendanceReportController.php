@@ -52,7 +52,7 @@ class AttendanceReportController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function filterAttendanceTardiness(Request $request)
+    public function filterAttendanceReport(Request $request)
     {
         try {
             $arr_data = [];
@@ -79,7 +79,7 @@ class AttendanceReportController extends Controller
 
                 foreach ($employee_profiles as $employee) {
                     if ($employee) {
-                        $arr_data[] = $this->resultTardinessFilter(
+                        $arr_data[] = $this->resultAttendanceReport(
                             $employee,
                             $whole_month = true,
                             $first_half = false,
@@ -148,7 +148,7 @@ class AttendanceReportController extends Controller
                                     ->limit($limit)->get();
 
                                 foreach ($areas as $area) {
-                                    $arr_data[] = $this->resultTardinessFilter(
+                                    $arr_data[] = $this->resultAttendanceReport(
                                         $area->employeeProfile,
                                         $whole_month,
                                         $first_half,
@@ -174,7 +174,7 @@ class AttendanceReportController extends Controller
                                         ->limit($limit)->get();
 
                                     foreach ($areas as $area) {
-                                        $arr_data[] = $this->resultTardinessFilter(
+                                        $arr_data[] = $this->resultAttendanceReport(
                                             $area->employeeProfile,
                                             $whole_month,
                                             $first_half,
@@ -200,7 +200,7 @@ class AttendanceReportController extends Controller
                                             ->limit($limit)->get();
 
                                         foreach ($areas as $area) {
-                                            $arr_data[] = $this->resultTardinessFilter(
+                                            $arr_data[] = $this->resultAttendanceReport(
                                                 $area->employeeProfile,
                                                 $whole_month,
                                                 $first_half,
@@ -226,7 +226,7 @@ class AttendanceReportController extends Controller
                                                 ->limit($limit)->get();
 
                                             foreach ($areas as $area) {
-                                                $arr_data[] = $this->resultTardinessFilter(
+                                                $arr_data[] = $this->resultAttendanceReport(
                                                     $area->employeeProfile,
                                                     $whole_month,
                                                     $first_half,
@@ -255,7 +255,7 @@ class AttendanceReportController extends Controller
                                         ->limit($limit)->get();
 
                                     foreach ($areas as $area) {
-                                        $arr_data[] = $this->resultTardinessFilter(
+                                        $arr_data[] = $this->resultAttendanceReport(
                                             $area->employeeProfile,
                                             $whole_month,
                                             $first_half,
@@ -281,7 +281,7 @@ class AttendanceReportController extends Controller
                                             ->limit($limit)->get();
 
                                         foreach ($areas as $area) {
-                                            $arr_data[] = $this->resultTardinessFilter(
+                                            $arr_data[] = $this->resultAttendanceReport(
                                                 $area->employeeProfile,
                                                 $whole_month,
                                                 $first_half,
@@ -309,7 +309,7 @@ class AttendanceReportController extends Controller
                                     ->limit($limit)->get();
 
                                 foreach ($areas as $area) {
-                                    $arr_data[] = $this->resultTardinessFilter(
+                                    $arr_data[] = $this->resultAttendanceReport(
                                         $area->employeeProfile,
                                         $whole_month,
                                         $first_half,
@@ -339,7 +339,7 @@ class AttendanceReportController extends Controller
                                     ->limit($limit)->get();
 
                                 foreach ($areas as $area) {
-                                    $arr_data[] = $this->resultTardinessFilter(
+                                    $arr_data[] = $this->resultAttendanceReport(
                                         $area->employeeProfile,
                                         $whole_month,
                                         $first_half,
@@ -365,7 +365,7 @@ class AttendanceReportController extends Controller
                                         ->limit($limit)->get();
 
                                     foreach ($areas as $area) {
-                                        $arr_data[] = $this->resultTardinessFilter(
+                                        $arr_data[] = $this->resultAttendanceReport(
                                             $area->employeeProfile,
                                             $whole_month,
                                             $first_half,
@@ -391,7 +391,7 @@ class AttendanceReportController extends Controller
                                             ->limit($limit)->get();
 
                                         foreach ($areas as $area) {
-                                            $arr_data[] = $this->resultTardinessFilter(
+                                            $arr_data[] = $this->resultAttendanceReport(
                                                 $area->employeeProfile,
                                                 $whole_month,
                                                 $first_half,
@@ -420,7 +420,7 @@ class AttendanceReportController extends Controller
                                     ->limit($limit)->get();
 
                                 foreach ($areas as $area) {
-                                    $arr_data[] = $this->resultTardinessFilter(
+                                    $arr_data[] = $this->resultAttendanceReport(
                                         $area->employeeProfile,
                                         $whole_month,
                                         $first_half,
@@ -450,7 +450,7 @@ class AttendanceReportController extends Controller
                                     ->limit($limit)->get();
 
                                 foreach ($areas as $area) {
-                                    $arr_data[] = $this->resultTardinessFilter(
+                                    $arr_data[] = $this->resultAttendanceReport(
                                         $area->employeeProfile,
                                         $whole_month,
                                         $first_half,
@@ -476,7 +476,7 @@ class AttendanceReportController extends Controller
                                         ->limit($limit)->get();
 
                                     foreach ($areas as $area) {
-                                        $arr_data[] = $this->resultTardinessFilter(
+                                        $arr_data[] = $this->resultAttendanceReport(
                                             $area->employeeProfile,
                                             $whole_month,
                                             $first_half,
@@ -504,7 +504,7 @@ class AttendanceReportController extends Controller
                                     ->limit($limit)->get();
 
                                 foreach ($areas as $area) {
-                                    $arr_data[] = $this->resultTardinessFilter(
+                                    $arr_data[] = $this->resultAttendanceReport(
                                         $area->employeeProfile,
                                         $whole_month,
                                         $first_half,
@@ -533,7 +533,7 @@ class AttendanceReportController extends Controller
                                 ->limit($limit)->get();
 
                             foreach ($areas as $area) {
-                                $arr_data[] = $this->resultTardinessFilter(
+                                $arr_data[] = $this->resultAttendanceReport(
                                     $area->employeeProfile,
                                     $whole_month,
                                     $first_half,
@@ -555,7 +555,7 @@ class AttendanceReportController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             // Log the error and return an internal server error response
-            Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceTardiness', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
             return response()->json(
                 [
                     'message' => $th->getMessage()
@@ -566,7 +566,7 @@ class AttendanceReportController extends Controller
     }
 
 
-    private function resultTardinessFilter($employee_profile, $whole_month, $first_half, $second_half, $month_of, $year_of)
+    private function resultAttendanceReport($employee_profile, $whole_month, $first_half, $second_half, $month_of, $year_of)
     {
         $report_data = [];
         $employee = EmployeeProfile::find($employee_profile->id);
