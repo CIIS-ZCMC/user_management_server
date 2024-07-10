@@ -300,13 +300,15 @@ AND id IN (
     }
 
     public function CurrentSchedule($biometric_id, $value, $yesterdayRecord)
-    {
+    {   
+      
         if (!isset($value['date_time'])) {
             return [
                 'daySchedule' => [],
                 'break_Time_Req' => [],
             ];
         }
+       
         $entrydateYear = date('Y', strtotime($value['date_time']));
         $entrydateMonth = date('m', strtotime($value['date_time']));
         $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");

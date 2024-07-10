@@ -279,6 +279,94 @@ function isNotEmptyFields($logs) {
     }
     return true;
 }
+    public function RegenerateDTR(){
+        $month_of = date('m');
+        $year_of = date('Y');
+        $biometricIds = DB::table('daily_time_records')
+        ->whereYear('dtr_date', $year_of)
+        ->whereMonth('dtr_date', $month_of)
+        ->pluck('biometric_id');
+    $profiles = DB::table('employee_profiles')
+         ->whereIn('biometric_id', $biometricIds)
+     //  ->where('biometric_id', 138) // 494
+        ->get();
+    $data = [];
+    foreach ($profiles as $row) {
+        $Employee = EmployeeProfile::find($row->id);
+        $biometric_id = $row->biometric_id;
+        $dtr = DB::table('daily_time_records')
+            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                $query->where('biometric_id', $biometric_id)
+                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+            })
+            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                $query->where('biometric_id', $biometric_id)
+                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+            })
+            ->get();
+        $empschedule = [];
+        if(count($dtr) == 0 ){
+            $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+            ->where('active',1);
+                 $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+        }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+
+            $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+        }
+    foreach ($dtr as $val) {
+            $bioEntry = [
+                'first_entry' => $val->first_in ?? $val->second_in,
+                'date_time' => $val->first_in ?? $val->second_in
+            ];
+         $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+            $DaySchedule = $Schedule['daySchedule'];
+            $empschedule[] = $DaySchedule;
+
+            $dtrdate =$val->dtr_date;
+            $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+            ->where('dtr_date', $dtrdate)
+            ->where('active',1);
+            if($dvc_logs->exists()){
+                $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                if($checkdtr->exists()){
+
+                   $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                }else {
+                   $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
+                }
+
+            }
+            if (count($DaySchedule) >= 1) {
+                $validate = [
+                    (object)[
+                        'id' => $val->id,
+                        'first_in' => $val->first_in,
+                        'first_out' => $val->first_out,
+                        'second_in' => $val->second_in,
+                        'second_out' => $val->second_out
+                    ],
+                ];
+                $this->helper->saveTotalWorkingHours(
+                    $validate,
+                    $val,
+                    $val,
+                    $DaySchedule,
+                    true
+                );
+            }
+        }
+
+
+
+    }
+
+    Log::channel("custom-dtr-log")->info('DTR REGENERATED SUCCESSFULLY @ '.date('H:i'));
+
+    }
+
     public function fetchDTRFromDevice()
     {
 
@@ -2457,4 +2545,6 @@ function isNotEmptyFields($logs) {
     {
             return view('dtrlog');
     }
+
+   
 }

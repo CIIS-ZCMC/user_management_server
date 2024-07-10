@@ -305,17 +305,23 @@ class DeviceLogsController extends Controller
     public function RegenerateEntry($deviceLogs,$biometric_id){
         $Entry = $this->getEntryLineup($deviceLogs);
 
-        $bioEntry = $Entry[0]['date_time'] ?? $Entry[2]['date_time'];
+        
+     
+        $bioEntry = [
+            'first_entry' => $Entry[0]['date_time'] ?? $Entry[2]['date_time'],
+            'date_time' => $Entry[0]['date_time'] ?? $Entry[2]['date_time']
+        ];
+      
         $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
         $DaySchedule = $Schedule['daySchedule'];
         $BreakTime = $Schedule['break_Time_Req'];
-        $schedule = json_decode($Entry[0]['schedule']);
+       
         $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
-
-        if(!isset($schedule)){
+      
+        if(count($DaySchedule) == 0){
             return;
-        }
-
+        }   
+       
         if($BreakTime){
             //Add here if its lunch
           $dtr = [
@@ -355,7 +361,22 @@ class DeviceLogsController extends Controller
                $ent = array_values(array_filter($Entry,function($x) use($dates){
                     return $x['dtr_date'] === $dates;
                 }));
-                DailyTimeRecords::create([
+ 
+                $bioEntry = [
+                    'first_entry' => $ent[0]['date_time'] ?? $ent[2]['date_time'],
+                    'date_time' => $ent[0]['date_time'] ?? $ent[2]['date_time']
+                ];
+                $Schedule = $this->helper->CurrentSchedule($ent[0]['biometric_id'], $bioEntry, false);
+                $DaySchedule = $Schedule['daySchedule'];
+                $BreakTime = $Schedule['break_Time_Req'];
+                $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
+                if(!isset($DaySchedule)){
+                    return;
+                }
+                
+                if($BreakTime){
+                    //Add here if its lunch
+                  $dtr = [
                     'dtr_date'=>$dates,
                     'biometric_id'=>$ent[0]['biometric_id'] ?? null,
                     'first_in'=>$this->first_in($Entry  ?? null,false),
@@ -363,7 +384,18 @@ class DeviceLogsController extends Controller
                     'second_in'=>$this->second_in($Entry ?? null,true),
                     'second_out'=>$this->second_out($Entry ?? null,true),
                     'is_generated'=>1
-                ]);
+                  ];
+                }else {
+                   $dtr = [
+                    'dtr_date'=>$dates,
+                    'biometric_id'=>$ent[0]['biometric_id'] ?? null,
+                    'first_in'=>$this->first_in($Entry ?? null,true),
+                    'first_out'=>$this->first_out($Entry ?? null,true),
+                    'is_generated'=>1
+                  ];
+                }
+               
+                DailyTimeRecords::create($dtr);
             }
             return;
         }

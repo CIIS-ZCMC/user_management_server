@@ -13,6 +13,7 @@ use App\Models\SalaryGrade;
 use App\Models\DeviceLogs;
 use App\Http\Controllers\PayrollHooks\ComputationController;
 use App\Http\Controllers\DTR\DeviceLogsController;
+use App\Http\Controllers\DTR\DTRcontroller;
 //SalaryGrade
 class GenerateReportController extends Controller
 {
@@ -21,11 +22,13 @@ class GenerateReportController extends Controller
 
     protected $DeviceLog ;
 
+    protected $dtr ;
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->computed = new ComputationController();
         $this->DeviceLog = new DeviceLogsController();
+        $this->dtr = new DTRcontroller();
     }
 
 
@@ -54,11 +57,9 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
-  
         for ($i=0; $i < 2; $i++) {
-            $this->GenerateDataReport($request);
+            $this->dtr->RegenerateDTR();
            }
-   return  $this->GenerateDataReport($request);
     }
 
     public function AsyncrounousRun_GenerateDataReport(Request $request)
@@ -68,51 +69,10 @@ class GenerateReportController extends Controller
                     }
             return  $this->GenerateDataReport($request);
                     
-//         $firsthalf = new Request([
-//                 'month_of'=>$request->month_of,
-//                 'year_of'=>$request->year_of,
-//                 'whole_month'=>0,
-//                 'first_half'=>1,
-//                 'second_half'=>0
-//         ]);
-
-//         $secondhalf = new Request([
-//             'month_of'=>$request->month_of,
-//             'year_of'=>$request->year_of,
-//             'whole_month'=>0,
-//             'first_half'=>0,
-//             'second_half'=>1
-//     ]);
-    
-//     $whole = new Request([
-//         'month_of'=>$request->month_of,
-//         'year_of'=>$request->year_of,
-//         'whole_month'=>1,
-//         'first_half'=>0,
-//         'second_half'=>0
-// ]);
-    
-//         $second_half = clone $request;
-//         $second_half->merge(['second_half' => 1]);
-//         $whole= clone $request;
-//         $whole->merge(['second_half' => 1]);
-//         $whole_month = [];
-//         $first_half = [];
-//         $second_half = [];
-//         for ($i=0; $i < 2; $i++) {
-//          $this->GenerateDataReport($whole);
-//         }
-        
-//         return [
-//             'first_half'=> $this->GenerateDataReport($firsthalf),
-//             'second_half'=>$this->GenerateDataReport($secondhalf),
-//             'whole'=>$this->GenerateDataReport($whole),
-//         ];
     }
 
-
-
     public function GenerateDataReport(Request $request){
+        ini_set('max_execution_time', 7200); 
         $month_of = $request->month_of;
         $year_of = $request->year_of;
         $biometricIds = DB::table('daily_time_records')
@@ -120,8 +80,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-            // ->whereIn('biometric_id', $biometricIds)
-            ->where('biometric_id', 493) // 494
+             ->whereIn('biometric_id', $biometricIds)
+         //  ->where('biometric_id', 138) // 494
             ->get();
         $data = [];
 
@@ -169,12 +129,12 @@ class GenerateReportController extends Controller
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
-                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+             $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
 
 
-                $dtrdate =  $val->dtr_date;
+                $dtrdate =$val->dtr_date;
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('dtr_date', $dtrdate)
                 ->where('active',1);
@@ -185,7 +145,7 @@ class GenerateReportController extends Controller
 
                        $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
                     }else {
-                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
+                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
                     }
 
                 }
