@@ -57,9 +57,8 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
-        for ($i=0; $i < 2; $i++) {
-            $this->dtr->RegenerateDTR();
-           }
+        return $this->dtr->RegenerateDTR();
+
     }
 
     public function AsyncrounousRun_GenerateDataReport(Request $request)
@@ -68,11 +67,11 @@ class GenerateReportController extends Controller
                      $this->GenerateDataReport($request);
                     }
             return  $this->GenerateDataReport($request);
-                    
+
     }
 
     public function GenerateDataReport(Request $request){
-        ini_set('max_execution_time', 7200); 
+        ini_set('max_execution_time', 7200);
         $month_of = $request->month_of;
         $year_of = $request->year_of;
         $biometricIds = DB::table('daily_time_records')
@@ -436,7 +435,7 @@ class GenerateReportController extends Controller
             $data[] = [
                 'Biometric_id' => $biometric_id,
                 'EmployeeNo' => $Employee->employee_id,
-                'Name' => $Employee->personalInformation->name(),              
+                'Name' => $Employee->personalInformation->name(),
                 'Payroll' => $init . " - " . $days_In_Month,
                 'From' => $init,
                 'To' => $days_In_Month,
