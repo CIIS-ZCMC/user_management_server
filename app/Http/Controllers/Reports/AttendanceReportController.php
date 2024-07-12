@@ -32,6 +32,24 @@ class AttendanceReportController extends Controller
     private $CONTROLLER_NAME = "Attendance Reports";
 
     /**
+     * Sorts an array of employees based on a specified field and order.
+     *
+     * @param array $employees The array of employees to be sorted.
+     * @param string $sort_by The field to sort by (e.g., 'leave_count').
+     * @param string $order The order to sort by ('asc' or 'desc').
+     * @return void
+     */
+    private function sortData(&$employees, $sort_by, $order)
+    {
+        usort($employees, function ($a, $b) use ($sort_by, $order) {
+            if ($order === 'asc') {
+                return $a[$sort_by] <=> $b[$sort_by];
+            }
+            return $b[$sort_by] <=> $a[$sort_by];
+        });
+    }
+
+    /**
      * Filters attendance records based on given criteria.
      *
      * @param Request $request
@@ -58,7 +76,7 @@ class AttendanceReportController extends Controller
             $sort_order = $request->sort_order; // new parameter for sort order [asc/desc]
             if (
                 ($month_of && $year_of) && !$first_half && !$second_half && !$sector && !$employment_type && !$designation_id && !$absent_without_pay &&
-                !$absent_without_official_leave && !$report_type && !$sort_order
+                !$absent_without_official_leave
             ) {
                 // Get biometric IDs for the given month and year
                 $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
@@ -83,7 +101,7 @@ class AttendanceReportController extends Controller
                 })->toArray();
             } else if (
                 ($month_of && $year_of) && ($first_half || $second_half) && !$sector && !$employment_type && !$designation_id && !$absent_without_pay &&
-                !$absent_without_official_leave && !$report_type && !$sort_order
+                !$absent_without_official_leave
             ) {
                 // Get biometric IDs for the given month and year
                 $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
@@ -159,6 +177,7 @@ class AttendanceReportController extends Controller
                                 if (!empty($employment_type)) {
                                     $q->where('employment_type_id', $employment_type);
                                 }
+                                $q->groupBy('employee_id');
                             })
                             ->limit($limit)
                             ->get();
@@ -175,6 +194,7 @@ class AttendanceReportController extends Controller
                                         if (!empty($employment_type)) {
                                             $q->where('employment_type_id', $employment_type);
                                         }
+                                        $q->groupBy('employee_id');
                                     })
                                     ->limit($limit)
                                     ->get()
@@ -191,6 +211,7 @@ class AttendanceReportController extends Controller
                                         if (!empty($employment_type)) {
                                             $q->where('employment_type_id', $employment_type);
                                         }
+                                        $q->groupBy('employee_id');
                                     })
                                     ->limit($limit)
                                     ->get()
@@ -210,6 +231,7 @@ class AttendanceReportController extends Controller
                                 if (!empty($employment_type)) {
                                     $q->where('employment_type_id', $employment_type);
                                 }
+                                $q->groupBy('employee_id');
                             })
                             ->limit($limit)
                             ->get();
@@ -226,6 +248,7 @@ class AttendanceReportController extends Controller
                                         if (!empty($employment_type)) {
                                             $q->where('employment_type_id', $employment_type);
                                         }
+                                        $q->groupBy('employee_id');
                                     })
                                     ->limit($limit)
                                     ->get()
@@ -245,6 +268,7 @@ class AttendanceReportController extends Controller
                                 if (!empty($employment_type)) {
                                     $q->where('employment_type_id', $employment_type);
                                 }
+                                $q->groupBy('employee_id');
                             })
                             ->limit($limit)
                             ->get();
@@ -261,6 +285,7 @@ class AttendanceReportController extends Controller
                                         if (!empty($employment_type)) {
                                             $q->where('employment_type_id', $employment_type);
                                         }
+                                        $q->groupBy('employee_id');
                                     })
                                     ->limit($limit)
                                     ->get()
@@ -280,6 +305,7 @@ class AttendanceReportController extends Controller
                                 if (!empty($employment_type)) {
                                     $q->where('employment_type_id', $employment_type);
                                 }
+                                $q->groupBy('employee_id');
                             })
                             ->limit($limit)
                             ->get();
@@ -297,17 +323,10 @@ class AttendanceReportController extends Controller
                     );
                 }
             }
-            // Sort data based on the type of report and sort order
-            if ($report_type == 'tardiness') {
-                usort($arr_data, function ($a, $b) use ($sort_order) {
-                    return $sort_order == 'asc' ? $a['total_days_with_tardiness'] <=> $b['total_days_with_tardiness'] : $b['total_days_with_tardiness'] <=> $a['total_days_with_tardiness'];
-                });
-            } else if ($report_type == 'absences') {
-                usort($arr_data, function ($a, $b) use ($sort_order) {
-                    return $sort_order == 'asc' ? $a['total_absent_days'] <=> $b['total_absent_days'] : $b['total_absent_days'] <=> $a['total_absent_days'];
-                });
-            }
 
+            if (!empty($report_type) && !empty($report_type)) {
+                $this->sortData($arr_data, $report_type === 'tardiness' ? 'total_days_with_tardiness' : 'total_absent_days', $sort_order);
+            }
 
             return response()->json([
                 'count' => empty($arr_data) ? 0 : count($arr_data),
@@ -513,6 +532,8 @@ class AttendanceReportController extends Controller
             'total_hours_missed' => $total_hours_missed,
             'total_days_with_tardiness' => $total_days_with_tardiness
         ];
+
+
 
         return $report_data;
     }
