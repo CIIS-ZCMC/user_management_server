@@ -865,8 +865,8 @@ Route::middleware('auth.cookie')->group(function () {
             Route::put('employee-profile-update-password', 'EmployeeProfileController@updatePassword');
         });
 
-        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
-            Route::put('employee-profile-update-shifting/{id}', 'EmployeeProfileController@updateEmployeeProfileShifting');
+        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
+            Route::post('employee-profile-update-shifting', 'EmployeeProfileController@updateEmployeeProfileShifting');
         });
 
 
