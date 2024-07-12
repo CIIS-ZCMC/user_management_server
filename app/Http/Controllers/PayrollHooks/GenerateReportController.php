@@ -80,7 +80,7 @@ class GenerateReportController extends Controller
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
              ->whereIn('biometric_id', $biometricIds)
-         //  ->where('biometric_id', 138) // 494
+           //->where('biometric_id', 565) // 494
             ->get();
         $data = [];
 
@@ -133,7 +133,7 @@ class GenerateReportController extends Controller
                 $empschedule[] = $DaySchedule;
 
 
-                $dtrdate =$val->dtr_date;
+                $dtrdate = "2024-07-10";//$val->dtr_date;
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('dtr_date', $dtrdate)
                 ->where('active',1);

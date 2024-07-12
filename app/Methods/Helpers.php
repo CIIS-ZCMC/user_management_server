@@ -300,15 +300,15 @@ AND id IN (
     }
 
     public function CurrentSchedule($biometric_id, $value, $yesterdayRecord)
-    {   
-      
+    {
+
         if (!isset($value['date_time'])) {
             return [
                 'daySchedule' => [],
                 'break_Time_Req' => [],
             ];
         }
-       
+
         $entrydateYear = date('Y', strtotime($value['date_time']));
         $entrydateMonth = date('m', strtotime($value['date_time']));
         $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");
@@ -835,7 +835,7 @@ AND id IN (
     public function SaveToDTR($check_for_generate, $validate, $attr, $sc, $out)
     {
         if ($check_for_generate) {
-            DailyTimeRecords::find($validate->id)->update([
+            DailyTimeRecords::where('id',$validate->id)->update([
                 'total_working_hours' => $attr['total_WH_words'],
                 'required_working_hours' => $attr['required_WH'],
                 'required_working_minutes' => $attr['required_WH_Minutes'],
