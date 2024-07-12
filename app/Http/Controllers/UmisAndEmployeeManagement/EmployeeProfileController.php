@@ -2138,12 +2138,6 @@ class EmployeeProfileController extends Controller
     public function index(Request $request)
     {
         try {
-            // Retrieve the authenticated user from the request
-            $user = $request->user;
-
-            // Define the cache expiration time (currently not used, can be implemented if needed)
-            $cacheExpiration = Carbon::now()->addDay();
-
             // Fetch active employee profiles, excluding the profile with id 1, with pagination (10 rows per page)
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1])
                 ->where('deactivated_at', NULL)
