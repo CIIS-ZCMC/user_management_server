@@ -4404,4 +4404,32 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function updateEmployeeProfileShifting(Request $request, $id)
+    {
+        try {
+            // Validate the incoming request
+            $request->validate([
+                'shifting' => 'required|string',
+            ]);
+
+            // Find the employee profile by its ID
+            $employeeProfile = EmployeeProfile::findOrFail($id);
+
+            // Update the shifting status
+            $employeeProfile->shifting = $request->shifting;
+            $employeeProfile->save();
+
+            return response()->json(
+                [
+                    'data' => $employeeProfile,
+                    'message' => 'Employee profile shifting updated.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeProfileShifting', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
