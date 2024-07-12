@@ -2126,11 +2126,13 @@ class EmployeeProfileController extends Controller
     }
 
     /**
-     * Display a paginated list of employee profiles.
+     * Display a paginated and searchable list of employee profiles.
      *
      * This method retrieves a paginated list of active employee profiles
      * and returns them in a JSON response along with pagination metadata.
      * The data is fetched in chunks of 10 rows per page to improve performance.
+     * If a search term is provided, the method filters the employee profiles
+     * based on the search term before applying pagination.
      *
      * @param \Illuminate\Http\Request $request The incoming HTTP request.
      * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles and pagination metadata.
@@ -2138,10 +2140,26 @@ class EmployeeProfileController extends Controller
     public function index(Request $request)
     {
         try {
-            // Fetch active employee profiles, excluding the profile with id 1, with pagination (10 rows per page)
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])
-                ->where('deactivated_at', NULL)
-                ->paginate(10);
+            // Fetch the search term from the request
+            $search = $request->input('search');
+
+            // Create the base query for active employee profiles, excluding the profile with id 1
+            $query = EmployeeProfile::with('personalInformation')
+                ->whereNotIn('employee_profiles.id', [1])
+                ->whereNull('employee_profiles.deactivated_at');
+
+            // Apply search filtering if a search term is provided
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('personalInformation', function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+                });
+            }
+
+            // Apply pagination (10 rows per page)
+            $employee_profiles = $query->paginate(10);
 
             // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
