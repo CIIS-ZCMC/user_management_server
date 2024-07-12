@@ -122,23 +122,15 @@ class ContactController extends Controller
 
 
             
-            if (isset($request->password)) {
-                foreach ($request->contact as $key => $value) {
-                    if ($value === null || $key === 'password') {
-                        $cleanData[$key] = $value;
-                        continue;
-                    }
-                    $cleanData[$key] = $value;
-                }
-            } 
-
-            foreach ($request->all() as $key => $value) {
+           
+            foreach ($request->contact as $key => $value) {
                 if ($value === null || $key === 'password') {
                     $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = $value;
             }
+            
 
             $contact->update($cleanData);
 
@@ -147,7 +139,6 @@ class ContactController extends Controller
             throw new \Exception("Failed to register employee contact.", 400);
         }
     }
-
     public function destroy($id, AuthPinApprovalRequest $request)
     {
         try {
