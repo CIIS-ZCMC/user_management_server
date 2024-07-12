@@ -2125,29 +2125,46 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    /**
+     * Display a paginated list of employee profiles.
+     *
+     * This method retrieves a paginated list of active employee profiles
+     * and returns them in a JSON response along with pagination metadata.
+     * The data is fetched in chunks of 10 rows per page to improve performance.
+     *
+     * @param \Illuminate\Http\Request $request The incoming HTTP request.
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles and pagination metadata.
+     */
     public function index(Request $request)
     {
         try {
+            // Retrieve the authenticated user from the request
             $user = $request->user;
+
+            // Define the cache expiration time (currently not used, can be implemented if needed)
             $cacheExpiration = Carbon::now()->addDay();
 
-            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
-            //     return EmployeeProfile::whereNotIn('id', [1])->get();
-            // });
+            // Fetch active employee profiles, excluding the profile with id 1, with pagination (10 rows per page)
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])
+                ->where('deactivated_at', NULL)
+                ->paginate(10);
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->where('deactivated_at', NULL)->get();
-
-            // return EmployeeProfileResource::collection($employee_profiles);
-
+            // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles),
-                'message' => 'list of employees retrieved.'
+                'data' => EmployeeProfileResource::collection($employee_profiles->items()), // Current page items
+                'current_page' => $employee_profiles->currentPage(), // Current page number
+                'last_page' => $employee_profiles->lastPage(), // Total number of pages
+                'per_page' => $employee_profiles->perPage(), // Number of items per page
+                'total' => $employee_profiles->total(), // Total number of items
+                'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            // Log any exceptions and return an error response
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     public function getUserListMentions(Request $request)
     {
@@ -4405,15 +4422,17 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function updateEmployeeProfileShifting(Request $request, $id)
+    public function updateEmployeeProfileShifting(Request $request)
     {
         try {
             // Validate the incoming request
             $request->validate([
+                'id' => 'required|integer',
                 'shifting' => 'required|string',
             ]);
 
             // Find the employee profile by its ID
+            $id = $request->id;
             $employeeProfile = EmployeeProfile::findOrFail($id);
 
             // Update the shifting status
