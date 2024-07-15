@@ -41,7 +41,7 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
-
+use DateTime;
 
 class LeaveApplicationController extends Controller
 {
@@ -153,8 +153,8 @@ class LeaveApplicationController extends Controller
     public function exportCsv()
     {
         $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')->get();
-            // ->where('status', 'received')
-           
+        // ->where('status', 'received')
+
         // ->where('status', 'approved')
 
 
@@ -898,7 +898,9 @@ class LeaveApplicationController extends Controller
             $position = $employee_profile->position();
             $status = '';
             $log_status = '';
-
+            $the_same_approver_id = '';
+            $hrmo_flag = false;
+            $approving_flag=false;
             //FOR NOTIFICATION
             $next_approving = null;
             $emp_id = $leave_application->employee_profile_id;
@@ -909,13 +911,25 @@ class LeaveApplicationController extends Controller
             switch ($leave_application->status) {
                 case 'applied':
                     if ($employee_profile->id === $leave_application->hrmo_officer) {
-                        $status = 'for recommending approval';
-                        $log_status = 'Approved by HRMO';
-                        $leave_application->update(['status' => $status]);
+                        if ($leave_application->hrmo_officer === $leave_application->recommending_officer) {
+                            $status = 'for approving approval';
+                            $log_status = 'Approved by HRMO';
+                            $the_same_approver_id = 'Approved by Recommending Officer';
+                            $leave_application->update(['status' => $status]);
 
-                        //FOR NOTIFICATION
-                        $next_approving = $leave_application->recommending_officer;
-                        $message = 'HRMO';
+                            //FOR NOTIFICATION
+                            $next_approving = $leave_application->approving_officer;
+                            $message = 'HRMO';
+                            $hrmo_flag = true;
+                        } else {
+                            $status = 'for recommending approval';
+                            $log_status = 'Approved by HRMO';
+                            $leave_application->update(['status' => $status]);
+
+                            //FOR NOTIFICATION
+                            $next_approving = $leave_application->recommending_officer;
+                            $message = 'HRMO';
+                        }
                     } else {
                         return response()->json([
                             'message' => 'You have no access to approve this request.',
@@ -924,13 +938,27 @@ class LeaveApplicationController extends Controller
                     break;
                 case 'for recommending approval':
                     if ($employee_profile->id === $leave_application->recommending_officer) {
-                        $status = 'for approving approval';
-                        $log_status = 'Approved by Recommending Officer';
-                        $leave_application->update(['status' => $status]);
+                        if ($leave_application->recommending_officer === $leave_application->approving_officer) {
+                            $status = 'approved';
+                            $log_status = 'Approved by Recommending Officer';
+                            $the_same_approver_id = 'Approved by Approving Officer';
+                            $leave_application->update(['status' => $status]);
 
-                        //FOR NOTIFICATION
-                        $next_approving = $leave_application->approving_officer;
-                        $message = 'Recommending Officer';
+                            //FOR NOTIFICATION
+                            // $next_approving=$leave_application->recommending_officer;
+                            $message = 'Approving Officer';
+                            $approving_flag=true;
+                        }
+                        else{
+                            $status = 'for approving approval';
+                            $log_status = 'Approved by Recommending Officer';
+                            $leave_application->update(['status' => $status]);
+
+                            //FOR NOTIFICATION
+                            $next_approving = $leave_application->approving_officer;
+                            $message = 'Recommending Officer';
+                        }
+
                     } else {
                         return response()->json([
                             'message' => 'You have no access to approve this request.',
@@ -954,11 +982,40 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            LeaveApplicationLog::create([
-                'action_by' => $employee_profile->id,
-                'leave_application_id' => $leave_application->id,
-                'action' => $log_status
-            ]);
+            if ($hrmo_flag) {
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $log_status
+                ]);
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $the_same_approver_id
+                ]);
+            }
+            elseif($approving_flag)
+            {
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $log_status
+                ]);
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $the_same_approver_id
+                ]);
+
+            }
+            else {
+                LeaveApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'leave_application_id' => $leave_application->id,
+                    'action' => $log_status
+                ]);
+            }
+
 
             if ($leave_application->status === 'approved') {
                 //EMPLOYEE
@@ -1120,11 +1177,30 @@ class LeaveApplicationController extends Controller
 
             $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
 
-            if (!$checkSchedule) {
+            if (!$checkSchedule['status']) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
 
-            //CHECK SCHEDULES
+            $dateObject = new DateTime($start);
+            $dateFormatted = $dateObject->format('m-d');
+            $isHolidayByMonthDay = Holiday::where('month_day', $dateFormatted)->get();
+            $isHolidayExists = false;
+            foreach ($isHolidayByMonthDay as $holiday) {
+                if ($holiday->isspecial == 1) {
+                    $isHolidayExists = Holiday::where('effectiveDate', $currentDate)->exists();
+                } else {
+                    $isHolidayExists = Holiday::where('month_day', $dateFormatted)->exists();
+                }
+
+                if ($isHolidayExists) {
+                    break;
+                }
+            }
+
+            if ($isHolidayExists) {
+                return response()->json(['message' => "The selected starting date, " . $dateObject->format('Y-m-d') . ", is a holiday."], Response::HTTP_FORBIDDEN);
+            }
+
 
             //IF SICK LEAVE
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
@@ -1160,6 +1236,7 @@ class LeaveApplicationController extends Controller
                 $currentDate = Carbon::now();
                 // Get the HRMO schedule for the next 5 days
                 $checkDate = $currentDate->copy();
+
                 $foundConsecutiveDays = 0;
                 $selected_date = $start->copy();
                 if (Helpers::hasSchedule($checkDate->toDateString(),  $checkDate->toDateString(), $hrmo_officer)) {
@@ -1167,6 +1244,7 @@ class LeaveApplicationController extends Controller
                     $foundConsecutiveDays = 0;
 
                     while ($foundConsecutiveDays === 4) {
+
                         if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $hrmo_officer)) {
                             // If a schedule is found, increment the counter
                             $foundConsecutiveDays++;
@@ -1218,11 +1296,11 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
                 if ($leave_type->is_special) {
-                    if ($leave_type->period < $daysDiff) {
+                    if ($leave_type->period < $checkSchedule['totalWithSchedules']) {
                         return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
 
-                    $cleanData['applied_credits'] = $daysDiff;
+                    $cleanData['applied_credits'] = $checkSchedule['totalWithSchedules'];
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
@@ -1291,7 +1369,7 @@ class LeaveApplicationController extends Controller
                         ->where('leave_type_id', $request->leave_type_id)->first();
 
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
-                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
+                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $checkSchedule['totalWithSchedules']) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
                         $totalHours = Helpers::getTotalHours($start, $end, $employeeId);
@@ -1300,7 +1378,7 @@ class LeaveApplicationController extends Controller
                             $totalDeductCredits = $totalDeductCredits / 8;
                             $cleanData['applied_credits'] = $totalDeductCredits;
                         } else {
-                            $cleanData['applied_credits'] = $daysDiff;
+                            $cleanData['applied_credits'] = $checkSchedule['totalWithSchedules'];
                         }
 
                         $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -1349,8 +1427,8 @@ class LeaveApplicationController extends Controller
                         $previous_credit = $employee_credit->total_leave_credits;
 
                         $employee_credit->update([
-                            'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
-                            'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
+                            'total_leave_credits' => $employee_credit->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                            'used_leave_credits' => $employee_credit->used_leave_credits + $checkSchedule['totalWithSchedules']
                         ]);
 
 
@@ -1363,8 +1441,8 @@ class LeaveApplicationController extends Controller
                             $previous_credit_vl = $employee_credit_vl->total_leave_credits;
 
                             $employee_credit_vl->update([
-                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $daysDiff,
-                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
+                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
                             ]);
                         }
                     }
@@ -1398,7 +1476,7 @@ class LeaveApplicationController extends Controller
                     EmployeeLeaveCreditLogs::create([
                         'employee_leave_credit_id' => $employee_credit->id,
                         'previous_credit' => $previous_credit,
-                        'leave_credits' => $daysDiff,
+                        'leave_credits' => $checkSchedule['totalWithSchedules'],
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
@@ -1545,7 +1623,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'Employee already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
                 if ($leave_type->is_special) {
-                    $cleanData['applied_credits'] = $daysDiff;
+                    $cleanData['applied_credits'] = $checkSchedule['totalWithSchedules'];
                     $cleanData['employee_profile_id'] = $employee_id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
@@ -1616,7 +1694,7 @@ class LeaveApplicationController extends Controller
                         ->where('leave_type_id', $request->leave_type_id)->first();
 
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
-                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
+                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $checkSchedule['totalWithSchedules']) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
                         $totalHours = Helpers::getTotalHours($start, $end, $employee_id);
@@ -1625,7 +1703,7 @@ class LeaveApplicationController extends Controller
                             $totalDeductCredits = $totalDeductCredits / 8;
                             $cleanData['applied_credits'] = $totalDeductCredits;
                         } else {
-                            $cleanData['applied_credits'] = $daysDiff;
+                            $cleanData['applied_credits'] = $checkSchedule['totalWithSchedules'];
                         }
 
                         $cleanData['employee_profile_id'] = $employee_id;
@@ -1677,8 +1755,8 @@ class LeaveApplicationController extends Controller
                         $previous_credit = $employee_credit->total_leave_credits;
 
                         $employee_credit->update([
-                            'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
-                            'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
+                            'total_leave_credits' => $employee_credit->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                            'used_leave_credits' => $employee_credit->used_leave_credits + $checkSchedule['totalWithSchedules']
                         ]);
 
 
@@ -1691,8 +1769,8 @@ class LeaveApplicationController extends Controller
                             $previous_credit_vl = $employee_credit_vl->total_leave_credits;
 
                             $employee_credit_vl->update([
-                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $daysDiff,
-                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
+                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
                             ]);
                         }
                     }
@@ -1726,7 +1804,7 @@ class LeaveApplicationController extends Controller
                     EmployeeLeaveCreditLogs::create([
                         'employee_leave_credit_id' => $employee_credit->id,
                         'previous_credit' => $previous_credit,
-                        'leave_credits' => $daysDiff,
+                        'leave_credits' => $checkSchedule['totalWithSchedules'],
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);

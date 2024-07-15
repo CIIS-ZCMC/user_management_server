@@ -47,7 +47,7 @@ class ComputationController extends Controller
         }
         $salaryGrade = 35097;
     return [
-        'Total'=> $schedcount * $salaryGrade / $this->Working_Days,
+        'Total'=> floor(( $schedcount * $salaryGrade / $this->Working_Days) * 100) / 100,
         'GrandTotal'=> $salaryGrade,
     ];
     }
@@ -66,11 +66,12 @@ class ComputationController extends Controller
             $per_week = $per_day * 5;
 
             return [
-                'Weekly'=>round($per_week,2),
-                'Daily'=>round($per_day,2),
-                'Hourly'=>round($per_hour,2),
-                'Minutes'=>round($per_minutes,2),
+                'Weekly' => floor($per_week * 100) / 100,
+                'Daily' => floor($per_day * 100) / 100,
+                'Hourly' => floor($per_hour * 100) / 100,
+                'Minutes' => floor($per_minutes * 100) / 100,
             ];
+
 
     }
 
@@ -82,10 +83,34 @@ class ComputationController extends Controller
         return round($Rates['Daily'] * $Number_Absences,2) ;
     }
 
-    public function NetSalary($undertimeRate,$absentRate,$grosssalary){
-        $deduction = $undertimeRate + $absentRate;
-        return round( $grosssalary - $deduction,2);
+    public function NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$grosssalary){
+        $deduction = $undertimeRate ;
+        $grossSal = $Rates['Daily'] * $presentCount ;
+        $net =  floor(round( $grossSal - $deduction,2) * 100) /100;
 
+      
+
+        return $net ;
+
+    }
+
+    public function OutofPayroll($netsalary,$init,$days_In_Month){
+        $limit = 5000;
+        $halfLimit = $limit / 2;
+        
+        if (($init >= 1 && $days_In_Month <= 15) || ($init >= 16 && $days_In_Month >=31)) {
+            if ($netsalary < $halfLimit) {
+                // OUT OF PAYROLL
+                return true;
+            }
+        } elseif ($init >= 1 && $init <= 31) {
+            if ($netsalary < $limit) {
+                return true;
+            }
+        }
+        
+        return false;
+        
     }
 
 

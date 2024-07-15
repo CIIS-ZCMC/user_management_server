@@ -77,7 +77,6 @@ class ProcessApprovedOvertimeCredits extends Command
                                         if ($holiday->isspecial == 1) {
                                             $effectiveDate = Carbon::createFromFormat('Y-m-d', $holiday->effectiveDate);
                                             if ($effectiveDate->isSameDay($dateObject)) {
-
                                                 if ($dateObject->isWeekend()) {
                                                     $overtimeRate = 1.5;
                                                 }
