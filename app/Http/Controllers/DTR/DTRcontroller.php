@@ -347,46 +347,21 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
     }
 }
     public function RegenerateDTR(){
+        
+    Log::channel("custom-dtr-log")->info('Performing RegenerateDTR @ '.date('H:i'));
         ini_set('max_execution_time', 7200);
-        $previousDay = strtotime('-3 day');
-        $previousDay1 = strtotime('-4 day');
-        $previousDay2 = strtotime('-5 day');
-
-    // return date('Y-m-d',$previousDay)." ".date('Y-m-d',$previousDay1)." ".date('Y-m-d',$previousDay2);
-        $data = [
-            [
-                'month_of'=> date('m',$previousDay2 ),
-                'year_of'=>date('Y',$previousDay2 ),
-                'dtr_date'=>date('Y-m-d',$previousDay2)
-            ],
-            [
-
-                'month_of'=> date('m',$previousDay1 ),
-                'year_of'=>date('Y',$previousDay1 ),
-                'dtr_date'=>date('Y-m-d',$previousDay1)
-            ],
+        $data = [ 
             [
                 'month_of'=> date('m'),
                 'year_of'=>date('Y'),
                 'dtr_date'=>date('Y-m-d')
-            ],
-            [
-
-                'month_of'=> date('m',$previousDay ),
-                'year_of'=>date('Y',$previousDay ),
-                'dtr_date'=>date('Y-m-d',$previousDay)
-            ],
-
+            ],   
         ];
 
         foreach($data as $row){
             $year_of = $row['year_of'];
             $month_of = $row['month_of'];
             $dtr_date = $row['dtr_date'];
-
-
-
-
         $biometricIds = DB::table('daily_time_records')
         ->whereYear('dtr_date', $year_of)
         ->whereMonth('dtr_date', $month_of)
@@ -427,9 +402,8 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
             $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
             ->where('active',1);
 
-                 $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+             $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
         }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
-
              $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
         }
 
