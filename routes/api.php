@@ -44,7 +44,7 @@ Route::
 
 Route::
         namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-            Route::post('testgenerate', 'GenerateReportController@test');
+            Route::get('testgenerate', 'GenerateReportController@test');
         });
 
 Route::

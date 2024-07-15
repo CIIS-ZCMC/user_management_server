@@ -133,7 +133,7 @@ class GenerateReportController extends Controller
                 $empschedule[] = $DaySchedule;
 
 
-                $dtrdate = "2024-07-10";//$val->dtr_date;
+                $dtrdate = $val->dtr_date;
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('dtr_date', $dtrdate)
                 ->where('active',1);

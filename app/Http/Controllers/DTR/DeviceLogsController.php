@@ -241,10 +241,10 @@ class DeviceLogsController extends Controller
         //COMPARE IF IT CONFLICTS THE SCHEDULE
 
         if(count($DaySchedule)){
-        return $DaySchedule['first_entry']."  = ".$timeSched;
-        //;
-
+           $date = Carbon::parse(date('Y-m-d',strtotime($timeSched))." ".$DaySchedule['first_entry'])->format("Y-m-d H:i:s");
+          if($date == $timeSched){
             return true;
+          }
         }
 
         return false;
@@ -263,13 +263,11 @@ class DeviceLogsController extends Controller
 
         if($dvl->count()){
             //Check if conflict
-            return $this->ScheduleIsConflict(date('Y-m-d H:i:s',strtotime($tomorrow." ".date('H:i:s',strtotime($timeSched)))),$biometric_id);
-            // if($this->ScheduleIsConflict(date('Y-m-d H:i:s',strtotime($tomorrow." ".date('H:i:s',strtotime($timeSched)))),$biometric_id)){
-
-            //     return;
-            // }
 
 
+            if($this->ScheduleIsConflict(date('Y-m-d H:i:s',strtotime($tomorrow." ".date('H:i:s',strtotime($timeSched)))),$biometric_id)){
+                return;
+            }
 
             //Check the schedule for today if conflict.
             //Removed the created DTR if theres one.
@@ -444,6 +442,10 @@ class DeviceLogsController extends Controller
             'PM'
         ];
 
+        if(!$this->getEntries($datetime,$DaySchedule)['firstEntry'] && !$this->getEntries($datetime,$DaySchedule)['thirdentry']){
+          return null;
+        }
+
         return $this->getEntries($datetime,$DaySchedule)['lastentry'][0]['date_time'] ?? null;
 
     }
@@ -453,6 +455,25 @@ class DeviceLogsController extends Controller
         if($dtr->exists()){
             $dtr->delete();
         }
+    }
+
+    public function cleanEntry($dtr,$biometric_id,$dtrDate){
+        $count = 0;
+        foreach ($dtr as $key => $value) {
+            if($key !== "is_generated"){
+                if($value === null){
+                    $count ++;
+                }
+            }
+        }
+        if($count == 4){
+            DailyTimeRecords::where('biometric_id',$biometric_id)
+            ->where('dtr_date',$dtrDate)
+            ->delete();
+            return false;
+        }
+
+        return true;
     }
     public function RegenerateEntry($deviceLogs,$biometric_id){
         try {
@@ -522,14 +543,21 @@ class DeviceLogsController extends Controller
             }
             $dtr = $this->adjustEntries($dtr);
 
-            return $dtr;
 
-            DailyTimeRecords::where('biometric_id',$biometric_id)
+            if($this->cleanEntry($dtr,$biometric_id,$Entry[0]['dtr_date'])){
+              DailyTimeRecords::where('biometric_id',$biometric_id)
             ->where('dtr_date',$Entry[0]['dtr_date'])
+            ->where('is_time_adjustment',0)
             ->where('is_generated',0)
             ->update($dtr);
+
+            }
+
+
         } catch (\Throwable $th) {
-            return $th;
+           // return $th;
+           Log::channel("custom-dtr-log")->info('Error: '.$th->getMessage());
+
         }
     }
     public function GenerateEntry($deviceLogs,$dtrdate,$generateEntry){
@@ -554,8 +582,12 @@ class DeviceLogsController extends Controller
                     'first_entry' => $ent[0]['date_time'] ?? $ent[2]['date_time'],
                     'date_time' => $ent[0]['date_time'] ?? $ent[2]['date_time']
                 ];
+
+
                 $Schedule = $this->helper->CurrentSchedule($ent[0]['biometric_id'], $bioEntry, false);
+
                 $DaySchedule = $Schedule['daySchedule'];
+
                 $BreakTime = $Schedule['break_Time_Req'];
                 $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
                 if(!isset($DaySchedule)){
@@ -584,10 +616,15 @@ class DeviceLogsController extends Controller
                     'is_generated'=>1
                   ];
                 }
-                $dtr =  $this->UniqueEntry($dtr);
+                $dtr = $this->UniqueEntry($dtr);
                 $dtr = $this->adjustEntries($dtr);
-                //return $dtr;
-                DailyTimeRecords::create($dtr);
+
+
+                if($this->cleanEntry($dtr,$ent[0]['biometric_id'],$Entry[0]['dtr_date'])){
+
+                    DailyTimeRecords::create($dtr);
+                  }
+
             }
             return;
         }
