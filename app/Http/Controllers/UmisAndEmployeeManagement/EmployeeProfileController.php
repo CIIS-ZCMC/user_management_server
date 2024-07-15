@@ -4472,15 +4472,60 @@ class EmployeeProfileController extends Controller
             $area_id = $request->area_id;
             $key = Str::lower(strip_tags($sector));
 
-            // Eager load the personalInformation relationship
-            $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile.assignedArea', 'employeeProfile.employmentType'])
-                ->where($key . "_id", $area_id)
-                ->get();
+            switch ($sector) {
+                case 'division':
+                    $employees = AssignArea::with(['employeeProfile.personalInformation'])
+                        ->where($key . "_id", $area_id)
+                        ->where('division_id', $area_id)
+                        ->get();
+
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->whereIn('department_id', Department::where('division_id', $area_id)->pluck('id')->toArray())
+                            ->get()
+                    );
+
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->whereIn('section_id', Section::where('division_id', $area_id)->pluck('id')->toArray())
+                            ->get()
+                    );
+
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->whereIn('unit_id', Unit::where('section_id', $area_id)->pluck('id')->toArray())
+                            ->get()
+                    );
+
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->whereIn('section_id', Section::where('division_id', $area_id)->whereNull('department_id')->pluck('id')->toArray())
+                            ->get()
+                    );
+
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->whereIn('unit_id', Unit::where('section_id', $area_id)->pluck('id')->toArray())
+                            ->get()
+                    );
+
+                    break;
+                case 'department':
+                    break;
+                case 'section':
+                    break;
+                case 'unit':
+                    break;
+            }
+
+            // $employees = AssignArea::with(['employeeProfile.personalInformation'])
+            //     ->where($key . "_id", $area_id)
+            //     ->get();
 
             // return $employees;
             return response()->json([
-                'data' => EmployeesAssignedAreaResource::collection($employees),
                 'count' => COUNT($employees),
+                'data' => EmployeesAssignedAreaResource::collection($employees),
                 'message' => 'List of employees by area retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
