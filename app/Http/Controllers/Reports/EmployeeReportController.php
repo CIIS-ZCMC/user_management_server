@@ -7,8 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\DesignationReportResource;
 use App\Http\Resources\EmployeesDetailsReport;
 use App\Models\AssignArea;
+use App\Models\Department;
 use App\Models\EmployeeProfile;
 use App\Models\PersonalInformation;
+use App\Models\Section;
+use App\Models\Unit;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -19,6 +22,202 @@ class EmployeeReportController extends Controller
 {
     private $CONTROLLER_NAME = 'Employee Reports';
 
+    public function filterEmployeeByBloodType(Request $request)
+    {
+        try {
+            $employees = collect();
+            $sector =  $request->sector;
+            $area_id = $request->area_id;
+            $blood_type = $request->blood_type;
+
+            switch ($sector) {
+                case 'division':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                if (!empty($blood_type)) {
+                                    $q->where('blood_type', $blood_type);
+                                }
+                            })
+                            ->get()
+                    );
+
+                    $departments = Department::where('division_id', $area_id)->get();
+                    foreach ($departments as $department) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('department_id', $department->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                    if (!empty($blood_type)) {
+                                        $q->where('blood_type', $blood_type);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                        if (!empty($blood_type)) {
+                                            $q->where('blood_type', $blood_type);
+                                        }
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                            if (!empty($blood_type)) {
+                                                $q->where('blood_type', $blood_type);
+                                            }
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                    }
+
+                    // Get sections directly under the division (if any) that are not under any department
+                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                    foreach ($sections as $section) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('section_id', $section->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                    if (!empty($blood_type)) {
+                                        $q->where('blood_type', $blood_type);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                        if (!empty($blood_type)) {
+                                            $q->where('blood_type', $blood_type);
+                                        }
+                                    })
+                                    ->get()
+                            );
+                        }
+                    }
+                    break;
+
+                case 'department':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                if (!empty($blood_type)) {
+                                    $q->where('blood_type', $blood_type);
+                                }
+                            })
+                            ->get()
+                    );
+
+                    $sections = Section::where('department_id', $area_id)->get();
+                    foreach ($sections as $section) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('section_id', $section->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                    if (!empty($blood_type)) {
+                                        $q->where('blood_type', $blood_type);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                        if (!empty($blood_type)) {
+                                            $q->where('blood_type', $blood_type);
+                                        }
+                                    })
+                                    ->get()
+                            );
+                        }
+                    }
+                    break;
+
+                case 'section':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                if (!empty($blood_type)) {
+                                    $q->where('blood_type', $blood_type);
+                                }
+                            })
+                            ->get()
+                    );
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('unit_id', $unit->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                    if (!empty($blood_type)) {
+                                        $q->where('blood_type', $blood_type);
+                                    }
+                                })
+                                ->get()
+                        );
+                    }
+                    break;
+
+                case 'unit':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                if (!empty($blood_type)) {
+                                    $q->where('blood_type', $blood_type);
+                                }
+                            })
+                            ->get()
+                    );
+                    break;
+            }
+            return response()->json([
+                'count' => COUNT($employees),
+                'data' => EmployeesDetailsReport::collection($employees),
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function allEmployeesBloodType(Request $request)
     {

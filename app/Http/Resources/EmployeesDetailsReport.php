@@ -20,7 +20,7 @@ class EmployeesDetailsReport extends JsonResource
             $employee_profile = $this->employeeProfile;
             $personal_information = $employee_profile->personalInformation;
             $name = $personal_information->fullName();
-            $assigned_area =$employee_profile->assignedArea;
+            $assigned_area = $employee_profile->assignedArea;
             $area_details = $assigned_area ? $assigned_area->findDetails() : null;
             $area = $area_details;
             $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
@@ -39,7 +39,7 @@ class EmployeesDetailsReport extends JsonResource
             ];
         }
 
-        
+
         $personal_information = $this->personalInformation;
         $name = $personal_information->fullName();
         $assigned_area = $this->assignedArea;
