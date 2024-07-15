@@ -219,6 +219,203 @@ class EmployeeReportController extends Controller
         }
     }
 
+    public function filterEmployeeByCivilStatus(Request $request)
+    {
+        try {
+            $employees = collect();
+            $sector =  $request->sector;
+            $area_id = $request->area_id;
+            $civil_status = $request->civil_status;
+
+            switch ($sector) {
+                case 'division':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                if (!empty($civil_status)) {
+                                    $q->where('civil_status', $civil_status);
+                                }
+                            })
+                            ->get()
+                    );
+
+                    $departments = Department::where('division_id', $area_id)->get();
+                    foreach ($departments as $department) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('department_id', $department->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                    if (!empty($civil_status)) {
+                                        $q->where('civil_status', $civil_status);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                        if (!empty($civil_status)) {
+                                            $q->where('civil_status', $civil_status);
+                                        }
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                            if (!empty($civil_status)) {
+                                                $q->where('civil_status', $civil_status);
+                                            }
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                    }
+
+                    // Get sections directly under the division (if any) that are not under any department
+                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                    foreach ($sections as $section) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('section_id', $section->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                    if (!empty($civil_status)) {
+                                        $q->where('civil_status', $civil_status);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                        if (!empty($civil_status)) {
+                                            $q->where('civil_status', $civil_status);
+                                        }
+                                    })
+                                    ->get()
+                            );
+                        }
+                    }
+                    break;
+
+                case 'department':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                if (!empty($civil_status)) {
+                                    $q->where('civil_status', $civil_status);
+                                }
+                            })
+                            ->get()
+                    );
+
+                    $sections = Section::where('department_id', $area_id)->get();
+                    foreach ($sections as $section) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('section_id', $section->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                    if (!empty($civil_status)) {
+                                        $q->where('civil_status', $civil_status);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                        if (!empty($civil_status)) {
+                                            $q->where('civil_status', $civil_status);
+                                        }
+                                    })
+                                    ->get()
+                            );
+                        }
+                    }
+                    break;
+
+                case 'section':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                if (!empty($civil_status)) {
+                                    $q->where('civil_status', $civil_status);
+                                }
+                            })
+                            ->get()
+                    );
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('unit_id', $unit->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                    if (!empty($civil_status)) {
+                                        $q->where('civil_status', $civil_status);
+                                    }
+                                })
+                                ->get()
+                        );
+                    }
+                    break;
+
+                case 'unit':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile.personalInformation'])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
+                                if (!empty($civil_status)) {
+                                    $q->where('civil_status', $civil_status);
+                                }
+                            })
+                            ->get()
+                    );
+                    break;
+            }
+            return response()->json([
+                'count' => COUNT($employees),
+                'data' => EmployeesDetailsReport::collection($employees),
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function allEmployeesBloodType(Request $request)
     {
         try {

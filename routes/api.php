@@ -2428,8 +2428,13 @@ Route::middleware('auth.cookie')->group(function () {
     Route::namespace('App\Http\Controllers\Reports')->group(function () {
 
         // TESTING
+        // Filter Employees by Blood Type
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-bloodtype-filter', 'EmployeeReportController@filterEmployeeByBloodType');
+            Route::post('employee-by-blood-type-filter', 'EmployeeReportController@filterEmployeeByBloodType');
+        });
+        // Filter Employees by Civil Status
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-civil-status-filter', 'EmployeeReportController@filterEmployeeByCivilStatus');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
