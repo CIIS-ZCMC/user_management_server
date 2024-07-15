@@ -22,7 +22,7 @@ class EmployeeReportController extends Controller
 {
     private $CONTROLLER_NAME = 'Employee Reports';
 
-    public function filterEmployeeByBloodType(Request $request)
+    public function filterEmployeesByBloodType(Request $request)
     {
         try {
             $employees = collect();
@@ -219,7 +219,7 @@ class EmployeeReportController extends Controller
         }
     }
 
-    public function filterEmployeeByCivilStatus(Request $request)
+    public function filterEmployeesByCivilStatus(Request $request)
     {
         try {
             $employees = collect();
