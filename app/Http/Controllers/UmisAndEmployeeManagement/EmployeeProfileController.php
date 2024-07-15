@@ -86,6 +86,7 @@ use App\Http\Resources\IdentificationNumberResource;
 use App\Http\Controllers\DTR\TwoFactorAuthController;
 use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
+use App\Http\Resources\EmployeesAssignedAreaResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
 use App\Models\LeaveApplication;
 
@@ -4460,6 +4461,30 @@ class EmployeeProfileController extends Controller
             );
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeProfileShifting', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function employeesByArea(Request $request)
+    {
+        try {
+            $sector = $request->sector;
+            $area_id = $request->area_id;
+            $key = Str::lower(strip_tags($sector));
+
+            // Eager load the personalInformation relationship
+            $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile.assignedArea', 'employeeProfile.employmentType'])
+                ->where($key . "_id", $area_id)
+                ->get();
+
+            // return $employees;
+            return response()->json([
+                'data' => EmployeesAssignedAreaResource::collection($employees),
+                'count' => COUNT($employees),
+                'message' => 'List of employees by area retrieved'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeByArea', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
