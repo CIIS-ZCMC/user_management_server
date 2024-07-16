@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+namespace App\Http\Resources;
+
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,50 +16,37 @@ class EmployeesDetailsReport extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $employee_profile = $this->employeeProfile ?? $this;
+        $personal_information = $employee_profile->personalInformation;
+        $assigned_area = $employee_profile->assignedArea;
+        $employment_type = $employee_profile->employmentType;
 
-        if ($this->personalInformation === NULL) {
-
-            $employee_profile = $this->employeeProfile;
-            $personal_information = $employee_profile->personalInformation;
-            $name = $personal_information->fullName();
-            $assigned_area = $employee_profile->assignedArea;
-            $area_details = $assigned_area ? $assigned_area->findDetails() : null;
-            $area = $area_details;
-            $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
-            $employment_type = $employee_profile->employmentType;
-            $employment_status = $employment_type->name;
-
-            return [
-                'id' => $this->id,
-                'employee_id' => $employee_profile->employee_id,
-                'name' => $name,
-                'blood_type' => $personal_information->blood_type,
-                'civil_status' => $personal_information->civil_status,
-                'area' => $area,
-                'designation' => $designation,
-                'employment_status' => $employment_status,
-            ];
-        }
-
-
-        $personal_information = $this->personalInformation;
         $name = $personal_information->fullName();
-        $assigned_area = $this->assignedArea;
         $area_details = $assigned_area ? $assigned_area->findDetails() : null;
-        $area = $area_details;
         $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
-        $employment_type = $this->employmentType;
         $employment_status = $employment_type->name;
 
-        return [
+        $data = [
             'id' => $this->id,
-            'employee_id' => $this->employee_id,
+            'employee_id' => $employee_profile->employee_id,
             'name' => $name,
             'blood_type' => $personal_information->blood_type,
             'civil_status' => $personal_information->civil_status,
-            'area' => $area,
+            'area' => $area_details,
             'designation' => $designation,
             'employment_status' => $employment_status,
         ];
+
+        // Conditionally add service length data if it exists
+        if (isset($this->service_length)) {
+            $data = array_merge($data, [
+                'total_months' => $this->service_length['total_months'],
+                'total_years' => $this->service_length['total_years'],
+                'total_months_zcmc_regular' => $this->service_length['total_months_zcmc_regular'],
+                'total_years_zcmc_regular' => $this->service_length['total_years_zcmc_regular'],
+            ]);
+        }
+
+        return $data;
     }
 }

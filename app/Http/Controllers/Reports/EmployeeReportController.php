@@ -706,6 +706,8 @@ class EmployeeReportController extends Controller
         }
     }
 
+
+
     /**
      * Filter employees and count them per designation.
      *
@@ -856,9 +858,9 @@ class EmployeeReportController extends Controller
                 $employee->employee_count = $designationCounts[$designationName];
             }
 
-            // Sort employees by first name
-            $employees = $employees->sortBy(function ($employee) {
-                return $employee->employeeProfile->personalInformation->first_name;
+            // Sort employees by employee_count (descending order)
+            $employees = $employees->sortByDesc(function ($employee) {
+                return $employee->employee_count;
             });
 
             return response()->json([
@@ -874,7 +876,206 @@ class EmployeeReportController extends Controller
         }
     }
 
-    ////////////////////////////
+    public function filterEmployeesByServiceLength(Request $request)
+    {
+        try {
+            $employees = collect();
+            $sector =  $request->sector;
+            $area_id = $request->area_id;
+
+            if (!$sector && !$area_id) {
+                $employees = AssignArea::with(['employeeProfile.personalInformation'])
+                    ->where('employee_profile_id', '<>', 1)
+                    ->get();
+            } else {
+                switch ($sector) {
+                    case 'division':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('division_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->get()
+                        );
+
+                        $departments = Department::where('division_id', $area_id)->get();
+                        foreach ($departments as $department) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('department_id', $department->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->get()
+                            );
+
+                            $sections = Section::where('department_id', $department->id)->get();
+                            foreach ($sections as $section) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('section_id', $section->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->get()
+                                );
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $employees = $employees->merge(
+                                        AssignArea::with(['employeeProfile.personalInformation'])
+                                            ->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)
+                                            ->get()
+                                    );
+                                }
+                            }
+                        }
+
+                        // Get sections directly under the division (if any) that are not under any department
+                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'department':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('department_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->get()
+                        );
+
+                        $sections = Section::where('department_id', $area_id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'section':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('section_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $area_id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->get()
+                            );
+                        }
+                        break;
+
+                    case 'unit':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('unit_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->get()
+                        );
+                        break;
+                }
+            }
+
+            // Calculate service length for each employee
+            $employees = $employees->map(function ($employee) {
+                $employee->service_length = $this->calculateServiceLength($employee);
+                return $employee;
+            });
+
+            // Sort employees by total years of service (for example, total_years_in_zcmc)
+            $employees = $employees->sortByDesc(function ($employee) {
+                return $employee->service_length['total_years_zcmc_regular'];
+            });
+
+            return response()->json([
+                'count' => COUNT($employees),
+                'data' => EmployeesDetailsReport::collection($employees),
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeesByServiceLength', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Helper function to calculate service length
+    private function calculateServiceLength($employee)
+    {
+        $totalMonths = 0;
+        $totalZcmc = 0;
+
+        foreach ($employee->employeeProfile->personalInformation->workExperience as $experience) {
+            $dateFrom = Carbon::parse($experience->date_from);
+            $dateTo = Carbon::parse($experience->date_to);
+            $months = $dateFrom->diffInMonths($dateTo);
+
+            if ($experience->company == "Zamboanga City Medical Center") {
+                if ($experience->government_office === 'Yes') {
+                    $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
+                    $totalZcmc += $totalZcmcMonths;
+                }
+            }
+
+            $totalMonths += $months;
+        }
+
+        // Calculate current service months
+        $currentServiceMonths = 0;
+        $dateHired = Carbon::parse($employee->employeeProfile->date_hired);
+        $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
+
+        // Calculate total months and years
+        $total = $currentServiceMonths + $totalMonths;
+        $totalYears = floor($total / 12);
+
+        // Calculate total service in ZCMC
+        $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
+        $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
+
+        return [
+            'total_months' => $totalMonths,
+            'total_years' => $totalYears,
+            'total_months_zcmc_regular' => $totalMonthsInZcmc,
+            'total_years_zcmc_regular' => $totalYearsInZcmc,
+        ];
+    }
+    /*******************************************************************************************
+     * 
+     * OLD FUNCTIONS
+     *  
+     *******************************************************************************************/
 
     public function allEmployeesBloodType(Request $request)
     {
