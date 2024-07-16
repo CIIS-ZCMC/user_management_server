@@ -2141,8 +2141,9 @@ class EmployeeProfileController extends Controller
     public function index(Request $request)
     {
         try {
-            // Fetch the search term from the request
+            // Fetch the search term and page number from the request
             $search = $request->input('search');
+            $page = $request->input('page', 1); // Default to page 1 if not provided
 
             // Create the base query for active employee profiles, excluding the profile with id 1
             $query = EmployeeProfile::with('personalInformation')
@@ -2159,8 +2160,8 @@ class EmployeeProfileController extends Controller
                 });
             }
 
-            // Apply pagination (10 rows per page)
-            $employee_profiles = $query->paginate(10);
+            // Apply pagination (10 rows per page) with the specified page number
+            $employee_profiles = $query->paginate(10, ['*'], 'page', $page);
 
             // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
@@ -2177,6 +2178,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
     public function getUserListMentions(Request $request)
