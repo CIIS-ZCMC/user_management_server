@@ -298,6 +298,9 @@ class ScheduleController extends Controller
             $area_sector = strtolower($request->area_sector);
             $employment_type_id = $request->employment_type;
 
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 10);
+
             $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
 
             $query = EmployeeProfile::with([
@@ -326,9 +329,19 @@ class ScheduleController extends Controller
                 });
             }
 
-            $data = $query->get();
+            $query->select('employee_profiles.*')
+                ->addSelect([
+                    'last_name' => function ($subquery) {
+                        $subquery->select('last_name')
+                            ->from('personal_informations')
+                            ->whereColumn('personal_informations.id', 'employee_profiles.personal_information_id')
+                            ->limit(1);
+                    }
+                ])
+                ->orderBy('last_name');
+            $data = $query->paginate($perPage, ['*'], 'page', $page);
 
-            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray();
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data->items())->pluck('id')->toArray();
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
 
             $data->each(function ($employee) {
@@ -340,6 +353,12 @@ class ScheduleController extends Controller
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
+                'pagination' => [
+                    'current_page' => $data->currentPage(),
+                    'last_page' => $data->lastPage(),
+                    'per_page' => $data->perPage(),
+                    'total' => $data->total(),
+                ],
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {

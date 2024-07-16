@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\DTR\DTRcontroller;
 
 use App\Http\Controllers\PayrollHooks\GenerateReportController;
-
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class PullDTR extends Command
@@ -42,7 +42,11 @@ class PullDTR extends Command
     public function handle()
     {
         $this->dtrController->fetchDTRFromDevice();
+     
+
+
         $logFilePath = storage_path('logs/daily_time_record.log');
+        
         /**
          * Whenever log file reaches 5 MB, it will clear the log file.
          */
@@ -61,7 +65,7 @@ class PullDTR extends Command
         
        
         $datenow = date("H:i");
-        $GenerateEvry = date("i");
+        $GenerateMin = date("i");
         if (in_array($datenow,$DeletionList)){
             //Pull first before clearing devices.
                 if($this->dtrController->fetchDTRFromDevice()){
@@ -70,15 +74,8 @@ class PullDTR extends Command
                   }
        
         }
-        //Run every 10 minutes of every hour.
-        if($GenerateEvry == "10"){
-            Log::channel("custom-dtr-log")->info('PAYROLL LIST GENERATED '.$datenow);
-            // $this->genPayroll->AsyncrounousRun_GenerateDataReport(new request([
-            //     'month_of'=>3,
-            //     'year_of'=>,
-            //     'whole_month'=>,
-            // ]));
-        }
+     
+      
 
 
         if (file_exists($logFilePath)) {
@@ -96,5 +93,7 @@ class PullDTR extends Command
             }
         }
         Log::channel("custom-dtr-log")->info('DTR pulled from all device successfully.');
+
+
     }
 }

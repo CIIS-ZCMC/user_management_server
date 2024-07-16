@@ -13,6 +13,7 @@ use App\Models\SalaryGrade;
 use App\Models\DeviceLogs;
 use App\Http\Controllers\PayrollHooks\ComputationController;
 use App\Http\Controllers\DTR\DeviceLogsController;
+use App\Http\Controllers\DTR\DTRcontroller;
 //SalaryGrade
 class GenerateReportController extends Controller
 {
@@ -21,11 +22,13 @@ class GenerateReportController extends Controller
 
     protected $DeviceLog;
 
+    protected $dtr ;
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->computed = new ComputationController();
         $this->DeviceLog = new DeviceLogsController();
+        $this->dtr = new DTRcontroller();
     }
 
 
@@ -54,15 +57,21 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
+<<<<<<< HEAD
 
         for ($i = 0; $i < 2; $i++) {
             $this->GenerateDataReport($request);
         }
         return  $this->GenerateDataReport($request);
+=======
+        return $this->dtr->RegenerateDTR();
+
+>>>>>>> bf451cabc8c3e8c649e431451e05a39d6a03c40d
     }
 
     public function AsyncrounousRun_GenerateDataReport(Request $request)
     {
+<<<<<<< HEAD
         for ($i = 0; $i < 2; $i++) {
             $this->GenerateDataReport($request);
         }
@@ -114,18 +123,35 @@ class GenerateReportController extends Controller
 
     public function GenerateDataReport(Request $request)
     {
+=======
+        for ($i=0; $i < 2; $i++) {
+                     $this->GenerateDataReport($request);
+                    }
+            return  $this->GenerateDataReport($request);
+
+    }
+
+    public function GenerateDataReport(Request $request){
+        ini_set('max_execution_time', 7200);
+>>>>>>> bf451cabc8c3e8c649e431451e05a39d6a03c40d
         $month_of = $request->month_of;
         $year_of = $request->year_of;
         $biometricIds = DB::table('daily_time_records')
             ->whereYear('dtr_date', $yearOf)
             ->whereMonth('dtr_date', $monthOf)
             ->pluck('biometric_id');
+<<<<<<< HEAD
 
         // Get employee profiles matching the biometric IDs
         $employeeProfiles = DB::table('employee_profiles')
             // Uncomment this line to filter by biometric IDs
             // ->whereIn('biometric_id', $biometricIds)
             ->where('biometric_id', 511) // Example biometric ID for testing
+=======
+        $profiles = DB::table('employee_profiles')
+             ->whereIn('biometric_id', $biometricIds)
+           //->where('biometric_id', 565) // 494
+>>>>>>> bf451cabc8c3e8c649e431451e05a39d6a03c40d
             ->get();
         $data = [];
 
@@ -173,23 +199,36 @@ class GenerateReportController extends Controller
                     'first_entry' => $record->first_in ?? $record->second_in,
                     'date_time' => $record->first_in ?? $record->second_in
                 ];
-                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+             $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
 
 
+<<<<<<< HEAD
                 $dtrdate =  $val->dtr_date;
                 $dvc_logs =  DeviceLogs::where('biometric_id', $biometric_id)
                     ->where('dtr_date', $dtrdate)
                     ->where('active', 1);
+=======
+                $dtrdate = $val->dtr_date;
+                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                ->where('dtr_date', $dtrdate)
+                ->where('active',1);
+>>>>>>> bf451cabc8c3e8c649e431451e05a39d6a03c40d
                 //xxxxxxxxxxxxxxxxxxxxxx
                 if ($dvc_logs->exists()) {
                     $checkdtr = DailyTimeRecords::whereDate('dtr_date', $dtrdate)->where('biometric_id', $biometric_id);
                     if ($checkdtr->exists()) {
 
+<<<<<<< HEAD
                         $this->DeviceLog->RegenerateEntry($dvc_logs->get(), $biometric_id, false);
                     } else {
                         $this->DeviceLog->GenerateEntry($dvc_logs->get(), $dtrdate, false);
+=======
+                       $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                    }else {
+                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
+>>>>>>> bf451cabc8c3e8c649e431451e05a39d6a03c40d
                     }
                 }
 
