@@ -2444,6 +2444,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('employee-per-position-filter', 'EmployeeReportController@filterEmployeesPerPosition');
         });
+        // Filter Employees by Service Length
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
+        });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-blood-type', 'EmployeeReportController@allEmployeesBloodType');
