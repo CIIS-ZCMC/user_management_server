@@ -39,20 +39,13 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('news-search', 'NewsController@searchNews');
     Route::get('news/{id}', 'NewsController@show');
     Route::get('notification', 'NotificationController@store');
-});
+    });
 
-<<<<<<< HEAD
-Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-    Route::post('testgenerate', 'GenerateReportController@test');
-});
-=======
-Route::
-        namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-            Route::get('testgenerate', 'GenerateReportController@test');
-        });
->>>>>>> bf451cabc8c3e8c649e431451e05a39d6a03c40d
+    Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+        Route::get('testgenerate', 'GenerateReportController@test');
+    });
 
-Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
     Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
