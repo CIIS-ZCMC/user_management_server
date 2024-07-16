@@ -22,6 +22,15 @@ class EmployeeReportController extends Controller
 {
     private $CONTROLLER_NAME = 'Employee Reports';
 
+    /**
+     * Filter employees by their blood type.
+     *
+     * This function retrieves employees based on the provided sector, area, and blood type.
+     * The retrieved employees are sorted by their first name and returned as a JSON response.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function filterEmployeesByBloodType(Request $request)
     {
         try {
@@ -220,6 +229,11 @@ class EmployeeReportController extends Controller
                 }
             }
 
+            // Sort employees by first name
+            $employees = $employees->sortBy(function ($employee) {
+                return $employee->employeeProfile->personalInformation->first_name;
+            });
+
             return response()->json([
                 'count' => COUNT($employees),
                 'data' => EmployeesDetailsReport::collection($employees),
@@ -231,6 +245,15 @@ class EmployeeReportController extends Controller
         }
     }
 
+    /**
+     * Filter employees by their civil status.
+     *
+     * This function retrieves employees based on the provided sector, area, and civil status.
+     * The retrieved employees are sorted by their first name and returned as a JSON response.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function filterEmployeesByCivilStatus(Request $request)
     {
         try {
@@ -429,6 +452,11 @@ class EmployeeReportController extends Controller
                 }
             }
 
+            // Sort employees by first name
+            $employees = $employees->sortBy(function ($employee) {
+                return $employee->employeeProfile->personalInformation->first_name;
+            });
+
             return response()->json([
                 'count' => COUNT($employees),
                 'data' => EmployeesDetailsReport::collection($employees),
@@ -440,6 +468,16 @@ class EmployeeReportController extends Controller
         }
     }
 
+    /**
+     * Filter employees by their job status.
+     *
+     * This function retrieves employees based on the provided sector, area, and employment type.
+     * Employees are categorized into regular, permanent, and job order types, sorted by first name,
+     * and returned as a JSON response.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function filterEmployeesByJobStatus(Request $request)
     {
         try {
@@ -638,7 +676,6 @@ class EmployeeReportController extends Controller
                 }
             }
 
-
             $regular = $employees->filter(function ($row) {
                 return $row->employeeProfile->employment_type_id !== 4 && $row->employeeProfile->employment_type_id !== 5;
             });
@@ -647,6 +684,11 @@ class EmployeeReportController extends Controller
             });
             $job_order = $employees->filter(function ($row) {
                 return $row->employeeProfile->employment_type_id === 5;
+            });
+
+            // Sort employees by first name
+            $employees = $employees->sortBy(function ($employee) {
+                return $employee->employeeProfile->personalInformation->first_name;
             });
 
             return response()->json([
@@ -664,6 +706,15 @@ class EmployeeReportController extends Controller
         }
     }
 
+    /**
+     * Filter employees and count them per designation.
+     *
+     * This function retrieves employees based on the provided sector, area, and counts them
+     * per designation. Employees are sorted by first name and returned as a JSON response.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function filterEmployeesPerPosition(Request $request)
     {
         try {
@@ -804,6 +855,11 @@ class EmployeeReportController extends Controller
                 $designationName = $employee->employeeProfile->findDesignation()['name'];
                 $employee->employee_count = $designationCounts[$designationName];
             }
+
+            // Sort employees by first name
+            $employees = $employees->sortBy(function ($employee) {
+                return $employee->employeeProfile->personalInformation->first_name;
+            });
 
             return response()->json([
                 'count' => [
