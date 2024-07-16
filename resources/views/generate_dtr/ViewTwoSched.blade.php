@@ -125,11 +125,9 @@
     @endif
 @endif
 
-<td style="border-right :1px solid rgb(196, 197, 201);border-left :1px solid rgb(196, 197, 201)" class="time">
-    {{-- @include('dtr.DtrSeparator', ['entry' => 'undertime']) --}}
+<td style="width: 40px !important;font-size:10px;height:40px;">
+    @include('generate_dtr.DtrSeparator', ['entry' => 'undertime_hours'])
 </td>
-
-<td style="background-color: whitesmoke;">
-    <span style="font-size:13px;color:gray">
-
+<td style="width: 40px !important;font-size:10px;">
+    @include('generate_dtr.DtrSeparator', ['entry' => 'undertime_minutes'])
 </td>

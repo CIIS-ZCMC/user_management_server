@@ -1106,7 +1106,13 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
             ->get();
             $holidays = DB::table('holidays')->get();
             $days_In_Month = isset($ishalf) && $ishalf ? 15 :cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-        
+            $ut =  array_map(function ($res) {
+                return [
+                    'created' => $res->created_at,
+                    'undertime' => $res->undertime_minutes,
+                    'biometric_ID' => $res->biometric_id
+                ];
+            }, $dtr->toArray());
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
             $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
@@ -1126,6 +1132,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                             'ctoApp' => $ctoData ?? [],
                             'biometric_id'=>$biometric_id,
                             'Schedule'=>$employeeSched,
+                            'undertime' => $ut,
                         ]);
             }
 
@@ -1149,7 +1156,8 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                     'Employee_Name' => $emp_Details['Employee_Name'],
                     'OHF' => $emp_Details['OHF'],
                     'Arrival_Departure' => $schedules['arrival_departure'],
-                    'Incharge'=>$approver
+                    'Incharge'=>$approver,
+                    'undertime' => $ut,
                 ]);
 
             } else {

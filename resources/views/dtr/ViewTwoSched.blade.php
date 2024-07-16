@@ -126,7 +126,7 @@
 @endif
 
 <td style="width: 40px !important; padding:10px;border-right :1px solid rgb(196, 197, 201);border-left :1px solid rgb(196, 197, 201)" class="time">
-    {{-- @include('dtr.DtrSeparator', ['entry' => 'undertime']) --}}
+    @include('dtr.DtrSeparator', ['entry' => 'undertime'])
 </td>
 <td style="background-color: whitesmoke;width: 80px !important;border-right: 1px solid rgb(184, 184, 184)" id="wsched{{ $i }}">
     @if (count($empSched) >= 1)

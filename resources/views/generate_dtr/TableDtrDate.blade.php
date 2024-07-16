@@ -205,17 +205,11 @@ ABSENT
 
 @endif
 @endif
-
-
-<td style="background-color: whitesmoke;border-right: 1px solid rgb(184, 184, 184)"
-    id="wsched{{ $i }}">
-   
-
-
+<td style="width: 40px !important;font-size:10px;height:40px;">
+    @include('generate_dtr.DtrSeparator', ['entry' => 'undertime_hours'])
 </td>
-
-<td style="background-color: whitesmoke;">
-   
+<td style="width: 40px !important;font-size:10px;">
+    @include('generate_dtr.DtrSeparator', ['entry' => 'undertime_minutes'])
 </td>
 
 @endif
