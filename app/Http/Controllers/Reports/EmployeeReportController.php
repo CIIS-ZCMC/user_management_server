@@ -815,21 +815,17 @@ class EmployeeReportController extends Controller
                     break;
             }
 
-            $regular = $employees->filter(function ($row) {
-                return $row->employeeProfile->employment_type_id !== 4 && $row->employeeProfile->employment_type_id !== 5;
-            });
-            $permanent =  $employees->filter(function ($row) {
-                return $row->employeeProfile->employment_type_id === 4;
-            });
-            $job_order = $employees->filter(function ($row) {
-                return $row->employeeProfile->employment_type_id === 5;
-            });
+            foreach ($employees as $employee) {
+                $designationName = $employee->employeeProfile->findDesignation()['name'];
+                if (!isset($designationCounts[$designationName])) {
+                    $designationCounts[$designationName] = 0;
+                }
+                $designationCounts[$designationName]++;
+            }
 
             return response()->json([
                 'count' => [
-                    'regular' => COUNT($regular),
-                    'permanent' => COUNT($permanent),
-                    'job_order' => COUNT($job_order),
+                    'per_designation' => $designationCounts,
                 ],
                 'data' =>  EmployeesDetailsReport::collection($employees),
                 'message' => 'List of employees retrieved'
