@@ -706,6 +706,8 @@ class EmployeeReportController extends Controller
         }
     }
 
+
+
     /**
      * Filter employees and count them per designation.
      *
@@ -856,9 +858,9 @@ class EmployeeReportController extends Controller
                 $employee->employee_count = $designationCounts[$designationName];
             }
 
-            // Sort employees by first name
-            $employees = $employees->sortBy(function ($employee) {
-                return $employee->employeeProfile->personalInformation->first_name;
+            // Sort employees by employee_count (descending order)
+            $employees = $employees->sortByDesc(function ($employee) {
+                return $employee->employee_count;
             });
 
             return response()->json([
@@ -874,7 +876,11 @@ class EmployeeReportController extends Controller
         }
     }
 
-    ////////////////////////////
+    /*******************************************************************************************
+     * 
+     * OLD FUNCTIONS
+     *  
+     *******************************************************************************************/
 
     public function allEmployeesBloodType(Request $request)
     {
