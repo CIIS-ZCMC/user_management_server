@@ -2,6 +2,7 @@
 
 @switch($entry)
     @case('firstin')
+  
     @php
     $isHoliday = false;
     $appshown = true;
@@ -21,8 +22,10 @@
         @php
         $countin = 0;
     @endphp
+ 
 
     @foreach ($firstin as $key => $f1)
+
         @php
 
             $empSched = $schedule->filter(function ($sched) use ($f1) {
@@ -275,11 +278,11 @@
 
                         $presentSched = $schedule->filter(function ($row) use ($year, $month, $i) {
                             return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                $row->attendance_status == 1;
+                                $row->attendance_status == 0;
                         });
 
                     @endphp
-
+                 
                     @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
 
                     @else
@@ -296,9 +299,6 @@
 
                         @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d') &&  count($filteredSecondin) === 0)
                             <span class="timefirstarrival">{{ $absentMessage }} </span>
-
-
-
 
                             <script>
                                 $(document).ready(function() {
