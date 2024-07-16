@@ -670,7 +670,7 @@ class EmployeeReportController extends Controller
             $employees = collect();
             $sector =  $request->sector;
             $area_id = $request->area_id;
-            $designation_id = $request->designation_id;
+            $designationCounts = [];
 
             switch ($sector) {
                 case 'division':
@@ -678,11 +678,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                if (!empty($designation_id)) {
-                                    $q->where('designation_id', $designation_id);
-                                }
-                            })
                             ->get()
                     );
 
@@ -692,11 +687,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                    if (!empty($designation_id)) {
-                                        $q->where('designation_id', $designation_id);
-                                    }
-                                })
                                 ->get()
                         );
 
@@ -706,11 +696,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                        if (!empty($designation_id)) {
-                                            $q->where('designation_id', $designation_id);
-                                        }
-                                    })
                                     ->get()
                             );
 
@@ -720,11 +705,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-                                        ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                            if (!empty($designation_id)) {
-                                                $q->where('designation_id', $designation_id);
-                                            }
-                                        })
                                         ->get()
                                 );
                             }
@@ -738,11 +718,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                    if (!empty($designation_id)) {
-                                        $q->where('designation_id', $designation_id);
-                                    }
-                                })
                                 ->get()
                         );
 
@@ -752,11 +727,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                        if (!empty($designation_id)) {
-                                            $q->where('designation_id', $designation_id);
-                                        }
-                                    })
                                     ->get()
                             );
                         }
@@ -768,11 +738,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('department_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                if (!empty($designation_id)) {
-                                    $q->where('designation_id', $designation_id);
-                                }
-                            })
                             ->get()
                     );
 
@@ -782,11 +747,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                    if (!empty($designation_id)) {
-                                        $q->where('designation_id', $designation_id);
-                                    }
-                                })
                                 ->get()
                         );
 
@@ -796,11 +756,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                        if (!empty($designation_id)) {
-                                            $q->where('designation_id', $designation_id);
-                                        }
-                                    })
                                     ->get()
                             );
                         }
@@ -812,11 +767,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('section_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                if (!empty($designation_id)) {
-                                    $q->where('designation_id', $designation_id);
-                                }
-                            })
                             ->get()
                     );
 
@@ -826,11 +776,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('unit_id', $unit->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                    if (!empty($designation_id)) {
-                                        $q->where('designation_id', $designation_id);
-                                    }
-                                })
                                 ->get()
                         );
                     }
@@ -841,11 +786,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('unit_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile', function ($q) use ($designation_id) {
-                                if (!empty($designation_id)) {
-                                    $q->where('designation_id', $designation_id);
-                                }
-                            })
                             ->get()
                     );
                     break;
@@ -859,11 +799,17 @@ class EmployeeReportController extends Controller
                 $designationCounts[$designationName]++;
             }
 
+            // Adding employee count to each employee object
+            foreach ($employees as $employee) {
+                $designationName = $employee->employeeProfile->findDesignation()['name'];
+                $employee->employee_count = $designationCounts[$designationName];
+            }
+
             return response()->json([
                 'count' => [
                     'per_designation' => $designationCounts,
                 ],
-                'data' =>  EmployeesDetailsReport::collection($employees),
+                'data' =>  DesignationReportResource::collection($employees),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -871,6 +817,7 @@ class EmployeeReportController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     ////////////////////////////
 
     public function allEmployeesBloodType(Request $request)
