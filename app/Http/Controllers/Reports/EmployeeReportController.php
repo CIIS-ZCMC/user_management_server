@@ -30,25 +30,21 @@ class EmployeeReportController extends Controller
             $area_id = $request->area_id;
             $blood_type = $request->blood_type;
 
-            switch ($sector) {
-                case 'division':
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile.personalInformation'])
-                            ->where('division_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
-                                if (!empty($blood_type)) {
-                                    $q->where('blood_type', $blood_type);
-                                }
-                            })
-                            ->get()
-                    );
-
-                    $departments = Department::where('division_id', $area_id)->get();
-                    foreach ($departments as $department) {
+            if (!$sector && !$area_id) {
+                $employees = AssignArea::with(['employeeProfile.personalInformation'])
+                    ->where('employee_profile_id', '<>', 1)
+                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                        if (!empty($blood_type)) {
+                            $q->where('blood_type', $blood_type);
+                        }
+                    })
+                    ->get();
+            } else {
+                switch ($sector) {
+                    case 'division':
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation'])
-                                ->where('department_id', $department->id)
+                                ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                     if (!empty($blood_type)) {
@@ -58,7 +54,53 @@ class EmployeeReportController extends Controller
                                 ->get()
                         );
 
-                        $sections = Section::where('department_id', $department->id)->get();
+                        $departments = Department::where('division_id', $area_id)->get();
+                        foreach ($departments as $department) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('department_id', $department->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                        if (!empty($blood_type)) {
+                                            $q->where('blood_type', $blood_type);
+                                        }
+                                    })
+                                    ->get()
+                            );
+
+                            $sections = Section::where('department_id', $department->id)->get();
+                            foreach ($sections as $section) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('section_id', $section->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                            if (!empty($blood_type)) {
+                                                $q->where('blood_type', $blood_type);
+                                            }
+                                        })
+                                        ->get()
+                                );
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $employees = $employees->merge(
+                                        AssignArea::with(['employeeProfile.personalInformation'])
+                                            ->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)
+                                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                                if (!empty($blood_type)) {
+                                                    $q->where('blood_type', $blood_type);
+                                                }
+                                            })
+                                            ->get()
+                                    );
+                                }
+                            }
+                        }
+
+                        // Get sections directly under the division (if any) that are not under any department
+                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile.personalInformation'])
@@ -87,14 +129,12 @@ class EmployeeReportController extends Controller
                                 );
                             }
                         }
-                    }
+                        break;
 
-                    // Get sections directly under the division (if any) that are not under any department
-                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-                    foreach ($sections as $section) {
+                    case 'department':
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation'])
-                                ->where('section_id', $section->id)
+                                ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                     if (!empty($blood_type)) {
@@ -104,7 +144,51 @@ class EmployeeReportController extends Controller
                                 ->get()
                         );
 
-                        $units = Unit::where('section_id', $section->id)->get();
+                        $sections = Section::where('department_id', $area_id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation'])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                        if (!empty($blood_type)) {
+                                            $q->where('blood_type', $blood_type);
+                                        }
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation'])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                            if (!empty($blood_type)) {
+                                                $q->where('blood_type', $blood_type);
+                                            }
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'section':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation'])
+                                ->where('section_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
+                                    if (!empty($blood_type)) {
+                                        $q->where('blood_type', $blood_type);
+                                    }
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile.personalInformation'])
@@ -118,27 +202,12 @@ class EmployeeReportController extends Controller
                                     ->get()
                             );
                         }
-                    }
-                    break;
+                        break;
 
-                case 'department':
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile.personalInformation'])
-                            ->where('department_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
-                                if (!empty($blood_type)) {
-                                    $q->where('blood_type', $blood_type);
-                                }
-                            })
-                            ->get()
-                    );
-
-                    $sections = Section::where('department_id', $area_id)->get();
-                    foreach ($sections as $section) {
+                    case 'unit':
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation'])
-                                ->where('section_id', $section->id)
+                                ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                     if (!empty($blood_type)) {
@@ -147,67 +216,10 @@ class EmployeeReportController extends Controller
                                 })
                                 ->get()
                         );
-
-                        $units = Unit::where('section_id', $section->id)->get();
-                        foreach ($units as $unit) {
-                            $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation'])
-                                    ->where('unit_id', $unit->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
-                                        if (!empty($blood_type)) {
-                                            $q->where('blood_type', $blood_type);
-                                        }
-                                    })
-                                    ->get()
-                            );
-                        }
-                    }
-                    break;
-
-                case 'section':
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile.personalInformation'])
-                            ->where('section_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
-                                if (!empty($blood_type)) {
-                                    $q->where('blood_type', $blood_type);
-                                }
-                            })
-                            ->get()
-                    );
-
-                    $units = Unit::where('section_id', $area_id)->get();
-                    foreach ($units as $unit) {
-                        $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation'])
-                                ->where('unit_id', $unit->id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
-                                    if (!empty($blood_type)) {
-                                        $q->where('blood_type', $blood_type);
-                                    }
-                                })
-                                ->get()
-                        );
-                    }
-                    break;
-
-                case 'unit':
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile.personalInformation'])
-                            ->where('unit_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
-                                if (!empty($blood_type)) {
-                                    $q->where('blood_type', $blood_type);
-                                }
-                            })
-                            ->get()
-                    );
-                    break;
+                        break;
+                }
             }
+
             return response()->json([
                 'count' => COUNT($employees),
                 'data' => EmployeesDetailsReport::collection($employees),
