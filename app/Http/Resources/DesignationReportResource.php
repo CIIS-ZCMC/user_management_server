@@ -14,7 +14,7 @@ class DesignationReportResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        
+
         $designation = $this->designation;
         // $salary_grade = $this->salaryGrade;
         $salary_grade = $designation->salaryGrade;
@@ -26,7 +26,7 @@ class DesignationReportResource extends JsonResource
             'probation' =>  $designation->probation,
             'position_type' => $designation->position_type,
             'employee_count' => $this->employee_count,
-            'salary_grade' => $salary_grade ,
+            'salary_grade' => $salary_grade,
             'step' => $this->salary_grade_step
         ];
     }
