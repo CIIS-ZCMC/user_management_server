@@ -1033,42 +1033,70 @@ class EmployeeReportController extends Controller
     // Helper function to calculate service length
     private function calculateServiceLength($employee)
     {
-        $totalMonths = 0;
-        $totalZcmc = 0;
+        $total_months = 0;
+        $total_zcmc = 0;
+        $total_jo_service_months = 0;
+        $total_jo_current_service_months = 0;
 
         foreach ($employee->employeeProfile->personalInformation->workExperience as $experience) {
-            $dateFrom = Carbon::parse($experience->date_from);
-            $dateTo = Carbon::parse($experience->date_to);
-            $months = $dateFrom->diffInMonths($dateTo);
+            $date_from = Carbon::parse($experience->date_from);
+            $date_to = Carbon::parse($experience->date_to);
+            $months = $date_from->diffInMonths($date_to);
 
             if ($experience->company == "Zamboanga City Medical Center") {
                 if ($experience->government_office === 'Yes') {
-                    $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
-                    $totalZcmc += $totalZcmcMonths;
+                    $total_zcmc_months = $date_from->diffInMonths($date_to);
+                    $total_zcmc += $total_zcmc_months;
+                }
+                if ($experience->government_office === 'No') {
+                    $jo_service_months = $date_from->diffInMonths($date_to);
+                    $total_jo_service_months += $jo_service_months;
                 }
             }
 
-            $totalMonths += $months;
+            $total_months += $months;
         }
 
         // Calculate current service months
-        $currentServiceMonths = 0;
-        $dateHired = Carbon::parse($employee->employeeProfile->date_hired);
-        $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
 
-        // Calculate total months and years
-        $total = $currentServiceMonths + $totalMonths;
-        $totalYears = floor($total / 12);
+        $current_service_months = 0;
+        $employee_profile = $employee->employeeProfile;
 
-        // Calculate total service in ZCMC
-        $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
-        $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
+        if ($employee_profile->employment_type_id !== 5) {
+            $date_hired = Carbon::parse($employee_profile->date_hired);
+            $current_service_months = $date_hired->diffInMonths(Carbon::now());
+        }
+
+        if ($employee_profile->employment_type_id === 5) {
+            $date_hired_jo = Carbon::parse($employee_profile->date_hired);
+            $total_jo_current_service_months = $date_hired_jo->diffInMonths(Carbon::now());
+        }
+
+        // calculate total month and years
+        $total = $current_service_months + $total_months;
+        $total_years = floor($total / 12);
+
+        // calculate total service in zcmc
+        $total_months_in_zcmc = $total_zcmc + $current_service_months;
+        $total_years_in_zcmc = floor($total_months_in_zcmc / 12);
+
+        // total years in govt including zcmc
+        $total_with_zcmc = $total_months + $total_months_in_zcmc;
+        $total_years_with_zcmc = floor($total_with_zcmc / 12);
+
+        // total years in zcmc as JO / current ( id JO )
+        $total_jo_months = $total_jo_service_months + $total_jo_current_service_months;
+        $total_jo_years = floor($total_jo_months / 12);
 
         return [
-            'total_months' => $totalMonths,
-            'total_years' => $totalYears,
-            'total_months_zcmc_regular' => $totalMonthsInZcmc,
-            'total_years_zcmc_regular' => $totalYearsInZcmc,
+            'total_govt_months' => $total_years_with_zcmc,
+            'total_govt_years' => $total_years,
+            'total_govt_months_with_zcmc' => $total_years_with_zcmc,
+            'total_govt_years_with_zcmc' => $total_years_with_zcmc,
+            'total_months_zcmc_regular' => $total_months_in_zcmc,
+            'total_years_zcmc_regular' => $total_years_in_zcmc,
+            'total_months_zcmc_as_jo' => $total_jo_months,
+            'total_years_zcmc_as_jo' => $total_jo_years,
         ];
     }
     /*******************************************************************************************
