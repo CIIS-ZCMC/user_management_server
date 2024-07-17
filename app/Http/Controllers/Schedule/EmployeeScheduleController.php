@@ -36,7 +36,10 @@ class EmployeeScheduleController extends Controller
             $month = $request->month;   // Desired month (1 to 12)
             $year = $request->year;     // Desired year
             $assigned_area = $user->assignedArea->findDetails();
-            // $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+
+            // Get page and per_page parameters from the request
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 10);
 
             $this->updateAutomaticScheduleStatus();
 
@@ -58,32 +61,47 @@ class EmployeeScheduleController extends Controller
                 $query->whereIn('id', $employee_ids);
             }
 
-            $data = $query->get();
-            // $data = $query->paginate(10);
-            // $data = $query->whereHas('assignedArea', function ($query) {
-            //     $query->where('unit_id', 16);
-            // })->get();
+            // $data = $query->get();   
+            $query->select('employee_profiles.*')
+                ->addSelect([
+                    'last_name' => function ($subquery) {
+                        $subquery->select('last_name')
+                            ->from('personal_informations')
+                            ->whereColumn('personal_informations.id', 'employee_profiles.personal_information_id')
+                            ->limit(1);
+                    }
+                ])
+                ->orderBy('last_name');
 
-            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $data = $query->paginate($perPage, ['*'], 'page', $page);
+
+            // $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data->items())->pluck('id')->toArray(); // Ensure $employee_ids is defined
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
 
             // Calculate total working hours for each employee
-            $data->each(function ($employee) {
+            $data->getCollection()->transform(function ($employee) {
                 $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
                     return $schedule->timeShift->total_hours ?? 0;
                 });
+                return $employee;
             });
 
+            // $data->each(function ($employee) {
+            //     $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
+            //         return $schedule->timeShift->total_hours ?? 0;
+            //     });
+            // });
+
             return response()->json([
-                // 'data' => ScheduleResource::collection($data->items()),
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
-                // 'pagination' => [
-                //     'current_page' => $data->currentPage(),
-                //     'last_page' => $data->lastPage(),
-                //     'per_page' => $data->perPage(),
-                //     'total' => $data->total(),
-                // ],
+                'pagination' => [
+                    'current_page' => $data->currentPage(),
+                    'last_page' => $data->lastPage(),
+                    'per_page' => $data->perPage(),
+                    'total' => $data->total(),
+                ],
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
@@ -171,8 +189,6 @@ class EmployeeScheduleController extends Controller
                     $timeShiftId = $selectedDate['time_shift_id'];
 
                     foreach ($selectedDate['date'] as $date) {
-                        return $date;
-
                         $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
                             $query->where('time_shift_id', $timeShiftId)
                                 ->where('date', $date);
