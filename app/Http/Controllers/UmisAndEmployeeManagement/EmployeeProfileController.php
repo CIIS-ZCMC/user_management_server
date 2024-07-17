@@ -3218,9 +3218,6 @@ class EmployeeProfileController extends Controller
         }
     }
 
-
-
-
     public function getEmployeeListByEmployementTypes(Request $request)
     {
         try {
