@@ -22,40 +22,40 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
         return $row->first_in && $row->first_out && !$row->second_in && !$row->second_out && $row->dtr_date == $curDate ;
     }));
 
-   
+
 @endphp
 @foreach ($holidays as $item)
 @if ($item->month_day == sprintf('%02d-%02d', $month, $i))
     @php
         $isHoliday = true;
         $holiday = $item->description;
-       
+
     @endphp
 @endif
 @endforeach
 
 @if(count($cDTR))
 @include('generate_dtr.ViewTwoSched')
-@else 
+@else
 
 
-@if ($isHoliday)
+@if ($isHoliday && count($dtr)  == 0)
 {{-- HOLIDAY --}}
 <td  class="time " colspan="4" style="font-size:10px;font-weight:bold" id="entry{{ $i }}1">
     <span class="" >{{ $holidayMessage }}</span>
                 <script>
                     $(document).ready(function() {
                         $("#entry{{ $i }}1").addClass("Holiday");
-                       
+
                     })
     </script>
 </td>
-  
-@else 
+
+@else
 
 @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
 <td class="time " style="font-size:10px;font-weight:bold" colspan="4" id="entry{{ $i }}1">
-    
+
     @if ($leave_Count)
     <span class="" >{{ $leavemessage }}</span>
 @elseif ($ot_Count)
@@ -66,18 +66,18 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
     <span class="">{{ $ctoMessage }}</span>
 @endif
 </td>
-@else 
+@else
 
 
 
-    
+
 
 @if (count($empSched) == 0)
 <td class="time " style="font-size:10px;font-weight:bold" id="entry{{ $i }}1">
     DAY OFF
 
     </td>
-    
+
     <td class="time " style="font-weight:bold" id="entry{{ $i }}2">
         @php
             $yesterDate = date('Y-m-d', strtotime($curDate." -1 day"));
@@ -85,9 +85,9 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
         return $row->dtr_date == $yesterDate ;
             }));
 
-        
+
         if(count($yesdtr)>=1){
-              
+
                 if (date('H',strtotime($yesdtr[0]->first_in)) >= 21 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
                     if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
                             echo date('h:i a', strtotime($yesdtr[0]->first_out));
@@ -95,13 +95,13 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
                 }
         }
 
-        
+
 
         @endphp
-                               
+
         {{-- @if (count($dtr) && $dtr[0]->first_out)
                     @php
-                        if($curDate == date('Y-m-d', strtotime($dtr[0]->first_out)."-1 day") && date('a', strtotime($dtr[0]->first_out)) == "am") {                              
+                        if($curDate == date('Y-m-d', strtotime($dtr[0]->first_out)."-1 day") && date('a', strtotime($dtr[0]->first_out)) == "am") {
                             echo date('h:i a', strtotime($dtr[0]->first_out));
                         }
                     @endphp
@@ -112,17 +112,17 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
                      @endphp
                   <p><span style="font-size:8px;color:rgb(190, 184, 184)">NO ENTRY</span></p>
         @endif --}}
-        
+
 
 
     </td>
     <td class="time " id="entry{{ $i }}3">
-      
+
     </td>
     <td class="time " id="entry{{ $i }}4">
-      
+
     </td>
-@else 
+@else
 
 @if (count($dtr) == 0 && count($empSched) && $empSched[0]->schedule < date('Y-m-d'))
 
@@ -142,56 +142,56 @@ ABSENT
 <td class="time " id="entry{{ $i }}2"></td>
 <td class="time " id="entry{{ $i }}3"></td>
 <td class="time " id="entry{{ $i }}4"></td>
-@else 
+@else
 <td  class="space" style="width: 50px !important;font-weight:bold" id="entry{{ $i }}1">
-    
+
     <!--FIRST IN -->
     @if (count($dtr) && $dtr[0]->first_in)
                 @if (date('a', strtotime($dtr[0]->first_in)) == "am")
-                {{date('h:i a',strtotime($dtr[0]->first_in))}}  
-                @else 
+                {{date('h:i a',strtotime($dtr[0]->first_in))}}
+                @else
                      <span>-</span>
-                @endif           
-        @else 
-        
+                @endif
+        @else
+
     @endif
 
 </td>
 <td  class="space" style="width: 50px !important;font-weight:bold" id="entry{{ $i }}2">
     @if (count($dtr) && $dtr[0]->first_out)
                 @if (date('a', strtotime($dtr[0]->first_out)) == "am" || date('a', strtotime($dtr[0]->first_out)) == "pm")
-                {{date('h:i a',strtotime($dtr[0]->first_out))}}   
-                @else 
+                {{date('h:i a',strtotime($dtr[0]->first_out))}}
+                @else
                 <span>-</span>
-           @endif 
-    @else 
-    
+           @endif
+    @else
+
 @endif
 
 </td>
 <td  class="space" style="width: 50px !important;font-weight:bold" id="entry{{ $i }}3">
     @if (count($dtr) && $dtr[0]->second_in)
             @if (date('a', strtotime($dtr[0]->second_in)) == "pm")
-            {{date('h:i a',strtotime($dtr[0]->second_in))}}   
-            @else 
+            {{date('h:i a',strtotime($dtr[0]->second_in))}}
+            @else
             <span>-</span>
-       @endif 
-  
-    @else 
-   
+       @endif
+
+    @else
+
 @endif
 
 </td>
 <td  class="space" style="width: 50px !important;font-weight:bold" id="entry{{ $i }}4">
     @if (count($dtr) && $dtr[0]->second_out)
                 @if (date('a', strtotime($dtr[0]->second_out)) == "pm")
-                {{date('h:i a',strtotime($dtr[0]->second_out))}}   
-                @else 
+                {{date('h:i a',strtotime($dtr[0]->second_out))}}
+                @else
                      <span>-</span>
-                @endif 
- 
-    @else 
-  
+                @endif
+
+    @else
+
 @endif
 
 </td>

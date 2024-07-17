@@ -14,6 +14,7 @@ use App\Models\DeviceLogs;
 use App\Http\Controllers\PayrollHooks\ComputationController;
 use App\Http\Controllers\DTR\DeviceLogsController;
 use App\Http\Controllers\DTR\DTRcontroller;
+use Carbon\Carbon;
 //SalaryGrade
 class GenerateReportController extends Controller
 {
@@ -55,9 +56,133 @@ class GenerateReportController extends Controller
         ];
     }
 
+    public function getNightDifferentialHours($startTime, $endTime)
+    {
+        // $nightStart = Carbon::createFromTime(18, 0, 0); // 6 PM
+        // $midnight = Carbon::createFromTime(0, 0, 0)->addDay(); // Midnight
+        // $nightEnd = Carbon::createFromTime(6, 0, 0)->addDay(); // 6 AM next day
+
+        // $startTime = Carbon::parse($startTime);
+        // $endTime = Carbon::parse($endTime);
+
+        // // If end time is before start time, it means the end time is on the next day
+        // if ($endTime->lessThanOrEqualTo($startTime)) {
+        //     $endTime->addDay();
+        // }
+
+        // // Calculate overlap with night period for the first day (6 PM to 12 AM)
+        // $overlapStart = $startTime->copy()->max($nightStart);
+        // $overlapEnd = $endTime->copy()->min($midnight);
+
+        // // Initial values
+        // $totalMinutes = 0;
+        // $totalHours = 0;
+        // $applicableDate = null;
+        // $nextDayMinutes = 0;
+        // $nextDayHours = 0;
+        // $nextDayApplicableDate = null;
+
+        // // Calculate total minutes and hours for the first day overlap (6 PM to 12 AM)
+        // if ($overlapStart->lessThanOrEqualTo($overlapEnd)) {
+        //     $totalMinutes = $overlapEnd->diffInMinutes($overlapStart);
+        //     $totalHours = $overlapEnd->diffInHours($overlapStart);
+        //     $applicableDate = $overlapStart->toDateString();
+        // }
+        // if ($endTime->greaterThan($midnight)) {
+        //     $nextDayOverlapStart = $midnight;
+        //     $nextDayOverlapEnd = $endTime->copy()->min($nightEnd);
+
+        //     $nextDayMinutes = $nextDayOverlapEnd->diffInMinutes($nextDayOverlapStart);
+        //     $nextDayHours = $nextDayOverlapEnd->diffInHours($nextDayOverlapStart);
+        //     $nextDayApplicableDate = $nextDayOverlapStart->toDateString();
+        // }
+
+        // return [
+        //     'current_day_minutes' => $totalMinutes,
+        //     'current_day_hours' => $totalHours,
+        //     'current_day_applicable_date' => $applicableDate,
+        //     'next_day_minutes' => $nextDayMinutes,
+        //     'next_day_hours' => $nextDayHours,
+        //     'next_day_applicable_date' => $nextDayApplicableDate,
+        // ];
+
+        $startTime = Carbon::parse($startTime);
+        $endTime = Carbon::parse($endTime);
+
+        // Ensure that the end time is after the start time
+        if ($endTime->lessThanOrEqualTo($startTime)) {
+            $endTime->addDay();
+        }
+
+        $totalMinutes = 0;
+        $totalHours = 0;
+        $details = [];
+
+        // Loop through each day in the range
+        $current = $startTime->copy();
+        while ($current->lessThanOrEqualTo($endTime)) {
+            // Calculate night period overlaps for the current day
+            $nightStart = $current->copy()->setTime(18, 0, 0);
+            $midnight = $current->copy()->setTime(0, 0, 0)->addDay();
+            $nightEnd = $current->copy()->setTime(6, 0, 0)->addDay();
+
+            // Calculate overlap with night period for the first day (6 PM to 12 AM)
+            $overlapStart = $current->copy()->max($nightStart);
+            $overlapEnd = $endTime->copy()->min($midnight);
+
+            // Calculate total minutes and hours for the first day overlap (6 PM to 12 AM)
+            if ($overlapStart->lessThanOrEqualTo($overlapEnd)) {
+                $minutes = $overlapEnd->diffInMinutes($overlapStart);
+                $hours = $overlapEnd->diffInHours($overlapStart);
+                $details[] = [
+                    'minutes' => $minutes,
+                    'hours' => $hours,
+                    'date' => $overlapStart->toDateString(),
+                    'period' => '6 PM to 12 AM',
+                ];
+                $totalMinutes += $minutes;
+                $totalHours += $hours;
+            }
+
+            // Check if there is an overlap into the next day (12 AM to 6 AM)
+            if ($endTime->greaterThan($midnight)) {
+                $nextDayOverlapStart = $midnight;
+                $nextDayOverlapEnd = $endTime->copy()->min($nightEnd);
+
+                $minutes = $nextDayOverlapEnd->diffInMinutes($nextDayOverlapStart);
+                $hours = $nextDayOverlapEnd->diffInHours($nextDayOverlapStart);
+                $details[] = [
+                    'minutes' => $minutes,
+                    'hours' => $hours,
+                    'date' => $nextDayOverlapStart->toDateString(),
+                    'period' => '12 AM to 6 AM',
+                ];
+                $totalMinutes += $minutes;
+                $totalHours += $hours;
+            }
+
+            // Move to the next day
+            $current->addDay()->setTime(0, 0, 0);
+        }
+
+        if($totalMinutes && $totalHours){
+               return [
+            'total_minutes' => $totalMinutes,
+            'total_hours' => $totalHours,
+            'details' => $details,
+        ];
+        }
+
+    }
+
     public function test(Request $request)
     {
-        return $this->dtr->RegenerateDTR();
+        // $startTime = '2024-07-16 22:00:00'; // Example start time
+        // $endTime = '2024-07-17 06:00:00'; // Example end time
+
+        // $nightDifferentialHours = $this->getNightDifferentialHours($startTime, $endTime);
+        // return $nightDifferentialHours;
+     return $this->GenerateDataReport($request);
 
     }
 
@@ -79,11 +204,11 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-             ->whereIn('biometric_id', $biometricIds)
-           //->where('biometric_id', 565) // 494
+             //->whereIn('biometric_id', $biometricIds)
+           ->where('biometric_id', 516) //516
             ->get();
         $data = [];
-
+        $nightDifferentials = [];
         $whole_month = $request->whole_month;
         $first_half = $request->first_half;
         $second_half = $request->second_half;
@@ -96,6 +221,7 @@ class GenerateReportController extends Controller
 
         foreach ($profiles as $row) {
             $Employee = EmployeeProfile::find($row->id);
+
             $biometric_id = $row->biometric_id;
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -112,43 +238,45 @@ class GenerateReportController extends Controller
                 ->get();
             $empschedule = [];
 
-            if(count($dtr) == 0 ){
-                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
-                ->where('active',1);
-                     $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
-            }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+            // if(count($dtr) == 0 ){
+            //     $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+            //     ->where('active',1);
+            //          $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
+            // }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
 
-                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
-            }
+            //     $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+            // }
 
-
+                //return $dtr;
 
         foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
+
+
+
+                $nightDifferentials[] = $this->getNightDifferentialHours($val->first_in,$val->first_out);
              $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
 
+                // $dtrdate = $val->dtr_date;
+                // $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
+                // ->where('dtr_date', $dtrdate)
+                // ->where('active',1);
+                // //xxxxxxxxxxxxxxxxxxxxxx
+                // if($dvc_logs->exists()){
+                //     $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
+                //     if($checkdtr->exists()){
 
-                $dtrdate = $val->dtr_date;
-                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
-                ->where('dtr_date', $dtrdate)
-                ->where('active',1);
-                //xxxxxxxxxxxxxxxxxxxxxx
-                if($dvc_logs->exists()){
-                    $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
-                    if($checkdtr->exists()){
+                //        $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                //     }else {
+                //        $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
+                //     }
 
-                       $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
-                    }else {
-                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
-                    }
-
-                }
-
+                // }
 
                 if (count($DaySchedule) >= 1) {
                     $validate = [
@@ -160,13 +288,13 @@ class GenerateReportController extends Controller
                             'second_out' => $val->second_out
                         ],
                     ];
-                    $this->helper->saveTotalWorkingHours(
-                        $validate,
-                        $val,
-                        $val,
-                        $DaySchedule,
-                        true
-                    );
+                    // $this->helper->saveTotalWorkingHours(
+                    //     $validate,
+                    //     $val,
+                    //     $val,
+                    //     $DaySchedule,
+                    //     true
+                    // );
                 }
             }
 
@@ -427,8 +555,9 @@ class GenerateReportController extends Controller
             $salaryStep  = $employeeAssignedAreas->salary_grade_step;
 
             $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep,count($filtered_scheds));
-            $GrossSalary = $this->computed->GrossSalary($presentCount,$basicSalary['GrandTotal']);
-            $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
+            //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
+            $GrossSalary = $this->computed->GrossSalary($presentCount,$basicSalary['GrandTotal'],count($filtered_scheds));
+            $Rates = $this->computed->Rates($basicSalary['GrandTotal'],count($filtered_scheds));
             $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime,$Rates);
             $absentRate = $this->computed->AbsentRates($Number_Absences,$Rates);
             $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$basicSalary['Total']);
@@ -442,6 +571,7 @@ class GenerateReportController extends Controller
                 'Month' => $month_of,
                 'Year' => $year_of,
                 'Is_out'=> $this->computed->OutofPayroll($NetSalary,$init,$days_In_Month),
+                'NightDifferentials'=>array_values(array_filter($nightDifferentials)),
                 'TotalWorkingMinutes' => $total_Month_WorkingMinutes,
                 'TotalWorkingHours' => $this->ToHours($total_Month_WorkingMinutes),
                 'TotalOvertimeMinutes' => $total_Month_Overtime,

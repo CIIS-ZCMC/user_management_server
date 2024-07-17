@@ -1,5 +1,5 @@
 
-@if ($isHoliday)
+@if ($isHoliday && count($dtr)  == 0)
 {{-- HOLIDAY --}}
 <td class="time" style="font-size:10px;" id="entry{{ $i }}1">
     <span class="" style="letter-spacing:  5px">{{ $holidayMessage }}</span>
@@ -29,10 +29,10 @@
         @if (count($empSched) == 0)
             <td class="time" style="font-size:10px;letter-spacing:1px;color:rgb(146, 140, 140);" id="entry{{ $i }}1">
               DAY OFF
-              
+
             </td>
             <td class="time" id="entry{{ $i }}2">
-                
+
             </td>
             <td class="time" id="entry{{ $i }}3"></td>
             <td class="time" id="entry{{ $i }}4"></td>
@@ -53,12 +53,12 @@
                 <td class="time" id="entry{{ $i }}3"></td>
                 <td class="time" id="entry{{ $i }}4"></td>
             @else
-         
+
                 <td class="space" style="width: 50px !important;font-weight:bold"  id="entry{{ $i }}1">
-                    
+
                     <!--FIRST IN -->
                     @if (count($dtr) && $dtr[0]->first_in)
-                    
+
                         @php
                             if($curDate == date('Y-m-d', strtotime($dtr[0]->first_in)) && date('a', strtotime($dtr[0]->first_in)) == "am") {
                                 echo date('h:i a', strtotime($dtr[0]->first_in));
@@ -68,11 +68,11 @@
                                 @php
                                     $firstin =true;
                                 @endphp
-                        
+
                     @endif
                 </td>
                 <td class="space" style="width: 50px !important;font-weight:bold"  id="entry{{ $i }}2">
-              
+
                     @if (count($dtr) && $dtr[0]->first_out)
                     @php
                         if($curDate == date('Y-m-d', strtotime($dtr[0]->first_out)) && date('a', strtotime($dtr[0]->first_out)) == "am") {
@@ -80,13 +80,13 @@
                         }
                     @endphp
                 @else
-                                  
 
-                                 
-                          
+
+
+
                 @endif
 
-       
+
 
                 </td>
                 <td class="space" style="width: 50px !important;font-weight:bold"  id="entry{{ $i }}3">
@@ -101,7 +101,7 @@
                                         $secondin =true;
                                         $previousTimestamp =date('h:i a', strtotime($dtr[0]->first_in));
                                     @endphp
-                  
+
                 @endif
 
                 </td>
@@ -116,7 +116,7 @@
                                     @php
                                     $secondout =true;
                                 @endphp
-                   
+
                 @endif
 
                 </td>

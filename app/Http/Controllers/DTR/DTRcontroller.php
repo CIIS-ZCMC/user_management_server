@@ -347,21 +347,21 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
     }
 }
     public function RegenerateDTR(){
-        
+
     Log::channel("custom-dtr-log")->info('Performing RegenerateDTR @ '.date('H:i'));
         ini_set('max_execution_time', 7200);
-        $data = [ 
+        $data = [
             [
                 'month_of'=> date('m'),
                 'year_of'=>date('Y'),
                 'dtr_date'=>date('Y-m-d')
-            ],   
+            ],
         ];
 
-        foreach($data as $row){
-            $year_of = $row['year_of'];
-            $month_of = $row['month_of'];
-            $dtr_date = $row['dtr_date'];
+        foreach($data as $x){
+            $year_of = $x['year_of'];
+            $month_of = $x['month_of'];
+            $dtr_date = $x['dtr_date'];
         $biometricIds = DB::table('daily_time_records')
         ->whereYear('dtr_date', $year_of)
         ->whereMonth('dtr_date', $month_of)
@@ -422,7 +422,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
 
 
               // $dtrdate = "2024-07-10";
-               $dtrdate = $val->dtr_date;
+               $dtrdate = $dtr_date;
 
                DailyTimeRecords::where('dtr_date',$dtrdate)
                ->where('biometric_id',$biometric_id)
@@ -431,7 +431,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                    'is_generated'=>0
                ]);
 
-                $dates[] = $val->dtr_date;
+                $dates[] =$dtr_date;
                 $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 ->where('dtr_date', $dtrdate)
                 ->where('active',1);
@@ -464,7 +464,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                     );
                 }
             }
-            $this->reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates);
+            //$this->reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates);
     }
         }
 
@@ -959,7 +959,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                 $ishalf = 0;
             }
 
-        
+
 
             $id = json_decode($biometric_id);
 
@@ -1137,7 +1137,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
             }
 
 
-            
+
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,
@@ -1167,7 +1167,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                 $options->set('isRemoteEnabled', true);
                 $dompdf = new Dompdf($options);
                 $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-                $dompdf->loadHtml(view('dtr.PrintDTRPDF',  [
+                $dompdf->loadHtml(view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,
                     'year' => $year_of,
                     'month' => $month_of,
@@ -1182,6 +1182,10 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                     'biometric_id'=>$biometric_id,
                     'Schedule'=>$employeeSched,
                     'Employee_Name' => $emp_Details['Employee_Name'],
+                    'OHF' => $emp_Details['OHF'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
+                    'Incharge'=>$approver,
+                    'undertime' => $ut,
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
@@ -1192,7 +1196,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                 /* Downloads as PDF */
                 $dompdf->stream($filename);
             }
-        
+
         } catch (\Throwable $th) {
             return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
