@@ -873,6 +873,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('employee-profile-by-area', 'EmployeeProfileController@employeesByArea');
         });
 
+        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
+            Route::post('employee-profile-filter', 'EmployeeProfileController@filterEmployeeProfile');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-twofa-status', 'EmployeeProfileController@update2fa');
