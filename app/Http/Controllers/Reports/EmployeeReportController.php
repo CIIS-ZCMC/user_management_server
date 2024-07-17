@@ -1042,6 +1042,7 @@ class EmployeeReportController extends Controller
     }
 
     // Helper function to calculate service length
+    // Helper function to calculate service length
     private function calculateServiceLength($employee)
     {
         $total_months = 0;
@@ -1056,12 +1057,10 @@ class EmployeeReportController extends Controller
 
             if ($experience->company == "Zamboanga City Medical Center") {
                 if ($experience->government_office === 'Yes') {
-                    $total_zcmc_months = $date_from->diffInMonths($date_to);
-                    $total_zcmc += $total_zcmc_months;
+                    $total_zcmc += $months;
                 }
                 if ($experience->government_office === 'No') {
-                    $jo_service_months = $date_from->diffInMonths($date_to);
-                    $total_jo_service_months += $jo_service_months;
+                    $total_jo_service_months += $months;
                 }
             }
 
@@ -1069,47 +1068,54 @@ class EmployeeReportController extends Controller
         }
 
         // Calculate current service months
-
         $current_service_months = 0;
         $employee_profile = $employee->employeeProfile;
 
         if ($employee_profile->employment_type_id !== 5) {
             $date_hired = Carbon::parse($employee_profile->date_hired);
             $current_service_months = $date_hired->diffInMonths(Carbon::now());
-        }
-
-        if ($employee_profile->employment_type_id === 5) {
+        } else {
             $date_hired_jo = Carbon::parse($employee_profile->date_hired);
             $total_jo_current_service_months = $date_hired_jo->diffInMonths(Carbon::now());
         }
 
-        // calculate total month and years
+        // Calculate total months and years
         $total = $current_service_months + $total_months;
         $total_years = floor($total / 12);
+        $total_remaining_months = $total % 12;
 
-        // calculate total service in zcmc
+        // Calculate total service in ZCMC
         $total_months_in_zcmc = $total_zcmc + $current_service_months;
         $total_years_in_zcmc = floor($total_months_in_zcmc / 12);
+        $total_remaining_months_in_zcmc = $total_months_in_zcmc % 12;
 
-        // total years in govt including zcmc
+        // Calculate total years in government including ZCMC
         $total_months_with_zcmc = $total_months + $total_months_in_zcmc;
         $total_years_with_zcmc = floor($total_months_with_zcmc / 12);
+        $total_remaining_months_with_zcmc = $total_months_with_zcmc % 12;
 
-        // total years in zcmc as JO / current ( id JO )
+        // Calculate total years in ZCMC as JO / current (if ID JO)
         $total_jo_months = $total_jo_service_months + $total_jo_current_service_months;
         $total_jo_years = floor($total_jo_months / 12);
+        $total_remaining_months_jo = $total_jo_months % 12;
 
         return [
-            'total_govt_months' => $total_years_with_zcmc,
+            'total_govt_months' => $total,
             'total_govt_years' => $total_years,
+            'total_govt_remaining_months' => $total_remaining_months,
             'total_govt_months_with_zcmc' => $total_months_with_zcmc,
             'total_govt_years_with_zcmc' => $total_years_with_zcmc,
+            'total_govt_remaining_months_with_zcmc' => $total_remaining_months_with_zcmc,
             'total_months_zcmc_regular' => $total_months_in_zcmc,
             'total_years_zcmc_regular' => $total_years_in_zcmc,
+            'total_remaining_months_zcmc_regular' => $total_remaining_months_in_zcmc,
             'total_months_zcmc_as_jo' => $total_jo_months,
             'total_years_zcmc_as_jo' => $total_jo_years,
+            'total_remaining_months_zcmc_as_jo' => $total_remaining_months_jo,
         ];
     }
+
+
     /*******************************************************************************************
      * 
      * OLD FUNCTIONS
