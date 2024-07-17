@@ -28,7 +28,7 @@ class LeaveReportController extends Controller
     public function filterLeave(Request $request)
     {
         try {
-            $areas = [];
+            $results = [];
             $sector = $request->sector;
             $report_format = strtolower($request->report_format);
             $status = $request->status;
@@ -46,16 +46,16 @@ class LeaveReportController extends Controller
             // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
-                    $areas = $this->getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $results = $this->getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                     break;
                 case 'employee':
-                    $areas = $this->getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $results = $this->getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                     break;
                 default:
                     return response()->json(
                         [
-                            'count' => count($areas),
-                            'data' => $areas,
+                            'count' => count($results),
+                            'data' => $results,
                             'message' => 'Invalid report format'
                         ],
                         Response::HTTP_OK
@@ -63,8 +63,8 @@ class LeaveReportController extends Controller
             }
 
             return response()->json([
-                'count' => count($areas),
-                'data' => $areas,
+                'count' => count($results),
+                'data' => $results,
                 'message' => 'Successfully retrieved data.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
