@@ -1092,8 +1092,8 @@ class EmployeeReportController extends Controller
         $total_years_in_zcmc = floor($total_months_in_zcmc / 12);
 
         // total years in govt including zcmc
-        $total_with_zcmc = $total_months + $total_months_in_zcmc;
-        $total_years_with_zcmc = floor($total_with_zcmc / 12);
+        $total_months_with_zcmc = $total_months + $total_months_in_zcmc;
+        $total_years_with_zcmc = floor($total_months_with_zcmc / 12);
 
         // total years in zcmc as JO / current ( id JO )
         $total_jo_months = $total_jo_service_months + $total_jo_current_service_months;
@@ -1102,7 +1102,7 @@ class EmployeeReportController extends Controller
         return [
             'total_govt_months' => $total_years_with_zcmc,
             'total_govt_years' => $total_years,
-            'total_govt_months_with_zcmc' => $total_years_with_zcmc,
+            'total_govt_months_with_zcmc' => $total_months_with_zcmc,
             'total_govt_years_with_zcmc' => $total_years_with_zcmc,
             'total_months_zcmc_regular' => $total_months_in_zcmc,
             'total_years_zcmc_regular' => $total_years_in_zcmc,
