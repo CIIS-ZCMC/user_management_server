@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Http\Requests\ScheduleRequest;
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\EmployeeScheduleResource2;
 use App\Http\Resources\HolidayResource;
 use App\Http\Resources\ScheduleResource;
 use App\Models\EmployeeProfile;
@@ -11,11 +12,10 @@ use App\Helpers\Helpers;
 
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
+use App\Models\MonthlyWorkHours;
 use App\Models\Schedule;
-use App\Models\TimeShift;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -36,7 +36,10 @@ class EmployeeScheduleController extends Controller
             $month = $request->month;   // Desired month (1 to 12)
             $year = $request->year;     // Desired year
             $assigned_area = $user->assignedArea->findDetails();
-            // $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+
+            // Get page and per_page parameters from the request
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 10);
 
             $this->updateAutomaticScheduleStatus();
 
@@ -58,21 +61,47 @@ class EmployeeScheduleController extends Controller
                 $query->whereIn('id', $employee_ids);
             }
 
-            $data = $query->get();
+            // $data = $query->get();   
+            $query->select('employee_profiles.*')
+                ->addSelect([
+                    'last_name' => function ($subquery) {
+                        $subquery->select('last_name')
+                            ->from('personal_informations')
+                            ->whereColumn('personal_informations.id', 'employee_profiles.personal_information_id')
+                            ->limit(1);
+                    }
+                ])
+                ->orderBy('last_name');
 
-            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $data = $query->paginate($perPage, ['*'], 'page', $page);
+
+            // $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data->items())->pluck('id')->toArray(); // Ensure $employee_ids is defined
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
 
             // Calculate total working hours for each employee
-            $data->each(function ($employee) {
+            $data->getCollection()->transform(function ($employee) {
                 $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
                     return $schedule->timeShift->total_hours ?? 0;
                 });
+                return $employee;
             });
+
+            // $data->each(function ($employee) {
+            //     $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
+            //         return $schedule->timeShift->total_hours ?? 0;
+            //     });
+            // });
 
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
+                'pagination' => [
+                    'current_page' => $data->currentPage(),
+                    'last_page' => $data->lastPage(),
+                    'per_page' => $data->perPage(),
+                    'total' => $data->total(),
+                ],
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
@@ -133,15 +162,20 @@ class EmployeeScheduleController extends Controller
             $employee = $cleanData['employee'];
             $selected_date = $cleanData['selected_date'];   // Selected Date;
 
-            $schedule = null;
-            $employee_schedules = null;
+            $employee = $cleanData['employee'] ?? null;
+            $selected_date = $cleanData['selected_date'] ?? null;
 
-            if ($selected_date === "") {
+            if ($employee !== null && $selected_date === "") {
+                // Ensure $employee is a valid employee ID
                 $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
                 foreach ($existing_employee_ids as $employee_id) {
-                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->first();
-                    $employee_schedules->delete();
+                    // Retrieve and delete all schedules for the employee
+                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->get();
+
+                    foreach ($employee_schedules as $schedule) {
+                        $schedule->delete();
+                    }
                 }
             } else {
                 // Delete existing data for the selected dates and time shifts
@@ -155,7 +189,6 @@ class EmployeeScheduleController extends Controller
                     $timeShiftId = $selectedDate['time_shift_id'];
 
                     foreach ($selectedDate['date'] as $date) {
-
                         $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
                             $query->where('time_shift_id', $timeShiftId)
                                 ->where('date', $date);
@@ -212,10 +245,33 @@ class EmployeeScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
-            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
+            // $data = EmployeeSchedule::where('employee_profile_id', $id)->get();
+            $data = EmployeeSchedule::where('employee_profile_id', $id)
+                ->with(['schedule'])
+                ->get();
+
+            // Calculate total working hours for each employee
+            $data->each(function ($employeeSchedule) {
+                $employeeSchedule->total_working_hours = $employeeSchedule->schedule->timeShift->total_hours ?? 0;
+            });
+
+            if ($data->isEmpty()) {
+                $data = EmployeeProfile::find($id);
+                $MWH = MonthlyWorkHours::where('employment_type_id', $data->employment_type_id)->where('month_year', Carbon::now()->format('m-Y'))->first();
+
+                return response()->json([
+                    'data' => null,
+                    'updated' => [
+                        'total_working_hours' => 0,
+                        'monthly_working_hours' => $MWH->work_hours
+                    ],
+                    'holiday' => Holiday::all(),
+                ], Response::HTTP_OK);
+            }
 
             return response()->json([
-                'data' => new EmployeeScheduleResource($model),
+                'data' => new EmployeeScheduleResource($data),
+                'updated' => new EmployeeScheduleResource2($data),
                 'holiday' => Holiday::all(),
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -305,6 +361,101 @@ class EmployeeScheduleController extends Controller
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    /**
+     * Generate Employee Schedule (Specific Month).
+     */
+    public function generate(Request $request)
+    {
+        try {
+            $sector = $request->sector;
+            $area_id = $request->area_id;
+            $date = Carbon::parse($request->date)->startOfMonth();
+
+            if ($sector === 0 && $area_id === null) {
+                return response()->json(['message' => 'Please Select Area'], 200);
+            }
+
+            $ids = EmployeeProfile::whereHas('assignedArea', function ($query) use ($area_id, $sector) {
+                $query->where($sector . '_id', $area_id);
+            })->pluck('id');
+
+
+            // Non Permanent Part-time employee
+            $nonPermanentEmployees = EmployeeProfile::whereNot('employment_type_id', 2)
+                ->where('shifting', 0)
+                ->whereIn('id', $ids)
+                ->get();
+            $this->generateAndAssignSchedules($nonPermanentEmployees, 1, 'AM', $date);
+
+            // Generate and assign schedules for permanent part-time employees (employment_type_id = 2)
+            $permanentEmployees = EmployeeProfile::where('employment_type_id', 2)
+                ->where('shifting', 0)
+                ->whereIn('id', $ids)
+                ->get();
+            $this->generateAndAssignSchedules($permanentEmployees, 2, 'AM', $date);
+
+            // Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['message' => 'Successfully generated schedule for the month of ' . $date->format('F')], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function remove(Request $request)
+    {
+        try {
+            $date = $request->date;
+            $sector = $request->sector;
+            $area_id = $request->area_id;
+
+            // Retrieve schedule IDs for the given date range
+            $to_delete_ids = Schedule::where('date', 'like', $date . '%')->pluck('id');
+
+            if ($sector === 0 && $area_id === null) {
+                EmployeeSchedule::whereIn('schedule_id', $to_delete_ids)->delete();
+                return response()->json(['message' => 'Employee schedules deleted successfully'], 200);
+            }
+
+            // Narrower delete scope based on sector and area_id
+            EmployeeSchedule::whereHas('employee.assignedArea', function ($query) use ($area_id, $sector) {
+                $query->where($sector . '_id', $area_id);
+            })->whereIn('schedule_id', $to_delete_ids)->delete();
+
+
+            // Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['message' => 'Employee schedules deleted successfully'], 200);
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    private function generateAndAssignSchedules($employees, $employmentTypeId, $shiftType, $date)
+    {
+        $schedules = Helpers::generateSchedule($date, $employmentTypeId, $shiftType);
+
+        foreach ($employees as $employee) {
+            foreach ($schedules as $schedule) {
+                // Check if EmployeeSchedule already exists for this employee and schedule
+                $exists = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                    ->where('schedule_id', $schedule->id)
+                    ->exists();
+
+                if (!$exists) {
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+            }
         }
     }
 

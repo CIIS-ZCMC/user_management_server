@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AnnouncementsResource extends JsonResource
+class FreedomWallMessageResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,13 +16,9 @@ class AnnouncementsResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'title' => $this->title,
             'content' => $this->content,
-            'scheduled_at'=>$this->scheduled_at,
-            'attachments' => $this->attachments,
-            'created_at' => $this->created_at,
-            'forsupervisors'=>$this->forsupervisors,
-            'posted'=>$this->posted
+            'employee' => $this->employeeProfile,
+            'created_at' => $this->created_at
         ];
     }
 }

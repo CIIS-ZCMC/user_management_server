@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Models\AssignedArea;
 
 use App\Models\Schedule;
 
@@ -254,7 +255,6 @@ class EmployeeProfile extends Authenticatable
             return $dtr;
         }
         return [];
-
     }
 
     public function issuanceInformation()
@@ -303,6 +303,8 @@ class EmployeeProfile extends Authenticatable
                 'area' => $division_oic
             ];
         }
+
+
 
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
@@ -373,6 +375,7 @@ class EmployeeProfile extends Authenticatable
 
         /** for HR ADMIN */
         $assign_area = AssignArea::where('employee_profile_id', $this->id)->first();
+
         if ($assign_area->section_id !== null) {
             $hr_employee = Section::find($assign_area->section_id);
 
@@ -612,4 +615,8 @@ class EmployeeProfile extends Authenticatable
         return $this->belongsTo(MonthlyWorkHours::class);
     }
 
+    public function assignedAreas()
+    {
+        return $this->hasMany(AssignArea::class);
+    }
 }

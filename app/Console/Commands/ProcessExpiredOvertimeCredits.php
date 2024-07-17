@@ -36,7 +36,7 @@ class ProcessExpiredOvertimeCredits extends Command
         foreach ($expiredCredits as $expiredCredit) {
             // Create a log entry for each expired credit
             EmployeeOvertimeCreditLog::create([
-                'employee_profile_id' => $expiredCredit->employee_profile_id,
+                'employee_ot_credit_id' => $expiredCredit->id,
                 'expired_credit_by_hour' => $expiredCredit->earned_credit_by_hour,
                 'action' => 'deduct',
                 'reason' => 'expired',

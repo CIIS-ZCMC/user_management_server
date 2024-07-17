@@ -77,7 +77,6 @@ class ProcessApprovedOvertimeCredits extends Command
                                         if ($holiday->isspecial == 1) {
                                             $effectiveDate = Carbon::createFromFormat('Y-m-d', $holiday->effectiveDate);
                                             if ($effectiveDate->isSameDay($dateObject)) {
-
                                                 if ($dateObject->isWeekend()) {
                                                     $overtimeRate = 1.5;
                                                 }
@@ -115,6 +114,7 @@ class ProcessApprovedOvertimeCredits extends Command
                                             $existingCredit->save();
 
                                             EmployeeOvertimeCreditLog::create([
+                                                'employee_ot_credit_id' => $existingCredit->id,
                                                 'action' => 'add',
                                                 'reason' => 'overtime',
                                                 'hours' => (float) $totalOverlapHours
@@ -122,7 +122,7 @@ class ProcessApprovedOvertimeCredits extends Command
                                         } else {
                                             // Create a new record
 
-                                            EmployeeOvertimeCredit::create([
+                                            $newId = EmployeeOvertimeCredit::create([
                                                 'employee_profile_id' => $employee->employee_profile_id,
                                                 'earned_credit_by_hour' => (float) $totalOverlapHours,
                                                 'used_credit_by_hour' => '0',
@@ -133,6 +133,7 @@ class ProcessApprovedOvertimeCredits extends Command
 
 
                                             EmployeeOvertimeCreditLog::create([
+                                                'employee_ot_credit_id' => $newId->id,
                                                 'action' => 'add',
                                                 'reason' => 'overtime',
                                                 'hours' => (float) $totalOverlapHours
@@ -142,18 +143,18 @@ class ProcessApprovedOvertimeCredits extends Command
                                 }
                                 $title = "COC earned credited";
                                 $description = "You have earned a COC of ". $totalOverlapHours . ".";
-                                
+
                                 $notification = Notifications::create([
                                     "title" => $title,
                                     "description" => $description,
                                     "module_path" => '/cto',
                                 ]);
-                
+
                                 $user_notification = UserNotifications::create([
                                     'notification_id' => $notification->id,
                                     'employee_profile_id' => $employee->id,
                                 ]);
-                
+
                                 Helpers::sendNotification([
                                     "id" => $employee->employee_id,
                                     "data" => new NotificationResource($user_notification)
@@ -230,10 +231,17 @@ class ProcessApprovedOvertimeCredits extends Command
                                         // Update the existing record
                                         $existingCredit->earned_credit_by_hour += $totalOverlapHours;
                                         $existingCredit->save();
+
+                                        EmployeeOvertimeCreditLog::create([
+                                            'employee_ot_credit_id' => $existingCredit->id,
+                                            'action' => 'add',
+                                            'reason' => 'overtime',
+                                            'hours' => (float) $totalOverlapHours
+                                        ]);
                                     } else {
                                         // Create a new record
 
-                                        EmployeeOvertimeCredit::create([
+                                        $newId=EmployeeOvertimeCredit::create([
                                             'employee_profile_id' => $employee->employee_profile_id,
                                             'earned_credit_by_hour' => (float) $totalOverlapHours,
                                             'used_credit_by_hour' => '0',
@@ -241,23 +249,30 @@ class ProcessApprovedOvertimeCredits extends Command
                                             'max_credit_annual' => '120',
                                             'valid_until' => $validUntil,
                                         ]);
+
+                                        EmployeeOvertimeCreditLog::create([
+                                            'employee_ot_credit_id' => $newId->id,
+                                            'action' => 'add',
+                                            'reason' => 'overtime',
+                                            'hours' => (float) $totalOverlapHours
+                                        ]);
                                     }
                                 }
                             }
                             $title = "COC earned credited";
                             $description = "You have earned a COC of ". $totalOverlapHours . ".";
-                            
+
                             $notification = Notifications::create([
                                 "title" => $title,
                                 "description" => $description,
                                 "module_path" => '/cto',
                             ]);
-            
+
                             $user_notification = UserNotifications::create([
                                 'notification_id' => $notification->id,
                                 'employee_profile_id' => $employee->id,
                             ]);
-            
+
                             Helpers::sendNotification([
                                 "id" => $employee->employee_id,
                                 "data" => new NotificationResource($user_notification)

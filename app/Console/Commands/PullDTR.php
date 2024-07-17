@@ -5,6 +5,9 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\DTR\DTRcontroller;
+
+use App\Http\Controllers\PayrollHooks\GenerateReportController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class PullDTR extends Command
@@ -17,6 +20,7 @@ class PullDTR extends Command
      */
     protected $signature = 'app:pull-d-t-r';
     protected $dtrController;
+    protected $genPayroll;
     /**
      * The console command description.
      *
@@ -27,6 +31,7 @@ class PullDTR extends Command
     {
         parent::__construct();
         $this->dtrController = $dtrController;
+        $this->genPayroll = new GenerateReportController();
     }
 
     protected $description = 'Pulling DTR from device';
@@ -37,7 +42,11 @@ class PullDTR extends Command
     public function handle()
     {
         $this->dtrController->fetchDTRFromDevice();
+     
+
+
         $logFilePath = storage_path('logs/daily_time_record.log');
+        
         /**
          * Whenever log file reaches 5 MB, it will clear the log file.
          */
@@ -53,7 +62,10 @@ class PullDTR extends Command
             '03:00',
             '05:30'
         ];
+        
+       
         $datenow = date("H:i");
+        $GenerateMin = date("i");
         if (in_array($datenow,$DeletionList)){
             //Pull first before clearing devices.
                 if($this->dtrController->fetchDTRFromDevice()){
@@ -62,6 +74,8 @@ class PullDTR extends Command
                   }
        
         }
+     
+      
 
 
         if (file_exists($logFilePath)) {
@@ -79,5 +93,7 @@ class PullDTR extends Command
             }
         }
         Log::channel("custom-dtr-log")->info('DTR pulled from all device successfully.');
+
+
     }
 }

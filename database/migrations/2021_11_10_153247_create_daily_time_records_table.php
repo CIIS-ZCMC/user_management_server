@@ -31,6 +31,7 @@ return new class extends Migration {
             $table->integer('total_minutes_reg')->nullable();
             $table->integer('is_biometric')->default(0)->comment('1 if pulled from Bio');
             $table->boolean('is_time_adjustment')->default(0);
+            $table->boolean('is_generated')->default(0);
             $table->timestamps();
         });
     }

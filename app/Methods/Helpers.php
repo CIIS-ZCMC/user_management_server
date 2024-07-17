@@ -301,12 +301,14 @@ AND id IN (
 
     public function CurrentSchedule($biometric_id, $value, $yesterdayRecord)
     {
+
         if (!isset($value['date_time'])) {
             return [
                 'daySchedule' => [],
                 'break_Time_Req' => [],
             ];
         }
+
         $entrydateYear = date('Y', strtotime($value['date_time']));
         $entrydateMonth = date('m', strtotime($value['date_time']));
         $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");
@@ -796,7 +798,7 @@ AND id IN (
         if ($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry) {
             $first_Sched_firstin = $time_stamps_req['first_entry'];
             $first_Sched_firstout = $time_stamps_req['second_entry'];
-
+            $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
             $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
             $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
 
@@ -833,7 +835,7 @@ AND id IN (
     public function SaveToDTR($check_for_generate, $validate, $attr, $sc, $out)
     {
         if ($check_for_generate) {
-            DailyTimeRecords::find($validate->id)->update([
+            DailyTimeRecords::where('id',$validate->id)->update([
                 'total_working_hours' => $attr['total_WH_words'],
                 'required_working_hours' => $attr['required_WH'],
                 'required_working_minutes' => $attr['required_WH_Minutes'],
@@ -1334,7 +1336,7 @@ AND id IN (
                 }
 
 
-                if (!isset($entry['entry_status']) ) {
+               if (!isset($entry['entry_status']) ) {
 
 
 
@@ -1368,6 +1370,7 @@ AND id IN (
                 $Employee_Attendance[] = $entry; // Add entry to the main array
 
                 $previousTimestamp = $currentTimestamp;
+
             }
 
             $processedLogs[$employee_ID] = true;

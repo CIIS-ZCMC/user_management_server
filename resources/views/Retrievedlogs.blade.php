@@ -81,6 +81,52 @@ $(document).ready(function(){
               </div>
             <br>
             <div class="row">
+
+                <div class="col-md-12 mt-2 mb-2">
+
+                    <div class="card shadow">
+                        <div class="card-body p-5">
+                            <h4>
+                               <span style="color: rgb(192, 75, 75)">Live</span> Biometric/Device Logs <span style="font-size:13px;">( It is either pulled or not. If you're not seeing data here, it means it has been pulled by the system. )</span>
+                            </h4>
+                            <table class="table">
+                                <thead>
+                                  <tr class="table-warning">
+                                    <th scope="col">Entry</th>
+                                    <th scope="col">Punch</th>
+                                    <th scope="col">Assumed Status</th>
+
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($biologs as $item)
+                                        <tr style="font-size:35px">
+                                            <td>{{date('h:i a',strtotime($item['date_time']))}}</td>
+                                            <td>
+                                                @switch($item['status'])
+                                                    @case(1)
+                                                        <span class="badge bg-warning">Check-OUT</span>
+                                                        @break
+                                                    @case(0)
+                                                    <span class="badge bg-success">Check-IN</span>
+                                                        @break
+                                                        @case(255)
+                                                        <span class="badge bg-primary">Global State</span>
+                                                        @break
+
+                                                @endswitch
+                                            </td>
+                                            <td>
+                                                {{$item['entry_status']}}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+
+                                </tbody>
+                              </table>
+                        </div>
+                       </div>
+                </div>
                 <div class="col-md-12">
                <div class="card shadow">
                 <div class="card-body p-5">
@@ -141,7 +187,7 @@ $(document).ready(function(){
                         $dtlogs = [];
                             if($dtrlogs){
                                 $jlogs = json_decode($dtrlogs->json_logs);
-                             
+
                             }
                         @endphp
                         @if (isset($jlogs))
@@ -186,51 +232,7 @@ $(document).ready(function(){
                        </div>
                 </div>
 
-                <div class="col-md-12 mt-2">
 
-                    <div class="card shadow">
-                        <div class="card-body p-5">
-                            <h4>
-                               <span style="color: rgb(192, 75, 75)">Live</span> Biometric/Device Logs <span style="font-size:13px;">( It is either pulled or not. If you're not seeing data here, it means it has been pulled by the system. )</span>
-                            </h4>
-                            <table class="table">
-                                <thead>
-                                  <tr class="table-warning">
-                                    <th scope="col">Entry</th>
-                                    <th scope="col">Punch</th>
-                                    <th scope="col">Assumed Status</th>
-
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($biologs as $item)
-                                        <tr style="font-size:35px">
-                                            <td>{{date('h:i a',strtotime($item['date_time']))}}</td>
-                                            <td>
-                                                @switch($item['status'])
-                                                    @case(1)
-                                                        <span class="badge bg-warning">Check-OUT</span>
-                                                        @break
-                                                    @case(0)
-                                                    <span class="badge bg-success">Check-IN</span>
-                                                        @break
-                                                        @case(255)
-                                                        <span class="badge bg-primary">Global State</span>
-                                                        @break
-
-                                                @endswitch
-                                            </td>
-                                            <td>
-                                                {{$item['entry_status']}}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-
-                                </tbody>
-                              </table>
-                        </div>
-                       </div>
-                </div>
             </div>
         </div>
     </div>

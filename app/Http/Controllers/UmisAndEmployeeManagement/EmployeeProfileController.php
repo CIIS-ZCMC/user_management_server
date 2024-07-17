@@ -2149,6 +2149,33 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function getUserListMentions(Request $request)
+    {
+        try {
+            $user = $request->user;
+
+
+
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
+
+            $filteredUsers = $employee_profiles->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->personalInformation->fullName(),
+                    'avatar'  => config("app.server_domain") . "/photo/profiles/" . $user->profile_url,
+                ];
+            });
+
+            return response()->json([
+                'data' => $filteredUsers,
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function retrieveEmployees($employees, $key, $id, $myId)
     {
 
@@ -3685,6 +3712,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function updateEmployeeProfilePicture($id, Request $request)
     {
         try {

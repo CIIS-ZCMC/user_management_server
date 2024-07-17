@@ -14,7 +14,10 @@ class Announcements extends Model
     public $fillable = [
         'title',
         'content',
-        'attachments'
+        'attachments',
+        'scheduled_at',
+        'forsupervisors',
+        'posted',
     ];
     
     protected $casts = [

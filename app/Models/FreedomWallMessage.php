@@ -5,27 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SpecialAccessRole extends Model
+class FreedomWallMessage extends Model
 {
     use HasFactory;
 
-    protected $table = 'special_access_roles';
-
-    public $fillable = [
+    protected $fillable = [
         'employee_profile_id',
-        'system_role_id',
-        'effective_at'
+        'content',
     ];
-
-    public $timestamps = TRUE;
 
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
     }
 
-    public function systemRole()
+    public function likes()
     {
-        return $this->belongsTo(SystemRole::class, 'system_role_id');
+        return $this->hasMany(Like::class);
     }
 }

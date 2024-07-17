@@ -11,6 +11,7 @@ use App\Models\EmployeeProfile;
 use App\Models\EmployeeSchedule;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
+use App\Models\Holiday;
 use App\Models\Notifications;
 use App\Models\LeaveApplication;
 use App\Models\OfficialBusiness;
@@ -699,7 +700,7 @@ class Helpers
 
         $overlappingOT = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
-                ->where('status','not like', '%declined%')
+                ->where('status', 'not like', '%declined%')
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -879,7 +880,72 @@ class Helpers
     public static function hasSchedule($start, $end, $employeeId)
     {
         $currentDate = $start;
+        $totalWithSchedules = 0;
+        $startDayOfWeek = date('N', strtotime($currentDate)); // 'N' gives 1 (for Monday) through 7 (for Sunday)
+        $endDayOfWeek = date('N', strtotime($end));
+
+        if (($startDayOfWeek == 6 || $startDayOfWeek == 7) && ($endDayOfWeek == 6 || $endDayOfWeek == 7)) {
+            // If both start and end dates are weekends, check if there are schedules on weekends
+            $currentDate = $currentDate; // Set the initial current date to start
+
+            while ($currentDate <= $end) {
+                $dayOfWeek = date('N', strtotime($currentDate)); // 'N' gives 1 (for Monday) through 7 (for Sunday)
+
+                if ($dayOfWeek == 6 || $dayOfWeek == 7) {
+                    // If it's Saturday (6) or Sunday (7), check if there is a schedule
+                    $hasSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
+                        ->whereHas('schedule', function ($query) use ($currentDate) {
+                            $query->where('date', $currentDate);
+                        })
+                        ->exists();
+
+                    if (!$hasSchedule) {
+                        return ['status' => false];
+                    }
+
+                    // Increment the counter if there is a schedule
+                    $totalWithSchedules++;
+                }
+
+                // Move to the next day
+                $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+            }
+
+            // Return true if schedules are found for every weekend day and include the total count
+            return ['status' => true, 'totalWithSchedules' => $totalWithSchedules];
+        }
+
+        // If start or end dates are not both weekends, proceed with the existing logic
         while ($currentDate <= $end) {
+            // Check if the current date is a weekend
+            // 'N' gives 1 (for Monday) through 7 (for Sunday)
+
+
+
+            $dateObject = new DateTime($currentDate);
+            $dateFormatted = $dateObject->format('m-d');
+
+            $isHolidayByMonthDay = Holiday::where('month_day', $dateFormatted)->get();
+
+            $isHolidayExists = false;
+            foreach ($isHolidayByMonthDay as $holiday) {
+                if ($holiday->isspecial == 1) {
+                    $isHolidayExists = Holiday::where('effectiveDate', $currentDate)->exists();
+                } else {
+                    $isHolidayExists = Holiday::where('month_day', $dateFormatted)->exists();
+                }
+
+                if ($isHolidayExists) {
+                    break;
+                }
+            }
+
+            if ($isHolidayExists) {
+                // If it's a holiday, skip the check and continue to the next day
+                $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+                continue;
+            }
+
             // Check if there is a schedule for the current date
             $hasSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
                 ->whereHas('schedule', function ($query) use ($currentDate) {
@@ -887,22 +953,27 @@ class Helpers
                 })
                 ->exists();
 
-            // If schedule is missing for any day, return false
+            // If schedule is missing for any day that is not a weekend or holiday, return false
             if (!$hasSchedule) {
-                return false;
+                $dayOfWeek = date('N', strtotime($currentDate));
+                if ($dayOfWeek == 6 || $dayOfWeek == 7) {
+                    // If it's Saturday (6) or Sunday (7), skip the check and continue to the next day
+                    $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+                    continue;
+                } else {
+                    return false;
+                }
             }
+
+            // Increment the counter if there is a schedule and it's not a holiday
+            $totalWithSchedules++;
 
             // Move to the next day
             $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
         }
 
-        // If schedules are found for every day, return true
-        return true;
-        // return EmployeeSchedule::where('employee_profile_id', $employeeId)
-        //     ->whereHas('schedule', function ($query) use ($start, $end) {
-        //         $query->whereBetween('date', [$start, $end]);
-        //     })
-        //     ->exists();
+        // Return true if schedules are found for every weekday and include the total count
+        return ['status' => true, 'totalWithSchedules' => $totalWithSchedules];
     }
     public static function getTotalHours($start, $end, $employeeId)
     {
@@ -1169,6 +1240,12 @@ class Helpers
         }
     }
 
+    public static function getEmployeeName($employeeProfileId)
+    {
+        $employeeProfile = EmployeeProfile::with('personalInformation')->find($employeeProfileId);
+        return $employeeProfile && $employeeProfile->personalInformation ? $employeeProfile->personalInformation->full_name : 'Unknown';
+    }
+
     public static function sendNotification($body)
     {
 
@@ -1186,5 +1263,4 @@ class Helpers
             return "HTTP request failed with status: $status";
         }
     }
-
 }
