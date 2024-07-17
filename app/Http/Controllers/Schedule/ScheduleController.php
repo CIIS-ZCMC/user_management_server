@@ -336,7 +336,6 @@ class ScheduleController extends Controller
                     foreach ($terms as $term) {
                         $q2->where(function ($q) use ($term) {
                             $q->where('first_name', 'like', "%{$term}%")
-                                ->orWhere('middle_name', 'like', "%{$term}%")
                                 ->orWhere('last_name', 'like', "%{$term}%")
                                 ->orWhere('name_extension', 'like', "%{$term}%");
                         });
