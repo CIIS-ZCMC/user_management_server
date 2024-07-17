@@ -33,6 +33,7 @@ use App\Http\Resources\WorkExperienceResource;
 use App\Jobs\SendEmailJob;
 use App\Methods\MailConfig;
 use App\Models\AssignArea;
+use App\Models\Biometrics;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeSchedule;
@@ -443,13 +444,27 @@ class InActiveEmployeeController extends Controller
                     $employee_data['profile_url'] = null;
                 }
             } catch (\Throwable $th) {}
+            
+            /**
+             * Retrieve last employee registered and get the biometric id
+             * since biometric id is incremental
+             * Biometric id = number employee registered
+             */
+            $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
+            $new_biometric_id = $last_registered_employee->biometric_id + 1;
 
+            $emp_bio = Biometrics::where("biometric_id", $new_biometric_id)->first();
+            // Update employee biometric with new biometric id
+            $emp_bio->update(['biometric_id' => $new_biometric_id]);
+
+            $employee_data['biometric_id'] = $new_biometric_id;
             $employee_data['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $employee_data['solo_parent'] = strip_tags($request->solo_parent) === 1 ? true : false;
             $employee_data['password_encrypted'] = $encryptedPassword;
             $employee_data['password_created_at'] = now();
             $employee_data['password_expiration_at'] = $threeMonths;
             $employee_data['salary_grade_step'] = strip_tags($request->salary_grade_step);
+            $employee_data['salary_grade_id'] = $request->salary_grade_id == null?1 :strip_tags($request->salary_grade_id);
             $employee_data['date_hired'] = $request->date_hired;
             $employee_data['designation_id'] = $request->designation_id;
             $employee_data['effective_at'] = $request->date_hired;

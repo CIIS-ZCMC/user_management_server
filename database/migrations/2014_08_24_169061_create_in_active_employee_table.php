@@ -18,6 +18,9 @@ return new class extends Migration
             $table->date('date_resigned')->nullable();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('employment_type_id')->nullable();
+            $table->foreign('employment_type_id')->references('id')->on('employment_types');
+            $table->integer('biometric_id')->nullable();
             $table->string('status')->nullable();
             $table->text('remarks')->nullable();
             $table->timestamps();

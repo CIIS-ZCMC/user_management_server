@@ -17,7 +17,9 @@ class InActiveEmployee extends Model
         'date_resigned',
         'employee_profile_id',
         'status',
-        'remarks'
+        'remarks',
+        'employment_type_id',
+        'biometric_id'
     ];
 
     public $timestamps = TRUE;

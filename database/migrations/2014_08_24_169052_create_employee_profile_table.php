@@ -32,7 +32,7 @@ return new class extends Migration
             $table->boolean('is_2fa')->default(FALSE);
             $table->boolean('solo_parent')->default(FALSE);
             $table->datetime('renewal')->nullable();
-            $table->unsignedBigInteger('employment_type_id');
+            $table->unsignedBigInteger('employment_type_id')->nullable();
             $table->foreign('employment_type_id')->references('id')->on('employment_types');
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');

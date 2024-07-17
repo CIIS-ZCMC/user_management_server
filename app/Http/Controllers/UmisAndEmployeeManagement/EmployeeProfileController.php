@@ -4350,6 +4350,8 @@ class EmployeeProfileController extends Controller
                 'employee_profile_id' => $employee_profile->id,
                 'status' => strip_tags($request->status),
                 'remarks' => strip_tags($request->remarks),
+                'biometric_id' => $employee_profile->biometric_id,
+                'employment_type_id' => $employee_profile->employment_type_id
             ]);
 
             if ($employee_profile->employmentType->name === 'Permanent CTI') {
@@ -4380,6 +4382,8 @@ class EmployeeProfileController extends Controller
             $employee_profile->update([
                 'employee_id' => null,
                 'date_hired' => null,
+                'biometric_id' => null,
+                'employment_type_id' => null,
                 'encrypted_password' => null,
                 'password_created_at' => null,
                 'password_expiration_at' => null,
