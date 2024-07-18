@@ -135,7 +135,9 @@ class GenerateReportController extends Controller
 
         // $nightDifferentialHours = $this->getNightDifferentialHours($startTime, $endTime);
         // return $nightDifferentialHours;
-     return $this->GenerateDataReport($request);
+
+        return $this->dtr->RegenerateDTR();
+    // return $this->GenerateDataReport($request);
 
     }
 
@@ -157,8 +159,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-             //->whereIn('biometric_id', $biometricIds)
-           ->where('biometric_id', 516) //516
+             ->whereIn('biometric_id', $biometricIds)
+           //->where('biometric_id', 516) //516
             ->get();
         $data = [];
         $nightDifferentials = [];

@@ -387,19 +387,20 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
 
 
         $dtr = DB::table('daily_time_records')
-            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                $query->where('biometric_id', $biometric_id)
-                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-            })
-            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                $query->where('biometric_id', $biometric_id)
-                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-            })
-            ->get();
-
+        ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+        ->where(function ($query) use ($biometric_id, $month_of, $year_of, $dtr_date) {
+            $query->where('dtr_date', $dtr_date)
+                ->where('biometric_id', $biometric_id)
+                ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+        })
+        ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of, $dtr_date) {
+            $query->where('dtr_date', $dtr_date)
+                ->where('biometric_id', $biometric_id)
+                ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+        })
+        ->get();
 
 
         if(count($dtr) == 0 ){
