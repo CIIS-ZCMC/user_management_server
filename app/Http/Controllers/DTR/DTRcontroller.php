@@ -356,6 +356,11 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                 'year_of'=>date('Y'),
                 'dtr_date'=>date('Y-m-d')
             ],
+            [
+                'month_of'=> date('m',strtotime(" - 1 day")),
+                'year_of'=>date('Y',strtotime(" - 1 day")),
+                'dtr_date'=>date('Y-m-d',strtotime(" - 1 day"))
+            ],
         ];
 
         foreach($data as $x){
@@ -439,7 +444,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                 if($dvc_logs->exists()){
                     $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
                     if($checkdtr->exists()){
-                          $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                          $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,$dtrdate);
                     }else {
                       //  return "new";
                            $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
@@ -1276,7 +1281,7 @@ public function reGenerateImproperDTR($biometric_id,$month_of,$year_of,$dates){
                         if($dvc_logs->exists()){
                             $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
                             if($checkdtr->exists()){
-                               $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
+                               $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,$dtrdate);
                             }else {
                                 $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
                             }

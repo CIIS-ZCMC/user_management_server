@@ -475,7 +475,7 @@ class DeviceLogsController extends Controller
 
         return true;
     }
-    public function RegenerateEntry($deviceLogs,$biometric_id){
+    public function RegenerateEntry($deviceLogs,$biometric_id,$dtrdate){
         try {
             $Entry = $this->getEntryLineup($deviceLogs);
 
@@ -544,13 +544,12 @@ class DeviceLogsController extends Controller
             $dtr = $this->adjustEntries($dtr);
 
 
-            if($this->cleanEntry($dtr,$biometric_id,$Entry[0]['dtr_date'])){
+            if($this->cleanEntry($dtr,$biometric_id,$dtrdate)){
               DailyTimeRecords::where('biometric_id',$biometric_id)
-            ->where('dtr_date',$Entry[0]['dtr_date'])
+            ->where('dtr_date',$dtrdate)
             ->where('is_time_adjustment',0)
             ->where('is_generated',0)
             ->update($dtr);
-
             }
 
 
