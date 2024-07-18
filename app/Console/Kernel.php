@@ -30,6 +30,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:regenerate-d-t-r')->everyThirtyMinutes();
         $schedule->command('app:schedule-status-task')->daily();
 
+
+        $schedule->command('app:delete-device-logs')->monthly();
+
         // $schedule->command('app:c-t-o-expiration')->when(function () {
         //     return now()->month == 12 && now()->day == 25;
         // })->daily();

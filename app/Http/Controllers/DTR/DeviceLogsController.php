@@ -24,6 +24,28 @@ class DeviceLogsController extends Controller
 
     }
 
+    public function ClearDeviceLogs($startDate){
+        if(!$startDate){
+            $startDate = date('Y-m-d');
+        }
+        /**
+         * Deletion of Device logs stored from Database
+         * Every 3 months from current Date
+         */
+        $startDateTime = Carbon::parse($startDate);
+        $currentDateTime = Carbon::now();
+        $diffInMonths = $currentDateTime->diffInMonths($startDateTime, false);
+        if ($diffInMonths <= 3 && $diffInMonths >= 0) {
+            $threeMonthsFromStartDate = $startDateTime->copy()->sub("9 days");
+
+            $date = $threeMonthsFromStartDate->format('Y-m-d');
+            DeviceLogs::where('dtr_date',"<=",$date)->delete();
+            Log::channel("custom-dtr-log")->info('DEVICE LOGS CLEARED FROM  '.$date.' and LATE on.. '.date('Y-m-d H:i'));
+        } else {
+            return null;
+        }
+    }
+
     public function CheckDTR($biometric_id) {
         $data = DB::table('device_logs')
                   ->where('biometric_id', $biometric_id)

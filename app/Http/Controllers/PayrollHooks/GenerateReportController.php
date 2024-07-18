@@ -56,76 +56,105 @@ class GenerateReportController extends Controller
         ];
     }
 
-    public function getNightDifferentialHours($startTime, $endTime)
+
+    public function getNightDifferentialHours($startTime, $endTime, $biometric_id, $wBreak, $DaySchedule)
     {
+        // $startTime = "2024-07-14 21:46:46";
+        // $endTime = "2024-07-15 06:13:35";
+        if (count($wBreak) == 0 && $startTime && $endTime && count($DaySchedule)) {
+            // Convert start and end times to DateTime objects
+            $startTime = new \DateTime($startTime);
+            $endTime = new \DateTime($endTime);
 
-        $startTime = Carbon::parse($startTime);
-        $endTime = Carbon::parse($endTime);
+            echo $startTime->format('Y-m-d H:i:s') . " " . $endTime->format('Y-m-d H:i:s') . " " . count($wBreak) . " " . count($DaySchedule) . "\n";
 
-        // Ensure that the end time is after the start time
-        if ($endTime->lessThanOrEqualTo($startTime)) {
-            $endTime->addDay();
-        }
+            // Ensure that the end time is after the start time
+            if ($endTime <= $startTime) {
+                $endTime->modify('+1 day');
+            }
+          //  return $endTime->format("Y-m-d H:i:s");
+            $totalMinutes = 0;
+            $totalHours = 0;
+            $details = [];
 
-        $totalMinutes = 0;
-        $totalHours = 0;
-        $details = [];
+            // Loop through each day in the range
+            $current = clone $startTime;
 
-        // Loop through each day in the range
-        $current = $startTime->copy();
-        while ($current->lessThanOrEqualTo($endTime)) {
-            // Calculate night period overlaps for the current day
-            $nightStart = $current->copy()->setTime(18, 0, 0);
-            $midnight = $current->copy()->setTime(0, 0, 0)->addDay();
-            $nightEnd = $current->copy()->setTime(6, 0, 0)->addDay();
+            while ($current <= $endTime) {
+                // Calculate night period overlaps for the current day
+                $nightStart = (clone $current)->setTime(18, 0, 0);
+                $midnight = (clone $current)->setTime(0, 0, 0)->modify('+1 day');
+                $nightEnd = (clone $current)->setTime(6, 0, 0)->modify('+1 day');
 
-            // Calculate overlap with night period for the first day (6 PM to 12 AM)
-            $overlapStart = $current->copy()->max($nightStart);
-            $overlapEnd = $endTime->copy()->min($midnight);
+                // Calculate overlap with night period for the first day (6 PM to 12 AM)
+                $overlapStart = max($current, $nightStart);
+                $overlapEnd = min($endTime, $midnight);
 
-            // Calculate total minutes and hours for the first day overlap (6 PM to 12 AM)
-            if ($overlapStart->lessThanOrEqualTo($overlapEnd)) {
-                $minutes = $overlapEnd->diffInMinutes($overlapStart);
-                $hours = $overlapEnd->diffInHours($overlapStart);
-                $details[] = [
-                    'minutes' => $minutes,
-                    'hours' => $hours,
-                    'date' => $overlapStart->toDateString(),
-                    'period' => '6 PM to 12 AM',
-                ];
-                $totalMinutes += $minutes;
-                $totalHours += $hours;
+                // Calculate total minutes and hours for the first day overlap (6 PM to 12 AM)
+                if ($overlapStart <= $overlapEnd) {
+                    $interval = $overlapStart->diff($overlapEnd);
+                    $minutes = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
+                    $hours = $interval->h + ($interval->i / 60);
+
+                    // $check = DailyTimeRecords::where('biometric_id', $biometric_id)
+                    //     ->where('dtr_date', $overlapStart->format('Y-m-d'));
+
+                   // if ($check->exists()) {
+                        $details[] = [
+                            'minutes' => $minutes,
+                            'hours' => round($hours,0),
+                            'date' => $overlapStart->format('Y-m-d'),
+                            'period' => '6 PM to 12 AM',
+                            'biometric_id' => $biometric_id,
+                        ];
+                  //  }
+
+                    $totalMinutes += $minutes;
+                    $totalHours += $hours;
+                }
+
+                // Check if there is an overlap into the next day (12 AM to 6 AM)
+                if ($endTime > $midnight) {
+                    $nextDayOverlapStart = $midnight;
+                    $nextDayOverlapEnd = min($endTime, $nightEnd);
+
+                    $interval = $nextDayOverlapStart->diff($nextDayOverlapEnd);
+                    $minutes = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
+                    $hours = $interval->h + ($interval->i / 60);
+
+                    // $check = DailyTimeRecords::where('biometric_id', $biometric_id)
+                    //     ->where('dtr_date', $nextDayOverlapStart->format('Y-m-d'))->get();
+
+                    //if ($check->exists()) {
+                        $details[] = [
+                            'minutes' => $minutes,
+                            'hours' => round($hours,0),
+                            'date' => $nextDayOverlapStart->format('Y-m-d'),
+                            'period' => '12 AM to 6 AM',
+                            'biometric_id' => $biometric_id,
+                        ];
+                  //  }
+
+                    $totalMinutes += $minutes;
+                    $totalHours += $hours;
+                }
+
+                // Move to the next day
+                $current->modify('+1 day')->setTime(0, 0, 0);
             }
 
-            // Check if there is an overlap into the next day (12 AM to 6 AM)
-            if ($endTime->greaterThan($midnight)) {
-                $nextDayOverlapStart = $midnight;
-                $nextDayOverlapEnd = $endTime->copy()->min($nightEnd);
 
-                $minutes = $nextDayOverlapEnd->diffInMinutes($nextDayOverlapStart);
-                $hours = $nextDayOverlapEnd->diffInHours($nextDayOverlapStart);
-                $details[] = [
-                    'minutes' => $minutes,
-                    'hours' => $hours,
-                    'date' => $nextDayOverlapStart->toDateString(),
-                    'period' => '12 AM to 6 AM',
+            if ($totalMinutes && $totalHours) {
+                return [
+                    'biometric_id' => $biometric_id,
+                    'total_minutes' => $totalMinutes,
+                    'total_hours' => round($totalHours,0),
+                    'details' => $details,
                 ];
-                $totalMinutes += $minutes;
-                $totalHours += $hours;
             }
-
-            // Move to the next day
-            $current->addDay()->setTime(0, 0, 0);
         }
 
-        if($totalMinutes && $totalHours){
-               return [
-            'total_minutes' => $totalMinutes,
-            'total_hours' => $totalHours,
-            'details' => $details,
-        ];
-        }
-
+        return null; // Return null if the conditions are not met
     }
 
     public function test(Request $request)
@@ -135,9 +164,9 @@ class GenerateReportController extends Controller
 
         // $nightDifferentialHours = $this->getNightDifferentialHours($startTime, $endTime);
         // return $nightDifferentialHours;
-
-        return $this->dtr->RegenerateDTR();
-    // return $this->GenerateDataReport($request);
+    //    return $this->DeviceLog->ClearDeviceLogs(date('Y-m-d'));
+     //   return $this->dtr->RegenerateDTR();
+     return $this->GenerateDataReport($request);
 
     }
 
@@ -159,11 +188,11 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-             ->whereIn('biometric_id', $biometricIds)
-           //->where('biometric_id', 516) //516
+            // ->whereIn('biometric_id', $biometricIds)
+           ->whereIn('biometric_id', [518]) //516
             ->get();
         $data = [];
-        $nightDifferentials = [];
+
         $whole_month = $request->whole_month;
         $first_half = $request->first_half;
         $second_half = $request->second_half;
@@ -212,11 +241,11 @@ class GenerateReportController extends Controller
 
 
 
-                $nightDifferentials[] = $this->getNightDifferentialHours($val->first_in,$val->first_out);
              $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
-
+                $wBreak = $Schedule['break_Time_Req'];
+              //  return  $val->first_in." = ".$val->first_out;
                 // $dtrdate = $val->dtr_date;
                 // $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
                 // ->where('dtr_date', $dtrdate)
@@ -232,7 +261,8 @@ class GenerateReportController extends Controller
                 //     }
 
                 // }
-
+                $nightDifferentials[] =  $this->getNightDifferentialHours( $val->first_in ?? $val->second_in, $val->first_out ?? $val->second_out,$biometric_id,$wBreak,$DaySchedule);
+             //  return $this->getNightDifferentialHours( $val->first_in , $val->first_out,$biometric_id,$wBreak,$DaySchedule);
                 if (count($DaySchedule) >= 1) {
                     $validate = [
                         (object)[
@@ -250,6 +280,8 @@ class GenerateReportController extends Controller
                     //     $DaySchedule,
                     //     true
                     // );
+
+
                 }
             }
 
@@ -457,19 +489,23 @@ class GenerateReportController extends Controller
                     }));
                     // echo $i."-P \n";
 
-
-                    if (
-                        ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
-                        (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out)  || //3-4
-                        ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
-                        ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
-                    ) {
-                        $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                        $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                        $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                        $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                    if (isset($recordDTR[0])) {
+                        if (
+                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
+                            (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out)  || //3-4
+                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
+                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
+                        ) {
+                            $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                            $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                            $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                            $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                        } else {
+                            $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                        }
                     } else {
-                        $invalidEntry[] =  $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                        // Handle the case where $recordDTR[0] does not exist
+                        $invalidEntry[] = "No record found for the given day.";
                     }
                 } else if (
                     in_array($i, $AbsentDays) &&
@@ -526,7 +562,9 @@ class GenerateReportController extends Controller
                 'Month' => $month_of,
                 'Year' => $year_of,
                 'Is_out'=> $this->computed->OutofPayroll($NetSalary,$init,$days_In_Month),
-                'NightDifferentials'=>array_values(array_filter($nightDifferentials)),
+                'NightDifferentials'=>array_values(array_filter($nightDifferentials,function($row) use($biometric_id){
+                    return isset( $row['biometric_id']) && $row['biometric_id'] == $biometric_id;
+                })),
                 'TotalWorkingMinutes' => $total_Month_WorkingMinutes,
                 'TotalWorkingHours' => $this->ToHours($total_Month_WorkingMinutes),
                 'TotalOvertimeMinutes' => $total_Month_Overtime,
