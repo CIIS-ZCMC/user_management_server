@@ -72,10 +72,23 @@
                     @endif
                 </td>
                 <td class="time" id="entry{{ $i }}2">
+                    @php
+                    $yesterDate = date('Y-m-d', strtotime($curDate." -1 day"));
+                    $yesdtr = array_values(array_filter($dtrRecords->toArray(),function($row) use($yesterDate){
+                return $row->dtr_date == $yesterDate ;
+                    }));
+                if(count($yesdtr)>=1){
 
+                        if (date('H',strtotime($yesdtr[0]->first_in)) >= 21 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+                            if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
+                                    echo date('h:i a', strtotime($yesdtr[0]->first_out));
+                            }
+                        }
+                }
+                @endphp
                     @if (count($dtr) && $dtr[0]->first_out)
                     @php
-                        if($curDate == date('Y-m-d', strtotime($dtr[0]->first_out)) && date('a', strtotime($dtr[0]->first_out)) == "am") {
+                        if($curDate == date('Y-m-d', strtotime($dtr[0]->first_out)) && date('a', strtotime($dtr[0]->first_out)) == "am" ) {
                             echo date('h:i a', strtotime($dtr[0]->first_out));
                         }
                     @endphp
@@ -128,6 +141,7 @@
 <td style="width: 40px !important; padding:10px;border-right :1px solid rgb(196, 197, 201);border-left :1px solid rgb(196, 197, 201)" class="time">
     @include('dtr.DtrSeparator', ['entry' => 'undertime'])
 </td>
+
 <td style="background-color: whitesmoke;width: 80px !important;border-right: 1px solid rgb(184, 184, 184)" id="wsched{{ $i }}">
     @if (count($empSched) >= 1)
         <span style="font-size: 11px;color:gray">
@@ -141,6 +155,28 @@
             $("#wsched{{ $i }}").addClass("wsched");
         </script>
     @endif
+</td>
+<td style="background-color: whitesmoke;width: 80px !important;border-right: 1px solid rgb(184, 184, 184)" >
+    <span style="font-size:13px;color:gray;">
+        @php
+        try {
+                  if(count($dtr)){
+            $firstIn =$dtr[0]->first_in ?? null;
+            $firstOut = $dtr[0]->first_out ?? null;
+            $currDate = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+            if($firstIn && $firstOut){
+            $controller = new \App\Http\Controllers\PayrollHooks\GenerateReportController();
+            $nightDifferentialHours = $controller->getNightDifferentialHours($firstIn ,$firstOut);
+
+            //print_r($nightDifferentialHours);
+            echo $nightDifferentialHours['total_hours'];
+            }
+            }  //code...
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+            @endphp
+      </span>
 </td>
 <td style="background-color: whitesmoke;width: 200px !important;">
     <span style="font-size:13px;color:gray">

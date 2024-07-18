@@ -99,27 +99,7 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
                     }
                 }
         }
-
-
-
         @endphp
-
-        {{-- @if (count($dtr) && $dtr[0]->first_out)
-                    @php
-                        if($curDate == date('Y-m-d', strtotime($dtr[0]->first_out)."-1 day") && date('a', strtotime($dtr[0]->first_out)) == "am") {
-                            echo date('h:i a', strtotime($dtr[0]->first_out));
-                        }
-                    @endphp
-        @else
-                    @php
-                    $secondin =true;
-                    $previousTimestamp =date('h:i a', strtotime($dtr[0]->first_in));
-                     @endphp
-                  <p><span style="font-size:8px;color:rgb(190, 184, 184)">NO ENTRY</span></p>
-        @endif --}}
-
-
-
     </td>
     <td class="time " id="entry{{ $i }}3">
 
@@ -191,9 +171,16 @@ ABSENT
 
     @else
   <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
-@endif
+
+
+
+
+
+  @endif
 
 </td>
+
+
 
 @endif
 
@@ -226,12 +213,37 @@ ABSENT
         @endif
 
     </span>
+
     <script>
         $("#wsched{{ $i }}").addClass("wsched");
     </script>
 @endif
 
 </td>
+<td style="background-color: whitesmoke;width: 80px !important;border-right: 1px solid rgb(184, 184, 184);padding:10px" >
+    <span style="font-size:13px;color:gray;">
+        @php
+    try {
+              if(count($dtr)){
+        $firstIn =$dtr[0]->first_in ?? null;
+        $firstOut = $dtr[0]->first_out ?? null;
+        $currDate = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+        if($firstIn && $firstOut){
+        $controller = new \App\Http\Controllers\PayrollHooks\GenerateReportController();
+        $nightDifferentialHours = $controller->getNightDifferentialHours($firstIn ,$firstOut);
+
+        //print_r($nightDifferentialHours);
+        echo $nightDifferentialHours['total_hours'];
+        }
+
+        }  //code...
+    } catch (\Throwable $th) {
+        //throw $th;
+    }
+        @endphp
+      </span>
+</td>
+
 
 <td style="background-color: whitesmoke;width: 200px !important;">
     <span style="font-size:13px;color:gray">

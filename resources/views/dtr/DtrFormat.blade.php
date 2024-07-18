@@ -123,6 +123,10 @@
                 style="background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);border-left: 1px solid rgb(184, 184, 184)">
                 Schedule
             </th>
+         <th
+            style="width:80px !important;background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);">
+              Night Shift Hours
+          </th>
             <th style="background-color: whitesmoke">
                 Remarks
             </th>
@@ -133,7 +137,7 @@
             @php
                 $isExcept = false;
             @endphp
-         
+
             @for ($i = 1; $i <= $daysInMonth; $i++)
                 @php
                     // $checkIn = array_filter($dtrRecords->toArray(), function ($res) use ($i) {
@@ -230,7 +234,7 @@
                     $leavemessage = '';
                     foreach ($ourdata as $key => $value) {
                         $leavemessage = $value['leavetype'];
-                        
+
                     }
 
                     $officialTime = 'Official Time';
@@ -254,7 +258,7 @@
                     </td>
 
                     @include('dtr.TableDtrDate')
-{{--                     
+{{--
                     @if (count($checkIn) >= 1)
                         @php $val = $i; @endphp
                     @endif --}}

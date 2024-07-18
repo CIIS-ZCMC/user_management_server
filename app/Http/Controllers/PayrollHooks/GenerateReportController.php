@@ -58,53 +58,6 @@ class GenerateReportController extends Controller
 
     public function getNightDifferentialHours($startTime, $endTime)
     {
-        // $nightStart = Carbon::createFromTime(18, 0, 0); // 6 PM
-        // $midnight = Carbon::createFromTime(0, 0, 0)->addDay(); // Midnight
-        // $nightEnd = Carbon::createFromTime(6, 0, 0)->addDay(); // 6 AM next day
-
-        // $startTime = Carbon::parse($startTime);
-        // $endTime = Carbon::parse($endTime);
-
-        // // If end time is before start time, it means the end time is on the next day
-        // if ($endTime->lessThanOrEqualTo($startTime)) {
-        //     $endTime->addDay();
-        // }
-
-        // // Calculate overlap with night period for the first day (6 PM to 12 AM)
-        // $overlapStart = $startTime->copy()->max($nightStart);
-        // $overlapEnd = $endTime->copy()->min($midnight);
-
-        // // Initial values
-        // $totalMinutes = 0;
-        // $totalHours = 0;
-        // $applicableDate = null;
-        // $nextDayMinutes = 0;
-        // $nextDayHours = 0;
-        // $nextDayApplicableDate = null;
-
-        // // Calculate total minutes and hours for the first day overlap (6 PM to 12 AM)
-        // if ($overlapStart->lessThanOrEqualTo($overlapEnd)) {
-        //     $totalMinutes = $overlapEnd->diffInMinutes($overlapStart);
-        //     $totalHours = $overlapEnd->diffInHours($overlapStart);
-        //     $applicableDate = $overlapStart->toDateString();
-        // }
-        // if ($endTime->greaterThan($midnight)) {
-        //     $nextDayOverlapStart = $midnight;
-        //     $nextDayOverlapEnd = $endTime->copy()->min($nightEnd);
-
-        //     $nextDayMinutes = $nextDayOverlapEnd->diffInMinutes($nextDayOverlapStart);
-        //     $nextDayHours = $nextDayOverlapEnd->diffInHours($nextDayOverlapStart);
-        //     $nextDayApplicableDate = $nextDayOverlapStart->toDateString();
-        // }
-
-        // return [
-        //     'current_day_minutes' => $totalMinutes,
-        //     'current_day_hours' => $totalHours,
-        //     'current_day_applicable_date' => $applicableDate,
-        //     'next_day_minutes' => $nextDayMinutes,
-        //     'next_day_hours' => $nextDayHours,
-        //     'next_day_applicable_date' => $nextDayApplicableDate,
-        // ];
 
         $startTime = Carbon::parse($startTime);
         $endTime = Carbon::parse($endTime);
