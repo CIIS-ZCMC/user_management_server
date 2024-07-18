@@ -702,6 +702,11 @@ class LeaveReportController extends Controller
                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                     ->where('division_id', $division_id)
                     ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->distinct()
                     ->get();
 
@@ -723,6 +728,11 @@ class LeaveReportController extends Controller
                 foreach ($departments as $department) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                         ->where('department_id', $department->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -742,6 +752,11 @@ class LeaveReportController extends Controller
                     foreach ($sections as $section) {
                         $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                             ->where('section_id', $section->id)
+                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                if (!empty($leave_type_ids)) {
+                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                }
+                            })
                             ->get();
 
                         foreach ($assignAreas as $assignArea) {
@@ -761,6 +776,11 @@ class LeaveReportController extends Controller
                         foreach ($units as $unit) {
                             $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                                 ->where('unit_id', $unit->id)
+                                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                    if (!empty($leave_type_ids)) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                })
                                 ->get();
 
                             foreach ($assignAreas as $assignArea) {
@@ -784,6 +804,11 @@ class LeaveReportController extends Controller
                 foreach ($sections as $section) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                         ->where('section_id', $section->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -804,6 +829,11 @@ class LeaveReportController extends Controller
                     foreach ($units as $unit) {
                         $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                             ->where('unit_id', $unit->id)
+                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                if (!empty($leave_type_ids)) {
+                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                }
+                            })
                             ->get();
 
                         foreach ($assignAreas as $assignArea) {
@@ -823,6 +853,11 @@ class LeaveReportController extends Controller
             } elseif ($area_under === 'staff') {
                 $assignAreas = AssignArea::with(['employeeProfile', 'division'])
                     ->where('division_id', $division_id)
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->distinct()
                     ->get();
 
@@ -881,6 +916,11 @@ class LeaveReportController extends Controller
                 $assignedAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                     ->where('department_id', $department_id)
                     ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -899,6 +939,11 @@ class LeaveReportController extends Controller
                 foreach ($sections as $section) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                         ->where('section_id', $section->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -918,6 +963,11 @@ class LeaveReportController extends Controller
                     foreach ($units as $unit) {
                         $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                             ->where('unit_id', $unit->id)
+                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                if (!empty($leave_type_ids)) {
+                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                }
+                            })
                             ->get();
 
                         foreach ($assignAreas as $assignArea) {
@@ -937,6 +987,11 @@ class LeaveReportController extends Controller
             } elseif ($area_under === 'staff') {
                 $assignedAreas = AssignArea::with(['employeeProfile', 'department'])
                     ->where('department_id', $department_id)
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -978,6 +1033,11 @@ class LeaveReportController extends Controller
                 $assignedAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
                     ->where('section_id', $section_id)
                     ->where('employee_profile_id', '!=', 1) // Use where clause with '<>' for not equal
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -996,6 +1056,11 @@ class LeaveReportController extends Controller
                 foreach ($units as $unit) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                         ->where('unit_id', $unit->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -1014,6 +1079,11 @@ class LeaveReportController extends Controller
             } elseif ($area_under === 'staff') {
                 $assignedAreas =  AssignArea::with(['employeeProfile', 'section'])
                     ->where('section_id', $section_id)
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -1054,6 +1124,11 @@ class LeaveReportController extends Controller
             $assignedAreas = AssignArea::with(['employeeProfile', 'unit'])
                 ->where('unit_id', $unit_id)
                 ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
+                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                    if (!empty($leave_type_ids)) {
+                        $q->whereIn('leave_type_id', $leave_type_ids);
+                    }
+                })
                 ->get();
 
             foreach ($assignedAreas as $assignedArea) {
@@ -1266,9 +1341,9 @@ class LeaveReportController extends Controller
         $leave_count_total_approved = 0;
 
         // Build the leave applications query with necessary relationships and filters
-        $leave_applications = LeaveApplication::with(['leaveType'])
-            ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
-            ->where('employee_profile_id', $employee->id);
+        $leave_applications = LeaveApplication::where('employee_profile_id', $employee->id);
+
+
 
         // Filter by leave type ids if provided
         if (!empty($leave_type_ids)) {
