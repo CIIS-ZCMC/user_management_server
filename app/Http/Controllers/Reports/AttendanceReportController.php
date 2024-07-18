@@ -100,8 +100,7 @@ class AttendanceReportController extends Controller
                     );
                 })->toArray();
             } else if (
-                ($month_of && $year_of) && ($first_half || $second_half) && !$sector && !$employment_type && !$designation_id && !$absent_without_pay &&
-                !$absent_without_official_leave
+                ($month_of && $year_of) && ($first_half || $second_half) && !$sector && !$employment_type && !$designation_id && !$absent_without_pay && !$absent_without_official_leave
             ) {
                 // Get biometric IDs for the given month and year
                 $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
@@ -120,6 +119,29 @@ class AttendanceReportController extends Controller
                         $whole_month = true,
                         $first_half,
                         $second_half,
+                        $month_of,
+                        $year_of
+                    );
+                })->toArray();
+            } else if (
+                !$month_of && !$year_of && !$first_half && !$second_half && !$sector && $employment_type && !$designation_id && !$absent_without_pay && !$absent_without_official_leave
+            ) {
+                // Get biometric IDs for the given month and year
+                $biometric_ids = DailyTimeRecords::pluck('biometric_id');
+
+                // Get employee profiles matching the biometric IDs
+                $employee_profiles = EmployeeProfile::whereIn('biometric_id', $biometric_ids)
+                    ->with(['personalInformation', 'employmentType', 'assignedArea'])
+                    ->where('employment_type_id', $employment_type)
+                    ->limit($limit)
+                    ->get();
+
+                $arr_data = $employee_profiles->map(function ($employee) use ($month_of, $year_of) {
+                    return $this->resultAttendanceReport(
+                        $employee,
+                        $whole_month = true,
+                        $first_half = false,
+                        $second_half = false,
                         $month_of,
                         $year_of
                     );
