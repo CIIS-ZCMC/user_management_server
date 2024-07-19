@@ -352,24 +352,26 @@ class EmployeeProfileController extends Controller
              * Reuse the created token of first instance of signin to have single access token.
              */
 
-            $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
+            /** Uncomment this if this module is already in need */
+            // $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-                $ip = $request->ip();
+            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+            //     $ip = $request->ip();
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+                    //Changes applied order by desc, old version in accurate due to wrong fetching of data
+            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->first();
 
-                if ($login_trail !== null) {
-                    if ($login_trail->ip_address !== $ip) {
-                        $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+            //     if ($login_trail !== null) {
+            //         if ($login_trail->ip_address !== $ip) {
+            //             $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-                        SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+            //             SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                        response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                    }
-                }
-            }
+            //             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+            //                 ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            //         }
+            //     }
+            // }
 
             // if ($access_token !== null) {
             AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
