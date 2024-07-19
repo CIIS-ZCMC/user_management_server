@@ -1009,10 +1009,6 @@ class AttendanceReportController extends Controller
             }
 
 
-
-
-
-
             // MONTH OF AND YEAR OF
             // if (!$start_date && !$end_date && $month_of && $year_of) {
             //     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
