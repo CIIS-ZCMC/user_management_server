@@ -43,12 +43,15 @@ class AttendanceReportController extends Controller
     private function sortData(&$employees, $sort_by, $order)
     {
         usort($employees, function ($a, $b) use ($sort_by, $order) {
+            $valueA = $a[$sort_by] ?? 0; // Use 0 as default value if key does not exist
+            $valueB = $b[$sort_by] ?? 0; // Use 0 as default value if key does not exist
             if ($order === 'asc') {
-                return $a[$sort_by] <=> $b[$sort_by];
+                return $valueA <=> $valueB;
             }
-            return $b[$sort_by] <=> $a[$sort_by];
+            return $valueB <=> $valueA;
         });
     }
+
 
     /**
      * Filters attendance records based on given criteria.
@@ -78,6 +81,15 @@ class AttendanceReportController extends Controller
             $report_type = $request->report_type; // new parameter for report type [tardiness/absences]
             $sort_order = $request->sort_order; // new parameter for sort order [asc/desc]
             $whole_month = true;
+
+            if (!$report_type) {
+                return response()->json(
+                    [
+                        'message' => 'Report type field is required'
+                    ],
+                    Response::HTTP_OK
+                );
+            }
 
             if (!$start_date && !$end_date && !$month_of && !$year_of) {
                 return response()->json([
@@ -113,6 +125,7 @@ class AttendanceReportController extends Controller
                             $second_half,
                             $month_of,
                             $year_of,
+                            $report_type,
                         );
                     }
                 } else {
@@ -181,6 +194,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
 
@@ -207,6 +221,7 @@ class AttendanceReportController extends Controller
                                                 $second_half,
                                                 $month_of,
                                                 $year_of,
+                                                $report_type
                                             );
                                         }
 
@@ -233,6 +248,7 @@ class AttendanceReportController extends Controller
                                                     $second_half,
                                                     $month_of,
                                                     $year_of,
+                                                    $report_type
                                                 );
                                             }
 
@@ -259,6 +275,7 @@ class AttendanceReportController extends Controller
                                                         $second_half,
                                                         $month_of,
                                                         $year_of,
+                                                        $report_type
                                                     );
                                                 }
                                             }
@@ -288,6 +305,7 @@ class AttendanceReportController extends Controller
                                                 $second_half,
                                                 $month_of,
                                                 $year_of,
+                                                $report_type
                                             );
                                         }
 
@@ -314,6 +332,7 @@ class AttendanceReportController extends Controller
                                                     $second_half,
                                                     $month_of,
                                                     $year_of,
+                                                    $report_type
                                                 );
                                             }
                                         }
@@ -342,6 +361,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
                                     break;
@@ -372,6 +392,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
 
@@ -398,6 +419,7 @@ class AttendanceReportController extends Controller
                                                 $second_half,
                                                 $month_of,
                                                 $year_of,
+                                                $report_type
                                             );
                                         }
 
@@ -424,6 +446,7 @@ class AttendanceReportController extends Controller
                                                     $second_half,
                                                     $month_of,
                                                     $year_of,
+                                                    $report_type
                                                 );
                                             }
                                         }
@@ -453,6 +476,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
                                     break;
@@ -483,6 +507,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
 
@@ -509,6 +534,7 @@ class AttendanceReportController extends Controller
                                                 $second_half,
                                                 $month_of,
                                                 $year_of,
+                                                $report_type
                                             );
                                         }
                                     }
@@ -537,6 +563,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
                                     break;
@@ -566,6 +593,7 @@ class AttendanceReportController extends Controller
                                         $second_half,
                                         $month_of,
                                         $year_of,
+                                        $report_type
                                     );
                                 }
                             }
@@ -899,6 +927,7 @@ class AttendanceReportController extends Controller
                                             $second_half,
                                             $month_of,
                                             $year_of,
+                                            $report_type
                                         );
                                     }
                                     break;
@@ -1008,935 +1037,25 @@ class AttendanceReportController extends Controller
                 }
             }
 
-
-            // MONTH OF AND YEAR OF
-            // if (!$start_date && !$end_date && $month_of && $year_of) {
-            //     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
-            //         ->whereMonth('dtr_date', $month_of)
-            //         ->pluck('biometric_id');
-
-            //     $query = EmployeeProfile::whereIn('biometric_id', $biometric_ids)
-            //         ->with(['personalInformation', 'employmentType', 'assignedArea'])
-            //         ->limit($limit);
-
-            //     if (!$sector && !$designation_id && !$absent_without_pay && !$absent_without_official_leave) {
-            //         if (!$first_half && !$second_half && !$employment_type) {
-            //             // No additional conditions
-            //             $employee_profiles = $query->get();
-            //         } elseif ($first_half || $second_half) {
-            //             // Only half month conditions
-            //             $employee_profiles = $query->get();
-            //         } elseif (!$first_half && !$second_half && $employment_type) {
-            //             // Employment type condition
-            //             $employee_profiles = $query->where('employment_type_id', $employment_type)->get();
-            //         }
-            //     }
-
-            //     $arr_data = $employee_profiles->map(function ($employee) use ($month_of, $year_of, $whole_month, $first_half, $second_half) {
-            //         return $this->resultAttendanceReport(
-            //             $employee,
-            //             $whole_month,
-            //             $first_half,
-            //             $second_half,
-            //             $month_of,
-            //             $year_of
-            //         );
-            //     })->toArray();
-            // } else {
-
-            //     // get biometric IDs
-            //     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
-            //         ->whereMonth('dtr_date', $month_of)
-            //         ->pluck('biometric_id');
-
-            //     // Filter for absences without pay
-            //     if ($absent_without_pay) {
-            //         $biometric_ids = DB::table('leave_applications')
-            //             ->join('leave_types', 'leave_applications.leave_type_id', '=', 'leave_types.id')
-            //             ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
-            //             ->where('leave_types.without_pay', true)
-            //             ->where('leave_applications.status', 'approved')
-            //             ->whereYear('leave_applications.date_from', $year_of)
-            //             ->whereMonth('leave_applications.date_from', $month_of)
-            //             ->pluck('employee_profiles.biometric_id');
-            //     }
-
-            //     // Filter for absences without official leave
-            //     if ($absent_without_official_leave) {
-            //         $leave_biometric_ids = DB::table('leave_applications')
-            //             ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
-            //             ->where('leave_applications.status', 'approved')
-            //             ->whereYear('leave_applications.date_from', $year_of)
-            //             ->whereMonth('leave_applications.date_from', $month_of)
-            //             ->pluck('employee_profiles.biometric_id');
-
-            //         $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
-            //             ->whereMonth('dtr_date', $month_of)
-            //             ->whereNull('first_in')
-            //             ->whereNull('second_in')
-            //             ->whereNull('first_out')
-            //             ->whereNull('second_out')
-            //             ->pluck('biometric_id');
-
-            //         $biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
-            //     }
-
-            //     switch ($sector) {
-            //         case 'Division':
-            //             switch ($area_under) {
-            //                 case 'all':
-            //                     $areas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-            //                         ->where('division_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReport(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-
-            //                     $departments = Department::where('division_id', $area_id)->get();
-            //                     foreach ($departments as $department) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-            //                             ->where('department_id', $department->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReport(
-            //                                 $area->employeeProfile,
-            //                                 $whole_month,
-            //                                 $first_half,
-            //                                 $second_half,
-            //                                 $month_of,
-            //                                 $year_of,
-            //                             );
-            //                         }
-
-            //                         $sections = Section::where('department_id', $department->id)->get();
-            //                         foreach ($sections as $section) {
-            //                             $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                 ->where('section_id', $section->id)
-            //                                 ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                     return $query->where('designation_id', $designation_id);
-            //                                 })
-            //                                 ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                     $q->whereIn('biometric_id', $biometric_ids);
-            //                                     if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                         $q->where('employment_type_id', $employment_type);
-            //                                     }
-            //                                 })
-            //                                 ->limit($limit)->get();
-
-            //                             foreach ($areas as $area) {
-            //                                 $arr_data[] = $this->resultAttendanceReport(
-            //                                     $area->employeeProfile,
-            //                                     $whole_month,
-            //                                     $first_half,
-            //                                     $second_half,
-            //                                     $month_of,
-            //                                     $year_of,
-            //                                 );
-            //                             }
-
-            //                             $units = Unit::where('section_id', $section->id)->get();
-            //                             foreach ($units as $unit) {
-            //                                 $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                     ->where('unit_id', $unit->id)
-            //                                     ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                         return $query->where('designation_id', $designation_id);
-            //                                     })
-            //                                     ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                         $q->whereIn('biometric_id', $biometric_ids);
-            //                                         if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                             $q->where('employment_type_id', $employment_type);
-            //                                         }
-            //                                     })
-            //                                     ->limit($limit)->get();
-
-            //                                 foreach ($areas as $area) {
-            //                                     $arr_data[] = $this->resultAttendanceReport(
-            //                                         $area->employeeProfile,
-            //                                         $whole_month,
-            //                                         $first_half,
-            //                                         $second_half,
-            //                                         $month_of,
-            //                                         $year_of,
-            //                                     );
-            //                                 }
-            //                             }
-            //                         }
-            //                     }
-            //                     // Get sections directly under the division (if any) that are not under any department
-            //                     $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-            //                     foreach ($sections as $section) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                             ->where('section_id', $section->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReport(
-            //                                 $area->employeeProfile,
-            //                                 $whole_month,
-            //                                 $first_half,
-            //                                 $second_half,
-            //                                 $month_of,
-            //                                 $year_of,
-            //                             );
-            //                         }
-
-            //                         $units = Unit::where('section_id', $section->id)->get();
-            //                         foreach ($units as $unit) {
-            //                             $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                 ->where('unit_id', $unit->id)
-            //                                 ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                     return $query->where('designation_id', $designation_id);
-            //                                 })
-            //                                 ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                     $q->whereIn('biometric_id', $biometric_ids);
-            //                                     if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                         $q->where('employment_type_id', $employment_type);
-            //                                     }
-            //                                 })
-            //                                 ->limit($limit)->get();
-
-            //                             foreach ($areas as $area) {
-            //                                 $arr_data[] = $this->resultAttendanceReport(
-            //                                     $area->employeeProfile,
-            //                                     $whole_month,
-            //                                     $first_half,
-            //                                     $second_half,
-            //                                     $month_of,
-            //                                     $year_of,
-            //                                 );
-            //                             }
-            //                         }
-            //                     }
-            //                     break;
-            //                 case 'staff':
-            //                     $areas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-            //                         ->where('division_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReport(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-            //                     break;
-            //             }
-            //             break;
-            //         case 'Department':
-            //             switch ($area_under) {
-            //                 case 'all':
-            //                     $areas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-            //                         ->where('department_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReport(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-
-            //                     $sections = Section::where('department_id', $area_id)->get();
-            //                     foreach ($sections as $section) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                             ->where('section_id', $section->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReport(
-            //                                 $area->employeeProfile,
-            //                                 $whole_month,
-            //                                 $first_half,
-            //                                 $second_half,
-            //                                 $month_of,
-            //                                 $year_of,
-            //                             );
-            //                         }
-
-            //                         $units = Unit::where('section_id', $section->id)->get();
-            //                         foreach ($units as $unit) {
-            //                             $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                 ->where('unit_id', $unit->id)
-            //                                 ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                     return $query->where('designation_id', $designation_id);
-            //                                 })
-            //                                 ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                     $q->whereIn('biometric_id', $biometric_ids);
-            //                                     if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                         $q->where('employment_type_id', $employment_type);
-            //                                     }
-            //                                 })
-            //                                 ->limit($limit)->get();
-
-            //                             foreach ($areas as $area) {
-            //                                 $arr_data[] = $this->resultAttendanceReport(
-            //                                     $area->employeeProfile,
-            //                                     $whole_month,
-            //                                     $first_half,
-            //                                     $second_half,
-            //                                     $month_of,
-            //                                     $year_of,
-            //                                 );
-            //                             }
-            //                         }
-            //                     }
-
-            //                     break;
-            //                 case 'staff':
-            //                     $areas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-            //                         ->where('department_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReport(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-            //                     break;
-            //             }
-            //             break;
-            //         case 'Section':
-            //             switch ($area_under) {
-            //                 case 'all':
-            //                     $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                         ->where('section_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReport(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-
-            //                     $units = Unit::where('section_id', $area_id)->get();
-            //                     foreach ($units as $unit) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                             ->where('unit_id', $unit->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReport(
-            //                                 $area->employeeProfile,
-            //                                 $whole_month,
-            //                                 $first_half,
-            //                                 $second_half,
-            //                                 $month_of,
-            //                                 $year_of,
-            //                             );
-            //                         }
-            //                     }
-
-            //                     break;
-            //                 case 'staff':
-            //                     $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                         ->where('section_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReport(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-            //                     break;
-            //             }
-            //             break;
-            //         case 'Unit':
-            //             $units = Unit::where('unit_id', $area_id)->get();
-            //             foreach ($units as $unit) {
-            //                 $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                     ->where('unit_id', $unit->id)
-            //                     ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                         return $query->where('designation_id', $designation_id);
-            //                     })
-            //                     ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                         $q->whereIn('biometric_id', $biometric_ids);
-            //                         if (!empty($employment_type) || !is_null($employment_type)) {
-            //                             $q->where('employment_type_id', $employment_type);
-            //                         }
-            //                     })
-            //                     ->limit($limit)->get();
-
-            //                 foreach ($areas as $area) {
-            //                     $arr_data[] = $this->resultAttendanceReport(
-            //                         $area->employeeProfile,
-            //                         $whole_month,
-            //                         $first_half,
-            //                         $second_half,
-            //                         $month_of,
-            //                         $year_of,
-            //                     );
-            //                 }
-            //             }
-            //             break;
-            //     }
-            // }
-
-            // // DATE RANGE
-            // if ($start_date && $end_date && !$month_of && !$year_of) {
-            //     $biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-            //     $query = EmployeeProfile::whereIn('biometric_id', $biometric_ids)
-            //         ->with(['personalInformation', 'employmentType', 'assignedArea'])
-            //         ->limit($limit);
-
-            //     if (!$sector && !$designation_id && !$absent_without_pay && !$absent_without_official_leave) {
-            //         if (!$first_half && !$second_half && $employment_type) {
-            //             // Employment type condition
-            //             $employee_profiles = $query->where('employment_type_id', $employment_type)->get();
-            //         }
-            //     }
-
-            //     $arr_data = $employee_profiles->map(function ($employee) use ($start_date, $end_date) {
-            //         return $this->resultAttendanceReportWithDates(
-            //             $employee,
-            //             $start_date,
-            //             $end_date
-            //         );
-            //     })->toArray();
-            // } else {
-
-            //     // get biometric IDs
-            //     $biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-
-            //     // Filter for absences without pay
-            //     if ($absent_without_pay) {
-            //         $biometric_ids = DB::table('leave_applications')
-            //             ->join('leave_types', 'leave_applications.leave_type_id', '=', 'leave_types.id')
-            //             ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
-            //             ->where('leave_types.without_pay', true)
-            //             ->where('leave_applications.status', 'approved')
-            //             ->whereBetween('leave_applications.date_from', [$start_date, $end_date])
-            //             ->pluck('employee_profiles.biometric_id');
-            //     }
-
-            //     // Filter for absences without official leave
-            //     if ($absent_without_official_leave) {
-            //         $leave_biometric_ids = DB::table('leave_applications')
-            //             ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
-            //             ->where('leave_applications.status', 'approved')
-            //             ->whereYear('leave_applications.date_from', [$start_date, $end_date])
-            //             ->pluck('employee_profiles.biometric_id');
-
-            //         $absent_biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])
-            //             ->whereNull('first_in')
-            //             ->whereNull('second_in')
-            //             ->whereNull('first_out')
-            //             ->whereNull('second_out')
-            //             ->pluck('biometric_id');
-
-            //         $biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
-            //     }
-
-            //     switch ($sector) {
-            //         case 'Division':
-            //             switch ($area_under) {
-            //                 case 'all':
-            //                     $areas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-            //                         ->where('division_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                             $area->employeeProfile,
-            //                             $start_date,
-            //                             $end_date
-            //                         );
-            //                     }
-
-            //                     $departments = Department::where('division_id', $area_id)->get();
-            //                     foreach ($departments as $department) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-            //                             ->where('department_id', $department->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                 $area->employeeProfile,
-            //                                 $start_date,
-            //                                 $end_date
-            //                             );
-            //                         }
-
-            //                         $sections = Section::where('department_id', $department->id)->get();
-            //                         foreach ($sections as $section) {
-            //                             $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                 ->where('section_id', $section->id)
-            //                                 ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                     return $query->where('designation_id', $designation_id);
-            //                                 })
-            //                                 ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                     $q->whereIn('biometric_id', $biometric_ids);
-            //                                     if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                         $q->where('employment_type_id', $employment_type);
-            //                                     }
-            //                                 })
-            //                                 ->limit($limit)->get();
-
-            //                             foreach ($areas as $area) {
-            //                                 $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                     $area->employeeProfile,
-            //                                     $start_date,
-            //                                     $end_date
-            //                                 );
-            //                             }
-
-            //                             $units = Unit::where('section_id', $section->id)->get();
-            //                             foreach ($units as $unit) {
-            //                                 $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                     ->where('unit_id', $unit->id)
-            //                                     ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                         return $query->where('designation_id', $designation_id);
-            //                                     })
-            //                                     ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                         $q->whereIn('biometric_id', $biometric_ids);
-            //                                         if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                             $q->where('employment_type_id', $employment_type);
-            //                                         }
-            //                                     })
-            //                                     ->limit($limit)->get();
-
-            //                                 foreach ($areas as $area) {
-            //                                     $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                         $area->employeeProfile,
-            //                                         $start_date,
-            //                                         $end_date
-            //                                     );
-            //                                 }
-            //                             }
-            //                         }
-            //                     }
-            //                     // Get sections directly under the division (if any) that are not under any department
-            //                     $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-            //                     foreach ($sections as $section) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                             ->where('section_id', $section->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                 $area->employeeProfile,
-            //                                 $start_date,
-            //                                 $end_date
-            //                             );
-            //                         }
-
-            //                         $units = Unit::where('section_id', $section->id)->get();
-            //                         foreach ($units as $unit) {
-            //                             $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                 ->where('unit_id', $unit->id)
-            //                                 ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                     return $query->where('designation_id', $designation_id);
-            //                                 })
-            //                                 ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                     $q->whereIn('biometric_id', $biometric_ids);
-            //                                     if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                         $q->where('employment_type_id', $employment_type);
-            //                                     }
-            //                                 })
-            //                                 ->limit($limit)->get();
-
-            //                             foreach ($areas as $area) {
-            //                                 $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                     $area->employeeProfile,
-            //                                     $start_date,
-            //                                     $end_date
-            //                                 );
-            //                             }
-            //                         }
-            //                     }
-            //                     break;
-            //                 case 'staff':
-            //                     $areas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-            //                         ->where('division_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                             $area->employeeProfile,
-            //                             $start_date,
-            //                             $end_date
-            //                         );
-            //                     }
-            //                     break;
-            //             }
-            //             break;
-            //         case 'Department':
-            //             switch ($area_under) {
-            //                 case 'all':
-            //                     $areas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-            //                         ->where('department_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                             $area->employeeProfile,
-            //                             $start_date,
-            //                             $end_date
-            //                         );
-            //                     }
-
-            //                     $sections = Section::where('department_id', $area_id)->get();
-            //                     foreach ($sections as $section) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                             ->where('section_id', $section->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                 $area->employeeProfile,
-            //                                 $start_date,
-            //                                 $end_date
-            //                             );
-            //                         }
-
-            //                         $units = Unit::where('section_id', $section->id)->get();
-            //                         foreach ($units as $unit) {
-            //                             $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                                 ->where('unit_id', $unit->id)
-            //                                 ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                     return $query->where('designation_id', $designation_id);
-            //                                 })
-            //                                 ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                     $q->whereIn('biometric_id', $biometric_ids);
-            //                                     if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                         $q->where('employment_type_id', $employment_type);
-            //                                     }
-            //                                 })
-            //                                 ->limit($limit)->get();
-
-            //                             foreach ($areas as $area) {
-            //                                 $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                     $area->employeeProfile,
-            //                                     $start_date,
-            //                                     $end_date
-            //                                 );
-            //                             }
-            //                         }
-            //                     }
-
-            //                     break;
-            //                 case 'staff':
-            //                     $areas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
-            //                         ->where('department_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                             $area->employeeProfile,
-            //                             $whole_month,
-            //                             $first_half,
-            //                             $second_half,
-            //                             $month_of,
-            //                             $year_of,
-            //                         );
-            //                     }
-            //                     break;
-            //             }
-            //             break;
-            //         case 'Section':
-            //             switch ($area_under) {
-            //                 case 'all':
-            //                     $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                         ->where('section_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                             $area->employeeProfile,
-            //                             $start_date,
-            //                             $end_date
-            //                         );
-            //                     }
-
-            //                     $units = Unit::where('section_id', $area_id)->get();
-            //                     foreach ($units as $unit) {
-            //                         $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                             ->where('unit_id', $unit->id)
-            //                             ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                                 return $query->where('designation_id', $designation_id);
-            //                             })
-            //                             ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                                 $q->whereIn('biometric_id', $biometric_ids);
-            //                                 if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                     $q->where('employment_type_id', $employment_type);
-            //                                 }
-            //                             })
-            //                             ->limit($limit)->get();
-
-            //                         foreach ($areas as $area) {
-            //                             $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                                 $area->employeeProfile,
-            //                                 $start_date,
-            //                                 $end_date
-            //                             );
-            //                         }
-            //                     }
-
-            //                     break;
-            //                 case 'staff':
-            //                     $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                         ->where('section_id', $area_id)
-            //                         ->where('employee_profile_id', '<>', 1)
-            //                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                             return $query->where('designation_id', $designation_id);
-            //                         })
-            //                         ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                             $q->whereIn('biometric_id', $biometric_ids);
-            //                             if (!empty($employment_type) || !is_null($employment_type)) {
-            //                                 $q->where('employment_type_id', $employment_type);
-            //                             }
-            //                         })
-            //                         ->limit($limit)->get();
-
-            //                     foreach ($areas as $area) {
-            //                         $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                             $area->employeeProfile,
-            //                             $start_date,
-            //                             $end_date
-            //                         );
-            //                     }
-            //                     break;
-            //             }
-            //             break;
-            //         case 'Unit':
-            //             $units = Unit::where('unit_id', $area_id)->get();
-            //             foreach ($units as $unit) {
-            //                 $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
-            //                     ->where('unit_id', $unit->id)
-            //                     ->when(!empty($designation_id), function ($query) use ($designation_id) {
-            //                         return $query->where('designation_id', $designation_id);
-            //                     })
-            //                     ->whereHas('employeeProfile', function ($q) use ($biometric_ids, $employment_type) {
-            //                         $q->whereIn('biometric_id', $biometric_ids);
-            //                         if (!empty($employment_type) || !is_null($employment_type)) {
-            //                             $q->where('employment_type_id', $employment_type);
-            //                         }
-            //                     })
-            //                     ->limit($limit)->get();
-
-            //                 foreach ($areas as $area) {
-            //                     $arr_data[] = $this->resultAttendanceReportWithDates(
-            //                         $area->employeeProfile,
-            //                         $start_date,
-            //                         $end_date
-            //                     );
-            //                 }
-            //             }
-            //             break;
-            //     }
-            // }
-
             if (!empty($report_type) && !empty($report_type)) {
-                $this->sortData($arr_data, $report_type === 'tardiness' ? 'total_days_with_tardiness' : 'total_absent_days', $sort_order);
+                switch ($report_type) {
+                    case 'absences':
+                        $this->sortData($arr_data, 'total_absent_days', $sort_order);
+                        break;
+                    case 'tardiness':
+                        $this->sortData($arr_data, 'total_undertine_minutes', $sort_order);
+                        break;
+                }
             }
 
+            $results = array_filter($arr_data, function ($arr) {
+                return !empty($arr);
+            });
+
+
             return response()->json([
-                'count' => empty($arr_data) ? 0 : count($arr_data),
-                'data' => $arr_data,
+                'count' => empty($results) ? 0 : count($results),
+                'data' => $results,
                 'message' => 'Successfully retrieved data.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1951,7 +1070,7 @@ class AttendanceReportController extends Controller
         }
     }
 
-    private function resultAttendanceReport($employee_profile, $whole_month, $first_half, $second_half, $month_of, $year_of)
+    private function resultAttendanceReport($employee_profile, $whole_month, $first_half, $second_half, $month_of, $year_of, $report_type)
     {
         $report_data = [];
 
@@ -2119,11 +1238,11 @@ class AttendanceReportController extends Controller
             'employee_id' => $employee->employee_id,
             'employee_name' => $employee->personalInformation->employeeName(),
             'employment_type' => $employee->employmentType->name,
-            'employee_designation_name' => $employee->findDesignation()['name'],
-            'employee_designation_code' => $employee->findDesignation()['code'],
-            'sector' => $employee->assignedArea->findDetails()['sector'],
-            'area_name' => $employee->assignedArea->findDetails()['details']['name'],
-            'area_code' => $employee->assignedArea->findDetails()['details']['code'],
+            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
             'from' => $start_day,
             'to' => $end_day,
             'month' => $month_of,
@@ -2131,15 +1250,26 @@ class AttendanceReportController extends Controller
             'total_working_minutes' => $total_month_working_minutes,
             'total_working_hours' => ReportHelpers::ToHours($total_month_working_minutes),
             'total_undertime_minutes' => $total_month_undertime_minutes,
+            'total_days_with_tardiness' => $total_days_with_tardiness,
             'total_absent_days' => $number_of_absences,
+            'total_hours_missed' => $total_hours_missed,
             'total_leave_without_pay' => count($leave_without_pay),
             'total_leave_with_pay' => count($leave_with_pay),
             'schedule' => count($scheduledDays),
-            'total_hours_missed' => $total_hours_missed,
-            'total_days_with_tardiness' => $total_days_with_tardiness
         ];
 
-
+        // Apply report type conditions
+        if ($report_type === 'absences') {
+            unset($report_data['total_undertime_minutes']);
+            if ($number_of_absences === 0 || count($scheduledDays) === 0) {
+                return [];
+            }
+        } else if ($report_type === 'tardiness') {
+            unset($report_data['total_absent_days']);
+            if ($total_month_undertime_minutes === 0 || count($scheduledDays) === 0) {
+                return [];
+            }
+        }
 
         return $report_data;
     }
