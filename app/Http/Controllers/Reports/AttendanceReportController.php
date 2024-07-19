@@ -570,7 +570,7 @@ class AttendanceReportController extends Controller
                             }
                             break;
                         case 'Unit':
-                            $units = Unit::where('unit_id', $area_id)->get();
+                            $units = Unit::where('id', $area_id)->get();
                             foreach ($units as $unit) {
                                 $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
                                     ->where('unit_id', $unit->id)
