@@ -570,6 +570,8 @@ class ReportHelpers
     {
         //return self::toWordsMinutes(59.71);
 
+        // Ensure $fent is initialized
+        $fent = '';
 
         foreach ($sequence as $sc) {
             /* Entries */
@@ -676,7 +678,7 @@ class ReportHelpers
 
                     if (isset($time_stamps_req['third_entry']) && isset($time_stamps_req['last_entry'])) {
 
-                        $fent = date('Y-m-d', strtotime($f1_entry));
+                        $fent = date('Y-m-d', strtotime($f1_entry)) ?? null;
                         $second_Sched_secondin = $time_stamps_req['third_entry'];
                         $second_Sched_secondout = $time_stamps_req['last_entry'];
 
@@ -798,6 +800,9 @@ class ReportHelpers
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
 
         if ($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry) {
+            if (empty($fent)) {
+                $fent = date('Y-m-d');
+            }
             $first_Sched_firstin = $time_stamps_req['first_entry'];
             $first_Sched_firstout = $time_stamps_req['second_entry'];
 
