@@ -42,7 +42,7 @@ class AuthenticateWithCookie
             $hasAccessToken = AccessToken::where('token', $decryptedToken)->first();
 
             if (!$hasAccessToken) {
-                return response()->json(['message' => 'Un-Authorized.'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
             }
 
             $tokenExpTime = Carbon::parse($hasAccessToken->token_exp);
