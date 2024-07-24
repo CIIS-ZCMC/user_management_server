@@ -264,7 +264,7 @@ class EmployeeProfileController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-
+            
             /**
              * Fields Needed:
              *  employee_id
@@ -276,7 +276,7 @@ class EmployeeProfileController extends Controller
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
-
+            
             $employee_profile = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
 
             /**
@@ -298,7 +298,7 @@ class EmployeeProfileController extends Controller
                 FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Account is deactivated."]);
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
-
+            
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
@@ -326,7 +326,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
-
+            
             /**
              * For password expired.
              */
@@ -370,7 +370,7 @@ class EmployeeProfileController extends Controller
                     }
                 }
             }
-
+            
             // if ($access_token !== null) {
             AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
             // }
@@ -387,7 +387,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
             }
-
+            
             $token = $employee_profile->createToken();
 
             $assigned_area = $employee_profile->assignedArea;
@@ -438,13 +438,13 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
-
+            
             Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
-
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
+            return response()->json(['mess'=>$th]);
             FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
