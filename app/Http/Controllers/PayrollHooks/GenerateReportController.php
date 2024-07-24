@@ -66,7 +66,7 @@ class GenerateReportController extends Controller
             $startTime = new \DateTime($startTime);
             $endTime = new \DateTime($endTime);
 
-            echo $startTime->format('Y-m-d H:i:s') . " " . $endTime->format('Y-m-d H:i:s') . " " . count($wBreak) . " " . count($DaySchedule) . "\n";
+         //   echo $startTime->format('Y-m-d H:i:s') . " " . $endTime->format('Y-m-d H:i:s') . " " . count($wBreak) . " " . count($DaySchedule) . "\n";
 
             // Ensure that the end time is after the start time
             if ($endTime <= $startTime) {
@@ -159,14 +159,15 @@ class GenerateReportController extends Controller
 
     public function test(Request $request)
     {
+
         // $startTime = '2024-07-16 22:00:00'; // Example start time
         // $endTime = '2024-07-17 06:00:00'; // Example end time
 
         // $nightDifferentialHours = $this->getNightDifferentialHours($startTime, $endTime);
         // return $nightDifferentialHours;
     //    return $this->DeviceLog->ClearDeviceLogs(date('Y-m-d'));
-     //   return $this->dtr->RegenerateDTR();
-     return $this->GenerateDataReport($request);
+       return $this->dtr->RegenerateDTR();
+  //   return $this->GenerateDataReport($request);
 
     }
 
@@ -188,8 +189,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-            // ->whereIn('biometric_id', $biometricIds)
-           ->whereIn('biometric_id', [518]) //516
+             ->whereIn('biometric_id', $biometricIds)
+          // ->whereIn('biometric_id', [518]) //516
             ->get();
         $data = [];
 
