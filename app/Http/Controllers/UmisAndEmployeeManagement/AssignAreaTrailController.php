@@ -23,70 +23,67 @@ class AssignAreaTrailController extends Controller
 
     public function index(Request $request)
     {
-        try{
+        try {
             $assign_area_trails = AssignAreaTrail::all();
 
             return response()->json([
-                'data' => AssignAreaResource::collection($assign_area_trails), 
+                'data' => AssignAreaResource::collection($assign_area_trails),
                 'message' => 'Record of employee assigned area trail retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function findByEmployeeID(Request $request)
     {
-        try{
+        try {
             $employe_profile = EmployeeProfile::where('employee_id')->first();
 
-            if(!$employe_profile)
-            {
+            if (!$employe_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
 
-            $assign_area_trail = AssignAreaTrail::where('employee_profile_id',$employe_profile['id'])->first();
+            $assign_area_trail = AssignAreaTrail::where('employee_profile_id', $employe_profile['id'])->first();
 
-            if(!$assign_area_trail)
-            {
+            if (!$assign_area_trail) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             return response()->json([
-                'data' => AssignAreaResource::collection($assign_area_trail), 
+                'data' => AssignAreaResource::collection($assign_area_trail),
                 'message' => 'Employee assigned area trail found.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function show($id, Request $request)
     {
-        try{
+        try {
             $assign_area_trail = AssignAreaTrail::findOrFail($id);
 
-            if(!$assign_area_trail)
-            {
+            if (!$assign_area_trail) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             return response()->json([
-                'data' => new AssignAreaResource($assign_area_trail), 
+                'data' => new AssignAreaResource($assign_area_trail),
                 'message' => 'Assigned area trail record found.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, AuthPinApprovalRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -96,18 +93,17 @@ class AssignAreaTrailController extends Controller
 
             $assign_area_trail = AssignAreaTrail::findOrFail($id);
 
-            if(!$assign_area_trail)
-            {
+            if (!$assign_area_trail) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $assign_area_trail->delete();
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Assigned area record deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
