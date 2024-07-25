@@ -265,9 +265,6 @@ class DTRcontroller extends Controller
 
 public function PullingLogic($device,$Employee_Attendance,$date_now,$biometric_id){
 
-
-
-
 }
 
 
@@ -331,9 +328,12 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
         ini_set('max_execution_time', 7200);
 
 
-    // return date('Y-m-d',$previousDay)." ".date('Y-m-d',$previousDay1)." ".date('Y-m-d',$previousDay2);
-    $start_date = strtotime('2024-07-15');
-        $end_date = strtotime('2024-07-24');
+
+        $start_date = strtotime(date('Y-m-d',strtotime(' -3 days')));
+     $end_date = strtotime(date('Y-m-d'));
+    //   $start_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
+    //     $end_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
+
 
         $data = [];
 
@@ -345,23 +345,25 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
             ];
         }
 
-//return $data;
 
+        $processedBiometricIds = [];
 
         foreach($data as $row){
             $year_of = $row['year_of'];
             $month_of = $row['month_of'];
             $dtr_date =$row['dtr_date'];
             //Get List of Device Logs Per Employee
-            $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->get();
-         //  $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->where('biometric_id',582)->get();
+           $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->get();
+
+         // $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->where('biometric_id',493)->get();
+
             foreach ($dvclogs as $value) {
                 $biometric_id = $value['biometric_id'];
                 $byemp = array_values(array_filter($dvclogs->toArray(),function($row) use($biometric_id){
                     return $row['biometric_id'] == $biometric_id;
                 }));
                 $Entry =$this->DeviceLog->getEntryLineup($byemp);
-             //   return $Entry;
+
                 if(count($Entry)>=1){
                    $dtr =  DailyTimeRecords::where('dtr_date',$dtr_date)->where('biometric_id',$biometric_id);
                    $dtr->update([
@@ -382,6 +384,14 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
                 //Get matching Schedule.
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                $this->DeviceLog->RegenerateEntry($Entry,$biometric_id,$dtr_date,$Schedule);
+
+
+               //ReCompute Hours
+               if (!in_array($biometric_id, $processedBiometricIds)) {
+                $processedBiometricIds[] = $biometric_id;
+                $this->RecomputeHours($biometric_id, $month_of, $year_of);
+            }
+
 
             }
         }
@@ -1031,16 +1041,17 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
             $ut = array_values(array_map(function ($res) {
                 return [
                     'created' => $res->dtr_date,
-                    'undertime' => $res->undertime_minutes,
+                    'undertime' => $res->undertime_minutes >= 480 ? 480 : $res->undertime_minutes,
                     'biometric_ID' => $res->biometric_id
                 ];
             }, $ute));
+
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
-                $this->RecomputeHours($biometric_id,$month_of,$year_of);
+
             $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
             $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
             if ($FrontDisplay) {
