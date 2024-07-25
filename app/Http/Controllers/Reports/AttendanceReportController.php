@@ -121,8 +121,8 @@ class AttendanceReportController extends Controller
                         $arr_data[] = $this->resultAttendanceReport(
                             $area->employeeProfile,
                             $whole_month,
-                            $first_half,
-                            $second_half,
+                            $first_half = null,
+                            $second_half = null,
                             $month_of,
                             $year_of,
                             $report_type,
@@ -1009,7 +1009,7 @@ class AttendanceReportController extends Controller
                             }
                             break;
                         case 'Unit':
-                            $units = Unit::where('unit_id', $area_id)->get();
+                            $units = Unit::where('id', $area_id)->get();
                             foreach ($units as $unit) {
                                 $areas = AssignArea::with(['employeeProfile', 'section', 'unit'])
                                     ->where('unit_id', $unit->id)
@@ -1052,7 +1052,6 @@ class AttendanceReportController extends Controller
                 return !empty($arr);
             });
 
-
             return response()->json([
                 'count' => empty($results) ? 0 : count($results),
                 'data' => $results,
@@ -1079,6 +1078,7 @@ class AttendanceReportController extends Controller
         $employee_biometric_id = $employee_profile->biometric_id;
 
         $daily_time_records = DailyTimeRecords::select('id', 'biometric_id', 'first_in', 'second_in', 'first_out', 'second_out', 'dtr_date', 'total_working_minutes', 'undertime_minutes', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+            ->where('undertime_minutes', '>', 0)
             ->where('biometric_id', $employee_biometric_id)
             ->whereNotNull('first_in');
 
@@ -1260,13 +1260,7 @@ class AttendanceReportController extends Controller
 
         // Apply report type conditions
         if ($report_type === 'absences') {
-            unset($report_data['total_undertime_minutes']);
             if ($number_of_absences === 0 || count($scheduledDays) === 0) {
-                return [];
-            }
-        } else if ($report_type === 'tardiness') {
-            unset($report_data['total_absent_days']);
-            if ($total_month_undertime_minutes === 0 || count($scheduledDays) === 0) {
                 return [];
             }
         }
