@@ -2135,11 +2135,12 @@ class EmployeeProfileController extends Controller
     public function indexDropdown(Request $request)
     {
         try {
-            $cacheExpiration = Carbon::now()->addDay();
+            // $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::all();
-            });
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+            //     return EmployeeProfile::all();
+            // });
+            $employee_profiles = EmployeeProfile::all();
 
             return response()->json([
                 'data' => EmployeeProfileResource::collection($employee_profiles),
