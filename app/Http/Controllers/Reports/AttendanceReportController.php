@@ -102,7 +102,6 @@ class AttendanceReportController extends Controller
                     // get biometric IDs
                     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
                         ->whereMonth('dtr_date', $month_of)
-                        ->where('undertime_minutes', '>', 0)
                         ->pluck('biometric_id');
 
                     $areas = AssignArea::with(['employeeProfile'])
@@ -133,7 +132,6 @@ class AttendanceReportController extends Controller
                     // get biometric IDs
                     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
                         ->whereMonth('dtr_date', $month_of)
-                        ->where('undertime_minutes', '>', 0)
                         ->pluck('biometric_id');
 
                     // Filter for absences without pay
@@ -607,7 +605,7 @@ class AttendanceReportController extends Controller
 
             if ($start_date && $end_date && !$month_of && !$year_of) {
                 if (!$sector && !$area_id && !$area_under) {
-                    $biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id')->where('undertime_minutes', '>', 0);
+                    $biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                     $areas = AssignArea::with(['employeeProfile'])
                         ->where('employee_profile_id', '<>', 1)
                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
