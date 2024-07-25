@@ -1050,9 +1050,16 @@ class AttendanceReportController extends Controller
                 }
             }
 
-            $results = array_filter($arr_data, function ($arr) {
+            $filtered_items = array_filter($arr_data, function ($arr) {
                 return !empty($arr);
             });
+
+            $results = [];
+
+            foreach ($filtered_items as $item) {
+                $results[] = $item;
+            }
+
 
             return response()->json([
                 'count' => empty($results) ? 0 : count($results),
