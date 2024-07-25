@@ -90,6 +90,10 @@ use App\Http\Resources\EmployeesAssignedAreaResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
 use App\Models\LeaveApplication;
 
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+
+
 class EmployeeProfileController extends Controller
 {
     private $CONTROLLER_NAME = 'Employee Profile';
@@ -358,7 +362,10 @@ class EmployeeProfileController extends Controller
             if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
                 $ip = $request->ip();
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+
+            //Changes applied order by desc, old version in accurate due to wrong fetching of data
+         $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->first();
+
 
                 if ($login_trail !== null) {
                     if ($login_trail->ip_address !== $ip) {
@@ -2128,6 +2135,35 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    public function indexDropdown(Request $request)
+    {
+        try {
+            // $cacheExpiration = Carbon::now()->addDay();
+
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+            //     return EmployeeProfile::all();
+            // });
+            $employee_profiles = EmployeeProfile::all();
+
+
+            // Return a JSON response with the paginated employee profiles and pagination metadata
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles->items()), // Current page items
+                'current_page' => $employee_profiles->currentPage(), // Current page number
+                'last_page' => $employee_profiles->lastPage(), // Total number of pages
+                'per_page' => $employee_profiles->perPage(), // Number of items per page
+                'total' => $employee_profiles->total(), // Total number of items
+                'message' => 'List of employees retrieved.' // Success message
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            // Log any exceptions and return an error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     /**
      * Display a paginated and searchable list of employee profiles.
@@ -4603,6 +4639,9 @@ class EmployeeProfileController extends Controller
             $area_id = $request->area_id;
             $employment_type_id = $request->employment_type_id;
 
+            $page = $request->input('page', 1);
+
+
             if (!$sector && !$area_id) {
                 $employees = AssignArea::with(['employeeProfile.personalInformation'])
                     ->where('employee_profile_id', '<>', 1)
@@ -4842,11 +4881,30 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            $employees = $employees->unique('employee_profile_id');
+            // Create a new LengthAwarePaginator instance
+            $currentPage = $page;
+            $perPage = 10;
+            $total = $employees->unique('employee_profile_id')->count(); // Total number of unique employees
+
+            // Slice the collection to get the items for the current page
+            $currentItems = $employees->unique('employee_profile_id')
+                ->forPage($currentPage, $perPage);
+
+            $employee_profiles = new LengthAwarePaginator(
+                $currentItems,
+                $total,
+                $perPage,
+                $currentPage,
+                ['path' => Paginator::resolveCurrentPath()]
+            );
 
             return response()->json([
-                'count' => $employees->count(),
-                'data' => EmployeesAssignedAreaResource::collection($employees),
+                'current_page' => $employee_profiles->currentPage(),
+                'last_page' => $employee_profiles->lastPage(),
+                'per_page' => $employee_profiles->perPage(),
+                'total' => $employee_profiles->total(),
+                'data' => EmployeesAssignedAreaResource::collection($employee_profiles->items()),
+
                 'message' => 'List of filtered employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

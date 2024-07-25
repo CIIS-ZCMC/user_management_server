@@ -619,4 +619,9 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->hasMany(AssignArea::class);
     }
+
+    public function dailyTimeRecords()
+    {
+        return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id');
+    }
 }

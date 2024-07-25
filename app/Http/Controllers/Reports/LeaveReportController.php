@@ -28,46 +28,34 @@ class LeaveReportController extends Controller
     public function filterLeave(Request $request)
     {
         try {
-            $areas = [];
+            $results = [];
             $sector = $request->sector;
             $report_format = strtolower($request->report_format);
             $status = $request->status;
             $area_under = strtolower($request->area_under);
             $area_id = $request->area_id;
-            $leave_type_ids = $request->leave_type_ids ? $request->leave_type_ids : [];
+            $leave_type_ids = $request->leave_type_ids
+                ? array_map('intval', preg_split('/\s*,\s*/', $request->leave_type_ids))
+                : [];
+
             $date_from = $request->date_from;
             $date_to = $request->date_to;
             $sort_by = $request->sort_by;
             $limit = $request->limit;
 
-            // Check if no filters are applied
-            if (
-                empty($sector) &&
-                empty($status) &&
-                empty($area_under) &&
-                empty($area_id) &&
-                empty($leave_type_ids) &&
-                empty($date_from) &&
-                empty($date_to) &&
-                empty($sort_by) &&
-                empty($limit)
-            ) {
-                $areas = $this->getAllData($report_format);
-            }
-
             // Determine report format and fetch data accordingly
             switch ($report_format) {
                 case 'area':
-                    $areas = $this->getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $results = $this->getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                     break;
                 case 'employee':
-                    $areas = $this->getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $results = $this->getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
                     break;
                 default:
                     return response()->json(
                         [
-                            'count' => count($areas),
-                            'data' => $areas,
+                            'count' => count($results),
+                            'data' => $results,
                             'message' => 'Invalid report format'
                         ],
                         Response::HTTP_OK
@@ -75,8 +63,8 @@ class LeaveReportController extends Controller
             }
 
             return response()->json([
-                'count' => count($areas),
-                'data' => $areas,
+                'count' => count($results),
+                'data' => $results,
                 'message' => 'Successfully retrieved data.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -89,6 +77,8 @@ class LeaveReportController extends Controller
             );
         }
     }
+
+
 
     /**
      * Retrieve all data based on report format.
@@ -106,7 +96,7 @@ class LeaveReportController extends Controller
                     $areas = array_merge($areas, $this->getDivisionData($division->id, '', '', [], '', '', '', ''));
                 }
                 break;
-            case 'employees':
+            case 'employee':
                 $employees = EmployeeProfile::all();
                 foreach ($employees as $employee) {
                     $areas = array_merge($areas, $this->getEmployeeData($employee->id, '', '', [], '', '', '', ''));
@@ -133,6 +123,10 @@ class LeaveReportController extends Controller
      */
     private function getAreaFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
+        if (empty($area_under) && empty($sector) && empty($area_id)) {
+            return $this->getAreasWithLeaveApplicationsOnly($status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
         $areas = [];
         switch ($sector) {
             case 'division':
@@ -149,8 +143,83 @@ class LeaveReportController extends Controller
                 break;
         }
 
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort areas based on the sort_by variable
+        $this->sortAreas($areas, $sort_field, $sort_by);
+
+        // Check if limit is defined and is a positive integer
+        if (isset($limit) && is_numeric($limit) && (int)$limit > 0) {
+            $areas = array_slice($areas, 0, (int)$limit);
+        }
+
+
         return $areas;
     }
+
+    /**
+     * Get areas with leave applications only.
+     *
+     * @param string|null $status
+     * @param array $leave_type_ids
+     * @param string|null $date_from
+     * @param string|null $date_to
+     * @param string|null $sort_by
+     * @param int|null $limit
+     * @return array
+     */
+    private function getAreasWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
+    {
+        $areas = AssignArea::whereHas('employeeProfile.leaveApplications', function ($query) use ($status, $leave_type_ids, $date_from, $date_to) {
+            // Apply filters to the leave applications
+            if (!empty($leave_type_ids)) {
+                $query->whereIn('leave_type_id', $leave_type_ids);
+            }
+            if (!empty($status)) {
+                $query->where('status', 'LIKE', '%' . $status . '%');
+            }
+            if (!empty($date_from)) {
+                $query->where('date_from', '>=', $date_from);
+            }
+            if (!empty($date_to)) {
+                $query->where('date_to', '<=', $date_to);
+            }
+        })->with(['division', 'department', 'section', 'unit'])->get();
+
+        $result = [];
+        $unique_areas = [];
+
+        foreach ($areas as $area) {
+            $details = $area->findDetails();
+            $area_key = $details['details']->id . '-' . $details['sector'];
+            if (!in_array($area_key, $unique_areas)) {
+                $result[] = $this->result($details['details'], strtolower($details['sector']), $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $unique_areas[] = $area_key;
+            }
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort areas based on the sort_by variable
+        $this->sortAreas($result, $sort_field, $sort_by);
+
+        // Check if limit is defined and is a positive integer
+        if (isset($limit) && is_numeric($limit) && (int)$limit > 0) {
+            $areas = array_slice($areas, 0, (int)$limit);
+        }
+
+        return $result;
+    }
+
 
     /**
      * Filter employee data based on provided criteria.
@@ -168,6 +237,10 @@ class LeaveReportController extends Controller
      */
     private function getEmployeeFilter($sector, $status, $area_under, $area_id, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)
     {
+        if (empty($area_under) && empty($sector) && empty($area_id)) {
+            return $this->getEmployeesWithLeaveApplicationsOnly($status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
         $employees = [];
         switch ($sector) {
             case 'division':
@@ -184,7 +257,76 @@ class LeaveReportController extends Controller
                 break;
         }
 
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort employees based on the sort_by variable
+        $this->sortEmployees($employees, $sort_field, $sort_by);
+
+        // Apply limit if provided and it is a valid integer
+        if (isset($limit) && is_numeric($limit) && (int)$limit > 0) {
+            $employees = array_slice($employees, 0, (int)$limit);
+        }
+
+
         return $employees;
+    }
+
+
+    /**
+     * Get employees with leave applications only.
+     *
+     * @param string|null $status
+     * @param array $leave_type_ids
+     * @param string|null $date_from
+     * @param string|null $date_to
+     * @param string|null $sort_by
+     * @param int|null $limit
+     * @return array
+     */
+    private function getEmployeesWithLeaveApplicationsOnly($status = null, $leave_type_ids = [], $date_from = null, $date_to = null, $sort_by = null, $limit = null)
+    {
+        $employees = EmployeeProfile::whereHas('leaveApplications', function ($query) use ($status, $leave_type_ids, $date_from, $date_to) {
+            // Apply filters to the leave applications
+            if (!empty($leave_type_ids)) {
+                $query->whereIn('leave_type_id', $leave_type_ids);
+            }
+            if (!empty($status)) {
+                $query->where('status', 'LIKE', '%' . $status . '%');
+            }
+            if (!empty($date_from)) {
+                $query->where('date_from', '>=', $date_from);
+            }
+            if (!empty($date_to)) {
+                $query->where('date_to', '<=', $date_to);
+            }
+        })->get();
+
+        $result = [];
+        foreach ($employees as $employee) {
+            $result[] = $this->resultEmployee($employee, '', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+        }
+
+        // Ensure sort_by is in the correct format
+        $sort_field = 'leave_count';
+
+        if (strpos($sort_by, ':') !== false) {
+            list($sort_field, $sort_by) = explode(':', $sort_by);
+        }
+
+        // Sort employees based on the sort_by variable
+        $this->sortEmployees($result, $sort_field, $sort_by);
+
+        // Apply limit if provided
+        if (!empty($limit)) {
+            $result = array_slice($result, 0, $limit);
+        }
+
+        return $result;
     }
 
     /**
@@ -215,73 +357,110 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($division_id)) {
             $division = Division::find($division_id);
-            $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
 
             if ($area_under === 'all') {
                 $departments = Department::where('division_id', $division_id)->get();
                 foreach ($departments as $department) {
-                    $areas[] =  $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $areas[] =  $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] =  $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                         }
                     }
                 }
-                // Get sections directly under the division (if any) that are not under any department
+
                 $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
                 foreach ($sections as $section) {
-                    $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                    // Get all units directly under the section
+                    $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                     }
                 }
             } elseif ($area_under === 'staff') {
-                $division = Division::find($division_id);
-                $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
         if (!empty($area_under) && empty($division_id)) {
             $divisions = Division::all();
             foreach ($divisions as $division) {
-                $areas[] = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
                 if ($area_under === 'all') {
                     $departments = Department::where('division_id', $division->id)->get();
                     foreach ($departments as $department) {
-                        $areas[] =  $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
-                            $areas[] =  $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
-                                $areas[] =  $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                                $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                                if ($result) {
+                                    $areas[] = $result;
+                                }
                             }
                         }
                     }
-                    // Get sections directly under the division (if any) that are not under any department
                     $sections = Section::where('division_id', $division->id)->whereNull('department_id')->get();
                     foreach ($sections as $section) {
-                        $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
-                        // Get all units directly under the section
+                        $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                         }
                     }
                 } elseif ($area_under === 'staff') {
-                    // handle specific logic for employees if required
-                    $division = Division::find($division_id);
-                    $areas = [$this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                    $result = $this->result($division, 'division', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
 
     /**
@@ -311,43 +490,68 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($department_id)) {
             $department = Department::find($department_id);
-            $areas = [$this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
 
             if ($area_under === 'all') {
                 $sections = Section::where('department_id', $department->id)->get();
                 foreach ($sections as $section) {
-                    $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                     }
                 }
             } elseif ($area_under === 'staff') {
-                $areas = [$this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
         if (!empty($area_under) && empty($department_id)) {
             $departments = Department::all();
             foreach ($departments as $department) {
-                $areas[] = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
 
                 if ($area_under === 'all') {
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                            if ($result) {
+                                $areas[] = $result;
+                            }
                         }
                     }
                 } elseif ($area_under === 'staff') {
-                    $areas[] = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($department, 'department', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
 
     /**
@@ -377,35 +581,54 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($section_id)) {
             $section = Section::find($section_id);
-            $areas = [$this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
 
             if ($area_under === 'all') {
                 $units = Unit::where('section_id', $section->id)->get();
                 foreach ($units as $unit) {
-                    $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             } elseif ($area_under === 'staff') {
-                $areas = [$this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+                $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
         if (!empty($area_under) && empty($section_id)) {
             $sections = Section::all();
             foreach ($sections as $section) {
-                $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
 
                 if ($area_under === 'all') {
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                        if ($result) {
+                            $areas[] = $result;
+                        }
                     }
                 } elseif ($area_under === 'staff') {
-                    $areas[] = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    $result = $this->result($section, 'section', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                    if ($result) {
+                        $areas[] = $result;
+                    }
                 }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
 
     /**
@@ -435,18 +658,26 @@ class LeaveReportController extends Controller
 
         if (!empty($area_under) && !empty($unit_id)) {
             $unit = Unit::find($unit_id);
-            $areas = [$this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit)];
+            $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+            if ($result) {
+                $areas[] = $result;
+            }
         }
 
         if (!empty($area_under) && empty($unit_id)) {
             $units = Unit::all();
             foreach ($units as $unit) {
-                $areas[] = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                $result = $this->result($unit, 'unit', $status, $leave_type_ids, $date_from, $date_to, $sort_by, $limit);
+                if ($result) {
+                    $areas[] = $result;
+                }
             }
         }
 
-        return $areas;
+        // Filter out null values
+        return array_filter($areas);
     }
+
 
     /**
      * Retrieve employee data based on provided criteria.
@@ -465,120 +696,17 @@ class LeaveReportController extends Controller
     {
         $arr_employees = [];
 
-        // if (empty($division_id) && empty($area_under)) {
-        //     $divisions = Division::all();
-
-        //     foreach ($divisions as $division) {
-        //         $departments = Department::where('division_id', $division->id)->get();
-        //         foreach ($departments as $department) {
-        //             $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                 ->where('department_id', $department->id)
-        //                 ->get();
-
-        //             foreach ($assignAreas as $assignArea) {
-        //                 $arr_employees[] = $this->resultEmployee(
-        //                     $assignArea->employeeProfile,
-        //                     'department',
-        //                     $status,
-        //                     $leave_type_ids,
-        //                     $date_from,
-        //                     $date_to,
-        //                     $sort_by,
-        //                     $limit
-        //                 );
-        //             }
-
-        //             $sections = Section::where('department_id', $department->id)->get();
-        //             foreach ($sections as $section) {
-        //                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                     ->where('section_id', $section->id)
-        //                     ->get();
-
-        //                 foreach ($assignAreas as $assignArea) {
-        //                     $arr_employees[] = $this->resultEmployee(
-        //                         $assignArea->employeeProfile,
-        //                         'section',
-        //                         $status,
-        //                         $leave_type_ids,
-        //                         $date_from,
-        //                         $date_to,
-        //                         $sort_by,
-        //                         $limit
-        //                     );
-        //                 }
-
-        //                 $units = Unit::where('section_id', $section->id)->get();
-        //                 foreach ($units as $unit) {
-        //                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                         ->where('unit_id', $unit->id)
-        //                         ->get();
-
-        //                     foreach ($assignAreas as $assignArea) {
-        //                         $arr_employees[] = $this->resultEmployee(
-        //                             $assignArea->employeeProfile,
-        //                             'unit',
-        //                             $status,
-        //                             $leave_type_ids,
-        //                             $date_from,
-        //                             $date_to,
-        //                             $sort_by,
-        //                             $limit
-        //                         );
-        //                     }
-        //                 }
-        //             }
-        //         }
-
-        //         // Get sections directly under the division (if any) that are not under any department
-        //         $sections = Section::where('division_id', $division_id)->whereNull('department_id')->get();
-        //         foreach ($sections as $section) {
-        //             $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                 ->where('section_id', $section->id)
-        //                 ->get();
-
-        //             foreach ($assignAreas as $assignArea) {
-        //                 $arr_employees[] = $this->resultEmployee(
-        //                     $assignArea->employeeProfile,
-        //                     'section',
-        //                     $status,
-        //                     $leave_type_ids,
-        //                     $date_from,
-        //                     $date_to,
-        //                     $sort_by,
-        //                     $limit
-        //                 );
-        //             }
-
-        //             // Get all units directly under the section
-        //             $units = Unit::where('section_id', $section->id)->get();
-        //             foreach ($units as $unit) {
-        //                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
-        //                     ->where('unit_id', $unit->id)
-        //                     ->get();
-
-        //                 foreach ($assignAreas as $assignArea) {
-        //                     $arr_employees[] = $this->resultEmployee(
-        //                         $assignArea->employeeProfile,
-        //                         'unit',
-        //                         $status,
-        //                         $leave_type_ids,
-        //                         $date_from,
-        //                         $date_to,
-        //                         $sort_by,
-        //                         $limit
-        //                     );
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     return $arr_employees;
-        // }
-
         if (!empty($area_under) && !empty($division_id)) {
             if ($area_under === 'all') {
                 // $division = Division::find($division_id);
                 $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                     ->where('division_id', $division_id)
+                    ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->distinct()
                     ->get();
 
@@ -600,6 +728,11 @@ class LeaveReportController extends Controller
                 foreach ($departments as $department) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                         ->where('department_id', $department->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -619,6 +752,11 @@ class LeaveReportController extends Controller
                     foreach ($sections as $section) {
                         $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                             ->where('section_id', $section->id)
+                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                if (!empty($leave_type_ids)) {
+                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                }
+                            })
                             ->get();
 
                         foreach ($assignAreas as $assignArea) {
@@ -638,6 +776,11 @@ class LeaveReportController extends Controller
                         foreach ($units as $unit) {
                             $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                                 ->where('unit_id', $unit->id)
+                                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                    if (!empty($leave_type_ids)) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                })
                                 ->get();
 
                             foreach ($assignAreas as $assignArea) {
@@ -661,6 +804,11 @@ class LeaveReportController extends Controller
                 foreach ($sections as $section) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                         ->where('section_id', $section->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -681,6 +829,11 @@ class LeaveReportController extends Controller
                     foreach ($units as $unit) {
                         $assignAreas = AssignArea::with(['employeeProfile', 'division', 'department', 'section', 'unit'])
                             ->where('unit_id', $unit->id)
+                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                if (!empty($leave_type_ids)) {
+                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                }
+                            })
                             ->get();
 
                         foreach ($assignAreas as $assignArea) {
@@ -700,6 +853,11 @@ class LeaveReportController extends Controller
             } elseif ($area_under === 'staff') {
                 $assignAreas = AssignArea::with(['employeeProfile', 'division'])
                     ->where('division_id', $division_id)
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->distinct()
                     ->get();
 
@@ -718,6 +876,14 @@ class LeaveReportController extends Controller
             }
         }
 
+        if (!empty($area_under) && empty($division_id)) {
+            $divisions = Division::all();
+            foreach ($divisions as $division) {
+                $arr_employees = array_merge($arr_employees, $this->getEmployeesByDivision($division->id, $status, $area_under, $leave_type_ids, $date_from, $date_to, $sort_by, $limit));
+            }
+        }
+
+        return $arr_employees;
         if (!empty($area_under) && empty($division_id)) {
             $divisions = Division::all();
             foreach ($divisions as $division) {
@@ -749,6 +915,12 @@ class LeaveReportController extends Controller
             if ($area_under === 'all') {
                 $assignedAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                     ->where('department_id', $department_id)
+                    ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -767,6 +939,11 @@ class LeaveReportController extends Controller
                 foreach ($sections as $section) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                         ->where('section_id', $section->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -786,6 +963,11 @@ class LeaveReportController extends Controller
                     foreach ($units as $unit) {
                         $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                             ->where('unit_id', $unit->id)
+                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                                if (!empty($leave_type_ids)) {
+                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                }
+                            })
                             ->get();
 
                         foreach ($assignAreas as $assignArea) {
@@ -805,6 +987,11 @@ class LeaveReportController extends Controller
             } elseif ($area_under === 'staff') {
                 $assignedAreas = AssignArea::with(['employeeProfile', 'department'])
                     ->where('department_id', $department_id)
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -845,6 +1032,12 @@ class LeaveReportController extends Controller
             if ($area_under === 'all') {
                 $assignedAreas = AssignArea::with(['employeeProfile', 'section', 'unit'])
                     ->where('section_id', $section_id)
+                    ->where('employee_profile_id', '!=', 1) // Use where clause with '<>' for not equal
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -863,6 +1056,11 @@ class LeaveReportController extends Controller
                 foreach ($units as $unit) {
                     $assignAreas = AssignArea::with(['employeeProfile', 'department', 'section', 'unit'])
                         ->where('unit_id', $unit->id)
+                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                            if (!empty($leave_type_ids)) {
+                                $q->whereIn('leave_type_id', $leave_type_ids);
+                            }
+                        })
                         ->get();
 
                     foreach ($assignAreas as $assignArea) {
@@ -881,6 +1079,11 @@ class LeaveReportController extends Controller
             } elseif ($area_under === 'staff') {
                 $assignedAreas =  AssignArea::with(['employeeProfile', 'section'])
                     ->where('section_id', $section_id)
+                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                        if (!empty($leave_type_ids)) {
+                            $q->whereIn('leave_type_id', $leave_type_ids);
+                        }
+                    })
                     ->get();
 
                 foreach ($assignedAreas as $assignedArea) {
@@ -920,6 +1123,12 @@ class LeaveReportController extends Controller
         if (!empty($area_under) && !empty($unit_id)) {
             $assignedAreas = AssignArea::with(['employeeProfile', 'unit'])
                 ->where('unit_id', $unit_id)
+                ->where('employee_profile_id', '<>', 1) // Use where clause with '<>' for not equal
+                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($leave_type_ids) {
+                    if (!empty($leave_type_ids)) {
+                        $q->whereIn('leave_type_id', $leave_type_ids);
+                    }
+                })
                 ->get();
 
             foreach ($assignedAreas as $assignedArea) {
@@ -939,7 +1148,6 @@ class LeaveReportController extends Controller
         return $arr_employees;
     }
 
-
     /**
      * Format area data for the result.
      *
@@ -951,10 +1159,15 @@ class LeaveReportController extends Controller
      * @param string $date_to
      * @param string $sort_by
      * @param int $limit
-     * @return array
+     * @return array|null
      */
     private function result($area, $sector, $status, $leave_type_ids = [], $date_from, $date_to, $sort_by, $limit)
     {
+        // Check if $area is null or does not have the expected properties
+        if (is_null($area) || !isset($area->id) || !isset($area->name) || !isset($area->code)) {
+            return null;
+        }
+
         // Initialize the result array with area details and leave counts
         $area_data = [
             'id' => $area->id . '-' . $sector,
@@ -966,13 +1179,6 @@ class LeaveReportController extends Controller
             'leave_count_without_pay' => 0,
             'leave_types' => [] // Initialize leave types array
         ];
-
-        // Initialize additional leave count fields only if status is not empty
-        if (!empty($status)) {
-            $area_data['leave_count_received'] = 0;
-            $area_data['leave_count_cancelled'] = 0;
-            $area_data['leave_count_approved'] = 0;
-        }
 
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::with(['leaveType'])
@@ -986,11 +1192,6 @@ class LeaveReportController extends Controller
             $leave_applications->whereIn('leave_type_id', $leave_type_ids);
         }
 
-        // Apply status filter if provided
-        if (!empty($status)) {
-            $leave_applications->where('status', $status);
-        }
-
         // Apply date filters if provided
         if (!empty($date_from)) {
             $leave_applications->where('date_from', '>=', $date_from);
@@ -998,11 +1199,6 @@ class LeaveReportController extends Controller
 
         if (!empty($date_to)) {
             $leave_applications->where('date_to', '<=', $date_to);
-        }
-
-        // Apply sorting if provided
-        if (!empty($sort_by)) {
-            $leave_applications->orderBy('created_at', $sort_by);
         }
 
         // Apply limit if provided
@@ -1017,13 +1213,21 @@ class LeaveReportController extends Controller
         $leave_count_total = $leave_applications->count();
         $leave_count_with_pay_total = $leave_applications->where('without_pay', 0)->count();
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
+
+        // If there are no leave applications, return null
+
+
         $leave_types_data = [];
+
+        // Initialize specific leave counts
+        $leave_count_total_received = 0;
+        $leave_count_total_cancelled = 0;
+        $leave_count_total_approved = 0;
 
         // Only calculate specific leave counts if status is not empty
         if (!empty($status)) {
-            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
-            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
-            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
+            // Apply status filter
+            $leave_applications->where('status', $status);
         }
 
         foreach ($leave_applications as $application) {
@@ -1038,6 +1242,15 @@ class LeaveReportController extends Controller
                     ];
                 }
                 $leave_types_data[$leave_type->id]['count']++;
+            }
+
+            // Count specific leave statuses
+            if ($application->status == 'received') {
+                $leave_count_total_received++;
+            } elseif (stripos($application->status, 'cancelled') !== false) {
+                $leave_count_total_cancelled++;
+            } elseif ($application->status == 'approved') {
+                $leave_count_total_approved++;
             }
         }
 
@@ -1070,6 +1283,9 @@ class LeaveReportController extends Controller
             }
         }
 
+        // Sort leave types by ID
+        ksort($leave_types_data);
+
         // Update area data with aggregated leave counts and leave types
         $area_data['leave_count'] = $leave_count_total;
         $area_data['leave_count_with_pay'] = $leave_count_with_pay_total;
@@ -1077,14 +1293,14 @@ class LeaveReportController extends Controller
         $area_data['leave_types'] = array_values($leave_types_data);
 
         // Only update specific leave counts if status is not empty
-        if (!empty($status)) {
-            $area_data['leave_count_received'] = $leave_count_total_received;
-            $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
-            $area_data['leave_count_approved'] = $leave_count_total_approved;
-        }
+        $area_data['leave_count_received'] = $leave_count_total_received;
+        $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+        $area_data['leave_count_approved'] = $leave_count_total_approved;
 
-        return $area_data;
+        // return $area_data;
+        return $leave_count_total > 0 ? $area_data : [];
     }
+
 
 
     /**
@@ -1105,9 +1321,11 @@ class LeaveReportController extends Controller
         // Initialize the result array with employee details and leave counts
         $employee_data = [
             'id' => $employee->id,
-            'employee_profile_id' => $employee->personal_information_id,
+            'employee_id' => $employee->employee_id,
             'employee_name' => $employee->personalInformation->employeeName(),
-            'designation' => $employee->findDesignation(),
+            'personal_information_id' => $employee->personal_information_id,
+            'designation' => $employee->findDesignation()['name'],
+            'designation_code' => $employee->findDesignation()['code'],
             'leave_count' => 0, // Initialize leave count
             'leave_count_with_pay' => 0,
             'leave_count_without_pay' => 0,
@@ -1118,15 +1336,14 @@ class LeaveReportController extends Controller
         ];
 
         // Initialize additional leave count fields only if status is not empty
-        if (!empty($status)) {
-            $employee_data['leave_count_received'] = 0;
-            $employee_data['leave_count_cancelled'] = 0;
-            $employee_data['leave_count_approved'] = 0;
-        }
+        $leave_count_total_received = 0;
+        $leave_count_total_cancelled = 0;
+        $leave_count_total_approved = 0;
 
         // Build the leave applications query with necessary relationships and filters
-        $leave_applications = LeaveApplication::with(['leaveType'])
-            ->where('employee_profile_id', $employee->id);
+        $leave_applications = LeaveApplication::where('employee_profile_id', $employee->id);
+
+
 
         // Filter by leave type ids if provided
         if (!empty($leave_type_ids)) {
@@ -1135,7 +1352,7 @@ class LeaveReportController extends Controller
 
         // Apply status filter if provided
         if (!empty($status)) {
-            $leave_applications->where('status', $status);
+            $leave_applications->where('status', 'LIKE', '%' .  $status . '%');
         }
 
         // Apply date filters if provided
@@ -1147,17 +1364,12 @@ class LeaveReportController extends Controller
             $leave_applications->where('date_to', '<=', $date_to);
         }
 
-        // Apply sorting if provided
-        if (!empty($sort_by)) {
-            $leave_applications->orderBy('created_at', $sort_by);
-        }
-
         // Apply limit if provided
         if (!empty($limit)) {
             $leave_applications->limit($limit);
         }
 
-        // Execute the query and get results
+        // Get the leave applications
         $leave_applications = $leave_applications->get();
 
         // Process results to count leaves and aggregate leave types data
@@ -1166,13 +1378,6 @@ class LeaveReportController extends Controller
         $leave_count_without_pay_total = $leave_applications->where('without_pay', 1)->count();
         $leave_types_data = [];
 
-        // Only calculate specific leave counts if status is not empty
-        if (!empty($status)) {
-            $leave_count_total_received = $leave_applications->where('status', 'received')->count();
-            $leave_count_total_cancelled = $leave_applications->where('status', 'cancelled')->count();
-            $leave_count_total_approved = $leave_applications->where('status', 'approved')->count();
-        }
-
         foreach ($leave_applications as $application) {
             $leave_type = $application->leaveType;
             if ($leave_type) {
@@ -1180,10 +1385,20 @@ class LeaveReportController extends Controller
                     $leave_types_data[$leave_type->id] = [
                         'id' => $leave_type->id,
                         'name' => $leave_type->name,
+                        'code' => $leave_type->code,
                         'count' => 0
                     ];
                 }
                 $leave_types_data[$leave_type->id]['count']++;
+            }
+
+            // Count specific leave statuses
+            if ($application->status == 'received') {
+                $leave_count_total_received++;
+            } elseif (stripos($application->status, 'cancelled') !== false) {
+                $leave_count_total_cancelled++;
+            } elseif ($application->status == 'approved') {
+                $leave_count_total_approved++;
             }
         }
 
@@ -1195,6 +1410,7 @@ class LeaveReportController extends Controller
                     $leave_types_data[$leave_type->id] = [
                         'id' => $leave_type->id,
                         'name' => $leave_type->name,
+                        'code' => $leave_type->code,
                         'count' => 0
                     ];
                 }
@@ -1207,13 +1423,15 @@ class LeaveReportController extends Controller
                         $leave_types_data[$leave_type->id] = [
                             'id' => $leave_type->id,
                             'name' => $leave_type->name,
+                            'code' => $leave_type->code,
                             'count' => 0 // If no applications, count remains 0
                         ];
                     }
                 }
             }
         }
-
+        // Sort leave types by ID
+        ksort($leave_types_data);
         // Update employee data with aggregated leave counts and leave types
         $employee_data['leave_count'] = $leave_count_total;
         $employee_data['leave_count_with_pay'] = $leave_count_with_pay_total;
@@ -1221,12 +1439,47 @@ class LeaveReportController extends Controller
         $employee_data['leave_types'] = array_values($leave_types_data);
 
         // Only update specific leave counts if status is not empty
-        if (!empty($status)) {
-            $employee_data['leave_count_received'] = $leave_count_total_received;
-            $employee_data['leave_count_cancelled'] = $leave_count_total_cancelled;
-            $employee_data['leave_count_approved'] = $leave_count_total_approved;
-        }
+        $employee_data['leave_count_received'] = $leave_count_total_received;
+        $employee_data['leave_count_cancelled'] = $leave_count_total_cancelled;
+        $employee_data['leave_count_approved'] = $leave_count_total_approved;
 
         return $employee_data;
+    }
+
+
+    /**
+     * Sorts an array of areas based on a specified field and order.
+     *
+     * @param array $areas The array of areas to be sorted.
+     * @param string $sort_by The field to sort by (e.g., 'leave_count').
+     * @param string $order The order to sort by ('asc' or 'desc').
+     * @return void
+     */
+    private function sortAreas(&$areas, $sort_by, $order)
+    {
+        usort($areas, function ($a, $b) use ($sort_by, $order) {
+            if ($order === 'asc') {
+                return $a[$sort_by] <=> $b[$sort_by];
+            }
+            return $b[$sort_by] <=> $a[$sort_by];
+        });
+    }
+
+    /**
+     * Sorts an array of employees based on a specified field and order.
+     *
+     * @param array $employees The array of employees to be sorted.
+     * @param string $sort_by The field to sort by (e.g., 'leave_count').
+     * @param string $order The order to sort by ('asc' or 'desc').
+     * @return void
+     */
+    private function sortEmployees(&$employees, $sort_by, $order)
+    {
+        usort($employees, function ($a, $b) use ($sort_by, $order) {
+            if ($order === 'asc') {
+                return $a[$sort_by] <=> $b[$sort_by];
+            }
+            return $b[$sort_by] <=> $a[$sort_by];
+        });
     }
 }
