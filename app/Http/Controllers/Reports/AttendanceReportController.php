@@ -102,6 +102,7 @@ class AttendanceReportController extends Controller
                     // get biometric IDs
                     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
                         ->whereMonth('dtr_date', $month_of)
+                        ->where('undertime_minutes', '>', 0)
                         ->pluck('biometric_id');
 
                     $areas = AssignArea::with(['employeeProfile'])
@@ -132,6 +133,7 @@ class AttendanceReportController extends Controller
                     // get biometric IDs
                     $biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
                         ->whereMonth('dtr_date', $month_of)
+                        ->where('undertime_minutes', '>', 0)
                         ->pluck('biometric_id');
 
                     // Filter for absences without pay
@@ -605,7 +607,7 @@ class AttendanceReportController extends Controller
 
             if ($start_date && $end_date && !$month_of && !$year_of) {
                 if (!$sector && !$area_id && !$area_under) {
-                    $biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                    $biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id')->where('undertime_minutes', '>', 0);
                     $areas = AssignArea::with(['employeeProfile'])
                         ->where('employee_profile_id', '<>', 1)
                         ->when(!empty($designation_id), function ($query) use ($designation_id) {
@@ -1078,9 +1080,15 @@ class AttendanceReportController extends Controller
         $employee_biometric_id = $employee_profile->biometric_id;
 
         $daily_time_records = DailyTimeRecords::select('id', 'biometric_id', 'first_in', 'second_in', 'first_out', 'second_out', 'dtr_date', 'total_working_minutes', 'undertime_minutes', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-            ->where('undertime_minutes', '>', 0)
             ->where('biometric_id', $employee_biometric_id)
             ->whereNotNull('first_in');
+
+        if ($report_type === 'tardiness') {
+            $daily_time_records = DailyTimeRecords::select('id', 'biometric_id', 'first_in', 'second_in', 'first_out', 'second_out', 'dtr_date', 'total_working_minutes', 'undertime_minutes', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where('biometric_id', $employee_biometric_id)
+                ->where('undertime_minutes', '>', 0)
+                ->whereNotNull('first_in');
+        }
 
         // Conditional query based on month_of and year_of
         if (!empty($month_of) && !empty($year_of)) {
@@ -1265,8 +1273,14 @@ class AttendanceReportController extends Controller
             }
         }
 
+        // New condition: do not return report data if total_undertime_minutes is 0
+        if ($total_month_undertime_minutes === 0) {
+            return [];
+        }
+
         return $report_data;
     }
+
 
     private function resultAttendanceReportWithDates($employee_profile, $start_date, $end_date)
     {
@@ -1278,9 +1292,14 @@ class AttendanceReportController extends Controller
 
         $daily_time_records = DailyTimeRecords::select('id', 'biometric_id', 'first_in', 'second_in', 'first_out', 'second_out', 'dtr_date', 'total_working_minutes', 'undertime_minutes', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
             ->where('biometric_id', $employee_biometric_id)
-            ->whereNotNull('first_in')
-            ->whereBetween('dtr_date', [$start_date, $end_date])
-            ->get();
+            ->whereNotNull('first_in');
+
+        // Conditional query based on month_of and year_of
+        if (!empty($start_date) && !empty($end_date)) {
+            $daily_time_records = $daily_time_records->whereBetween('first_in', [$start_date, $end_date]);
+        }
+
+        $daily_time_records = $daily_time_records->get();
 
         $employee_schedules = [];
         $total_days_with_tardiness = 0;
@@ -1340,11 +1359,30 @@ class AttendanceReportController extends Controller
                 ];
             })
             ->toArray();
+        // Determine the range of days to process
+        $start_day = Carbon::parse($start_date)->day;
+        $end_day = Carbon::parse($end_date)->day;
+        $start_year = Carbon::parse($start_date)->year;
+        $end_year = Carbon::parse($end_date)->year;
+        $start_month = Carbon::parse($start_date)->month;
+        $end_month = Carbon::parse($end_date)->month;
 
-        // Calculate working days based on start_date and end_date
-        $start_date_obj = Carbon::parse($start_date);
-        $end_date_obj = Carbon::parse($end_date);
-        $days_in_range = $end_date_obj->diffInDays($start_date_obj) + 1;
+        // Ensure month_of and year_of are passed correctly
+        if (!empty($month_of) && !empty($year_of)) {
+            $employee_schedules = collect(ReportHelpers::Allschedule($employee_biometric_id, $month_of, $year_of, null, null, null, null)['schedule'])
+                ->map(fn ($schedule) => (int)date('d', strtotime($schedule['scheduleDate'])))
+                ->toArray();
+        } else {
+            // If month_of and year_of are not provided, use the start and end dates' month and year
+            $month_of = $start_month;
+            $year_of = $start_year;
+
+            $employee_schedules = collect(ReportHelpers::Allschedule($employee_biometric_id, $month_of, $year_of, $start_date, $end_date, null, null)['schedule'])
+                ->map(fn ($schedule) => (int)date('d', strtotime($schedule['scheduleDate'])))
+                ->toArray();
+        }
+
+
 
         $leave_without_pay = [];
         $leave_with_pay = [];
@@ -1354,8 +1392,8 @@ class AttendanceReportController extends Controller
         $total_hours_missed = 0;
 
         // Use collections to filter present and absent days
-        $present_days = collect($daily_time_records)->pluck('day')->toArray();
-        $absent_days = array_diff(range(1, $days_in_range), $present_days);
+        $present_days = collect($daily_time_records)->filter(fn ($day) => in_array($day->day, $employee_schedules))->pluck('day')->toArray();
+        $absent_days = array_values(array_diff($employee_schedules, $present_days));
 
         // Optimize leave date filtering using collections
         $filtered_leave_dates = collect($leave_data)->flatMap(fn ($leave) => collect($leave['datesCovered'])->map(fn ($date) => [
@@ -1363,8 +1401,8 @@ class AttendanceReportController extends Controller
             'status' => $leave['without_pay']
         ]))->toArray();
 
-        for ($day = 1; $day <= $days_in_range; $day++) {
-            $current_date_str = $start_date_obj->copy()->addDays($day - 1)->toDateString();
+        for ($day = $start_day; $day <= $end_day; $day++) {
+            $current_date_str = date('Y-m-d', strtotime("$year_of-$month_of-$day"));
             $current_date_ts = strtotime($current_date_str);
 
             // Filter leave applications for the specific day
@@ -1378,7 +1416,7 @@ class AttendanceReportController extends Controller
                     $leave_with_pay[] = ['dateRecord' => $current_date_str];
                     $total_month_working_minutes += 480;
                 }
-            } else if (in_array($day, $present_days)) {
+            } else if (in_array($day, $present_days) && in_array($day, $employee_schedules)) {
                 // Use collections to find DTR for the day
                 $recordDTR = collect($daily_time_records)->firstWhere('day', $day);
 
@@ -1392,7 +1430,7 @@ class AttendanceReportController extends Controller
                     $total_month_undertime_minutes += $recordDTR->undertime_minutes;
                     $total_hours_missed += max(0, (480 - $recordDTR->total_working_minutes) / 60);
                 }
-            } else if (in_array($day, $absent_days) && $current_date_ts < strtotime(date('Y-m-d'))) {
+            } else if (in_array($day, $absent_days) && in_array($day, $employee_schedules) && $current_date_ts < strtotime(date('Y-m-d'))) {
                 $absences[] = ['dateRecord' => $current_date_str];
                 $total_hours_missed += 8;
             }
@@ -1401,6 +1439,16 @@ class AttendanceReportController extends Controller
         // Calculate the number of absences
         $number_of_absences = count($absences) - count($leave_without_pay);
 
+        // Get all schedules for the employee
+        $employee_schedules = ReportHelpers::Allschedule($employee_biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
+
+        // Map and filter scheduled days within the date range
+        $scheduledDays = collect($employee_schedules)
+            ->map(fn ($schedule) => (int)date('d', strtotime($schedule['scheduleDate'])))
+            ->filter(fn ($value) => $value >= $start_day && $value <= $end_day)
+            ->values()
+            ->toArray();
+
         // Prepare report data
         $report_data = [
             'id' => $employee->id,
@@ -1408,23 +1456,29 @@ class AttendanceReportController extends Controller
             'employee_id' => $employee->employee_id,
             'employee_name' => $employee->personalInformation->employeeName(),
             'employment_type' => $employee->employmentType->name,
-            'employee_designation_name' => $employee->findDesignation()['name'],
-            'employee_designation_code' => $employee->findDesignation()['code'],
-            'sector' => $employee->assignedArea->findDetails()['sector'],
-            'area_name' => $employee->assignedArea->findDetails()['details']['name'],
-            'area_code' => $employee->assignedArea->findDetails()['details']['code'],
-            'start_date' => $start_date,
-            'end_date' => $end_date,
+            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+            'from' => $start_day,
+            'to' => $end_day,
+            'month' => $month_of,
+            'year' => $year_of,
             'total_working_minutes' => $total_month_working_minutes,
             'total_working_hours' => ReportHelpers::ToHours($total_month_working_minutes),
             'total_undertime_minutes' => $total_month_undertime_minutes,
+            'total_days_with_tardiness' => $total_days_with_tardiness,
             'total_absent_days' => $number_of_absences,
+            'total_hours_missed' => $total_hours_missed,
             'total_leave_without_pay' => count($leave_without_pay),
             'total_leave_with_pay' => count($leave_with_pay),
-            'schedule' => count($employee_schedules),
-            'total_hours_missed' => $total_hours_missed,
-            'total_days_with_tardiness' => $total_days_with_tardiness
+            'schedule' => count($scheduledDays),
         ];
+
+        if ($number_of_absences === 0 || count($scheduledDays) === 0) {
+            return [];
+        }
 
         return $report_data;
     }
