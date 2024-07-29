@@ -139,10 +139,37 @@ ABSENT
 </script>
 </td>
 
-<td class="time " id="entry{{ $i }}2"></td>
+<td class="time " style="font-weight:bold" id="entry{{ $i }}2">
+    @php
+    $yesterDate = date('Y-m-d', strtotime($curDate." -1 day"));
+    $yesdtr = array_values(array_filter($dtrRecords->toArray(),function($row) use($yesterDate){
+return $row->dtr_date == $yesterDate ;
+    }));
+
+
+if(count($yesdtr)>=1){
+
+        if (date('H',strtotime($yesdtr[0]->first_in)) >= 21 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+            if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
+                    echo date('h:i a', strtotime($yesdtr[0]->first_out));
+            }
+        }
+}
+@endphp
+</td>
 <td class="time " id="entry{{ $i }}3"></td>
 <td class="time " id="entry{{ $i }}4"></td>
 @else
+
+
+@php
+    $yesterDate = date('Y-m-d', strtotime($curDate." -1 day"));
+    $yesdtr = array_values(array_filter($dtrRecords->toArray(),function($row) use($yesterDate){
+return $row->dtr_date == $yesterDate ;
+    }));
+
+
+@endphp
 <td  class="space" style="width: 50px !important;font-weight:bold" id="entry{{ $i }}1">
 
     <!--FIRST IN -->
@@ -150,21 +177,34 @@ ABSENT
                 @if (date('a', strtotime($dtr[0]->first_in)) == "am")
                 {{date('h:i a',strtotime($dtr[0]->first_in))}}
                 @else
+                @if (count($yesdtr) == 0)
                      <span>-</span>
+                     @endif
                 @endif
         @else
-
+        <span>-</span>
     @endif
 
 </td>
 <td  class="space" style="width: 50px !important;font-weight:bold" id="entry{{ $i }}2">
     @if (count($dtr) && $dtr[0]->first_out)
-                @if (date('a', strtotime($dtr[0]->first_out)) == "am" || date('a', strtotime($dtr[0]->first_out)) == "pm")
-                {{date('h:i a',strtotime($dtr[0]->first_out))}}
-                @else
-                <span>-</span>
-           @endif
-    @else
+    @if (date('a', strtotime($dtr[0]->first_out)) == "am" || date('a', strtotime($dtr[0]->first_out)) == "pm")
+    {{date('h:i a',strtotime($dtr[0]->first_out))}} 
+    @endif
+@else
+
+@if (count($yesdtr))
+@php
+if (date('H',strtotime($yesdtr[0]->first_in)) >= 18 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
+        echo date('h:i a', strtotime($yesdtr[0]->first_out));
+}
+}
+@endphp           
+@else 
+
+<span>-</span>
+@endif
 
 @endif
 
