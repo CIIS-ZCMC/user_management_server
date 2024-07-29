@@ -61,7 +61,11 @@ class GenerateReportController extends Controller
     {
         // $startTime = "2024-07-14 21:46:46";
         // $endTime = "2024-07-15 06:13:35";
+
+    
+   
         if (count($wBreak) == 0 && $startTime && $endTime && count($DaySchedule)) {
+          
             // Convert start and end times to DateTime objects
             $startTime = new \DateTime($startTime);
             $endTime = new \DateTime($endTime);
@@ -166,8 +170,8 @@ class GenerateReportController extends Controller
         // $nightDifferentialHours = $this->getNightDifferentialHours($startTime, $endTime);
         // return $nightDifferentialHours;
     //    return $this->DeviceLog->ClearDeviceLogs(date('Y-m-d'));
-       return $this->dtr->RegenerateDTR();
-  //   return $this->GenerateDataReport($request);
+      return $this->dtr->RegenerateDTR();
+    //return $this->GenerateDataReport($request);
 
     }
 

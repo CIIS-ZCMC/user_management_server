@@ -88,7 +88,7 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
 
         if(count($yesdtr)>=1){
 
-                if (date('H',strtotime($yesdtr[0]->first_in)) >= 21 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+                if (date('H',strtotime($yesdtr[0]->first_in)) >= 18 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
                     if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
                             echo date('h:i a', strtotime($yesdtr[0]->first_out));
                     }

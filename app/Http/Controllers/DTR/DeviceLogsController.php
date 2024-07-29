@@ -279,8 +279,10 @@ class DeviceLogsController extends Controller
 
 
 
+
         //CHECK Devicelogs
         $dvl = DeviceLogs::where('dtr_date',$tomorrow)->where('biometric_id',$biometric_id)->get();
+
 
 
         if($dvl->count()){
@@ -297,12 +299,15 @@ class DeviceLogsController extends Controller
             //Delete DTR containing the data/
             $dtr = DailyTimeRecords::where('dtr_date',$dvl->first()->dtr_date)
             ->where('first_in',$dvl->first()->date_time);
+
             if($dtr->get()->count()){
                 $dtr->delete();
 
             }
-            if($this->withinSchedule($timeSched,date('H:i:s',strtotime($dvl->first()->date_time)))){
-                return $dvl->first()->date_time;
+            foreach($dvl as $dlogs){
+                if($this->withinSchedule($timeSched,date('H:i:s',strtotime($dlogs->date_time)))){
+                    return $dlogs->date_time;
+                }
             }
         }
     }
@@ -447,6 +452,7 @@ class DeviceLogsController extends Controller
 
                     }else {
                       //  return $this->getEntries($datetime,$DaySchedule)['secondentry'];
+
                         return $this->getEntries($datetime,$DaySchedule)['secondentry'][0]['date_time'] ?? null  ;
                     }
 
@@ -455,6 +461,7 @@ class DeviceLogsController extends Controller
 
 
         if($this->ConsiderNightToDay($this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['date_time'])){
+
             $biometric_id = $this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['biometric_id'];
 
             return $this->getAdvanceEntry($this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['date_time'],$biometric_id,$DaySchedule['second_entry']);
@@ -568,8 +575,6 @@ class DeviceLogsController extends Controller
             }
 
             $dtr = $this->adjustEntries($dtr);
-
-
 
 
             if($this->cleanEntry($dtr,$biometric_id,$dtrdate)){

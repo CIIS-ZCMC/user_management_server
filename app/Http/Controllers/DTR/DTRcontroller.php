@@ -329,8 +329,8 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
 
 
 
-        $start_date = strtotime(date('Y-m-d',strtotime(' -3 days')));
-     $end_date = strtotime(date('Y-m-d'));
+        $start_date = strtotime(date('Y-m-d',strtotime('-3 days')));
+        $end_date = strtotime(date('Y-m-d'));
     //   $start_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
     //     $end_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
 
@@ -346,16 +346,17 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
         }
 
 
+
         $processedBiometricIds = [];
 
         foreach($data as $row){
             $year_of = $row['year_of'];
             $month_of = $row['month_of'];
-            $dtr_date =$row['dtr_date'];
+            $dtr_date = $row['dtr_date'];
             //Get List of Device Logs Per Employee
            $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->get();
 
-         // $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->where('biometric_id',493)->get();
+         // $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->where('biometric_id',557)->get();
 
             foreach ($dvclogs as $value) {
                 $biometric_id = $value['biometric_id'];
@@ -1050,7 +1051,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
-
+          
 
             $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
             $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;

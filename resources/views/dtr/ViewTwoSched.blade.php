@@ -32,7 +32,22 @@
 
             </td>
             <td class="time" id="entry{{ $i }}2">
-
+                @php
+                $yesterDate = date('Y-m-d', strtotime($curDate." -1 day"));
+                $yesdtr = array_values(array_filter($dtrRecords->toArray(),function($row) use($yesterDate){
+            return $row->dtr_date == $yesterDate ;
+                }));
+    
+    
+            if(count($yesdtr)>=1){
+    
+                    if (date('H',strtotime($yesdtr[0]->first_in)) >= 21 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+                        if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
+                                echo date('h:i a', strtotime($yesdtr[0]->first_out));
+                        }
+                    }
+            }
+            @endphp
             </td>
             <td class="time" id="entry{{ $i }}3"></td>
             <td class="time" id="entry{{ $i }}4"></td>
@@ -77,14 +92,16 @@
                     $yesdtr = array_values(array_filter($dtrRecords->toArray(),function($row) use($yesterDate){
                 return $row->dtr_date == $yesterDate ;
                     }));
+
+                    $tomorrowDate = date('Y-m-d', strtotime($curDate." +1 day"));
                 if(count($yesdtr)>=1){
 
-                        if (date('H',strtotime($yesdtr[0]->first_in)) >= 21 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+                        if (date('H',strtotime($yesdtr[0]->first_in)) >= 18 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
                             if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
                                     echo date('h:i a', strtotime($yesdtr[0]->first_out));
                             }
                         }
-                }
+                 }
                 @endphp
                     @if (count($dtr) && $dtr[0]->first_out)
                     @php
@@ -98,7 +115,6 @@
                 <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
 
                 @endif
-
 
 
                 </td>
@@ -163,14 +179,31 @@
                   if(count($dtr)){
             $firstIn =$dtr[0]->first_in ?? null;
             $firstOut = $dtr[0]->first_out ?? null;
+    
+                    
             $currDate = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
             if($firstIn && $firstOut){
-            $controller = new \App\Http\Controllers\PayrollHooks\GenerateReportController();
-            $nightDifferentialHours = $controller->getNightDifferentialHours($firstIn ,$firstOut);
+            
+    
+        //daySchedule
 
-            //print_r($nightDifferentialHours);
+       
+            $helper = new \App\Methods\Helpers();
+
+             $bioEntry = [
+                    'first_entry' => $firstIn,
+                    'date_time' => $firstIn
+                ];
+                //Get matching Schedule.
+                $Schedule = $helper->CurrentSchedule($biometric_id, $bioEntry, false);
+
+                $controller = new \App\Http\Controllers\PayrollHooks\GenerateReportController();
+                $nightDifferentialHours = $controller->getNightDifferentialHours($firstIn ,$firstOut,$biometric_id,[],$Schedule['daySchedule']);
+               
+        
             echo $nightDifferentialHours['total_hours'];
             }
+    
             }  //code...
         } catch (\Throwable $th) {
             //throw $th;
