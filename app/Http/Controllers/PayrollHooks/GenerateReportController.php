@@ -20,9 +20,9 @@ class GenerateReportController extends Controller
     protected $helper;
     protected $computed;
 
-    protected $DeviceLog ;
+    protected $DeviceLog;
 
-    protected $dtr ;
+    protected $dtr;
     public function __construct()
     {
         $this->helper = new Helpers();
@@ -58,19 +58,18 @@ class GenerateReportController extends Controller
     public function test(Request $request)
     {
         return $this->dtr->RegenerateDTR();
-
     }
 
     public function AsyncrounousRun_GenerateDataReport(Request $request)
     {
-        for ($i=0; $i < 2; $i++) {
-                     $this->GenerateDataReport($request);
-                    }
-            return  $this->GenerateDataReport($request);
-
+        for ($i = 0; $i < 2; $i++) {
+            $this->GenerateDataReport($request);
+        }
+        return  $this->GenerateDataReport($request);
     }
 
-    public function GenerateDataReport(Request $request){
+    public function GenerateDataReport(Request $request)
+    {
         ini_set('max_execution_time', 7200);
         $month_of = $request->month_of;
         $year_of = $request->year_of;
@@ -79,8 +78,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-             ->whereIn('biometric_id', $biometricIds)
-           //->where('biometric_id', 565) // 494
+            ->whereIn('biometric_id', $biometricIds)
+            //->where('biometric_id', 565) // 494
             ->get();
         $data = [];
 
@@ -112,41 +111,40 @@ class GenerateReportController extends Controller
                 ->get();
             $empschedule = [];
 
-            if(count($dtr) == 0 ){
-                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
-                ->where('active',1);
-                     $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
-            }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
+            if (count($dtr) == 0) {
+                $dvc_logs =  DeviceLogs::where('biometric_id', $biometric_id)
+                    ->where('active', 1);
+                $this->DeviceLog->GenerateEntry($dvc_logs->get(), null, true);
+            } else if (count($this->DeviceLog->CheckDTR($biometric_id))) {
 
-                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
+                $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id), null, true);
             }
 
 
 
-        foreach ($dtr as $val) {
+            foreach ($dtr as $val) {
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
-             $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
 
 
                 $dtrdate = $val->dtr_date;
-                $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
-                ->where('dtr_date', $dtrdate)
-                ->where('active',1);
+                $dvc_logs =  DeviceLogs::where('biometric_id', $biometric_id)
+                    ->where('dtr_date', $dtrdate)
+                    ->where('active', 1);
                 //xxxxxxxxxxxxxxxxxxxxxx
-                if($dvc_logs->exists()){
-                    $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
-                    if($checkdtr->exists()){
+                if ($dvc_logs->exists()) {
+                    $checkdtr = DailyTimeRecords::whereDate('dtr_date', $dtrdate)->where('biometric_id', $biometric_id);
+                    if ($checkdtr->exists()) {
 
-                       $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,false);
-                    }else {
-                       $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,true);
+                        $this->DeviceLog->RegenerateEntry($dvc_logs->get(), $biometric_id, false);
+                    } else {
+                        $this->DeviceLog->GenerateEntry($dvc_logs->get(), $dtrdate, true);
                     }
-
                 }
 
 
@@ -280,9 +278,6 @@ class GenerateReportController extends Controller
             }, $empschedule)));
 
             for ($i = $init; $i <= $days_In_Month; $i++) {
-
-
-
                 $filteredleaveDates = [];
                 $leaveStatus = [];
                 foreach ($leavedata as $row) {
@@ -426,12 +421,12 @@ class GenerateReportController extends Controller
             $salaryGrade = $employeeAssignedAreas->salary_grade_id;
             $salaryStep  = $employeeAssignedAreas->salary_grade_step;
 
-            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep,count($filtered_scheds));
-            $GrossSalary = $this->computed->GrossSalary($presentCount,$basicSalary['GrandTotal']);
+            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
+            $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal']);
             $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
-            $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime,$Rates);
-            $absentRate = $this->computed->AbsentRates($Number_Absences,$Rates);
-            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$basicSalary['Total']);
+            $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
+            $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
+            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
             $data[] = [
                 'Biometric_id' => $biometric_id,
                 'EmployeeNo' => $Employee->employee_id,
@@ -441,7 +436,7 @@ class GenerateReportController extends Controller
                 'To' => $days_In_Month,
                 'Month' => $month_of,
                 'Year' => $year_of,
-                'Is_out'=> $this->computed->OutofPayroll($NetSalary,$init,$days_In_Month),
+                'Is_out' => $this->computed->OutofPayroll($NetSalary, $init, $days_In_Month),
                 'TotalWorkingMinutes' => $total_Month_WorkingMinutes,
                 'TotalWorkingHours' => $this->ToHours($total_Month_WorkingMinutes),
                 'TotalOvertimeMinutes' => $total_Month_Overtime,
@@ -453,14 +448,14 @@ class GenerateReportController extends Controller
                 'NoofInvalidEntry' => count($invalidEntry),
                 'NoofDayOff' => count($dayoff),
                 'schedule' => count($filtered_scheds),
-                'GrandBasicSalary'=> $basicSalary['GrandTotal'],
-                'Rates'=>$Rates,
-                'GrossSalary'=>$basicSalary['Total'],
-                'TimeDeductions'=>[
-                    'AbsentRate'=>$absentRate ,
-                'UndertimeRate'=>$undertimeRate,
+                'GrandBasicSalary' => $basicSalary['GrandTotal'],
+                'Rates' => $Rates,
+                'GrossSalary' => $basicSalary['Total'],
+                'TimeDeductions' => [
+                    'AbsentRate' => $absentRate,
+                    'UndertimeRate' => $undertimeRate,
                 ],
-                'NetSalary'=> $NetSalary
+                'NetSalary' => $NetSalary
 
 
                 // 'Attendance'=>$attd,
@@ -471,15 +466,8 @@ class GenerateReportController extends Controller
                 //  'Absences'=>$absences,
                 //  'Dayoff'=>$dayoff
             ];
-
-
-
-
-
         }
 
         return $data;
-
-
     }
 }
