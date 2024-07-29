@@ -1096,6 +1096,8 @@ class AttendanceReportController extends Controller
                                 }
                             }
 
+                            $profiles = $profiles->take($limit);
+
                             if ($year_of && $month_of) {
                                 $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
                             } else if ($start_date && $end_date) {
@@ -1156,7 +1158,7 @@ class AttendanceReportController extends Controller
                                 ->get();
 
                             $profiles = $division_profiles;
-
+                            $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
                                 $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
@@ -1300,6 +1302,7 @@ class AttendanceReportController extends Controller
                                 }
                             }
 
+                            $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
                                 $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
@@ -1363,6 +1366,7 @@ class AttendanceReportController extends Controller
 
 
                             $profiles = $profiles->merge($department_profiles);
+                            $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
                                 $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
@@ -1602,6 +1606,8 @@ class AttendanceReportController extends Controller
                         ->get();
 
                     $profiles = $profiles->merge($unit_profiles);
+                    $profiles = $profiles->take($limit);
+
 
                     if ($year_of && $month_of) {
                         $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
@@ -1621,9 +1627,6 @@ class AttendanceReportController extends Controller
                         ]
                     );
             }
-
-            // Convert the collection to an array
-            // $results_array = $results->toArray();
 
             // Format the output based on the report type
             switch ($report_type) {
@@ -1646,10 +1649,6 @@ class AttendanceReportController extends Controller
                         'message' => 'Invalid report type'
                     ], 400); // Added status code for better response
             }
-
-            // If needed, convert the array back to a collection
-            // $results = collect($results_array);
-
 
             return response()->json([
                 'count' => count($results),
