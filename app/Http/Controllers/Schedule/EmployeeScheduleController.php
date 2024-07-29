@@ -243,7 +243,6 @@ class EmployeeScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
-            // $data = EmployeeSchedule::where('employee_profile_id', $id)->get();
             $data = EmployeeSchedule::where('employee_profile_id', $id)
                 ->with(['schedule'])
                 ->get();
