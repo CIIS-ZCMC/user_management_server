@@ -553,6 +553,7 @@ class GenerateReportController extends Controller
                 $data[] = [
                     'Biometric_id' => $biometric_id,
                     'Employee' =>[
+                        'employee_id'=>$Employee->employee_id,
                         'Information'=> $Employee->personalInformation,
                         'Designation'=>$Employee->findDesignation(),
                         'Hired'=>$Employee->date_hired

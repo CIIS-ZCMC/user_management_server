@@ -578,7 +578,7 @@ class Helpers
             }
             $noHalfEntry = 0;
             $noHalfEntryfirst  = 0;
-
+            $isonhalfPm = 0;
             $f1_entry = $validate->first_in;
             $f2_entry = $validate->first_out;
             $f3_entry =  $validate->second_in;
