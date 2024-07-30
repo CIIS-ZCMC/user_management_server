@@ -39,13 +39,13 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('news-search', 'NewsController@searchNews');
     Route::get('news/{id}', 'NewsController@show');
     Route::get('notification', 'NotificationController@store');
-    });
+});
 
-    Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-        Route::get('testgenerate', 'GenerateReportController@test');
-    });
+Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+    Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+});
 
-    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
     Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
