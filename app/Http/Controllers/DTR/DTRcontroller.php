@@ -332,7 +332,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
         $start_date = strtotime(date('Y-m-d',strtotime('-3 days')));
         $end_date = strtotime(date('Y-m-d'));
     //   $start_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
-    //     $end_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
+    //   $end_date = strtotime(date('Y-m-d',strtotime(' -1 days')));
 
 
         $data = [];
@@ -1051,7 +1051,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
-          
+
 
             $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
             $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
