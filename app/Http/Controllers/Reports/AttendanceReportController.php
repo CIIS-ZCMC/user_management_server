@@ -447,8 +447,8 @@ class AttendanceReportController extends Controller
         $date_range = [$start_date, $end_date];
 
         // Determine the range of days to process
-        $start_day = Carbon::parse($start_date)->day;
-        $end_day = Carbon::parse($end_date)->day;
+        $start_day = (int)Carbon::parse($start_date)->day;
+        $end_day = (int) Carbon::parse($end_date)->day;
         $start_year = Carbon::parse($start_date)->year;
         $end_year = Carbon::parse($end_date)->year;
         $start_month = Carbon::parse($start_date)->month;
@@ -479,6 +479,7 @@ class AttendanceReportController extends Controller
                 ->where('biometric_id', $employee_biometric_id)
                 ->whereBetween('first_in', $date_range)
                 ->get();
+
             $employee_schedules = [];
             $total_days_with_tardiness = 0;
 
@@ -745,12 +746,12 @@ class AttendanceReportController extends Controller
                             return $d['dtr_date'] === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                         }));
 
-                        if (!empty($record_dtr) && (
+                        if (
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out']) || // all entry
-                            (!$record_dtr[0]['first_in'] && !$record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out'])  || // 3-4
+                            (!$record_dtr[0]['first_in'] && !$record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out'])  || //3-4
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && !$record_dtr[0]['second_in'] && !$record_dtr[0]['second_out']) || // 1-2
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && !$record_dtr[0]['second_out']) // 1-2-3
-                        )) {
+                        ) {
                             $attendance[] = $this->Attendance($year_of, $month_of, $i, $record_dtr);
                             $total_month_working_minutes += $record_dtr[0]['total_working_minutes'];
                             $total_month_overtime += $record_dtr[0]['overtime_minutes'];

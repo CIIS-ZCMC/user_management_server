@@ -39,13 +39,13 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('news-search', 'NewsController@searchNews');
     Route::get('news/{id}', 'NewsController@show');
     Route::get('notification', 'NotificationController@store');
-    });
+});
 
-    Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-        Route::get('testgenerate', 'GenerateReportController@test');
-    });
+Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+    Route::post('testgenerate', 'GenerateReportController@test');
+});
 
-    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
     Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
@@ -863,18 +863,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-update-password', 'EmployeeProfileController@updatePassword');
-        });
-
-        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
-            Route::post('employee-profile-update-shifting', 'EmployeeProfileController@updateEmployeeProfileShifting');
-        });
-
-        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
-            Route::post('employee-profile-by-area', 'EmployeeProfileController@employeesByArea');
-        });
-
-        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
-            Route::post('employee-profile-filter', 'EmployeeProfileController@filterEmployeeProfile');
         });
 
 
@@ -2431,26 +2419,8 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace('App\Http\Controllers\Reports')->group(function () {
 
-        // TESTING
-        // Filter Employees by Blood Type
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-blood-type-filter', 'EmployeeReportController@filterEmployeesByBloodType');
-        });
-        // Filter Employees by Civil Status
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-civil-status-filter', 'EmployeeReportController@filterEmployeesByCivilStatus');
-        });
-        // Filter Employees by Job Status
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-job-status-filter', 'EmployeeReportController@filterEmployeesByJobStatus');
-        });
-        // Filter Employees per Position
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-per-position-filter', 'EmployeeReportController@filterEmployeesPerPosition');
-        });
-        // Filter Employees by Service Length
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
+            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendanceReport');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -2495,17 +2465,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employees-service-length', 'EmployeeReportController@allEmployeesServiceLength');
         });
 
-        // LEAVE REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
-        // ATTENDANCE TARDINESS REPORT
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendanceReport');
-        });
-
-        // TEST ROUTE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
