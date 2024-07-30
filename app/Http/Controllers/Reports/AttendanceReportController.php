@@ -400,17 +400,6 @@ class AttendanceReportController extends Controller
                 return $value >= $init && $value <= $days_In_Month;
             }));
 
-            $employeeAssignedAreas =  $employee->assignedAreas->first();
-            $salaryGrade = $employeeAssignedAreas->salary_grade_id;
-            $salaryStep  = $employeeAssignedAreas->salary_grade_step;
-
-            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
-            $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal']);
-            $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
-            $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
-            $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
-
             $data[] = [
                 'id' => $employee->id,
                 'employee_biometric_id' => $employee->biometric_id,
@@ -476,6 +465,7 @@ class AttendanceReportController extends Controller
             $biometric_id = $row->biometric_id;
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where('undertime_minutes', '>', 0)
                 ->where(function ($query) use ($biometric_id, $startDate, $endDate) {
                     $query->where('biometric_id', $biometric_id)
                         ->whereBetween(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), [$startDate, $endDate]);
@@ -611,6 +601,7 @@ class AttendanceReportController extends Controller
             $total_Month_WorkingMinutes = 0;
             $total_Month_Overtime = 0;
             $total_Month_Undertime = 0;
+
             $invalidEntry = [];
 
             $presentDays = array_map(function ($d) use ($empschedule) {
@@ -759,9 +750,6 @@ class AttendanceReportController extends Controller
                 }
             }
 
-
-
-
             $presentCount = count(array_filter($attd, function ($d) {
                 return $d['total_working_minutes'] !== 0;
             }));
@@ -775,17 +763,6 @@ class AttendanceReportController extends Controller
             $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($firstDayOfRange, $lastDayOfRange) {
                 return $value >= $firstDayOfRange && $value <= $lastDayOfRange;
             }));
-
-            $employeeAssignedAreas =  $employee->assignedAreas->first();
-            $salaryGrade = $employeeAssignedAreas->salary_grade_id;
-            $salaryStep  = $employeeAssignedAreas->salary_grade_step;
-
-            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
-            $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal']);
-            $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
-            $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
-            $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
 
             $data[] = [
                 'id' => $employee->id,
@@ -1082,9 +1059,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1144,9 +1121,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1288,9 +1265,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1352,9 +1329,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1462,9 +1439,9 @@ class AttendanceReportController extends Controller
                             $profiles = $section_profiles->merge($unit_profiles)->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1523,9 +1500,9 @@ class AttendanceReportController extends Controller
                             $profiles = $section_profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1604,34 +1581,88 @@ class AttendanceReportController extends Controller
                     }
                     break;
                 default:
-                    return response()->json(
-                        [
-                            'message' => 'Invalid input. Please enter a valid sector'
-                        ]
-                    );
+                    $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
+
+                    $query = null;
+
+                    if ($year_of && $month_of) {
+                        $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                            ->whereMonth('dtr_date', $month_of)
+                            ->pluck('biometric_id');
+                    } else if ($start_date && $end_date) {
+                        $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                    }
+
+                    $dtr_biometric_ids = $query;
+
+                    $profiles = collect();
+
+                    $profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
+                        ->where('employee_profile_id', '<>', 1)
+                        ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                $query->whereYear('dtr_date', $year_of)
+                                    ->whereMonth('dtr_date', $month_of)
+                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                            });
+                        })
+                        ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                            });
+                        })
+                        ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                            return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                $q->whereIn('biometric_id', $dtr_biometric_ids);
+                            });
+                        })
+                        ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
+                            return $query->where('designation_id', $designation_id);
+                        })
+                        ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
+                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                $q->where('employment_type_id', $employment_type);
+                            });
+                        })
+                        ->get();
+
+                    $profiles = $profiles->take($limit);
+
+                    if ($year_of && $month_of) {
+                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                    } else if ($start_date && $end_date) {
+                        $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                    } else {
+                        $results = [];
+                        return response()->json([
+                            'message' => 'Invalid date'
+                        ]);
+                    }
+                    break;
             }
 
             // Format the output based on the report type
-            // switch ($report_type) {
-            //     case 'absences': // Sort the result based on total absent days
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
-            //                 : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
-            //         });
-            //         break;
-            //     case 'tardiness': // Sort the result based on total undertime minutes
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
-            //                 : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
-            //         });
-            //         break;
-            //     default:
-            //         return response()->json([
-            //             'message' => 'Invalid report type'
-            //         ], 400); // Added status code for better response
-            // }
+            switch ($report_type) {
+                case 'absences': // Sort the result based on total absent days
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
+                            : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
+                    });
+                    break;
+                case 'tardiness': // Sort the result based on total undertime minutes
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
+                            : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
+                    });
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report type'
+                    ], 400); // Added status code for better response
+            }
 
             return response()->json([
                 'count' => count($results),
