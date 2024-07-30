@@ -83,12 +83,14 @@ class AttendanceReportController extends Controller
                 ->where(function ($query) use ($employee_biometric_id, $month_of, $year_of) {
                     $query->where('biometric_id',  $employee_biometric_id)
                         ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of)
+                        ->whereNotNull('first_in');
                 })
                 ->orWhere(function ($query) use ($employee_biometric_id, $month_of, $year_of) {
                     $query->where('biometric_id',  $employee_biometric_id)
                         ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of)
+                        ->whereNotNull('first_in');
                 })
                 ->get();
 
@@ -115,6 +117,7 @@ class AttendanceReportController extends Controller
                 $current_schedule = ReportHelpers::CurrentSchedule($employee_biometric_id, $bio_entry, false);
                 $day_schedule = $current_schedule['daySchedule'];
                 $employee_schedules[] = $day_schedule;
+
 
                 $dtr_date = $d->dtr_date;
                 $device_logs = DeviceLogs::where('biometric_id', $employee_biometric_id)
@@ -163,12 +166,12 @@ class AttendanceReportController extends Controller
             }
 
             // FOR LEAVE APPLICATIONS
+            $leave_data = [];
             if ($profile->employeeProfile->leaveApplications) {
                 $leave_applications = $profile->employeeProfile->leaveApplications->filter(function ($row) {
                     return $row['status'] === "received";
                 });
 
-                $leave_data = [];
                 foreach ($leave_applications as $leave_application) {
                     $leave_data[] = [
                         'country' => $leave_application['country'],
@@ -183,12 +186,11 @@ class AttendanceReportController extends Controller
             }
 
             // FOR OFFICIAL BUSINESS
+            $official_business_data = [];
             if ($profile->employeeProfile->officialBusinessApplications) {
                 $official_business = array_values($profile->employeeProfile->officialBusinessApplications->filter(function ($row) {
                     return $row['status'] === "approved";
                 })->toArray());
-
-                $official_business_data = [];
 
                 foreach ($official_business as $ob) {
                     $official_business_data[] = [
@@ -200,13 +202,12 @@ class AttendanceReportController extends Controller
                 }
             }
 
-            // OFFIICAL TIME
+            // FOR OFFICIAL TIME
+            $official_time_data = [];
             if ($profile->employeeProfile->officialTimeApplications) {
                 $official_time = $profile->employeeProfile->officialTimeApplications->filter(function ($row) {
                     return $row['status'] === "approved";
                 });
-
-                $official_time_data  = [];
 
                 foreach ($official_time as $ot) {
                     $official_time_data[] = [
@@ -218,13 +219,13 @@ class AttendanceReportController extends Controller
                 }
             }
 
-            // CTO APPLICATIONS
+
+            // FOR CTO APPLICATIONS
+            $cto_data = [];
             if ($profile->employeeProfile->ctoApplications) {
                 $cto_applications = $profile->employeeProfile->ctoApplications->filter(function ($row) {
                     return $row['status'] === "approved";
                 });
-
-                $cto_data = [];
 
                 foreach ($cto_applications as $cto) {
                     $cto_data[] = [
@@ -235,11 +236,13 @@ class AttendanceReportController extends Controller
                 }
             }
 
+
             if (count($employee_schedules) >= 1) {
                 $employee_schedules = array_map(function ($sched) {
                     return (int) date('d', strtotime($sched['scheduleDate']));
                 }, ReportHelpers::Allschedule($employee_biometric_id, $month_of, $year_of, null, null, null, null)['schedule']);
             }
+
 
             // array initializations
             $attendance = [];
@@ -354,13 +357,12 @@ class AttendanceReportController extends Controller
                             return $d['dtr_date'] === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                         }));
 
-                        if (
+                        if (!empty($record_dtr) && (
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out']) || // all entry
-                            (!$record_dtr[0]['first_in'] && !$record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out'])  || //3-4
+                            (!$record_dtr[0]['first_in'] && !$record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out'])  || // 3-4
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && !$record_dtr[0]['second_in'] && !$record_dtr[0]['second_out']) || // 1-2
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && !$record_dtr[0]['second_out']) // 1-2-3
-                        ) {
-
+                        )) {
                             $attendance[] = $this->Attendance($year_of, $month_of, $i, $record_dtr);
                             $total_month_working_minutes += $record_dtr[0]['total_working_minutes'];
                             $total_month_overtime += $record_dtr[0]['overtime_minutes'];
@@ -385,12 +387,18 @@ class AttendanceReportController extends Controller
                 }
             }
 
+
+
             $present_count = count(array_filter($attendance, function ($d) {
                 return $d['total_working_minutes'] !== 0;
             }));
 
+
+
             $number_of_absences = count($absences) - count($leave_without_pay);
             $schedule_ = ReportHelpers::Allschedule($employee_biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
+
+
 
             $scheds = array_map(function ($d) {
                 return (int) date('d', strtotime($d['scheduleDate']));
@@ -399,22 +407,6 @@ class AttendanceReportController extends Controller
             $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($init_val, $days_in_month) {
                 return $value >= $init_val && $value <= $days_in_month;
             }));
-
-            // $employee_assigned_areas = $employee->assigndAreas->first();
-            // $salary_grade = $employee_assigned_areas->salary_grade_id;
-            // $salary_step = $employee_assigned_areas->salary_grade_step;
-
-
-            // $employeeAssignedAreas =  $employee->assignedAreas->first();
-            // $salaryGrade = $employeeAssignedAreas->salary_grade_id;
-            // $salaryStep  = $employeeAssignedAreas->salary_grade_step;
-
-            // $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
-            // $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal']);
-            // $Rates = $this->computed->Rates($basicSalary['GrandTotal']);
-            // $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
-            // $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-            // $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
 
             $arr_data[] = [
                 'id' => $profile->id,
@@ -561,7 +553,6 @@ class AttendanceReportController extends Controller
                     );
                 }
             }
-
 
 
             // FOR LEAVE APPLICATIONS
@@ -759,13 +750,12 @@ class AttendanceReportController extends Controller
                             return $d['dtr_date'] === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                         }));
 
-                        if (
+                        if (!empty($record_dtr) && (
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out']) || // all entry
-                            (!$record_dtr[0]['first_in'] && !$record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out'])  || //3-4
+                            (!$record_dtr[0]['first_in'] && !$record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && $record_dtr[0]['second_out'])  || // 3-4
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && !$record_dtr[0]['second_in'] && !$record_dtr[0]['second_out']) || // 1-2
                             ($record_dtr[0]['first_in'] && $record_dtr[0]['first_out'] && $record_dtr[0]['second_in'] && !$record_dtr[0]['second_out']) // 1-2-3
-                        ) {
-
+                        )) {
                             $attendance[] = $this->Attendance($year_of, $month_of, $i, $record_dtr);
                             $total_month_working_minutes += $record_dtr[0]['total_working_minutes'];
                             $total_month_overtime += $record_dtr[0]['overtime_minutes'];
@@ -866,59 +856,165 @@ class AttendanceReportController extends Controller
                 case 'Division':
                     switch ($area_under) {
                         case 'all':
-                            $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
 
-                            $query = null;
+                            try {
+                                $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
 
-                            if ($year_of && $month_of) {
-                                $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->pluck('biometric_id');
-                            } else if ($start_date && $end_date) {
-                                $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                                // Initialize query for biometric IDs
+                                $dtr_biometric_ids = null;
+
+                                // Determine query based on date parameters
+                                if ($year_of && $month_of) {
+                                    $dtr_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->pluck('biometric_id');
+                                } elseif ($start_date && $end_date) {
+                                    $dtr_biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])
+                                        ->pluck('biometric_id');
+                                }
+
+                                // Function to get profiles with the specified filters
+                                $getProfiles = function ($query) use ($current_date, $year_of, $month_of, $start_date, $end_date, $dtr_biometric_ids, $designation_id, $employment_type) {
+                                    return $query->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                            $query->whereYear('dtr_date', $year_of)
+                                                ->whereMonth('dtr_date', $month_of)
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                        ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                                $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                            });
+                                        })
+                                        ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                                            return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                                $q->whereIn('biometric_id', $dtr_biometric_ids);
+                                            });
+                                        })
+                                        ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
+                                            return $query->where('designation_id', $designation_id);
+                                        })
+                                        ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        })
+                                        ->get();
+                                };
+
+                                // Fetch division profiles
+                                $profiles = $getProfiles(AssignArea::with([
+                                    'employeeProfile',
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.dailyTimeRecords',
+                                    'employeeProfile.leaveApplications'
+                                ])->where('division_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1));
+
+                                // Fetch department, section, and unit profiles
+                                $departments = Department::where('division_id', $area_id)->get();
+                                foreach ($departments as $department) {
+                                    $profiles = $profiles->merge($getProfiles(AssignArea::with([
+                                        'employeeProfile',
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.dailyTimeRecords',
+                                        'employeeProfile.leaveApplications'
+                                    ])->where('department_id', $department->id)
+                                        ->where('employee_profile_id', '<>', 1)));
+
+                                    $sections = Section::where('department_id', $department->id)->get();
+                                    foreach ($sections as $section) {
+                                        $profiles = $profiles->merge($getProfiles(AssignArea::with([
+                                            'employeeProfile',
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile.dailyTimeRecords',
+                                            'employeeProfile.leaveApplications'
+                                        ])->where('section_id', $section->id)
+                                            ->where('employee_profile_id', '<>', 1)));
+
+                                        $units = Unit::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $profiles = $profiles->merge($getProfiles(AssignArea::with([
+                                                'employeeProfile',
+                                                'employeeProfile.personalInformation',
+                                                'employeeProfile.dailyTimeRecords',
+                                                'employeeProfile.leaveApplications'
+                                            ])->where('unit_id', $unit->id)
+                                                ->where('employee_profile_id', '<>', 1)));
+                                        }
+                                    }
+                                }
+
+                                // Fetch sections directly under the division
+                                $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                                foreach ($sections as $section) {
+                                    $profiles = $profiles->merge($getProfiles(AssignArea::with([
+                                        'employeeProfile',
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.dailyTimeRecords',
+                                        'employeeProfile.leaveApplications'
+                                    ])->where('section_id', $section->id)
+                                        ->where('employee_profile_id', '<>', 1)));
+
+                                    $units = Unit::where('section_id', $section->id)->get();
+                                    foreach ($units as $unit) {
+                                        $profiles = $profiles->merge($getProfiles(AssignArea::with([
+                                            'employeeProfile',
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile.dailyTimeRecords',
+                                            'employeeProfile.leaveApplications'
+                                        ])->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)));
+                                    }
+                                }
+
+                                // Limit and generate results
+                                $profiles = $profiles->take($limit);
+
+                                if ($year_of && $month_of) {
+                                    $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);
+                                } elseif ($start_date && $end_date) {
+                                    $results = $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                } else {
+                                    return response()->json([
+                                        'message' => 'Invalid date'
+                                    ], 400); // 400 Bad Request for invalid date parameters
+                                }
+
+                                return response()->json($results);
+                            } catch (\Throwable $th) {
+                                // Log the error and return an internal server error response
+                                Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                                return response()->json(
+                                    [
+                                        'message' => $th->getMessage()
+                                    ],
+                                    Response::HTTP_INTERNAL_SERVER_ERROR
+                                );
                             }
+                            break;
+                        case 'staff':
+                            try {
+                                $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
 
-                            $dtr_biometric_ids = $query;
+                                $query = null;
 
-                            $profiles = collect();
+                                if ($year_of && $month_of) {
+                                    $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->pluck('biometric_id');
+                                } else if ($start_date && $end_date) {
+                                    $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                                }
 
-                            $division_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                ->where('division_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereYear('dtr_date', $year_of)
-                                            ->whereMonth('dtr_date', $month_of)
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                    return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                        $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                    });
-                                })
-                                ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                    return $query->where('designation_id', $designation_id);
-                                })
-                                ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                })
-                                ->get();
+                                $dtr_biometric_ids = $query;
 
-                            $profiles = $profiles->merge($division_profiles);
+                                $profiles = collect();
 
-                            $departments = Department::where('division_id', $area_id)->get();
-                            foreach ($departments as $department) {
-                                $department_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                    ->where('department_id', $department->id)
+                                $division_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
+                                    ->where('division_id', $area_id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
                                         $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
@@ -948,11 +1044,108 @@ class AttendanceReportController extends Controller
                                     })
                                     ->get();
 
+                                $profiles = $division_profiles;
+                                $profiles = $profiles->take($limit);
+
+                                if ($year_of && $month_of) {
+                                    $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
+                                } else if ($start_date && $end_date) {
+                                    $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                } else {
+                                    $results = [];
+                                    return response()->json([
+                                        'message' => 'Invalid date'
+                                    ]);
+                                }
+                            } catch (\Throwable $th) {
+                                // Log the error and return an internal server error response
+                                Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                                return response()->json(
+                                    [
+                                        'message' => $th->getMessage()
+                                    ],
+                                    Response::HTTP_INTERNAL_SERVER_ERROR
+                                );
+                            }
+
+                            break;
+                        default:
+                            return response()->json([
+                                'message' => 'Invalid report type'
+                            ], 400); // Added status code for better response
+                    }
+                    break;
+                case 'Department':
+                    switch ($area_under) {
+                        case 'all':
+                            try {
+                                $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
+
+                                // Initialize query variable
+                                $query = null;
+
+                                // Determine query based on date parameters
+                                if ($year_of && $month_of) {
+                                    $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->pluck('biometric_id');
+                                } else if ($start_date && $end_date) {
+                                    $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                                }
+
+                                $dtr_biometric_ids = $query;
+
+                                // Initialize profiles collection
+                                $profiles = collect();
+
+                                // Fetch department profiles
+                                $department_profiles = AssignArea::with([
+                                    'employeeProfile',
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.dailyTimeRecords',
+                                    'employeeProfile.leaveApplications'
+                                ])
+                                    ->where('department_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                            $query->whereYear('dtr_date', $year_of)
+                                                ->whereMonth('dtr_date', $month_of)
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                    ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                            $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                    ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                                        return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                            $q->whereIn('biometric_id', $dtr_biometric_ids);
+                                        });
+                                    })
+                                    ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
+                                        return $query->where('designation_id', $designation_id);
+                                    })
+                                    ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get();
+
                                 $profiles = $profiles->merge($department_profiles);
 
-                                $sections = Section::where('department_id', $department->id)->get();
+                                // Fetch sections and their profiles
+                                $sections = Section::where('department_id', $area_id)->get();
                                 foreach ($sections as $section) {
-                                    $section_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
+                                    $section_profiles = AssignArea::with([
+                                        'employeeProfile',
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.dailyTimeRecords',
+                                        'employeeProfile.leaveApplications'
+                                    ])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
@@ -973,10 +1166,10 @@ class AttendanceReportController extends Controller
                                                 $q->whereIn('biometric_id', $dtr_biometric_ids);
                                             });
                                         })
-                                        ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
+                                        ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
                                             return $query->where('designation_id', $designation_id);
                                         })
-                                        ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
+                                        ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                                 $q->where('employment_type_id', $employment_type);
                                             });
@@ -985,9 +1178,220 @@ class AttendanceReportController extends Controller
 
                                     $profiles = $profiles->merge($section_profiles);
 
+                                    // Fetch units and their profiles
                                     $units = Unit::where('section_id', $section->id)->get();
                                     foreach ($units as $unit) {
-                                        $unit_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
+                                        $unit_profiles = AssignArea::with([
+                                            'employeeProfile',
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile.dailyTimeRecords',
+                                            'employeeProfile.leaveApplications'
+                                        ])
+                                            ->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)
+                                            ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                                                $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                                    $query->whereYear('dtr_date', $year_of)
+                                                        ->whereMonth('dtr_date', $month_of)
+                                                        ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                                });
+                                            })
+                                            ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                                                $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                                    $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                                        ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                                });
+                                            })
+                                            ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                                                return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                                    $q->whereIn('biometric_id', $dtr_biometric_ids);
+                                                });
+                                            })
+                                            ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
+                                                return $query->where('designation_id', $designation_id);
+                                            })
+                                            ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
+                                                $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                    $q->where('employment_type_id', $employment_type);
+                                                });
+                                            })
+                                            ->get();
+
+                                        $profiles = $profiles->merge($unit_profiles);
+                                    }
+                                }
+
+                                // Limit the profiles
+                                $profiles = $profiles->take($limit);
+
+                                // Generate report based on date parameters
+                                if ($year_of && $month_of) {
+                                    $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);
+                                } else if ($start_date && $end_date) {
+                                    $results = $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                } else {
+                                    return response()->json([
+                                        'message' => 'Invalid date'
+                                    ], 400); // 400 Bad Request for invalid date parameters
+                                }
+
+                                return response()->json($results);
+                            } catch (\Throwable $th) {
+                                // Log the error and return an internal server error response
+                                Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                                return response()->json(
+                                    [
+                                        'message' => $th->getMessage()
+                                    ],
+                                    Response::HTTP_INTERNAL_SERVER_ERROR
+                                );
+                            }
+                            break;
+                        case 'staff':
+                            try {
+                                $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
+
+                                // Initialize query variable
+                                $dtr_biometric_ids = null;
+
+                                // Determine query based on date parameters
+                                if ($year_of && $month_of) {
+                                    $dtr_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->pluck('biometric_id');
+                                } elseif ($start_date && $end_date) {
+                                    $dtr_biometric_ids = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])
+                                        ->pluck('biometric_id');
+                                }
+
+                                // Fetch profiles from AssignArea
+                                $department_profiles = AssignArea::with([
+                                    'employeeProfile',
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.dailyTimeRecords',
+                                    'employeeProfile.leaveApplications'
+                                ])
+                                    ->where('department_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                            $query->whereYear('dtr_date', $year_of)
+                                                ->whereMonth('dtr_date', $month_of)
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                    ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                            $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                    ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                                        return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                            $q->whereIn('biometric_id', $dtr_biometric_ids);
+                                        });
+                                    })
+                                    ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
+                                        return $query->where('designation_id', $designation_id);
+                                    })
+                                    ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get();
+
+                                // Merge and limit profiles
+                                $profiles = collect()->merge($department_profiles)->take($limit);
+
+                                // Generate report based on date parameters
+                                if ($year_of && $month_of) {
+                                    $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);
+                                } elseif ($start_date && $end_date) {
+                                    $results = $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                } else {
+                                    return response()->json([
+                                        'message' => 'Invalid date'
+                                    ], 400); // 400 Bad Request for invalid date parameters
+                                }
+
+                                return response()->json($results);
+                            } catch (\Throwable $th) {
+                                // Log the error and return an internal server error response
+                                Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                                return response()->json(
+                                    [
+                                        'message' => $th->getMessage()
+                                    ],
+                                    Response::HTTP_INTERNAL_SERVER_ERROR
+                                );
+                            }
+                            break;
+                        default:
+                            return response()->json([
+                                'message' => 'Invalid report type'
+                            ]);
+                    }
+                    break;
+                case 'Section':
+                    switch ($area_under) {
+                        case 'all':
+                            try {
+                                $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
+
+                                $query = null;
+
+                                if ($year_of && $month_of) {
+                                    $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->pluck('biometric_id');
+                                } else if ($start_date && $end_date) {
+                                    $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                                }
+
+                                $dtr_biometric_ids = $query;
+
+                                $profiles = collect();
+
+                                // Initialize $unit_profiles to ensure it is always defined
+                                $unit_profiles = collect();
+
+                                $section_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
+                                    ->where('section_id', $area_id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                            $query->whereYear('dtr_date', $year_of)
+                                                ->whereMonth('dtr_date', $month_of)
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                    ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                            $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                        });
+                                    })
+                                    ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                                        return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                            $q->whereIn('biometric_id', $dtr_biometric_ids);
+                                        });
+                                    })
+                                    ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
+                                        return $query->where('designation_id', $designation_id);
+                                    })
+                                    ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get();
+
+                                $units = Unit::where('section_id', $area_id)->get();
+
+                                foreach ($units as $unit) {
+                                    $unit_profiles = $unit_profiles->merge(
+                                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
@@ -1016,18 +1420,62 @@ class AttendanceReportController extends Controller
                                                     $q->where('employment_type_id', $employment_type);
                                                 });
                                             })
-                                            ->get();
-
-                                        $profiles = $profiles->merge($unit_profiles);
-                                    }
+                                            ->get()
+                                    );
                                 }
-                            }
 
-                            // Get sections directly under the division (if any) that are not under any department
-                            $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-                            foreach ($sections as $section) {
-                                $section_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                    ->where('section_id', $section->id)
+                                $profiles = $section_profiles->merge($unit_profiles)->take($limit);
+
+                                if ($year_of && $month_of) {
+                                    $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);
+                                } else if ($start_date && $end_date) {
+                                    $results = $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                } else {
+                                    $results = [];
+                                    return response()->json([
+                                        'message' => 'Invalid date'
+                                    ]);
+                                }
+                            } catch (\Throwable $th) {
+                                // Log the error and return an internal server error response
+                                Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                                return response()->json(
+                                    [
+                                        'message' => $th->getMessage()
+                                    ],
+                                    Response::HTTP_INTERNAL_SERVER_ERROR
+                                );
+                            }
+                            break;
+                        case 'staff':
+                            try {
+                                $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
+
+                                // Initialize query variable
+                                $query = null;
+
+                                // Check and assign query based on date parameters
+                                if ($year_of && $month_of) {
+                                    $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->pluck('biometric_id');
+                                } else if ($start_date && $end_date) {
+                                    $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                                }
+
+                                $dtr_biometric_ids = $query;
+
+                                // Initialize profiles collection
+                                $profiles = collect();
+
+                                // Fetch section profiles with necessary relationships
+                                $section_profiles = AssignArea::with([
+                                    'employeeProfile',
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.dailyTimeRecords',
+                                    'employeeProfile.leaveApplications'
+                                ])
+                                    ->where('section_id', $area_id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
                                         $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
@@ -1047,507 +1495,41 @@ class AttendanceReportController extends Controller
                                             $q->whereIn('biometric_id', $dtr_biometric_ids);
                                         });
                                     })
-                                    ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
+                                    ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
                                         return $query->where('designation_id', $designation_id);
                                     })
-                                    ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
+                                    ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                             $q->where('employment_type_id', $employment_type);
                                         });
                                     })
                                     ->get();
 
-                                $profiles = $profiles->merge($section_profiles);
+                                // Limit the number of profiles
+                                $profiles = $section_profiles->take($limit);
 
-                                $units = Unit::where('section_id', $section->id)->get();
-                                foreach ($units as $unit) {
-                                    $unit_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                        ->where('unit_id', $unit->id)
-                                        ->where('employee_profile_id', '<>', 1)
-                                        ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                                $query->whereYear('dtr_date', $year_of)
-                                                    ->whereMonth('dtr_date', $month_of)
-                                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                            });
-                                        })
-                                        ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                                $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                            });
-                                        })
-                                        ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                            return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                                $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                            });
-                                        })
-                                        ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                            return $query->where('designation_id', $designation_id);
-                                        })
-                                        ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                                $q->where('employment_type_id', $employment_type);
-                                            });
-                                        })
-                                        ->get();
-
-                                    $profiles = $profiles->merge($unit_profiles);
+                                // Generate report based on date parameters
+                                if ($year_of && $month_of) {
+                                    $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);
+                                } else if ($start_date && $end_date) {
+                                    $results = $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                                } else {
+                                    $results = [];
+                                    return response()->json([
+                                        'message' => 'Invalid date'
+                                    ], 400);
                                 }
-                            }
 
-                            $profiles = $profiles->take($limit);
-
-                            if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                            } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                            } else {
-                                $results = [];
-                                return response()->json([
-                                    'message' => 'Invalid date'
-                                ]);
-                            }
-                            break;
-                        case 'staff':
-                            $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
-
-                            $query = null;
-
-                            if ($year_of && $month_of) {
-                                $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->pluck('biometric_id');
-                            } else if ($start_date && $end_date) {
-                                $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-                            }
-
-                            $dtr_biometric_ids = $query;
-
-                            $profiles = collect();
-
-                            $division_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                ->where('division_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereYear('dtr_date', $year_of)
-                                            ->whereMonth('dtr_date', $month_of)
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                    return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                        $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                    });
-                                })
-                                ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                    return $query->where('designation_id', $designation_id);
-                                })
-                                ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                })
-                                ->get();
-
-                            $profiles = $division_profiles;
-                            $profiles = $profiles->take($limit);
-
-                            if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                            } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                            } else {
-                                $results = [];
-                                return response()->json([
-                                    'message' => 'Invalid date'
-                                ]);
-                            }
-                            break;
-                        default:
-                            return response()->json([
-                                'message' => 'Invalid report type'
-                            ], 400); // Added status code for better response
-                    }
-                    break;
-                case 'Department':
-                    switch ($area_under) {
-                        case 'all':
-                            $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
-
-                            $query = null;
-
-                            if ($year_of && $month_of) {
-                                $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->pluck('biometric_id');
-                            } else if ($start_date && $end_date) {
-                                $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-                            }
-
-                            $dtr_biometric_ids = $query;
-
-                            $profiles = collect();
-
-                            $department_profiles =  AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                ->where('department_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereYear('dtr_date', $year_of)
-                                            ->whereMonth('dtr_date', $month_of)
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                    return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                        $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                    });
-                                })
-                                ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                    return $query->where('designation_id', $designation_id);
-                                })
-                                ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                })
-                                ->get();
-
-
-                            $profiles = $profiles->merge($department_profiles);
-
-                            $sections = Section::where('department_id', $area_id)->get();
-                            foreach ($sections as $section) {
-                                $section_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                    ->where('section_id', $section->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                            $query->whereYear('dtr_date', $year_of)
-                                                ->whereMonth('dtr_date', $month_of)
-                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                        });
-                                    })
-                                    ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                            $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                        });
-                                    })
-                                    ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                        return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                            $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                        });
-                                    })
-                                    ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                        return $query->where('designation_id', $designation_id);
-                                    })
-                                    ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                            $q->where('employment_type_id', $employment_type);
-                                        });
-                                    })
-                                    ->get();
-
-                                $profiles = $profiles->merge($section_profiles);
-
-                                $units = Unit::where('section_id', $section->id)->get();
-                                foreach ($units as $unit) {
-                                    $unit_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                        ->where('unit_id', $unit->id)
-                                        ->where('employee_profile_id', '<>', 1)
-                                        ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                                $query->whereYear('dtr_date', $year_of)
-                                                    ->whereMonth('dtr_date', $month_of)
-                                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                            });
-                                        })
-                                        ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                                $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                            });
-                                        })
-                                        ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                            return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                                $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                            });
-                                        })
-                                        ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                            return $query->where('designation_id', $designation_id);
-                                        })
-                                        ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                                $q->where('employment_type_id', $employment_type);
-                                            });
-                                        })
-                                        ->get();
-
-                                    $profiles = $profiles->merge($unit_profiles);
-                                }
-                            }
-
-                            $profiles = $profiles->take($limit);
-
-                            if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                            } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                            } else {
-                                $results = [];
-                                return response()->json([
-                                    'message' => 'Invalid date'
-                                ]);
-                            }
-
-                            break;
-                        case 'staff':
-                            $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
-
-                            $query = null;
-
-                            if ($year_of && $month_of) {
-                                $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->pluck('biometric_id');
-                            } else if ($start_date && $end_date) {
-                                $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-                            }
-
-                            $dtr_biometric_ids = $query;
-
-                            $profiles = collect();
-
-                            $department_profiles =  AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                ->where('department_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereYear('dtr_date', $year_of)
-                                            ->whereMonth('dtr_date', $month_of)
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                    return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                        $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                    });
-                                })
-                                ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                    return $query->where('designation_id', $designation_id);
-                                })
-                                ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                })
-                                ->get();
-
-
-                            $profiles = $profiles->merge($department_profiles);
-                            $profiles = $profiles->take($limit);
-
-                            if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                            } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                            } else {
-                                $results = [];
-                                return response()->json([
-                                    'message' => 'Invalid date'
-                                ]);
-                            }
-                            break;
-                        default:
-                            return response()->json([
-                                'message' => 'Invalid report type'
-                            ]);
-                    }
-                    break;
-                case 'Section':
-                    switch ($area_under) {
-                        case 'all':
-                            $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
-
-                            $query = null;
-
-                            if ($year_of && $month_of) {
-                                $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->pluck('biometric_id');
-                            } else if ($start_date && $end_date) {
-                                $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-                            }
-
-                            $dtr_biometric_ids = $query;
-
-                            $profiles = collect();
-
-                            $section_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereYear('dtr_date', $year_of)
-                                            ->whereMonth('dtr_date', $month_of)
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                    return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                        $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                    });
-                                })
-                                ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                    return $query->where('designation_id', $designation_id);
-                                })
-                                ->when($employment_type, function ($query) use ($employment_type) { // filter bt emloyment type
-                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                })
-                                ->get();
-
-
-                            $units = Unit::where('section_id', $area_id)->get();
-
-                            foreach ($units as $unit) {
-                                $unit_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                    ->where('unit_id', $unit->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                            $query->whereYear('dtr_date', $year_of)
-                                                ->whereMonth('dtr_date', $month_of)
-                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                        });
-                                    })
-                                    ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                            $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                                ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                        });
-                                    })
-                                    ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                        return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                            $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                        });
-                                    })
-                                    ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                        return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                            $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                        });
-                                    })
-                                    ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                        return $query->where('designation_id', $designation_id);
-                                    })
-                                    ->when($employment_type, function ($query) use ($employment_type) { // filter bt emloyment type
-                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                            $q->where('employment_type_id', $employment_type);
-                                        });
-                                    })
-                                    ->get();
-                            }
-
-                            $profiles = $section_profiles->merge($unit_profiles)->take($limit);
-
-                            if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                            } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                            } else {
-                                $results = [];
-                                return response()->json([
-                                    'message' => 'Invalid date'
-                                ]);
-                            }
-                            break;
-                        case 'staff':
-                            $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
-
-                            $query = null;
-
-                            if ($year_of && $month_of) {
-                                $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->pluck('biometric_id');
-                            } else if ($start_date && $end_date) {
-                                $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-                            }
-
-                            $dtr_biometric_ids = $query;
-
-                            $profiles = collect();
-
-                            $section_profiles = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                        $query->whereYear('dtr_date', $year_of)
-                                            ->whereMonth('dtr_date', $month_of)
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                        $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                            ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                                    });
-                                })
-                                ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                                    return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                        $q->whereIn('biometric_id', $dtr_biometric_ids);
-                                    });
-                                })
-                                ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                                    return $query->where('designation_id', $designation_id);
-                                })
-                                ->when($employment_type, function ($query) use ($employment_type) { // filter bt emloyment type
-                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                        $q->where('employment_type_id', $employment_type);
-                                    });
-                                })
-                                ->get();
-
-                            $profiles = $section_profiles->take($limit);
-
-                            if ($year_of && $month_of) {
-                                $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                            } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                            } else {
-                                $results = [];
-                                return response()->json([
-                                    'message' => 'Invalid date'
-                                ]);
+                                return response()->json($results);
+                            } catch (\Throwable $th) {
+                                // Log the error and return an internal server error response
+                                Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                                return response()->json(
+                                    [
+                                        'message' => $th->getMessage()
+                                    ],
+                                    Response::HTTP_INTERNAL_SERVER_ERROR
+                                );
                             }
                             break;
                         default:
@@ -1556,68 +1538,96 @@ class AttendanceReportController extends Controller
                             ], 400); // Added status code for better response
                     }
 
-
+                    break;
                 case 'Unit':
-                    $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
+                    try {
+                        $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
 
-                    $query = null;
+                        // Initialize query variable
+                        $query = null;
 
-                    if ($year_of && $month_of) {
-                        $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
-                            ->whereMonth('dtr_date', $month_of)
-                            ->pluck('biometric_id');
-                    } else if ($start_date && $end_date) {
-                        $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
-                    }
+                        // Check and assign query based on date parameters
+                        if ($year_of && $month_of) {
+                            $query = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->pluck('biometric_id');
+                        } else if ($start_date && $end_date) {
+                            $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
+                        }
 
-                    $dtr_biometric_ids = $query;
+                        $dtr_biometric_ids = $query;
 
-                    $profiles = collect();
+                        // Initialize profiles collection
+                        $profiles = collect();
 
-                    $unit_profiles =  AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.dailyTimeRecords', 'employeeProfile.leaveApplications'])
-                        ->where('unit_id', $area_id)
-                        ->where('employee_profile_id', '<>', 1)
-                        ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
-                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
-                                $query->whereYear('dtr_date', $year_of)
-                                    ->whereMonth('dtr_date', $month_of)
-                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                            });
-                        })
-                        ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
-                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
-                                $query->whereBetween('dtr_date', [$start_date, $end_date])
-                                    ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
-                            });
-                        })
-                        ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
-                            return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
-                                $q->whereIn('biometric_id', $dtr_biometric_ids);
-                            });
-                        })
-                        ->when($designation_id, function ($query) use ($designation_id) { // filter by designation
-                            return $query->where('designation_id', $designation_id);
-                        })
-                        ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
-                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
-                                $q->where('employment_type_id', $employment_type);
-                            });
-                        })
-                        ->get();
+                        // Fetch unit profiles with necessary relationships
+                        $unit_profiles = AssignArea::with([
+                            'employeeProfile',
+                            'employeeProfile.personalInformation',
+                            'employeeProfile.dailyTimeRecords',
+                            'employeeProfile.leaveApplications'
+                        ])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($current_date && $year_of && $month_of, function ($query) use ($current_date, $year_of, $month_of) {
+                                $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $year_of, $month_of) {
+                                    $query->whereYear('dtr_date', $year_of)
+                                        ->whereMonth('dtr_date', $month_of)
+                                        ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                });
+                            })
+                            ->when($current_date && $start_date && $end_date, function ($query) use ($current_date, $start_date, $end_date) {
+                                $query->whereHas('employeeProfile.dailyTimeRecords', function ($query) use ($current_date, $start_date, $end_date) {
+                                    $query->whereBetween('dtr_date', [$start_date, $end_date])
+                                        ->whereDate('dtr_date', '<>', $current_date); // Exclude current dtr of the employee
+                                });
+                            })
+                            ->when($dtr_biometric_ids, function ($query) use ($dtr_biometric_ids) {
+                                return $query->whereHas('employeeProfile', function ($q) use ($dtr_biometric_ids) {
+                                    $q->whereIn('biometric_id', $dtr_biometric_ids);
+                                });
+                            })
+                            ->when($designation_id, function ($query) use ($designation_id) { // Filter by designation
+                                return $query->where('designation_id', $designation_id);
+                            })
+                            ->when($employment_type, function ($query) use ($employment_type) { // Filter by employment type
+                                $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                    $q->where('employment_type_id', $employment_type);
+                                });
+                            })
+                            ->get();
 
-                    $profiles = $profiles->merge($unit_profiles);
-                    $profiles = $profiles->take($limit);
+                        // Check if no unit profiles were found
+                        if ($unit_profiles->isEmpty()) {
+                            return response()->json([
+                                'message' => 'No unit profiles found.'
+                            ], 404); // 404 Not Found is more appropriate than 400 Bad Request
+                        }
 
+                        // Merge and limit profiles
+                        $profiles = $profiles->merge($unit_profiles)->take($limit);
 
-                    if ($year_of && $month_of) {
-                        $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);;
-                    } else if ($start_date && $end_date) {
-                        $results =  $this->GenerateReportDateRange($start_date, $end_date, $profiles);
-                    } else {
-                        $results = [];
-                        return response()->json([
-                            'message' => 'Invalid date'
-                        ]);
+                        // Generate report based on date parameters
+                        if ($year_of && $month_of) {
+                            $results = $this->GenerateReportYearMonthOf($first_half, $second_half, $month_of, $year_of, $profiles);
+                        } else if ($start_date && $end_date) {
+                            $results = $this->GenerateReportDateRange($start_date, $end_date, $profiles);
+                        } else {
+                            return response()->json([
+                                'message' => 'Invalid date'
+                            ], 400); // 400 Bad Request for invalid date parameters
+                        }
+
+                        return response()->json($results);
+                    } catch (\Throwable $th) {
+                        // Log the error and return an internal server error response
+                        Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+                        return response()->json(
+                            [
+                                'message' => $th->getMessage()
+                            ],
+                            Response::HTTP_INTERNAL_SERVER_ERROR
+                        );
                     }
                     break;
                 default:
