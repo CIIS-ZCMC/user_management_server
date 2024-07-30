@@ -76,8 +76,9 @@ class AttendanceReportController extends Controller
     }
 
 
-    public function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles)
+    private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles)
     {
+
 
         // Extract biometric_ids
         $biometricIds = $profiles->pluck('employeeProfile.biometric_id')->unique();
@@ -361,7 +362,8 @@ class AttendanceReportController extends Controller
                         $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
                         $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
                         $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                        $total_Month_Hour_Missed += ReportHelpers::ToHours((480 - $recordDTR[0]->total_working_minutes));
+                        $missedHours = ($recordDTR[0]->total_working_minutes - 480) / 60;
+                        $total_Month_Hour_Missed += $missedHours;
                     } else {
                         $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
                     }
@@ -434,9 +436,9 @@ class AttendanceReportController extends Controller
         return $data;
     }
 
-    public function GenerateDataReportDateRange($start_date, $end_date, $profiles)
+    private function GenerateDataReportDateRange($start_date, $end_date, $profiles)
     {
-        ini_set('max_execution_time', 7200);
+
 
         // Parse start and end dates
         $startDate = Carbon::parse($start_date);
@@ -727,7 +729,8 @@ class AttendanceReportController extends Controller
                             $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
                             $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
                             $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $total_Month_Hour_Missed += ReportHelpers::ToHours((480 - $recordDTR[0]->total_working_minutes));
+                            $missedHours = ($recordDTR[0]->total_working_minutes - 480) / 60;
+                            $total_Month_Hour_Missed += $missedHours;
                         } else {
                             $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
                         }
@@ -1396,6 +1399,8 @@ class AttendanceReportController extends Controller
                                 ->get();
 
 
+                            $profiles = $profiles->merge($section_profiles);
+
                             $units = Unit::where('section_id', $area_id)->get();
 
                             foreach ($units as $unit) {
@@ -1436,7 +1441,7 @@ class AttendanceReportController extends Controller
                                     ->get();
                             }
 
-                            $profiles = $section_profiles->merge($unit_profiles)->take($limit);
+                            $profiles = $profiles->merge($unit_profiles)->take($limit);
 
                             if ($year_of && $month_of) {
                                 $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
@@ -1643,26 +1648,26 @@ class AttendanceReportController extends Controller
             }
 
             // Format the output based on the report type
-            switch ($report_type) {
-                case 'absences': // Sort the result based on total absent days
-                    usort($results, function ($a, $b) use ($sort_order) {
-                        return $sort_order === 'desc'
-                            ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
-                            : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
-                    });
-                    break;
-                case 'tardiness': // Sort the result based on total undertime minutes
-                    usort($results, function ($a, $b) use ($sort_order) {
-                        return $sort_order === 'desc'
-                            ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
-                            : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
-                    });
-                    break;
-                default:
-                    return response()->json([
-                        'message' => 'Invalid report type'
-                    ], 400); // Added status code for better response
-            }
+            // switch ($report_type) {
+            //     case 'absences': // Sort the result based on total absent days
+            //         usort($results, function ($a, $b) use ($sort_order) {
+            //             return $sort_order === 'desc'
+            //                 ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
+            //                 : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
+            //         });
+            //         break;
+            //     case 'tardiness': // Sort the result based on total undertime minutes
+            //         usort($results, function ($a, $b) use ($sort_order) {
+            //             return $sort_order === 'desc'
+            //                 ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
+            //                 : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
+            //         });
+            //         break;
+            //     default:
+            //         return response()->json([
+            //             'message' => 'Invalid report type'
+            //         ], 400); // Added status code for better response
+            // }
 
             return response()->json([
                 'count' => count($results),
