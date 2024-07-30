@@ -83,14 +83,12 @@ class AttendanceReportController extends Controller
                 ->where(function ($query) use ($employee_biometric_id, $month_of, $year_of) {
                     $query->where('biometric_id',  $employee_biometric_id)
                         ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of)
-                        ->whereNotNull('first_in');
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
                 ->orWhere(function ($query) use ($employee_biometric_id, $month_of, $year_of) {
                     $query->where('biometric_id',  $employee_biometric_id)
                         ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of)
-                        ->whereNotNull('first_in');
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
                 ->get();
 
@@ -448,8 +446,6 @@ class AttendanceReportController extends Controller
         $init_val = 1;
         $date_range = [$start_date, $end_date];
 
-
-
         // Determine the range of days to process
         $start_day = Carbon::parse($start_date)->day;
         $end_day = Carbon::parse($end_date)->day;
@@ -482,7 +478,6 @@ class AttendanceReportController extends Controller
             )
                 ->where('biometric_id', $employee_biometric_id)
                 ->whereBetween('first_in', $date_range)
-                ->whereNotNull('first_in')
                 ->get();
             $employee_schedules = [];
             $total_days_with_tardiness = 0;
