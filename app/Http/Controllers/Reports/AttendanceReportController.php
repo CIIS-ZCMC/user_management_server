@@ -76,9 +76,8 @@ class AttendanceReportController extends Controller
     }
 
 
-    private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles)
+    private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles)
     {
-
 
         // Extract biometric_ids
         $biometricIds = $profiles->pluck('employeeProfile.biometric_id')->unique();
@@ -268,7 +267,6 @@ class AttendanceReportController extends Controller
                 }
 
 
-
                 $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
                     $year_of,
                     $month_of,
@@ -362,7 +360,7 @@ class AttendanceReportController extends Controller
                         $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
                         $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
                         $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                        $missedHours = ($recordDTR[0]->total_working_minutes - 480) / 60;
+                        $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
                         $total_Month_Hour_Missed += $missedHours;
                     } else {
                         $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
@@ -386,11 +384,10 @@ class AttendanceReportController extends Controller
             }
 
 
-
-
             $presentCount = count(array_filter($attd, function ($d) {
                 return $d['total_working_minutes'] !== 0;
             }));
+
             $Number_Absences = count($absences) - count($lwop);
             $schedule_ = ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
@@ -402,44 +399,88 @@ class AttendanceReportController extends Controller
                 return $value >= $init && $value <= $days_In_Month;
             }));
 
-            $data[] = [
-                'id' => $employee->id,
-                'employee_biometric_id' => $employee->biometric_id,
-                'employee_id' => $employee->employee_id,
-                'employee_name' => $employee->personalInformation->employeeName(),
-                'employment_type' => $employee->employmentType->name,
-                'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
-                'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
-                'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
-                'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
-                'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
-                'from' => $init,
-                'to' => $days_In_Month,
-                'month' => $month_of,
-                'year' => $year_of,
-                'total_working_minutes' => $total_Month_WorkingMinutes,
-                'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
-                'total_overtime_minutes' => $total_Month_Overtime,
-                'total_undertime_minutes' => $total_Month_Undertime,
-                'total_hours_missed' =>       $total_Month_Hour_Missed,
-                'total_days_with_tardiness' => $total_Days_With_Tardiness,
-                'total_of_absent_days' => $Number_Absences,
-                'total_of_present_days' => $presentCount,
-                'total_of_leave_without_pay' => count($lwop),
-                'total_of_leave_with_pay' => count($lwp),
-                'total_invalid_entry' => count($invalidEntry),
-                'total_of_day_off' => count($dayoff),
-                'schedule' => count($filtered_scheds),
-            ];
+            // process report type
+            switch ($report_type) {
+                case 'absences':
+                    if ($Number_Absences) {
+                        $data[] = [
+                            'id' => $employee->id,
+                            'employee_biometric_id' => $employee->biometric_id,
+                            'employee_id' => $employee->employee_id,
+                            'employee_name' => $employee->personalInformation->employeeName(),
+                            'employment_type' => $employee->employmentType->name,
+                            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+                            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+                            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+                            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+                            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+                            'from' => $init,
+                            'to' => $days_In_Month,
+                            'month' => $month_of,
+                            'year' => $year_of,
+                            'total_working_minutes' => $total_Month_WorkingMinutes,
+                            'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
+                            'total_overtime_minutes' => $total_Month_Overtime,
+                            // 'total_undertime_minutes' => $total_Month_Undertime,
+                            'total_hours_missed' =>       $total_Month_Hour_Missed,
+                            // 'total_days_with_tardiness' => $total_Days_With_Tardiness,
+                            'total_of_absent_days' => $Number_Absences,
+                            'total_of_present_days' => $presentCount,
+                            'total_of_absent_leave_without_pay' => count($lwop),
+                            'total_of_leave_with_pay' => count($lwp),
+                            'total_invalid_entry' => count($invalidEntry),
+                            'total_of_day_off' => count($dayoff),
+                            'schedule' => count($filtered_scheds),
+                        ];
+                    }
+
+                    break;
+                case 'tardiness':
+                    if ($total_Month_Undertime > 0) {
+                        $data[] = [
+                            'id' => $employee->id,
+                            'employee_biometric_id' => $employee->biometric_id,
+                            'employee_id' => $employee->employee_id,
+                            'employee_name' => $employee->personalInformation->employeeName(),
+                            'employment_type' => $employee->employmentType->name,
+                            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+                            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+                            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+                            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+                            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+                            'from' => $init,
+                            'to' => $days_In_Month,
+                            'month' => $month_of,
+                            'year' => $year_of,
+                            'total_working_minutes' => $total_Month_WorkingMinutes,
+                            'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
+                            'total_overtime_minutes' => $total_Month_Overtime,
+                            'total_undertime_minutes' => $total_Month_Undertime,
+                            // 'total_hours_missed' =>       $total_Month_Hour_Missed,
+                            'total_days_with_tardiness' => $total_Days_With_Tardiness,
+                            // 'total_of_absent_days' => $Number_Absences,
+                            // 'total_of_present_days' => $presentCount,
+                            'total_of_absent_leave_without_pay' => count($lwop),
+                            'total_of_leave_with_pay' => count($lwp),
+                            'total_invalid_entry' => count($invalidEntry),
+                            'total_of_day_off' => count($dayoff),
+                            'schedule' => count($filtered_scheds),
+                        ];
+                    }
+
+                    break;
+                default:
+                    return response()->json([
+                        'message' => "Invalid report type"
+                    ]);
+            }
         }
 
         return $data;
     }
 
-    private function GenerateDataReportDateRange($start_date, $end_date, $profiles)
+    private function GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles)
     {
-
-
         // Parse start and end dates
         $startDate = Carbon::parse($start_date);
         $endDate = Carbon::parse($end_date);
@@ -447,7 +488,6 @@ class AttendanceReportController extends Controller
         // Determine the first and last day of the date range
         $firstDayOfRange = $startDate->day;
         $lastDayOfRange = $endDate->day;
-
 
         // Get month and year of start date
         $startMonth = $startDate->month; // Numeric month (1-12)
@@ -460,7 +500,6 @@ class AttendanceReportController extends Controller
             ->get();
 
         $data = [];
-
 
         foreach ($profiles as $row) {
             $Employee = EmployeeProfile::find($row->id);
@@ -481,7 +520,6 @@ class AttendanceReportController extends Controller
             $empschedule = [];
             $total_Month_Hour_Missed = 0;
             $total_Days_With_Tardiness = 0;
-
 
 
             foreach ($dtr as $val) {
@@ -729,7 +767,7 @@ class AttendanceReportController extends Controller
                             $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
                             $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
                             $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $missedHours = ($recordDTR[0]->total_working_minutes - 480) / 60;
+                            $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
                             $total_Month_Hour_Missed += $missedHours;
                         } else {
                             $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
@@ -767,35 +805,79 @@ class AttendanceReportController extends Controller
                 return $value >= $firstDayOfRange && $value <= $lastDayOfRange;
             }));
 
-            $data[] = [
-                'id' => $employee->id,
-                'employee_biometric_id' => $employee->biometric_id,
-                'employee_id' => $employee->employee_id,
-                'employee_name' => $employee->personalInformation->employeeName(),
-                'employment_type' => $employee->employmentType->name,
-                'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
-                'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
-                'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
-                'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
-                'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
-                'from' => $firstDayOfRange,
-                'to' => $lastDayOfRange,
-                'month' => $startMonth,
-                'year' => $startYear,
-                'total_working_minutes' => $total_Month_WorkingMinutes,
-                'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
-                'total_overtime_minutes' => $total_Month_Overtime,
-                'total_undertime_minutes' => $total_Month_Undertime,
-                'total_hours_missed' =>       $total_Month_Hour_Missed,
-                'total_days_with_tardiness' => $total_Days_With_Tardiness,
-                'total_of_absent_days' => $Number_Absences,
-                'total_of_present_days' => $presentCount,
-                'total_of_leave_without_pay' => count($lwop),
-                'total_of_leave_with_pay' => count($lwp),
-                'total_invalid_entry' => count($invalidEntry),
-                'total_of_day_off' => count($dayoff),
-                'schedule' => count($filtered_scheds),
-            ];
+            // process report type
+            switch ($report_type) {
+                case 'absences':
+                    if ($Number_Absences > 0) {
+                        $data[] = [
+                            'id' => $employee->id,
+                            'employee_biometric_id' => $employee->biometric_id,
+                            'employee_id' => $employee->employee_id,
+                            'employee_name' => $employee->personalInformation->employeeName(),
+                            'employment_type' => $employee->employmentType->name,
+                            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+                            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+                            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+                            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+                            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+                            'from' => $firstDayOfRange,
+                            'to' => $lastDayOfRange,
+                            'month' => $startMonth,
+                            'year' => $startYear,
+                            'total_working_minutes' => $total_Month_WorkingMinutes,
+                            'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
+                            'total_overtime_minutes' => $total_Month_Overtime,
+                            // 'total_undertime_minutes' => $total_Month_Undertime,
+                            'total_hours_missed' =>       $total_Month_Hour_Missed,
+                            // 'total_days_with_tardiness' => $total_Days_With_Tardiness,
+                            'total_of_absent_days' => $Number_Absences,
+                            'total_of_present_days' => $presentCount,
+                            'total_of_absent_leave_without_pay' => count($lwop),
+                            'total_of_leave_with_pay' => count($lwp),
+                            'total_invalid_entry' => count($invalidEntry),
+                            'total_of_day_off' => count($dayoff),
+                            'schedule' => count($filtered_scheds),
+                        ];
+                    }
+                    break;
+                case 'tardiness':
+                    if ($total_Month_Undertime) {
+                        $data[] = [
+                            'id' => $employee->id,
+                            'employee_biometric_id' => $employee->biometric_id,
+                            'employee_id' => $employee->employee_id,
+                            'employee_name' => $employee->personalInformation->employeeName(),
+                            'employment_type' => $employee->employmentType->name,
+                            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+                            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+                            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+                            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+                            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+                            'from' => $firstDayOfRange,
+                            'to' => $lastDayOfRange,
+                            'month' => $startMonth,
+                            'year' => $startYear,
+                            'total_working_minutes' => $total_Month_WorkingMinutes,
+                            'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
+                            'total_overtime_minutes' => $total_Month_Overtime,
+                            'total_undertime_minutes' => $total_Month_Undertime,
+                            // 'total_hours_missed' =>       $total_Month_Hour_Missed,
+                            'total_days_with_tardiness' => $total_Days_With_Tardiness,
+                            // 'total_of_absent_days' => $Number_Absences,
+                            // 'total_of_present_days' => $presentCount,
+                            'total_of_absent_leave_without_pay' => count($lwop),
+                            'total_of_leave_with_pay' => count($lwp),
+                            'total_invalid_entry' => count($invalidEntry),
+                            'total_of_day_off' => count($dayoff),
+                            'schedule' => count($filtered_scheds),
+                        ];
+                    }
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report type.'
+                    ]);
+            }
         }
 
 
@@ -811,9 +893,8 @@ class AttendanceReportController extends Controller
             $sector = ucfirst($request->sector);
             $employment_type = $request->employment_type_id;
             $designation_id = $request->designation_id;
-            $absent_without_pay = $request->absent_without_pay ?? false; // new parameter to filter absences without pay
+            $absent_leave_without_pay = $request->absent_without_pay ?? false; // new parameter to filter absences without pay
             $absent_without_official_leave = $request->absent_without_official_leave ?? false; // parameter to filter absences without official leave
-            $whole_month = $request->whole_month;
             $first_half = (bool) $request->first_half;
             $second_half  = (bool) $request->second_half;
             $start_date = $request->start_date;
@@ -823,9 +904,8 @@ class AttendanceReportController extends Controller
             $limit = $request->limit; // default limit is 100
             $report_type = $request->report_type; // new parameter for report type [tardiness/absences]
             $sort_order = $request->sort_order; // new parameter for sort order [asc/desc]
-            $whole_month = true;
 
-            switch ($sector) {
+            switch ($sector) { // process sector
                 case 'Division':
                     switch ($area_under) {
                         case 'all':
@@ -840,6 +920,25 @@ class AttendanceReportController extends Controller
                             } else if ($start_date && $end_date) {
                                 $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                             }
+
+
+                            // Retrieve the biometric IDs for absences without official leave
+                            $leave_biometric_ids = DB::table('leave_applications')
+                                ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                                ->where('leave_applications.status', 'approved')
+                                ->whereYear('leave_applications.date_from', $year_of)
+                                ->whereMonth('leave_applications.date_from', $month_of)
+                                ->pluck('employee_profiles.biometric_id');
+
+                            $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->whereNull('first_in')
+                                ->whereNull('second_in')
+                                ->whereNull('first_out')
+                                ->whereNull('second_out')
+                                ->pluck('biometric_id');
+
+                            $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                             $dtr_biometric_ids = $query;
 
@@ -872,6 +971,14 @@ class AttendanceReportController extends Controller
                                 ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                         $q->where('employment_type_id', $employment_type);
+                                    });
+                                })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                    $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                        $q->where('without_pay', $absent_leave_without_pay);
+                                    });
+                                })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                        $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
                                     });
                                 })
                                 ->get();
@@ -908,6 +1015,14 @@ class AttendanceReportController extends Controller
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                             $q->where('employment_type_id', $employment_type);
                                         });
+                                    })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                        $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                            $q->where('without_pay', $absent_leave_without_pay);
+                                        });
+                                    })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                            $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                        });
                                     })
                                     ->get();
 
@@ -943,6 +1058,14 @@ class AttendanceReportController extends Controller
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                                 $q->where('employment_type_id', $employment_type);
                                             });
+                                        })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                            $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                                $q->where('without_pay', $absent_leave_without_pay);
+                                            });
+                                        })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                                $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                            });
                                         })
                                         ->get();
 
@@ -977,6 +1100,14 @@ class AttendanceReportController extends Controller
                                             ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
                                                 $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                                     $q->where('employment_type_id', $employment_type);
+                                                });
+                                            })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                                $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                                    $q->where('without_pay', $absent_leave_without_pay);
+                                                });
+                                            })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                                $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                                    $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
                                                 });
                                             })
                                             ->get();
@@ -1017,6 +1148,14 @@ class AttendanceReportController extends Controller
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                             $q->where('employment_type_id', $employment_type);
                                         });
+                                    })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                        $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                            $q->where('without_pay', $absent_leave_without_pay);
+                                        });
+                                    })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                            $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                        });
                                     })
                                     ->get();
 
@@ -1052,6 +1191,14 @@ class AttendanceReportController extends Controller
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                                 $q->where('employment_type_id', $employment_type);
                                             });
+                                        })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                            $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                                $q->where('without_pay', $absent_leave_without_pay);
+                                            });
+                                        })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                                $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                            });
                                         })
                                         ->get();
 
@@ -1062,9 +1209,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1085,6 +1232,24 @@ class AttendanceReportController extends Controller
                                 $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                             }
 
+
+                            // Retrieve the biometric IDs for absences without official leave
+                            $leave_biometric_ids = DB::table('leave_applications')
+                                ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                                ->where('leave_applications.status', 'approved')
+                                ->whereYear('leave_applications.date_from', $year_of)
+                                ->whereMonth('leave_applications.date_from', $month_of)
+                                ->pluck('employee_profiles.biometric_id');
+
+                            $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->whereNull('first_in')
+                                ->whereNull('second_in')
+                                ->whereNull('first_out')
+                                ->whereNull('second_out')
+                                ->pluck('biometric_id');
+
+                            $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
                             $dtr_biometric_ids = $query;
 
                             $profiles = collect();
@@ -1117,6 +1282,14 @@ class AttendanceReportController extends Controller
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                         $q->where('employment_type_id', $employment_type);
                                     });
+                                })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                    $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                        $q->where('without_pay', $absent_leave_without_pay);
+                                    });
+                                })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                        $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                    });
                                 })
                                 ->get();
 
@@ -1124,9 +1297,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1154,6 +1327,24 @@ class AttendanceReportController extends Controller
                             } else if ($start_date && $end_date) {
                                 $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                             }
+
+                            // Retrieve the biometric IDs for absences without official leave
+                            $leave_biometric_ids = DB::table('leave_applications')
+                                ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                                ->where('leave_applications.status', 'approved')
+                                ->whereYear('leave_applications.date_from', $year_of)
+                                ->whereMonth('leave_applications.date_from', $month_of)
+                                ->pluck('employee_profiles.biometric_id');
+
+                            $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->whereNull('first_in')
+                                ->whereNull('second_in')
+                                ->whereNull('first_out')
+                                ->whereNull('second_out')
+                                ->pluck('biometric_id');
+
+                            $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                             $dtr_biometric_ids = $query;
 
@@ -1186,6 +1377,14 @@ class AttendanceReportController extends Controller
                                 ->when($employment_type, function ($query) use ($employment_type) { // filter by employment type
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                         $q->where('employment_type_id', $employment_type);
+                                    });
+                                })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                    $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                        $q->where('without_pay', $absent_leave_without_pay);
+                                    });
+                                })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                        $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
                                     });
                                 })
                                 ->get();
@@ -1223,6 +1422,14 @@ class AttendanceReportController extends Controller
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                             $q->where('employment_type_id', $employment_type);
                                         });
+                                    })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                        $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                            $q->where('without_pay', $absent_leave_without_pay);
+                                        });
+                                    })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                            $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                        });
                                     })
                                     ->get();
 
@@ -1258,6 +1465,14 @@ class AttendanceReportController extends Controller
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                                 $q->where('employment_type_id', $employment_type);
                                             });
+                                        })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                            $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                                $q->where('without_pay', $absent_leave_without_pay);
+                                            });
+                                        })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                                $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                            });
                                         })
                                         ->get();
 
@@ -1268,9 +1483,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1291,6 +1506,25 @@ class AttendanceReportController extends Controller
                             } else if ($start_date && $end_date) {
                                 $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                             }
+
+
+                            // Retrieve the biometric IDs for absences without official leave
+                            $leave_biometric_ids = DB::table('leave_applications')
+                                ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                                ->where('leave_applications.status', 'approved')
+                                ->whereYear('leave_applications.date_from', $year_of)
+                                ->whereMonth('leave_applications.date_from', $month_of)
+                                ->pluck('employee_profiles.biometric_id');
+
+                            $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->whereNull('first_in')
+                                ->whereNull('second_in')
+                                ->whereNull('first_out')
+                                ->whereNull('second_out')
+                                ->pluck('biometric_id');
+
+                            $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                             $dtr_biometric_ids = $query;
 
@@ -1324,6 +1558,14 @@ class AttendanceReportController extends Controller
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                         $q->where('employment_type_id', $employment_type);
                                     });
+                                })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                    $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                        $q->where('without_pay', $absent_leave_without_pay);
+                                    });
+                                })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                        $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                    });
                                 })
                                 ->get();
 
@@ -1332,9 +1574,9 @@ class AttendanceReportController extends Controller
                             $profiles = $profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1362,6 +1604,24 @@ class AttendanceReportController extends Controller
                             } else if ($start_date && $end_date) {
                                 $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                             }
+
+                            // Retrieve the biometric IDs for absences without official leave
+                            $leave_biometric_ids = DB::table('leave_applications')
+                                ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                                ->where('leave_applications.status', 'approved')
+                                ->whereYear('leave_applications.date_from', $year_of)
+                                ->whereMonth('leave_applications.date_from', $month_of)
+                                ->pluck('employee_profiles.biometric_id');
+
+                            $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->whereNull('first_in')
+                                ->whereNull('second_in')
+                                ->whereNull('first_out')
+                                ->whereNull('second_out')
+                                ->pluck('biometric_id');
+
+                            $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                             $dtr_biometric_ids = $query;
 
@@ -1396,8 +1656,16 @@ class AttendanceReportController extends Controller
                                         $q->where('employment_type_id', $employment_type);
                                     });
                                 })
+                                ->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                    $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                        $q->where('without_pay', $absent_leave_without_pay);
+                                    });
+                                })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                        $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                    });
+                                })
                                 ->get();
-
 
                             $profiles = $profiles->merge($section_profiles);
 
@@ -1438,15 +1706,26 @@ class AttendanceReportController extends Controller
                                             $q->where('employment_type_id', $employment_type);
                                         });
                                     })
+                                    ->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                        $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                            $q->where('without_pay', $absent_leave_without_pay);
+                                        });
+                                    })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                        $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                            $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                        });
+                                    })
                                     ->get();
+
+                                $profiles = $profiles->merge($unit_profiles)->take($limit);
                             }
 
-                            $profiles = $profiles->merge($unit_profiles)->take($limit);
+
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1466,6 +1745,24 @@ class AttendanceReportController extends Controller
                             } else if ($start_date && $end_date) {
                                 $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                             }
+
+                            // Retrieve the biometric IDs for absences without official leave
+                            $leave_biometric_ids = DB::table('leave_applications')
+                                ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                                ->where('leave_applications.status', 'approved')
+                                ->whereYear('leave_applications.date_from', $year_of)
+                                ->whereMonth('leave_applications.date_from', $month_of)
+                                ->pluck('employee_profiles.biometric_id');
+
+                            $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                                ->whereMonth('dtr_date', $month_of)
+                                ->whereNull('first_in')
+                                ->whereNull('second_in')
+                                ->whereNull('first_out')
+                                ->whereNull('second_out')
+                                ->pluck('biometric_id');
+
+                            $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                             $dtr_biometric_ids = $query;
 
@@ -1500,14 +1797,23 @@ class AttendanceReportController extends Controller
                                         $q->where('employment_type_id', $employment_type);
                                     });
                                 })
+                                ->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                                    $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                        $q->where('without_pay', $absent_leave_without_pay);
+                                    });
+                                })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                                    $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                        $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                                    });
+                                })
                                 ->get();
 
                             $profiles = $section_profiles->take($limit);
 
                             if ($year_of && $month_of) {
-                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                                $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                             } else if ($start_date && $end_date) {
-                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                                $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                             } else {
                                 $results = [];
                                 return response()->json([
@@ -1520,8 +1826,7 @@ class AttendanceReportController extends Controller
                                 'message' => 'Invalid report type'
                             ], 400); // Added status code for better response
                     }
-
-
+                    break;
                 case 'Unit':
                     $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
 
@@ -1534,6 +1839,25 @@ class AttendanceReportController extends Controller
                     } else if ($start_date && $end_date) {
                         $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                     }
+
+
+                    // Retrieve the biometric IDs for absences without official leave
+                    $leave_biometric_ids = DB::table('leave_applications')
+                        ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                        ->where('leave_applications.status', 'approved')
+                        ->whereYear('leave_applications.date_from', $year_of)
+                        ->whereMonth('leave_applications.date_from', $month_of)
+                        ->pluck('employee_profiles.biometric_id');
+
+                    $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                        ->whereMonth('dtr_date', $month_of)
+                        ->whereNull('first_in')
+                        ->whereNull('second_in')
+                        ->whereNull('first_out')
+                        ->whereNull('second_out')
+                        ->pluck('biometric_id');
+
+                    $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                     $dtr_biometric_ids = $query;
 
@@ -1567,6 +1891,14 @@ class AttendanceReportController extends Controller
                             $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                 $q->where('employment_type_id', $employment_type);
                             });
+                        })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                            $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                $q->where('without_pay', $absent_leave_without_pay);
+                            });
+                        })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                            });
                         })
                         ->get();
 
@@ -1575,9 +1907,9 @@ class AttendanceReportController extends Controller
 
 
                     if ($year_of && $month_of) {
-                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                     } else if ($start_date && $end_date) {
-                        $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                        $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                     } else {
                         $results = [];
                         return response()->json([
@@ -1597,6 +1929,25 @@ class AttendanceReportController extends Controller
                     } else if ($start_date && $end_date) {
                         $query = DailyTimeRecords::whereBetween('dtr_date', [$start_date, $end_date])->pluck('biometric_id');
                     }
+
+
+                    // Retrieve the biometric IDs for absences without official leave
+                    $leave_biometric_ids = DB::table('leave_applications')
+                        ->join('employee_profiles', 'leave_applications.employee_profile_id', '=', 'employee_profiles.id')
+                        ->where('leave_applications.status', 'approved')
+                        ->whereYear('leave_applications.date_from', $year_of)
+                        ->whereMonth('leave_applications.date_from', $month_of)
+                        ->pluck('employee_profiles.biometric_id');
+
+                    $absent_biometric_ids = DailyTimeRecords::whereYear('dtr_date', $year_of)
+                        ->whereMonth('dtr_date', $month_of)
+                        ->whereNull('first_in')
+                        ->whereNull('second_in')
+                        ->whereNull('first_out')
+                        ->whereNull('second_out')
+                        ->pluck('biometric_id');
+
+                    $absent_without_official_leave_biometric_ids = $absent_biometric_ids->diff($leave_biometric_ids);
 
                     $dtr_biometric_ids = $query;
 
@@ -1629,15 +1980,23 @@ class AttendanceReportController extends Controller
                             $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
                                 $q->where('employment_type_id', $employment_type);
                             });
+                        })->when($absent_leave_without_pay, function ($query) use ($absent_leave_without_pay) {
+                            $query->whereHas('employeeProfile.leaveApplication', function ($q) use ($absent_leave_without_pay) {
+                                $q->where('without_pay', $absent_leave_without_pay);
+                            });
+                        })->when($absent_without_official_leave, function ($query) use ($absent_without_official_leave_biometric_ids) {
+                            $query->whereHas('employeeProfile.dailyTimeRecords', function ($q) use ($absent_without_official_leave_biometric_ids) {
+                                $q->whereIn('biometric_id', $absent_without_official_leave_biometric_ids);
+                            });
                         })
                         ->get();
 
                     $profiles = $profiles->take($limit);
 
                     if ($year_of && $month_of) {
-                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
+                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
                     } else if ($start_date && $end_date) {
-                        $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $profiles);
+                        $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                     } else {
                         $results = [];
                         return response()->json([
@@ -1648,26 +2007,26 @@ class AttendanceReportController extends Controller
             }
 
             // Format the output based on the report type
-            // switch ($report_type) {
-            //     case 'absences': // Sort the result based on total absent days
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
-            //                 : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
-            //         });
-            //         break;
-            //     case 'tardiness': // Sort the result based on total undertime minutes
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
-            //                 : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
-            //         });
-            //         break;
-            //     default:
-            //         return response()->json([
-            //             'message' => 'Invalid report type'
-            //         ], 400); // Added status code for better response
-            // }
+            switch ($report_type) {
+                case 'absences': // Sort the result based on total absent days
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
+                            : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
+                    });
+                    break;
+                case 'tardiness': // Sort the result based on total undertime minutes
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
+                            : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
+                    });
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report type'
+                    ], 400); // Added status code for better response
+            }
 
             return response()->json([
                 'count' => count($results),
