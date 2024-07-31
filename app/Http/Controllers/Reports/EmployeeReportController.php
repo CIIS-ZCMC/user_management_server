@@ -1216,10 +1216,17 @@ class EmployeeReportController extends Controller
     public function filterEmployeesByServiceLength(Request $request)
     {
         try {
-            $employees = collect();
-            $sector =  $request->sector;
+            // Retrieve parameters from the request
+            $sector = $request->sector;
             $area_id = $request->area_id;
+            $search = $request->search;
+            $page = $request->input('page', 1);  // Default to page 1 if not provided
+            $perPage = $request->input('per_page', 10);  // Default to 10 items per page if not provided
 
+            // Initialize an empty collection
+            $employees = collect();
+
+            // Fetch employees based on sector and area_id
             if (!$sector && !$area_id) {
                 $employees = AssignArea::with(['employeeProfile.personalInformation'])
                     ->where('employee_profile_id', '<>', 1)
@@ -1345,6 +1352,15 @@ class EmployeeReportController extends Controller
                 }
             }
 
+            // Apply search filter if provided
+            if ($search) {
+                $employees = $employees->filter(function ($employee) use ($search) {
+                    $employeeName = $employee->employeeProfile->personalInformation->fullName();
+                    // Check if search term matches either the name
+                    return stripos($employeeName, $search) !== false;
+                });
+            }
+
             // Calculate service length for each employee
             $employees = $employees->map(function ($employee) {
                 $employee->service_length = $this->calculateServiceLength($employee);
@@ -1356,10 +1372,27 @@ class EmployeeReportController extends Controller
                 return $employee->service_length['total_years_zcmc_regular'];
             });
 
+            // Paginate the results
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            $paginatedEmployees = new LengthAwarePaginator(
+                $employees->forPage($currentPage, $perPage),
+                $employees->count(),
+                $perPage,
+                $currentPage,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
+
             return response()->json([
-                'count' => COUNT($employees),
-                'data' => EmployeesDetailsReport::collection($employees),
-                'message' => 'List of employee blood types retrieved'
+                'pagination' => [
+                    'current_page' => $paginatedEmployees->currentPage(),
+                    'per_page' => $paginatedEmployees->perPage(),
+                    'total' => $paginatedEmployees->total(),
+                    'last_page' => $paginatedEmployees->lastPage(),
+                    'has_more_pages' => $paginatedEmployees->hasMorePages(),
+                ],
+                'count' => $paginatedEmployees->total(),
+                'data' => EmployeesDetailsReport::collection($paginatedEmployees),
+                'message' => 'List of employees by service length retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeesByServiceLength', $th->getMessage());
