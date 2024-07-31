@@ -765,12 +765,20 @@ class EmployeeReportController extends Controller
             switch ($sector) {
                 case 'division':
                     $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
+                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                             ->where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                 $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                     $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
                                 });
                             })
                             ->get()
@@ -779,12 +787,20 @@ class EmployeeReportController extends Controller
                     $departments = Department::where('division_id', $area_id)->get();
                     foreach ($departments as $department) {
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
+                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
+                                    });
+                                })
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
                                     });
                                 })
                                 ->get()
@@ -793,12 +809,20 @@ class EmployeeReportController extends Controller
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
+                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
+                                        });
+                                    })
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
                                         });
                                     })
                                     ->get()
@@ -807,12 +831,20 @@ class EmployeeReportController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile'])
+                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                                 $q->where('employment_type_id', $employment_type_id);
+                                            });
+                                        })
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
                                             });
                                         })
                                         ->get()
@@ -825,12 +857,20 @@ class EmployeeReportController extends Controller
                     $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                     foreach ($sections as $section) {
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
+                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
+                                    });
+                                })
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
                                     });
                                 })
                                 ->get()
@@ -839,12 +879,20 @@ class EmployeeReportController extends Controller
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
+                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
+                                        });
+                                    })
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
                                         });
                                     })
                                     ->get()
@@ -855,12 +903,20 @@ class EmployeeReportController extends Controller
 
                 case 'department':
                     $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
+                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                             ->where('department_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                 $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                     $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
                                 });
                             })
                             ->get()
@@ -869,12 +925,20 @@ class EmployeeReportController extends Controller
                     $sections = Section::where('department_id', $area_id)->get();
                     foreach ($sections as $section) {
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
+                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
+                                    });
+                                })
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
                                     });
                                 })
                                 ->get()
@@ -883,12 +947,20 @@ class EmployeeReportController extends Controller
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
+                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
+                                        });
+                                    })
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
                                         });
                                     })
                                     ->get()
@@ -899,12 +971,20 @@ class EmployeeReportController extends Controller
 
                 case 'section':
                     $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
+                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                             ->where('section_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                 $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                     $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
                                 });
                             })
                             ->get()
@@ -913,12 +993,20 @@ class EmployeeReportController extends Controller
                     $units = Unit::where('section_id', $area_id)->get();
                     foreach ($units as $unit) {
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
+                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('unit_id', $unit->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
+                                    });
+                                })
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
                                     });
                                 })
                                 ->get()
@@ -928,7 +1016,7 @@ class EmployeeReportController extends Controller
 
                 case 'unit':
                     $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
+                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                             ->where('unit_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($employment_type_id, function ($query) use ($employment_type_id) {
@@ -936,15 +1024,31 @@ class EmployeeReportController extends Controller
                                     $q->where('employment_type_id', $employment_type_id);
                                 });
                             })
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
+                                });
+                            })
                             ->get()
                     );
                     break;
                 default:
-                    $employees = AssignArea::with(['employeeProfile'])
+                    $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                         ->where('employee_profile_id', '<>', 1)
                         ->when($employment_type_id, function ($query) use ($employment_type_id) {
                             $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                 $q->where('employment_type_id', $employment_type_id);
+                            });
+                        })
+                        ->when($search, function ($query) use ($search) {
+                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                if (!empty($search)) {
+                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                }
                             });
                         })
                         ->get();
