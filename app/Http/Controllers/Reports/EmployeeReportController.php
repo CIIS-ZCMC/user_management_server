@@ -759,87 +759,47 @@ class EmployeeReportController extends Controller
             $sector =  $request->sector;
             $area_id = $request->area_id;
             $employment_type_id = $request->employment_type_id;
+            $search = $request->search;
+            $page = $request->page ?: 1;
 
-            if (!$sector && !$area_id) {
-                $employees = AssignArea::with(['employeeProfile'])
-                    ->where('employee_profile_id', '<>', 1)
-                    ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                        if (!empty($employment_type_id)) {
-                            $q->where('employment_type_id', $employment_type_id);
-                        }
-                    })
-                    ->get();
-            } else {
-                switch ($sector) {
-                    case 'division':
+            switch ($sector) {
+                case 'division':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                    $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->get()
+                    );
+
+                    $departments = Department::where('division_id', $area_id)->get();
+                    foreach ($departments as $department) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile'])
-                                ->where('division_id', $area_id)
+                                ->where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                    if (!empty($employment_type_id)) {
+                                ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
-                                    }
+                                    });
                                 })
                                 ->get()
                         );
 
-                        $departments = Department::where('division_id', $area_id)->get();
-                        foreach ($departments as $department) {
-                            $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
-                                    ->where('department_id', $department->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                        if (!empty($employment_type_id)) {
-                                            $q->where('employment_type_id', $employment_type_id);
-                                        }
-                                    })
-                                    ->get()
-                            );
-
-                            $sections = Section::where('department_id', $department->id)->get();
-                            foreach ($sections as $section) {
-                                $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile'])
-                                        ->where('section_id', $section->id)
-                                        ->where('employee_profile_id', '<>', 1)
-                                        ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                            if (!empty($employment_type_id)) {
-                                                $q->where('employment_type_id', $employment_type_id);
-                                            }
-                                        })
-                                        ->get()
-                                );
-
-                                $units = Unit::where('section_id', $section->id)->get();
-                                foreach ($units as $unit) {
-                                    $employees = $employees->merge(
-                                        AssignArea::with(['employeeProfile'])
-                                            ->where('unit_id', $unit->id)
-                                            ->where('employee_profile_id', '<>', 1)
-                                            ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                                if (!empty($employment_type_id)) {
-                                                    $q->where('employment_type_id', $employment_type_id);
-                                                }
-                                            })
-                                            ->get()
-                                    );
-                                }
-                            }
-                        }
-
-                        // Get sections directly under the division (if any) that are not under any department
-                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                        $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                        if (!empty($employment_type_id)) {
+                                    ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
-                                        }
+                                        });
                                     })
                                     ->get()
                             );
@@ -850,104 +810,144 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-                                        ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                            if (!empty($employment_type_id)) {
+                                        ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                                 $q->where('employment_type_id', $employment_type_id);
-                                            }
+                                            });
                                         })
                                         ->get()
                                 );
                             }
                         }
-                        break;
+                    }
 
-                    case 'department':
+                    // Get sections directly under the division (if any) that are not under any department
+                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                    foreach ($sections as $section) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile'])
-                                ->where('department_id', $area_id)
+                                ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                    if (!empty($employment_type_id)) {
+                                ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
-                                    }
+                                    });
                                 })
                                 ->get()
                         );
 
-                        $sections = Section::where('department_id', $area_id)->get();
-                        foreach ($sections as $section) {
-                            $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
-                                    ->where('section_id', $section->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                        if (!empty($employment_type_id)) {
-                                            $q->where('employment_type_id', $employment_type_id);
-                                        }
-                                    })
-                                    ->get()
-                            );
-
-                            $units = Unit::where('section_id', $section->id)->get();
-                            foreach ($units as $unit) {
-                                $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile'])
-                                        ->where('unit_id', $unit->id)
-                                        ->where('employee_profile_id', '<>', 1)
-                                        ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                            if (!empty($employment_type_id)) {
-                                                $q->where('employment_type_id', $employment_type_id);
-                                            }
-                                        })
-                                        ->get()
-                                );
-                            }
-                        }
-                        break;
-
-                    case 'section':
-                        $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                    if (!empty($employment_type_id)) {
-                                        $q->where('employment_type_id', $employment_type_id);
-                                    }
-                                })
-                                ->get()
-                        );
-
-                        $units = Unit::where('section_id', $area_id)->get();
+                        $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                        if (!empty($employment_type_id)) {
+                                    ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
-                                        }
+                                        });
                                     })
                                     ->get()
                             );
                         }
-                        break;
+                    }
+                    break;
 
-                    case 'unit':
+                case 'department':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                    $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->get()
+                    );
+
+                    $sections = Section::where('department_id', $area_id)->get();
+                    foreach ($sections as $section) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile'])
-                                ->where('unit_id', $area_id)
+                                ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
-                                    if (!empty($employment_type_id)) {
+                                ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
-                                    }
+                                    });
                                 })
                                 ->get()
                         );
-                        break;
-                }
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                            $q->where('employment_type_id', $employment_type_id);
+                                        });
+                                    })
+                                    ->get()
+                            );
+                        }
+                    }
+                    break;
+
+                case 'section':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                    $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->get()
+                    );
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile'])
+                                ->where('unit_id', $unit->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                        $q->where('employment_type_id', $employment_type_id);
+                                    });
+                                })
+                                ->get()
+                        );
+                    }
+                    break;
+
+                case 'unit':
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                                $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                    $q->where('employment_type_id', $employment_type_id);
+                                });
+                            })
+                            ->get()
+                    );
+                    break;
+                default:
+                    $employees = AssignArea::with(['employeeProfile'])
+                        ->where('employee_profile_id', '<>', 1)
+                        ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                            $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
+                                $q->where('employment_type_id', $employment_type_id);
+                            });
+                        })
+                        ->get();
             }
 
             $regular = $employees->filter(function ($row) {
@@ -965,13 +965,35 @@ class EmployeeReportController extends Controller
                 return $employee->employeeProfile->personalInformation->first_name;
             });
 
+            // Paginate the results
+            $current_page = LengthAwarePaginator::resolveCurrentPage();
+            $paginated_employees = new LengthAwarePaginator(
+                $employees->forPage($current_page, 10),
+                $employees->count(),
+                10,
+                $current_page,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
+
+            // TRansform and paginate employee data
+            $data = EmployeesDetailsReport::collection($paginated_employees);
+
             return response()->json([
-                'count' => [
+                'pagination' => [
+                    'current_page' => $paginated_employees->currentPage(),
+                    'per_page' => $paginated_employees->perPage(),
+                    'total' => $paginated_employees->total(),
+                    'last_page' => $paginated_employees->lastPage(),
+                    'has_more_pages' => $paginated_employees->hasMorePages(),
+                ],
+
+                'total_job_statuses' => [
                     'regular' => COUNT($regular),
                     'permanent' => COUNT($permanent),
                     'job_order' => COUNT($job_order),
                 ],
-                'data' =>  EmployeesDetailsReport::collection($employees),
+                'count' => COUNT($paginated_employees),
+                'data' =>  EmployeesDetailsReport::collection($data),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
