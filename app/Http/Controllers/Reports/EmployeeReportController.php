@@ -1146,6 +1146,10 @@ class EmployeeReportController extends Controller
                             ->get()
                     );
                     break;
+                default:
+                    $employees = AssignArea::with(['employeeProfile'])
+                        ->where('employee_profile_id', '<>', 1)
+                        ->get();
             }
 
             // Apply search filter if provided
