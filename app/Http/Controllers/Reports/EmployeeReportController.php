@@ -1002,8 +1002,6 @@ class EmployeeReportController extends Controller
         }
     }
 
-
-
     /**
      * Filter employees and count them per designation.
      *
@@ -1013,61 +1011,41 @@ class EmployeeReportController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+
     public function filterEmployeesPerPosition(Request $request)
     {
         try {
-            $employees = collect();
-            $sector =  $request->sector;
+            // Retrieve parameters from the request
+            $sector = $request->sector;
             $area_id = $request->area_id;
-            $designationCounts = [];
+            $search = $request->search;
+            $page = $request->input('page', 1);  // Default to page 1 if not provided
+            $perPage = $request->input('per_page', 10);  // Default to 10 items per page if not provided
 
-            if (!$sector && !$area_id) {
-                $employees =  AssignArea::with(['employeeProfile'])
-                    ->where('division_id', $area_id)
-                    ->where('employee_profile_id', '<>', 1)
-                    ->get();
-            } else {
-                switch ($sector) {
-                    case 'division':
+            // Initialize an empty collection
+            $employees = collect();
+
+            // Fetch employees based on sector and area_id
+            switch ($sector) {
+                case 'division':
+                    // Similar logic as before with search filter applied
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->get()
+                    );
+
+                    $departments = Department::where('division_id', $area_id)->get();
+                    foreach ($departments as $department) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile'])
-                                ->where('division_id', $area_id)
+                                ->where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->get()
                         );
 
-                        $departments = Department::where('division_id', $area_id)->get();
-                        foreach ($departments as $department) {
-                            $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
-                                    ->where('department_id', $department->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->get()
-                            );
-
-                            $sections = Section::where('department_id', $department->id)->get();
-                            foreach ($sections as $section) {
-                                $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile'])
-                                        ->where('section_id', $section->id)
-                                        ->where('employee_profile_id', '<>', 1)
-                                        ->get()
-                                );
-
-                                $units = Unit::where('section_id', $section->id)->get();
-                                foreach ($units as $unit) {
-                                    $employees = $employees->merge(
-                                        AssignArea::with(['employeeProfile'])
-                                            ->where('unit_id', $unit->id)
-                                            ->where('employee_profile_id', '<>', 1)
-                                            ->get()
-                                    );
-                                }
-                            }
-                        }
-
-                        // Get sections directly under the division (if any) that are not under any department
-                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                        $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile'])
@@ -1086,46 +1064,18 @@ class EmployeeReportController extends Controller
                                 );
                             }
                         }
-                        break;
+                    }
 
-                    case 'department':
+                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                    foreach ($sections as $section) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile'])
-                                ->where('department_id', $area_id)
+                                ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->get()
                         );
 
-                        $sections = Section::where('department_id', $area_id)->get();
-                        foreach ($sections as $section) {
-                            $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
-                                    ->where('section_id', $section->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->get()
-                            );
-
-                            $units = Unit::where('section_id', $section->id)->get();
-                            foreach ($units as $unit) {
-                                $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile'])
-                                        ->where('unit_id', $unit->id)
-                                        ->where('employee_profile_id', '<>', 1)
-                                        ->get()
-                                );
-                            }
-                        }
-                        break;
-
-                    case 'section':
-                        $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
-                                ->where('section_id', $area_id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->get()
-                        );
-
-                        $units = Unit::where('section_id', $area_id)->get();
+                        $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile'])
@@ -1134,19 +1084,84 @@ class EmployeeReportController extends Controller
                                     ->get()
                             );
                         }
-                        break;
+                    }
+                    break;
 
-                    case 'unit':
+                case 'department':
+                    // Similar logic as before with search filter applied
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->get()
+                    );
+
+                    $sections = Section::where('department_id', $area_id)->get();
+                    foreach ($sections as $section) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile'])
-                                ->where('unit_id', $area_id)
+                                ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->get()
                         );
-                        break;
-                }
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile'])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->get()
+                            );
+                        }
+                    }
+                    break;
+
+                case 'section':
+                    // Similar logic as before with search filter applied
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->get()
+                    );
+
+                    $units = Unit::where('section_id', $area_id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile'])
+                                ->where('unit_id', $unit->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->get()
+                        );
+                    }
+                    break;
+
+                case 'unit':
+                    // Similar logic as before with search filter applied
+                    $employees = $employees->merge(
+                        AssignArea::with(['employeeProfile'])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->get()
+                    );
+                    break;
             }
 
+            // Apply search filter if provided
+            if ($search) {
+                $employees = $employees->filter(function ($employee) use ($search) {
+                    $employeeName = $employee->employeeProfile->personalInformation->fullName();
+                    $designationName = $employee->employeeProfile->findDesignation()['name'];
+
+                    // Check if search term matches either the name or designation
+                    return stripos($employeeName, $search) !== false || stripos($designationName, $search) !== false;
+                });
+            }
+
+            // Count employees per designation
+            $designationCounts = [];
+            $uniqueDesignations = [];
 
             foreach ($employees as $employee) {
                 $designationName = $employee->employeeProfile->findDesignation()['name'];
@@ -1157,12 +1172,10 @@ class EmployeeReportController extends Controller
                 $designationCounts[$designationName]++;
             }
 
-            // Adding employee count to each unique designation object
             foreach ($uniqueDesignations as $designationName => $employee) {
                 $employee->employee_count = $designationCounts[$designationName];
             }
 
-            // Convert unique designations to a collection
             $uniqueDesignationsCollection = collect($uniqueDesignations)->values();
 
             // Sort unique designations by employee_count (descending order)
@@ -1170,15 +1183,32 @@ class EmployeeReportController extends Controller
                 return $employee->employee_count;
             });
 
+            // Paginate the results
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            $paginatedDesignations = new LengthAwarePaginator(
+                $uniqueDesignationsCollection->forPage($currentPage, $perPage),
+                $uniqueDesignationsCollection->count(),
+                $perPage,
+                $currentPage,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
+
             return response()->json([
                 'count' => [
                     'per_designation' => $designationCounts,
                 ],
-                'data' =>  DesignationReportResource::collection($uniqueDesignationsCollection),
+                'data' => DesignationReportResource::collection($paginatedDesignations),
+                'pagination' => [
+                    'current_page' => $paginatedDesignations->currentPage(),
+                    'per_page' => $paginatedDesignations->perPage(),
+                    'total' => $paginatedDesignations->total(),
+                    'last_page' => $paginatedDesignations->lastPage(),
+                    'has_more_pages' => $paginatedDesignations->hasMorePages(),
+                ],
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeesPerPosition', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
