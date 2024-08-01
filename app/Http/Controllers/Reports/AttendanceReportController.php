@@ -117,11 +117,17 @@ class AttendanceReportController extends Controller
             $total_Days_With_Tardiness = 0;
 
             foreach ($dtr as $val) {
+                $dayOfMonth = $val->day;
+
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
 
+                // Ensure the record falls within the selected half of the month
+                if ($dayOfMonth < $init || $dayOfMonth > $days_In_Month) {
+                    continue; // Skip records outside the selected half
+                }
 
                 $first_in = $val->first_in;
                 $second_in = $val->second_in;
@@ -522,11 +528,17 @@ class AttendanceReportController extends Controller
 
 
             foreach ($dtr as $val) {
+                $dayOfMonth = $val->day;
+
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
 
+                // Ensure the record falls within the selected half of the month
+                if ($dayOfMonth < $firstDayOfRange || $dayOfMonth > $lastDayOfRange) {
+                    continue; // Skip records outside the selected half
+                }
 
                 $first_in = $val->first_in;
                 $second_in = $val->second_in;
