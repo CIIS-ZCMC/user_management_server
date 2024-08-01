@@ -19,6 +19,1050 @@ class LeaveReportController extends Controller
 {
     private $CONTROLLER_NAME = 'Leave Reports';
 
+    private function GenerateReportSummary($report_format, $data)
+    {
+        try {
+            switch ($report_format) {
+                case 'area':
+
+                    break;
+                case 'employee':
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report format'
+                    ]);
+            }
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'GenerateReportLeaveByArea', $th->getMessage());
+            return response()->json(
+                [
+                    'message' => $th->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    private function GenerateReportLeaveByArea($areas, $sector)
+    {
+        try {
+            $data = [];
+
+            foreach ($areas as $area) {
+                $leave_count = 0;
+                $leave_count_total_with_pay = 0;
+                $leave_count_total_without_pay = 0;
+                $leave_count_cancelled = 0;
+                $leave_count_approved = 0;
+                $leave_count_received = 0;
+
+                // Initialize leave type count array
+                $leave_types_count = [];
+
+                $assign_areas = $area->assignArea;
+                foreach ($assign_areas as $assign_area) {
+
+                    // Get leave applications data
+                    $leave_applications = $assign_area->employeeProfile->leaveApplications;
+
+                    foreach ($leave_applications as $leave_application) {
+                        // Count leave types
+                        $leave_type = $leave_application->leaveType;
+                        if ($leave_type) {
+                            $leave_type_id = $leave_type->id;
+                            if (isset($leave_types_count[$leave_type_id])) {
+                                $leave_types_count[$leave_type_id]['count']++;
+                            } else {
+                                $leave_types_count[$leave_type_id] = [
+                                    'id' => $leave_type->id,
+                                    'name' => $leave_type->name,
+                                    'code' => $leave_type->code,
+                                    'count' => 1,
+                                ];
+                            }
+                        }
+                    }
+
+                    $leave_count += $leave_applications->count();
+                    $leave_count_total_with_pay += $leave_applications->where('without_pay', 0)->count();
+                    $leave_count_total_without_pay += $leave_applications->where('without_pay', 1)->count();
+                    $leave_count_cancelled += $leave_applications->where('status', 'cancelled');
+                    $leave_count_approved += $leave_applications->where('status', 'approved');
+                    $leave_count_received += $leave_applications->where('status', 'received');
+                }
+
+                // Sort leave types by their IDs
+                $leave_types_sorted = collect($leave_types_count)->sortBy('id')->values()->toArray();
+
+                $data[] = [
+                    'id' => $area->id,
+                    'name' => $area->name,
+                    'code' => $area->code,
+                    'sector' => ucfirst($sector),
+                    'leave_count' => $leave_count,
+                    'leave_count_with_pay' => $leave_count_total_with_pay,
+                    'leave_count_without_pay' => $leave_count_total_without_pay,
+                    'leave_count_received' => $leave_count_received,
+                    'leave_count_cancelled' => $leave_count_cancelled,
+                    'leave_count_approved' => $leave_count_approved,
+                    'leave_types' => $leave_types_sorted, // Sorted leave types
+                ];
+            }
+
+            return $data;
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'GenerateReportLeaveByArea', $th->getMessage());
+            return response()->json(
+                [
+                    'message' => $th->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    private function GenerateReportLeaveByEmployees($employee)
+    {
+        try {
+            $leave_count = 0;
+            $leave_count_total_with_pay = 0;
+            $leave_count_total_without_pay = 0;
+            $leave_count_cancelled = 0;
+            $leave_count_approved = 0;
+            $leave_count_received = 0;
+
+            $leave_types_count = [];
+
+            // Skip if no employeeProfile
+            if (!$employee->employeeProfile) {
+                return null;
+            }
+
+            // Ensure leaveApplications is a collection or array
+            $leave_applications = $employee->employeeProfile->leaveApplications;
+            if (!$leave_applications instanceof \Illuminate\Support\Collection) {
+                $leave_applications = collect($leave_applications);
+            }
+
+            foreach ($leave_applications as $leave_application) {
+                $leave_type = $leave_application->leaveType;
+                if ($leave_type) {
+                    $leave_type_id = $leave_type->id;
+                    if (isset($leave_types_count[$leave_type_id])) {
+                        $leave_types_count[$leave_type_id]['count']++;
+                    } else {
+                        $leave_types_count[$leave_type_id] = [
+                            'id' => $leave_type->id,
+                            'name' => $leave_type->name,
+                            'code' => $leave_type->code,
+                            'count' => 1,
+                        ];
+                    }
+                }
+
+                $leave_count++;
+                if ($leave_application->without_pay) {
+                    $leave_count_total_without_pay++;
+                } else {
+                    $leave_count_total_with_pay++;
+                }
+
+                // Count based on status
+                switch ($leave_application->status) {
+                    case 'cancelled':
+                        $leave_count_cancelled++;
+                        break;
+                    case 'approved':
+                        $leave_count_approved++;
+                        break;
+                    case 'received':
+                        $leave_count_received++;
+                        break;
+                }
+            }
+
+            $leave_types_sorted = collect($leave_types_count)->sortBy('id')->values()->toArray();
+
+            return [
+                'id' => $employee->id,
+                'employee_id' => $employee->employee_id,
+                'employee_name' => $employee->employeeProfile->personalInformation->employeeName(),
+                'personal_information_id' => $employee->employeeProfile->personal_information_id,
+                'designation' => $employee->employeeProfile->findDesignation()['name'],
+                'designation_code' => $employee->employeeProfile->findDesignation()['code'],
+                'sector' => ucfirst($employee->employeeProfile->assignedArea->findDetails()['sector']),
+                'area_name' => $employee->employeeProfile->assignedArea->findDetails()['details']['name'],
+                'area_code' => $employee->employeeProfile->assignedArea->findDetails()['details']['code'],
+                'leave_count' => $leave_count,
+                'leave_count_with_pay' => $leave_count_total_with_pay,
+                'leave_count_without_pay' => $leave_count_total_without_pay,
+                'leave_count_received' => $leave_count_received,
+                'leave_count_cancelled' => $leave_count_cancelled,
+                'leave_count_approved' => $leave_count_approved,
+                'leave_types' => $leave_types_sorted,
+            ];
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'GenerateReportLeaveByArea', $th->getMessage());
+            return response()->json(
+                [
+                    'message' => $th->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+
+
+
+    public function xfilterLeave(Request $request)
+    {
+        try {
+            $results = [];
+            $response = null;
+
+            $sector = $request->sector;
+            $report_format = strtolower($request->report_format);
+            $status = $request->status;
+            $area_under = strtolower($request->area_under);
+            $area_id = $request->area_id;
+            $leave_type_ids = $request->leave_type_ids
+                ? array_map('intval', preg_split('/\s*,\s*/', $request->leave_type_ids))
+                : [];
+
+            $date_from = $request->date_from;
+            $date_to = $request->date_to;
+            $sort_by = $request->sort_by;
+            $limit = $request->limit;
+
+            // process report format
+            switch ($report_format) {
+                case 'area':
+                    switch ($sector) {
+                        case 'division':
+                            switch ($area_under) {
+                                case 'all':
+                                    $areas = collect();
+
+                                    $division_areas = Division::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $areas = $areas->merge($division_areas);
+
+                                    $departments = Department::where('division_id', $area_id)->get();
+                                    foreach ($departments as $department) {
+                                        $department_areas =  Department::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                            ->where('id', $department->id)
+                                            ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+
+                                        $areas = $areas->merge($department_areas);
+
+                                        $sections = Section::where('department_id', $department->id)->get();
+                                        foreach ($sections as $section) {
+                                            $section_areas =  Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                                ->where('id', $section->id)
+                                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                    // Apply filters only if the leave application exists
+                                                    if ($status) {
+                                                        $q->where('status', $status);
+                                                    }
+                                                    if ($leave_type_ids) {
+                                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                                    }
+                                                    if ($date_from && $date_to) {
+                                                        $q->where('date_from', '>=', $date_from)
+                                                            ->where('date_to', '<=', $date_to);
+                                                    }
+                                                })
+                                                ->get();
+                                            $areas = $areas->merge($section_areas);
+
+                                            $units = Unit::where('section_id', $section->id)->get();
+                                            foreach ($units as $unit) {
+                                                $unit_areas =  Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                                    ->where('id', $section->id)
+                                                    ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                        // Apply filters only if the leave application exists
+                                                        if ($status) {
+                                                            $q->where('status', $status);
+                                                        }
+                                                        if ($leave_type_ids) {
+                                                            $q->whereIn('leave_type_id', $leave_type_ids);
+                                                        }
+                                                        if ($date_from && $date_to) {
+                                                            $q->where('date_from', '>=', $date_from)
+                                                                ->where('date_to', '<=', $date_to);
+                                                        }
+                                                    })
+                                                    ->get();
+                                                $areas = $areas->merge($unit_areas);
+                                            }
+                                        }
+                                    }
+
+                                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                                    foreach ($sections as $section) {
+                                        $section_areas = Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                            ->where('id', $section->id)
+                                            ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+                                        $areas = $areas->merge($section_areas);
+                                    }
+
+                                    $results = $this->GenerateReportLeaveByArea($areas, $sector);
+                                    break;
+                                case 'staff':
+                                    $areas = collect();
+
+                                    $division_areas = Division::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $areas = $areas->merge($division_areas);
+
+                                    $results = $this->GenerateReportLeaveByArea($areas, $sector);
+                                    break;
+                                default:
+                                    return response()->json([
+                                        'message' => 'Invalid area under.'
+                                    ]);
+                            }
+                            break;
+                        case 'department':
+                            switch ($area_under) {
+                                case 'all':
+                                    $areas = collect();
+                                    $department_areas = Department::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $areas = $areas->merge($department_areas);
+
+                                    $sections = Section::where('department_id', $area_id)->get();
+                                    foreach ($sections as $section) {
+                                        $section_areas = Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                            ->where('id', $section->id)
+                                            ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+
+                                        $areas = $areas->merge($section_areas);
+
+                                        $units = Unit::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $unit_areas = Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                                ->where('id', $unit->id)
+                                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                    // Apply filters only if the leave application exists
+                                                    if ($status) {
+                                                        $q->where('status', $status);
+                                                    }
+                                                    if ($leave_type_ids) {
+                                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                                    }
+                                                    if ($date_from && $date_to) {
+                                                        $q->where('date_from', '>=', $date_from)
+                                                            ->where('date_to', '<=', $date_to);
+                                                    }
+                                                })
+                                                ->get();
+
+                                            $areas = $areas->merge($unit_areas);
+                                        }
+                                    }
+                                    break;
+                                case 'staff':
+                                    break;
+                                default:
+                                    return response()->json([
+                                        'message' => 'Invalid area under.'
+                                    ]);
+                            }
+                            break;
+                        case 'section':
+                            switch ($area_under) {
+                                case 'all':
+                                    $areas = collect();
+
+                                    $section_areas = Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $areas = $areas->merge($section_areas);
+
+                                    $units = Unit::where('section_id', $area_id)->get();
+                                    foreach ($units as $unit) {
+                                        $unit_areas = Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                            ->where('id', $unit->id)
+                                            ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+
+                                        $areas = $areas->merge($unit_areas)->take($limit);
+                                    }
+
+                                    $results = $this->GenerateReportLeaveByArea($areas, $sector);
+                                    break;
+                                case 'staff':
+                                    $areas = collect();
+                                    $section_areas = Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $areas = $areas->merge($section_areas);
+                                    break;
+                                default:
+                                    return response()->json([
+                                        'message' => 'Invalid area under.'
+                                    ]);
+                            }
+                            break;
+                        case 'unit':
+                            $areas = collect();
+
+                            $unit_areas = Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                ->where('id', $area_id)
+                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    // Apply filters only if the leave application exists
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+
+
+                            $areas = $unit_areas;
+                            $results = $this->GenerateReportLeaveByArea($areas, $sector);
+                            break;
+                        default:
+                            $areas = collect();
+                            $division_areas = Division::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+                            $areas = $areas->merge($division_areas);
+
+                            $department_areas = Department::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+                            $areas = $areas->merge($department_areas);
+
+                            $section_areas = Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+
+                            $areas = $areas->merge($section_areas);
+
+                            $unit_areas = Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+
+                            $areas = $areas->merge($unit_areas);
+
+                            $results = $this->GenerateReportLeaveByArea($areas, $sector);
+                    }
+                    break;
+                case 'employee':
+                    switch ($sector) {
+                        case 'division':
+
+                            switch ($area_under) {
+
+                                case 'all':
+                                    $employees = collect();
+
+                                    $division_employees = AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                        ->where('division_id', $area_id)
+                                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    return $division_employees;
+
+                                    $employees = $employees->merge($division_employees);
+
+
+
+                                    $departments = AssignArea::where('division_id', $area_id)->get();
+                                    foreach ($departments as $department) {
+                                        $department_employees =  AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                            ->where('department_id', $department->id)
+                                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+
+                                        $employees = $employees->merge($department_employees);
+
+                                        $sections = AssignArea::where('department_id', $department->id)->get();
+                                        foreach ($sections as $section) {
+                                            $section_employees =  AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                                ->where('section_id', $section->id)
+                                                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                    // Apply filters only if the leave application exists
+                                                    if ($status) {
+                                                        $q->where('status', $status);
+                                                    }
+                                                    if ($leave_type_ids) {
+                                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                                    }
+                                                    if ($date_from && $date_to) {
+                                                        $q->where('date_from', '>=', $date_from)
+                                                            ->where('date_to', '<=', $date_to);
+                                                    }
+                                                })
+                                                ->get();
+                                            $employees = $employees->merge($section_employees);
+
+                                            $units = AssignArea::where('section_id', $section->id)->get();
+                                            foreach ($units as $unit) {
+                                                $unit_employees =  AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                                    ->where('unit_id', $section->id)
+                                                    ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                        // Apply filters only if the leave application exists
+                                                        if ($status) {
+                                                            $q->where('status', $status);
+                                                        }
+                                                        if ($leave_type_ids) {
+                                                            $q->whereIn('leave_type_id', $leave_type_ids);
+                                                        }
+                                                        if ($date_from && $date_to) {
+                                                            $q->where('date_from', '>=', $date_from)
+                                                                ->where('date_to', '<=', $date_to);
+                                                        }
+                                                    })
+                                                    ->get();
+                                                $employees = $employees->merge($unit_employees);
+                                            }
+                                        }
+                                    }
+
+                                    $sections = AssignArea::where('division_id', $area_id)->whereNull('department_id')->get();
+                                    foreach ($sections as $section) {
+                                        $section_employees = Section::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                            ->where('section_id', $section->id)
+                                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+                                        $employees = $employees->merge($section_employees);
+
+                                        $units = AssignArea::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $unit_employees = AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                                ->where('unit_id', $section->id)
+                                                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                    // Apply filters only if the leave application exists
+                                                    if ($status) {
+                                                        $q->where('status', $status);
+                                                    }
+                                                    if ($leave_type_ids) {
+                                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                                    }
+                                                    if ($date_from && $date_to) {
+                                                        $q->where('date_from', '>=', $date_from)
+                                                            ->where('date_to', '<=', $date_to);
+                                                    }
+                                                })
+                                                ->get();
+                                            $employees = $employees->merge($unit_employees);
+                                        }
+                                    }
+
+                                    // Process results
+                                    $results = $employees->map(function ($employee) {
+                                        return $this->GenerateReportLeaveByEmployees($employee);
+                                    })->filter()->values()->toArray();
+                                    break;
+                                case 'staff':
+                                    $areas = collect();
+                                    $employees = collect();
+
+                                    $division_employees = Division::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $employees = $employees->merge($division_employees);
+
+                                    // Process results
+                                    $results = $employees->map(function ($employee) {
+                                        return $this->GenerateReportLeaveByEmployees($employee);
+                                    })->filter()->values()->toArray();
+                                    break;
+                                default:
+                                    return response()->json([
+                                        'message' => 'Invalid area under.'
+                                    ]);
+                            }
+                            break;
+                        case 'department':
+                            switch ($area_under) {
+                                case 'all':
+                                    $employees = collect();
+                                    $department_employees = AssignArea::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $employees = $employees->merge($department_employees);
+
+                                    $sections = AssignArea::where('department_id', $area_id)->get();
+                                    foreach ($sections as $section) {
+                                        $section_employees = Section::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                            ->where('id', $section->id)
+                                            ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+
+                                        $employees = $employees->merge($section_employees);
+
+                                        $units = AssignArea::where('section_id', $section->id)->get();
+                                        foreach ($units as $unit) {
+                                            $unit_employees = Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                                ->where('id', $unit->id)
+                                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                    // Apply filters only if the leave application exists
+                                                    if ($status) {
+                                                        $q->where('status', $status);
+                                                    }
+                                                    if ($leave_type_ids) {
+                                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                                    }
+                                                    if ($date_from && $date_to) {
+                                                        $q->where('date_from', '>=', $date_from)
+                                                            ->where('date_to', '<=', $date_to);
+                                                    }
+                                                })
+                                                ->get();
+
+                                            $employees = $employees->merge($unit_employees);
+                                        }
+                                    }
+
+                                    // Process results
+                                    $results = $employees->map(function ($employee) {
+                                        return $this->GenerateReportLeaveByEmployees($employee);
+                                    })->filter()->values()->toArray();
+                                    break;
+                                case 'staff':
+                                    $employees = collect();
+                                    $department_employees = AssignArea::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                        ->where('id', $area_id)
+                                        ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $employees = $employees->merge($department_employees);
+                                    // Process results
+                                    $results = $employees->map(function ($employee) {
+                                        return $this->GenerateReportLeaveByEmployees($employee);
+                                    })->filter()->values()->toArray();
+                                    break;
+                                default:
+                                    return response()->json([
+                                        'message' => 'Invalid area under.'
+                                    ]);
+                            }
+                            break;
+                        case 'section':
+                            switch ($area_under) {
+                                case 'all':
+                                    $employees = collect();
+
+                                    $section_employees = AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                        ->where('section_id', $area_id)
+                                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+
+                                    $employees = $employees->merge($section_employees);
+
+                                    $units = Unit::where('section_id', $area_id)->get();
+                                    foreach ($units as $unit) {
+                                        $unit_employees = AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                            ->where('unit_id', $unit->id)
+                                            ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                                // Apply filters only if the leave application exists
+                                                if ($status) {
+                                                    $q->where('status', $status);
+                                                }
+                                                if ($leave_type_ids) {
+                                                    $q->whereIn('leave_type_id', $leave_type_ids);
+                                                }
+                                                if ($date_from && $date_to) {
+                                                    $q->where('date_from', '>=', $date_from)
+                                                        ->where('date_to', '<=', $date_to);
+                                                }
+                                            })
+                                            ->get();
+
+                                        $employees = $employees->merge($unit_employees)->take($limit);
+                                    }
+
+                                    // Process results
+                                    $results = $employees->map(function ($employee) {
+                                        return $this->GenerateReportLeaveByEmployees($employee);
+                                    })->filter()->values()->toArray();
+
+                                    break;
+                                case 'staff':
+                                    $employees = collect();
+                                    $section_employees = AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                        ->where('section_id', $area_id)
+                                        ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                            // Apply filters only if the leave application exists
+                                            if ($status) {
+                                                $q->where('status', $status);
+                                            }
+                                            if ($leave_type_ids) {
+                                                $q->whereIn('leave_type_id', $leave_type_ids);
+                                            }
+                                            if ($date_from && $date_to) {
+                                                $q->where('date_from', '>=', $date_from)
+                                                    ->where('date_to', '<=', $date_to);
+                                            }
+                                        })
+                                        ->get();
+
+                                    $employees = $employees->merge($section_employees);
+
+                                    // Process results
+                                    $results = $employees->map(function ($employee) {
+                                        return $this->GenerateReportLeaveByEmployees($employee);
+                                    })->filter()->values()->toArray();
+
+                                    break;
+                                default:
+                                    return response()->json([
+                                        'message' => 'Invalid area under.'
+                                    ]);
+                            }
+                            break;
+                        case 'unit':
+                            $employees = collect();
+
+                            $unit_employees = Unit::with(['assignArea.employeeProfile', 'assignArea.employeeProfile.leaveApplications', 'assignArea.employeeProfile.leaveApplications.leaveType'])
+                                ->where('id', $area_id)
+                                ->whereHas('assignArea.employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    // Apply filters only if the leave application exists
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+
+                            $employees = $unit_employees;
+                            // Process results
+                            $results = $employees->map(function ($employee) {
+                                return $this->GenerateReportLeaveByEmployees($employee);
+                            })->filter()->values()->toArray();
+                            break;
+                        default:
+                            $employees = collect();
+                            $employees = AssignArea::with(['employeeProfile', 'employeeProfile.leaveApplications', 'employeeProfile.leaveApplications.leaveType'])
+                                ->whereHas('employeeProfile.leaveApplications', function ($q) use ($status, $leave_type_ids, $date_from, $date_to) {
+                                    if ($status) {
+                                        $q->where('status', $status);
+                                    }
+                                    if ($leave_type_ids) {
+                                        $q->whereIn('leave_type_id', $leave_type_ids);
+                                    }
+                                    if ($date_from && $date_to) {
+                                        $q->where('date_from', '>=', $date_from)
+                                            ->where('date_to', '<=', $date_to);
+                                    }
+                                })
+                                ->get();
+
+                            // Process results
+                            $results = $employees->map(function ($employee) {
+                                return $this->GenerateReportLeaveByEmployees($employee);
+                            })->filter()->values()->toArray();
+                    }
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report format',
+                    ]);
+            }
+
+            return response()->json([
+                'count' => count($results),
+                'data' => $results,
+                'message' => 'Successfully retrieved data.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterLeave', $th->getMessage());
+            return response()->json(
+                [
+                    'message' => $th->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
     /**
      * Filter leave reports based on provided criteria.
      *
@@ -1223,6 +2267,7 @@ class LeaveReportController extends Controller
         $leave_count_total_received = 0;
         $leave_count_total_cancelled = 0;
         $leave_count_total_approved = 0;
+        $leave_count_total_applied = 0;
 
         // Only calculate specific leave counts if status is not empty
         if (!empty($status)) {
@@ -1251,6 +2296,8 @@ class LeaveReportController extends Controller
                 $leave_count_total_cancelled++;
             } elseif ($application->status == 'approved') {
                 $leave_count_total_approved++;
+            } elseif ($application->status == 'applied') {
+                $leave_count_total_applied++;
             }
         }
 
@@ -1296,7 +2343,7 @@ class LeaveReportController extends Controller
         $area_data['leave_count_received'] = $leave_count_total_received;
         $area_data['leave_count_cancelled'] = $leave_count_total_cancelled;
         $area_data['leave_count_approved'] = $leave_count_total_approved;
-
+        $area_data['leave_count_applied'] = $leave_count_total_applied;
         // return $area_data;
         return $leave_count_total > 0 ? $area_data : [];
     }
@@ -1339,6 +2386,7 @@ class LeaveReportController extends Controller
         $leave_count_total_received = 0;
         $leave_count_total_cancelled = 0;
         $leave_count_total_approved = 0;
+        $leave_count_total_applied = 0;
 
         // Build the leave applications query with necessary relationships and filters
         $leave_applications = LeaveApplication::where('employee_profile_id', $employee->id);
@@ -1399,6 +2447,8 @@ class LeaveReportController extends Controller
                 $leave_count_total_cancelled++;
             } elseif ($application->status == 'approved') {
                 $leave_count_total_approved++;
+            } elseif ($application->status == 'applied') {
+                $leave_count_total_applied++;
             }
         }
 
@@ -1442,6 +2492,7 @@ class LeaveReportController extends Controller
         $employee_data['leave_count_received'] = $leave_count_total_received;
         $employee_data['leave_count_cancelled'] = $leave_count_total_cancelled;
         $employee_data['leave_count_approved'] = $leave_count_total_approved;
+        $employee_data['leave_count_applied'] = $leave_count_total_applied;
 
         return $employee_data;
     }

@@ -78,7 +78,6 @@ class AttendanceReportController extends Controller
 
     private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles)
     {
-
         // Extract biometric_ids
         $biometricIds = $profiles->pluck('employeeProfile.biometric_id')->unique();
 
@@ -117,12 +116,19 @@ class AttendanceReportController extends Controller
             $total_Month_Hour_Missed = 0;
             $total_Days_With_Tardiness = 0;
 
+
             foreach ($dtr as $val) {
+                $dayOfMonth = $val->day;
+
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
 
+                // Ensure the record falls within the selected half of the month
+                if ($dayOfMonth < $init || $dayOfMonth > $days_In_Month) {
+                    continue; // Skip records outside the selected half
+                }
 
                 $first_in = $val->first_in;
                 $second_in = $val->second_in;
@@ -130,10 +136,11 @@ class AttendanceReportController extends Controller
                 $Schedule = ReportHelpers::CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
+
                 if (count($DaySchedule) >= 1) {
 
-                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8);
-                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13);
+                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8)->addMinutes(1); // 8:01 AM
+                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13)->addMinutes(1); // 1:01 PM
 
                     if ($first_in && Carbon::parse($first_in)->gt($startOfDay8)) {
                         $total_Days_With_Tardiness++;
@@ -143,6 +150,7 @@ class AttendanceReportController extends Controller
                     }
                 }
             }
+
 
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -314,6 +322,7 @@ class AttendanceReportController extends Controller
                     $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                     return $dateToCompare === $dateToMatch;
                 });
+
                 $cto_Count = count($ctoApplication);
 
 
@@ -402,7 +411,7 @@ class AttendanceReportController extends Controller
             // process report type
             switch ($report_type) {
                 case 'absences':
-                    if ($Number_Absences) {
+                    if ($Number_Absences > 0 && $total_Month_Hour_Missed > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -436,7 +445,7 @@ class AttendanceReportController extends Controller
 
                     break;
                 case 'tardiness':
-                    if ($total_Month_Undertime > 0) {
+                    if ($total_Days_With_Tardiness > 0 && $total_Month_Undertime > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -523,11 +532,17 @@ class AttendanceReportController extends Controller
 
 
             foreach ($dtr as $val) {
+                $dayOfMonth = $val->day;
+
                 $bioEntry = [
                     'first_entry' => $val->first_in ?? $val->second_in,
                     'date_time' => $val->first_in ?? $val->second_in
                 ];
 
+                // Ensure the record falls within the selected half of the month
+                if ($dayOfMonth < $firstDayOfRange || $dayOfMonth > $lastDayOfRange) {
+                    continue; // Skip records outside the selected half
+                }
 
                 $first_in = $val->first_in;
                 $second_in = $val->second_in;
@@ -538,8 +553,8 @@ class AttendanceReportController extends Controller
 
                 if (count($DaySchedule) >= 1) {
 
-                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8);
-                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13);
+                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8)->addMinutes(1); // 8:01 AM
+                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13)->addMinutes(1); // 1:01 PM
 
                     if ($first_in && Carbon::parse($first_in)->gt($startOfDay8)) {
                         $total_Days_With_Tardiness++;
@@ -808,7 +823,7 @@ class AttendanceReportController extends Controller
             // process report type
             switch ($report_type) {
                 case 'absences':
-                    if ($Number_Absences > 0) {
+                    if ($Number_Absences > 0 && $total_Month_Hour_Missed) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -841,7 +856,7 @@ class AttendanceReportController extends Controller
                     }
                     break;
                 case 'tardiness':
-                    if ($total_Month_Undertime) {
+                    if ($total_Days_With_Tardiness > 0 && $total_Month_Undertime > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -1991,6 +2006,7 @@ class AttendanceReportController extends Controller
                         })
                         ->get();
 
+
                     $profiles = $profiles->take($limit);
 
                     if ($year_of && $month_of) {
@@ -2007,26 +2023,26 @@ class AttendanceReportController extends Controller
             }
 
             // Format the output based on the report type
-            // switch ($report_type) {
-            //     case 'absences': // Sort the result based on total absent days
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
-            //                 : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
-            //         });
-            //         break;
-            //     case 'tardiness': // Sort the result based on total undertime minutes
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
-            //                 : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
-            //         });
-            //         break;
-            //     default:
-            //         return response()->json([
-            //             'message' => 'Invalid report type'
-            //         ], 400); // Added status code for better response
-            // }
+            switch ($report_type) {
+                case 'absences': // Sort the result based on total absent days
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
+                            : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
+                    });
+                    break;
+                case 'tardiness': // Sort the result based on total undertime minutes
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_days_with_tardiness'] <=> $a['total_days_with_tardiness']
+                            : $a['total_days_with_tardiness'] <=> $b['total_days_with_tardiness'];
+                    });
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report type'
+                    ], 400); // Added status code for better response
+            }
 
             return response()->json([
                 'count' => count($results),
