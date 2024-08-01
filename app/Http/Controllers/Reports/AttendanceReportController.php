@@ -116,6 +116,7 @@ class AttendanceReportController extends Controller
             $total_Month_Hour_Missed = 0;
             $total_Days_With_Tardiness = 0;
 
+
             foreach ($dtr as $val) {
                 $dayOfMonth = $val->day;
 
@@ -135,10 +136,11 @@ class AttendanceReportController extends Controller
                 $Schedule = ReportHelpers::CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $empschedule[] = $DaySchedule;
+
                 if (count($DaySchedule) >= 1) {
 
-                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8);
-                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13);
+                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8)->addMinutes(1); // 8:01 AM
+                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13)->addMinutes(1); // 1:01 PM
 
                     if ($first_in && Carbon::parse($first_in)->gt($startOfDay8)) {
                         $total_Days_With_Tardiness++;
@@ -148,6 +150,7 @@ class AttendanceReportController extends Controller
                     }
                 }
             }
+
 
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -549,8 +552,8 @@ class AttendanceReportController extends Controller
 
                 if (count($DaySchedule) >= 1) {
 
-                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8);
-                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13);
+                    $startOfDay8 = $record_dtr_date->copy()->startOfDay()->addHours(8)->addMinutes(1); // 8:01 AM
+                    $startOfDay13 = $record_dtr_date->copy()->startOfDay()->addHours(13)->addMinutes(1); // 1:01 PM
 
                     if ($first_in && Carbon::parse($first_in)->gt($startOfDay8)) {
                         $total_Days_With_Tardiness++;
