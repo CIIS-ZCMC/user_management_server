@@ -521,9 +521,6 @@ class GenerateReportController extends Controller
                         ];
                     }
                 }
-
-
-
                 $presentCount = count(array_filter($attd, function ($d) {
                     return $d['total_working_minutes'] !== 0;
                 }));
