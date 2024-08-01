@@ -322,6 +322,7 @@ class AttendanceReportController extends Controller
                     $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                     return $dateToCompare === $dateToMatch;
                 });
+
                 $cto_Count = count($ctoApplication);
 
 
@@ -410,7 +411,7 @@ class AttendanceReportController extends Controller
             // process report type
             switch ($report_type) {
                 case 'absences':
-                    if ($Number_Absences) {
+                    if ($Number_Absences > 0 && $total_Month_Hour_Missed > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -822,7 +823,7 @@ class AttendanceReportController extends Controller
             // process report type
             switch ($report_type) {
                 case 'absences':
-                    if ($Number_Absences > 0) {
+                    if ($Number_Absences > 0 && $total_Month_Hour_Missed) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -2004,6 +2005,7 @@ class AttendanceReportController extends Controller
                             });
                         })
                         ->get();
+
 
                     $profiles = $profiles->take($limit);
 
