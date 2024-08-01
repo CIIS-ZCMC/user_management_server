@@ -2018,8 +2018,8 @@ class AttendanceReportController extends Controller
                 case 'tardiness': // Sort the result based on total undertime minutes
                     usort($results, function ($a, $b) use ($sort_order) {
                         return $sort_order === 'desc'
-                            ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
-                            : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
+                            ? $b['total_days_with_tardiness'] <=> $a['total_days_with_tardiness']
+                            : $a['total_days_with_tardiness'] <=> $b['total_days_with_tardiness'];
                     });
                     break;
                 default:
