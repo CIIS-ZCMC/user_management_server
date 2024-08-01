@@ -2007,26 +2007,26 @@ class AttendanceReportController extends Controller
             }
 
             // Format the output based on the report type
-            // switch ($report_type) {
-            //     case 'absences': // Sort the result based on total absent days
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
-            //                 : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
-            //         });
-            //         break;
-            //     case 'tardiness': // Sort the result based on total undertime minutes
-            //         usort($results, function ($a, $b) use ($sort_order) {
-            //             return $sort_order === 'desc'
-            //                 ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
-            //                 : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
-            //         });
-            //         break;
-            //     default:
-            //         return response()->json([
-            //             'message' => 'Invalid report type'
-            //         ], 400); // Added status code for better response
-            // }
+            switch ($report_type) {
+                case 'absences': // Sort the result based on total absent days
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_of_absent_days'] <=> $a['total_of_absent_days']
+                            : $a['total_of_absent_days'] <=> $b['total_of_absent_days'];
+                    });
+                    break;
+                case 'tardiness': // Sort the result based on total undertime minutes
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
+                            : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
+                    });
+                    break;
+                default:
+                    return response()->json([
+                        'message' => 'Invalid report type'
+                    ], 400); // Added status code for better response
+            }
 
             return response()->json([
                 'count' => count($results),
