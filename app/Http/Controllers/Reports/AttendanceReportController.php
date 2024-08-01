@@ -436,7 +436,7 @@ class AttendanceReportController extends Controller
 
                     break;
                 case 'tardiness':
-                    if ($total_Month_Undertime > 0) {
+                    if ($total_Days_With_Tardiness > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
