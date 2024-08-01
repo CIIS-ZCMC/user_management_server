@@ -78,7 +78,6 @@ class AttendanceReportController extends Controller
 
     private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles)
     {
-
         // Extract biometric_ids
         $biometricIds = $profiles->pluck('employeeProfile.biometric_id')->unique();
 
@@ -436,7 +435,7 @@ class AttendanceReportController extends Controller
 
                     break;
                 case 'tardiness':
-                    if ($total_Days_With_Tardiness > 0) {
+                    if ($total_Days_With_Tardiness > 0 && $total_Month_Undertime > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
@@ -841,7 +840,7 @@ class AttendanceReportController extends Controller
                     }
                     break;
                 case 'tardiness':
-                    if ($total_Month_Undertime) {
+                    if ($total_Days_With_Tardiness > 0 && $total_Month_Undertime > 0) {
                         $data[] = [
                             'id' => $employee->id,
                             'employee_biometric_id' => $employee->biometric_id,
