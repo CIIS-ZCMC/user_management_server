@@ -243,7 +243,7 @@ class EmployeeProfile extends Authenticatable
     public function findDesignation()
     {
         $assign_area = $this->assignedArea;
-        $designation = $assign_area->plantilla_id === null ? $assign_area->designation : $assign_area->plantilla->designation;
+        $designation = !isset($assign_area->plantilla_id)? $assign_area->designation ?? "" : $assign_area->plantilla->designation ?? "";
         return $designation;
     }
 

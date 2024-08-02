@@ -366,7 +366,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
                 $Entry =$this->DeviceLog->getEntryLineup($byemp);
 
                 if(count($Entry)>=1){
-                   $dtr =  DailyTimeRecords::where('dtr_date',$dtr_date)->where('biometric_id',$biometric_id);
+                   $dtr =  DailyTimeRecords::where('dtr_date',$dtr_date)->where('biometric_id',$biometric_id)->where('is_time_adjustment',0);
                    $dtr->update([
                     'is_generated'=>0
                   ]);
@@ -2275,7 +2275,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
                         'id' => $emp->id,
                         'biometric_id' => $ids->biometric_id,
                         'name' =>  $emp->name(),
-                        'position' => $emp->findDesignation()->name,
+                        'position' => $emp->findDesignation()->name ?? null,
                         'designation' =>  $sections,
                         'recentDTRdates' => $recentlog->date_time,
                         'device' => $recentlog->device_name,
@@ -2287,8 +2287,9 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
             }
             return $data;
         } catch (\Throwable $th) {
+
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
-            //throw $th;
+            return $th;
         }
     }
 
