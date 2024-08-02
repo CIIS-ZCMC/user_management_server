@@ -814,7 +814,7 @@ class Helpers
 
 
         if (!$f1_entry && !$f2_entry && $f3_entry && $f4_entry) {
-            if(count($this->getBreakSchedule($value->biometric_id,$time_stamps_req))>=1){
+            if(isset($value->biometric_id) && count($this->getBreakSchedule($value->biometric_id,$time_stamps_req))>=1){
                 if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
                 $first_Sched_firstin = $time_stamps_req['first_entry'];
                 $first_Sched_firstout = $time_stamps_req['second_entry'];
