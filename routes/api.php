@@ -2249,6 +2249,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('remove-employee-schedule', 'EmployeeScheduleController@remove');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+            Route::post('uploads', 'EmployeeScheduleController@upload');
+        });
+
 
         /**
          * Exchange Schedule Module
