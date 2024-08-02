@@ -70,6 +70,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications/seen-all', 'NotificationController@seenAllNotification');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::put('notifications/{id}/seen', 'NotificationController@seen');
         });
 
