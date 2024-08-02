@@ -184,8 +184,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-            ->whereIn('biometric_id', $biometricIds)
-            //->where('biometric_id', 565) // 494
+            //->whereIn('biometric_id', $biometricIds)
+            ->where('biometric_id', 515) // 494
             ->get();
         $data = [];
 

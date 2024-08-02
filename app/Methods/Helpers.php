@@ -795,8 +795,9 @@ class Helpers
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
 
         if ($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry) {
-            $first_Sched_firstin = $time_stamps_req['first_entry'];
-            $first_Sched_firstout = $time_stamps_req['second_entry'];
+            if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
+            $first_Sched_firstin =  $time_stamps_req['first_entry'];
+            $first_Sched_firstout =$time_stamps_req['second_entry'];
             $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
             $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
             $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
@@ -806,11 +807,15 @@ class Helpers
             $totalHalfSEcsfirst = $s2_Time_stamp_ - $s1_Time_stamp_;
 
             $noHalfEntryfirst =  $totalHalfSEcsfirst / 60;
+            }
+
+
         }
 
 
         if (!$f1_entry && !$f2_entry && $f3_entry && $f4_entry) {
             if(count($this->getBreakSchedule($value->biometric_id,$time_stamps_req))>=1){
+                if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
                 $first_Sched_firstin = $time_stamps_req['first_entry'];
                 $first_Sched_firstout = $time_stamps_req['second_entry'];
                 $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
@@ -821,6 +826,7 @@ class Helpers
                 $differenceInSeconds = $s2_Time_stamp_ - $s1_Time_stamp_;
 
                 $isonhalfPm = $differenceInSeconds / 60;
+                }
             }
         }
 

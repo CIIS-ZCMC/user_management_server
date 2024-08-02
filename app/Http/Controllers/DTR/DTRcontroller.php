@@ -276,33 +276,25 @@ function isNotEmptyFields($logs) {
     }
     return true;
 }
-public function RecomputeHours($biometric_id,$month_of,$year_of){
-    $records =   DB::table('daily_time_records')
+public function RecomputeHours($biometric_id,$month_of,$year_of,$dtr_date){
+    $records = DB::table('daily_time_records')
     ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-    ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-        $query ->where('biometric_id', $biometric_id)
-            ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-            ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-    })
-    ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-        $query->where('biometric_id', $biometric_id)
-            ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-            ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-    })
+    ->where('biometric_id', $biometric_id)
+    ->where('dtr_date', $dtr_date)
     ->get();
 
 
     foreach ($records as $val) {
+
         $bioEntry = [
-            'first_entry' => $val->first_in ?? $val->second_in,
-            'date_time' => $val->first_in ?? $val->second_in
+            'first_entry' => $val->first_in ?? $val->first_out,
+            'date_time' =>$val->first_in ?? $val->first_out
         ];
 
-     $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-        $DaySchedule = $Schedule['daySchedule'];
-        $empschedule[] = $DaySchedule;
 
-        if (count($DaySchedule) >= 1) {
+        //Get matching Schedule.
+        $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+
             $validate = [
                 (object)[
                     'id' => $val->id,
@@ -312,21 +304,22 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
                     'second_out' => $val->second_out
                 ],
             ];
+
+
             $this->helper->saveTotalWorkingHours(
                 $validate,
                 $val,
                 $val,
-                $DaySchedule,
+                $Schedule['daySchedule'] ?? [],
                 true
             );
-        }
+
     }
 }
     public function RegenerateDTR(){
 
         Log::channel("custom-dtr-log")->info('Performing RegenerateDTR @ '.date('H:i'));
         ini_set('max_execution_time', 7200);
-
 
 
         $start_date = strtotime(date('Y-m-d',strtotime('-3 days')));
@@ -349,14 +342,17 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
 
         $processedBiometricIds = [];
 
+
         foreach($data as $row){
             $year_of = $row['year_of'];
             $month_of = $row['month_of'];
-            $dtr_date = $row['dtr_date'];
-            //Get List of Device Logs Per Employee
-           $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->get();
+           $dtr_date = $row['dtr_date'];
 
-         // $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->where('biometric_id',557)->get();
+            //Get List of Device Logs Per Employee
+           //$dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->get();
+
+         $dvclogs = DeviceLogs::where("dtr_date",$dtr_date)->orderBy("created_at","asc")->get();
+
 
             foreach ($dvclogs as $value) {
                 $biometric_id = $value['biometric_id'];
@@ -365,13 +361,17 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
                 }));
                 $Entry =$this->DeviceLog->getEntryLineup($byemp);
 
+
                 if(count($Entry)>=1){
                    $dtr =  DailyTimeRecords::where('dtr_date',$dtr_date)->where('biometric_id',$biometric_id)->where('is_time_adjustment',0);
                    $dtr->update([
                     'is_generated'=>0
                   ]);
+
+
                     if($dtr->count() >= 2){
                           // DELETE DTR if no devicelogs .
+
                         $recordsToDelete = $dtr->get()->slice(1);
                         foreach ($recordsToDelete as $record) {
                             $record->delete();
@@ -382,23 +382,20 @@ public function RecomputeHours($biometric_id,$month_of,$year_of){
                     'first_entry' => $Entry[0]['date_time'] ?? $Entry[2]['date_time'],
                     'date_time' => $Entry[0]['date_time'] ?? $Entry[2]['date_time']
                 ];
+
+
                 //Get matching Schedule.
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                $this->DeviceLog->RegenerateEntry($Entry,$biometric_id,$dtr_date,$Schedule);
 
-
-               //ReCompute Hours
-               if (!in_array($biometric_id, $processedBiometricIds)) {
-                $processedBiometricIds[] = $biometric_id;
-                $this->RecomputeHours($biometric_id, $month_of, $year_of);
-            }
-
+                $this->RecomputeHours($biometric_id, $month_of, $year_of,$dtr_date);
 
             }
         }
     Log::channel("custom-dtr-log")->info('DTR REGENERATED SUCCESSFULLY @ '.date('H:i'));
     return response()->json([
-        'message'=>'DTR Succesfully ReGenerated'
+        'message'=>'DTR Succesfully ReGenerated',
+        'DatesCovered'=>$data
     ]);
 
     }

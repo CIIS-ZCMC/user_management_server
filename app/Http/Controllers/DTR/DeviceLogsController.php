@@ -547,6 +547,8 @@ class DeviceLogsController extends Controller
             if(count($DaySchedule) == 0){
                 return $this->removedDTRnoschedule($Entry[0]['dtr_date'],$Entry[0]['biometric_id']);
             }
+
+
             if(count($BreakTime)){
                 //Add here if its lunch
               //  return $this->first_in($Entry  ?? null,false,$DaySchedule);
@@ -583,6 +585,7 @@ class DeviceLogsController extends Controller
                 ->where('dtr_date',$dtrdate)
                 ->where('is_time_adjustment',0)
                 ->where('is_generated',0);
+
 
                 if($validate->count()){
                     $validate->update($dtr);
