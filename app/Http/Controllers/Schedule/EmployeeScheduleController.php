@@ -435,7 +435,6 @@ class EmployeeScheduleController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     private function generateAndAssignSchedules($employees, $employmentTypeId, $shiftType, $date)

@@ -2502,7 +2502,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // ATTENDANCE TARDINESS REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendanceReport');
+            Route::post('attendance-report', 'AttendanceReportController@report');
         });
 
         // TEST ROUTE
