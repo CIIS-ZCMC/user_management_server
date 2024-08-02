@@ -76,7 +76,7 @@ class AttendanceReportController extends Controller
     }
 
 
-    private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles)
+    private function GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles, $report_type)
     {
         // Extract biometric_ids
         $biometricIds = $profiles->pluck('employeeProfile.biometric_id')->unique();
@@ -96,7 +96,6 @@ class AttendanceReportController extends Controller
         }
 
         foreach ($profiles as $row) {
-            $Employee = EmployeeProfile::find($row->id);
             $biometric_id = $row->biometric_id;
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -177,7 +176,6 @@ class AttendanceReportController extends Controller
                     ];
                 }
             }
-
 
 
             //Official business
@@ -408,81 +406,35 @@ class AttendanceReportController extends Controller
                 return $value >= $init && $value <= $days_In_Month;
             }));
 
-            // process report type
-            switch ($report_type) {
-                case 'absences':
-                    if ($Number_Absences > 0 && $total_Month_Hour_Missed > 0) {
-                        $data[] = [
-                            'id' => $employee->id,
-                            'employee_biometric_id' => $employee->biometric_id,
-                            'employee_id' => $employee->employee_id,
-                            'employee_name' => $employee->personalInformation->employeeName(),
-                            'employment_type' => $employee->employmentType->name,
-                            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
-                            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
-                            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
-                            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
-                            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
-                            'from' => $init,
-                            'to' => $days_In_Month,
-                            'month' => $month_of,
-                            'year' => $year_of,
-                            'total_working_minutes' => $total_Month_WorkingMinutes,
-                            'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
-                            'total_overtime_minutes' => $total_Month_Overtime,
-                            // 'total_undertime_minutes' => $total_Month_Undertime,
-                            'total_hours_missed' =>       $total_Month_Hour_Missed,
-                            // 'total_days_with_tardiness' => $total_Days_With_Tardiness,
-                            'total_of_absent_days' => $Number_Absences,
-                            'total_of_present_days' => $presentCount,
-                            'total_of_absent_leave_without_pay' => count($lwop),
-                            'total_of_leave_with_pay' => count($lwp),
-                            'total_invalid_entry' => count($invalidEntry),
-                            'total_of_day_off' => count($dayoff),
-                            'schedule' => count($filtered_scheds),
-                        ];
-                    }
-
-                    break;
-                case 'tardiness':
-                    if ($total_Days_With_Tardiness > 0 && $total_Month_Undertime > 0) {
-                        $data[] = [
-                            'id' => $employee->id,
-                            'employee_biometric_id' => $employee->biometric_id,
-                            'employee_id' => $employee->employee_id,
-                            'employee_name' => $employee->personalInformation->employeeName(),
-                            'employment_type' => $employee->employmentType->name,
-                            'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
-                            'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
-                            'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
-                            'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
-                            'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
-                            'from' => $init,
-                            'to' => $days_In_Month,
-                            'month' => $month_of,
-                            'year' => $year_of,
-                            'total_working_minutes' => $total_Month_WorkingMinutes,
-                            'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
-                            'total_overtime_minutes' => $total_Month_Overtime,
-                            'total_undertime_minutes' => $total_Month_Undertime,
-                            // 'total_hours_missed' =>       $total_Month_Hour_Missed,
-                            'total_days_with_tardiness' => $total_Days_With_Tardiness,
-                            // 'total_of_absent_days' => $Number_Absences,
-                            // 'total_of_present_days' => $presentCount,
-                            'total_of_absent_leave_without_pay' => count($lwop),
-                            'total_of_leave_with_pay' => count($lwp),
-                            'total_invalid_entry' => count($invalidEntry),
-                            'total_of_day_off' => count($dayoff),
-                            'schedule' => count($filtered_scheds),
-                        ];
-                    }
-
-                    break;
-                default:
-                    return response()->json([
-                        'message' => "Invalid report type"
-                    ]);
-            }
+            $data[] = [
+                'id' => $employee->id,
+                'employee_biometric_id' => $employee->biometric_id,
+                'employee_id' => $employee->employee_id,
+                'employee_name' => $employee->personalInformation->employeeName(),
+                'employment_type' => $employee->employmentType->name,
+                'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+                'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+                'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+                'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+                'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+                'from' => $init,
+                'to' => $days_In_Month,
+                'month' => $month_of,
+                'year' => $year_of,
+                'total_working_minutes' => $total_Month_WorkingMinutes,
+                'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
+                'total_overtime_minutes' => $total_Month_Overtime,
+                // 'total_undertime_minutes' => $total_Month_Undertime,
+                'total_hours_missed' =>       $total_Month_Hour_Missed,
+                // 'total_days_with_tardiness' => $total_Days_With_Tardiness,
+                'total_of_absent_days' => $Number_Absences,
+                'total_of_present_days' => $presentCount,
+                'total_of_absent_leave_without_pay' => count($lwop),
+                'total_of_leave_with_pay' => count($lwp),
+                'total_invalid_entry' => count($invalidEntry),
+                'total_of_day_off' => count($dayoff),
+                'schedule' => count($filtered_scheds),
+            ];
         }
 
         return $data;
@@ -899,7 +851,7 @@ class AttendanceReportController extends Controller
         return $data;
     }
 
-    public function filterAttendanceReport(Request $request)
+    public function absencesReport(Request $request)
     {
         try {
             $results = collect();
@@ -1844,7 +1796,6 @@ class AttendanceReportController extends Controller
                     break;
                 case 'Unit':
                     $current_date = Carbon::now()->toDateString(); // Get current date in YYYY-MM-DD format
-
                     $query = null;
 
                     if ($year_of && $month_of) {
@@ -1920,9 +1871,8 @@ class AttendanceReportController extends Controller
                     $profiles = $profiles->merge($unit_profiles);
                     $profiles = $profiles->take($limit);
 
-
                     if ($year_of && $month_of) {
-                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
+                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles, $report_type);
                     } else if ($start_date && $end_date) {
                         $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                     } else {
@@ -2010,7 +1960,7 @@ class AttendanceReportController extends Controller
                     $profiles = $profiles->take($limit);
 
                     if ($year_of && $month_of) {
-                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $report_type, $profiles);
+                        $results = $this->GenerateDataReportPeriod($first_half, $second_half, $month_of, $year_of, $profiles);
                     } else if ($start_date && $end_date) {
                         $results =  $this->GenerateDataReportDateRange($start_date, $end_date, $report_type, $profiles);
                     } else {
@@ -2036,6 +1986,12 @@ class AttendanceReportController extends Controller
                         return $sort_order === 'desc'
                             ? $b['total_days_with_tardiness'] <=> $a['total_days_with_tardiness']
                             : $a['total_days_with_tardiness'] <=> $b['total_days_with_tardiness'];
+                    });
+                case 'undertimes':
+                    usort($results, function ($a, $b) use ($sort_order) {
+                        return $sort_order === 'desc'
+                            ? $b['total_undertime_minutes'] <=> $a['total_undertime_minutes']
+                            : $a['total_undertime_minutes'] <=> $b['total_undertime_minutes'];
                     });
                     break;
                 default:
