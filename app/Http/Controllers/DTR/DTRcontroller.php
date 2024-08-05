@@ -629,9 +629,9 @@ public function RecomputeHours($biometric_id,$month_of,$year_of,$dtr_date){
             }
             }
         } catch (\Throwable $th) {
-            return $th;
+          
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
-
+           // return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }

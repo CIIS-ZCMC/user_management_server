@@ -90,7 +90,7 @@ class DeviceLogsController extends Controller
                     'dtr_date'=>date("Y-m-d",strtotime($row['date_time'])),
                     'date_time'=>$row['date_time'],
                     'status'=>$row['status'],
-                    'is_Shifting'=>$employee->shifting,
+                    'is_Shifting'=>$employee->shifting ?? 0,
                     'schedule'=>json_encode($DaySchedule),
                     'active'=>$this->helper->isEmployee($row['biometric_id'])
                 ]);
