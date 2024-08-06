@@ -140,4 +140,8 @@ class PersonalInformation extends Model
     {
         return $this->hasOne(EmployeeProfile::class);
     }
+    public function religion()
+    {
+        return $this->belongsTo(Religion::class);
+    }
 }
