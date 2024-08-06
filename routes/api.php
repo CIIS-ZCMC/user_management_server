@@ -2460,6 +2460,14 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('employee-by-sex', 'EmployeeReportController@filterEmployeesBySex');
         });
+        // Filter Employees by PWD
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-pwd', 'EmployeeReportController@filterEmployeesByPWD');
+        });
+        // Filter Employees by Solo Parent
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-pwd', 'EmployeeReportController@filterEmployeesBySoloParent');
+        });
 
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
