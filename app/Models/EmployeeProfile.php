@@ -26,6 +26,7 @@ class EmployeeProfile extends Authenticatable
         'employee_id',
         'profile_url',
         'date_hired',
+        'user_form_link',
         'password_encrypted',
         'password_created_at',
         'password_expiration_at',
