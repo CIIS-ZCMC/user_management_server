@@ -2500,7 +2500,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
-        // ATTENDANCE TARDINESS REPORT
+        // ATTENDANCE REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('attendance-report', 'AttendanceReportController@report');
         });
