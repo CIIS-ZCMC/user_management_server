@@ -14,7 +14,8 @@ class AccessToken extends Model
     public $fillable = [
         'employee_profile_id',
         'token',
-        'token_exp'
+        'token_exp',
+        'user_form_link'
     ];
 
     public $timestamps = TRUE;
