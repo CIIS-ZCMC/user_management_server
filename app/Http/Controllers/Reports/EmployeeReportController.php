@@ -1060,16 +1060,22 @@ class EmployeeReportController extends Controller
 
             // Separate employees into categories based on their employment types
             $permanent = $employees->filter(function ($row) {
-                return in_array($row->employeeProfile->employmentType->name, ['Permanent Full-time', 'Permanent Part-time']);
+                return in_array($row->employeeProfile->employmentType->id, [1, 2]);
             });
             $permanent_cti = $employees->filter(function ($row) {
-                return $row->employeeProfile->employmentType->name === 'Permanent CTI';
+                return $row->employeeProfile->employmentType->id === 3;
             });
             $part_time = $employees->filter(function ($row) {
-                return $row->employeeProfile->employmentType->name === 'Permanent Part-time';
+                return $row->employeeProfile->employmentType->id === 2;
             });
             $full_time = $employees->filter(function ($row) {
-                return $row->employeeProfile->employmentType->name === 'Permanent Full-time';
+                return $row->employeeProfile->employmentType->id === 1;
+            });
+            $temporary = $employees->filter(function ($row) {
+                return $row->employeeProfile->employmentType->id === 4;
+            });
+            $job_order = $employees->filter(function ($row) {
+                return $row->employeeProfile->employmentType->id === 5;
             });
 
             // Sort employees by first name
@@ -1103,6 +1109,8 @@ class EmployeeReportController extends Controller
                     'permanent_cti' => COUNT($permanent_cti),
                     'total_part_time' => COUNT($part_time),
                     'total_full_time' => COUNT($full_time),
+                    'total_temporary' => COUNT($temporary),
+                    'total_job_order' => COUNT($job_order)
                 ],
                 'count' => COUNT($paginated_employees),
                 'data' =>  EmployeesDetailsReport::collection($data),
