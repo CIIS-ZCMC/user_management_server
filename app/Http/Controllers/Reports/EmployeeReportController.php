@@ -1058,14 +1058,18 @@ class EmployeeReportController extends Controller
                         ->get();
             }
 
-            $regular = $employees->filter(function ($row) {
-                return $row->employeeProfile->employment_type_id !== 4 && $row->employeeProfile->employment_type_id !== 5;
+            // Separate employees into categories based on their employment types
+            $permanent = $employees->filter(function ($row) {
+                return in_array($row->employeeProfile->employmentType->name, ['Permanent Full-time', 'Permanent Part-time']);
             });
-            $permanent =  $employees->filter(function ($row) {
-                return $row->employeeProfile->employment_type_id === 4;
+            $permanent_cti = $employees->filter(function ($row) {
+                return $row->employeeProfile->employmentType->name === 'Permanent CTI';
             });
-            $job_order = $employees->filter(function ($row) {
-                return $row->employeeProfile->employment_type_id === 5;
+            $part_time = $employees->filter(function ($row) {
+                return $row->employeeProfile->employmentType->name === 'Permanent Part-time';
+            });
+            $full_time = $employees->filter(function ($row) {
+                return $row->employeeProfile->employmentType->name === 'Permanent Full-time';
             });
 
             // Sort employees by first name
@@ -1094,11 +1098,11 @@ class EmployeeReportController extends Controller
                     'last_page' => $paginated_employees->lastPage(),
                     'has_more_pages' => $paginated_employees->hasMorePages(),
                 ],
-
                 'total_job_statuses' => [
-                    'regular' => COUNT($regular),
-                    'permanent' => COUNT($permanent),
-                    'job_order' => COUNT($job_order),
+                    'total_permanent' => COUNT($permanent),
+                    'permanent_cti' => COUNT($permanent_cti),
+                    'total_part_time' => COUNT($part_time),
+                    'total_full_time' => COUNT($full_time),
                 ],
                 'count' => COUNT($paginated_employees),
                 'data' =>  EmployeesDetailsReport::collection($data),
@@ -1334,6 +1338,7 @@ class EmployeeReportController extends Controller
             $search = $request->search;
             $page = $request->input('page', 1);  // Default to page 1 if not provided
             $perPage = $request->input('per_page', 10);  // Default to 10 items per page if not provided
+            $serviceLengthFilter = $request->input('service_length', []);  // Filter for service length intervals (5, 10, 20, 30, etc.)
 
             // Initialize an empty collection
             $employees = collect();
@@ -1473,16 +1478,32 @@ class EmployeeReportController extends Controller
                 });
             }
 
+            // Apply service length filter
+            if (!empty($serviceLengthFilter)) {
+                $employees = $employees->filter(function ($employee) use ($serviceLengthFilter) {
+                    $totalYears = $employee->service_length['total_years_zcmc_regular'];
+                    foreach ($serviceLengthFilter as $interval) {
+                        if ($totalYears >= $interval && $totalYears < $interval + 5) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            }
+
             // Calculate service length for each employee
             $employees = $employees->map(function ($employee) {
                 $employee->service_length = $this->calculateServiceLength($employee);
                 return $employee;
             });
 
-            // Sort employees by total years of service (for example, total_years_in_zcmc)
-            $employees = $employees->sortByDesc(function ($employee) {
-                return $employee->service_length['total_years_zcmc_regular'];
-            });
+            // Apply service length filter
+            if (!empty($service))
+
+                // Sort employees by total years of service (for example, total_years_in_zcmc)
+                $employees = $employees->sortByDesc(function ($employee) {
+                    return $employee->service_length['total_years_zcmc_regular'];
+                });
 
             // Paginate the results
             $currentPage = LengthAwarePaginator::resolveCurrentPage();
