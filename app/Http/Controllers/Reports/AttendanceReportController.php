@@ -69,6 +69,79 @@ class AttendanceReportController extends Controller
         ];
     }
 
+    private function getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees)
+    {
+        $data = [];
+
+        $init = 1;
+        $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+
+        if ($first_half) {
+            $days_in_month = 15;
+        } else if ($second_half) {
+            $init = 16;
+        }
+
+        foreach ($employees as $row) {
+            $biometric_id = $row->biometric_id;
+            $dtr = DB::table('daily_time_records')
+                ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->get();
+
+            $absent_days = [];
+            $present_days = [];
+
+            foreach ($dtr as $val) {
+                $day_of_month = $val->day;
+
+                if ($day_of_month < $init || $day_of_month > $days_in_month) {
+                    continue;
+                }
+
+                // Check if the record has attendance data
+                if (($val->first_in && $val->first_out) || ($val->second_in && $val->second_out)) {
+                    $present_days[] = $day_of_month;
+                } else {
+                    $absent_days[] = $day_of_month;
+                }
+            }
+
+            // Check if the employee was present for all days within the selected range
+            $is_perfect_attendance = (count($present_days) == ($days_in_month - $init + 1)) && empty($absent_days);
+
+            if ($is_perfect_attendance) {
+                $data[] = [
+                    'id' => $row->id,
+                    'employee_biometric_id' => $row->biometric_id,
+                    'employee_id' => $row->employee_id,
+                    'employee_name' => $row->personalInformation->employeeName(),
+                    'employment_type' => $row->employmentType->name,
+                    'employee_designation_name' => $row->findDesignation()['name'] ?? '',
+                    'employee_designation_code' => $row->findDesignation()['code'] ?? '',
+                    'sector' => $row->assignedArea->findDetails()['sector'] ?? '',
+                    'area_name' => $row->assignedArea->findDetails()['details']['name'] ?? '',
+                    'area_code' => $row->assignedArea->findDetails()['details']['code'] ?? '',
+                    'from' => $init,
+                    'to' => $days_in_month,
+                    'month' => $month_of,
+                    'year' => $year_of,
+                ];
+            }
+        }
+
+        return $data;
+    }
+
     private function retrieveAllEmployees()
     {
         // Fetch all assigned areas, excluding where employee_profile_id is 1
@@ -924,6 +997,17 @@ class AttendanceReportController extends Controller
                         break;
                     case 'undertime':
                         break;
+                    case 'perfect_attendance':
+                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                        $filtered_data = collect($data)->filter(function ($item) {
+                            return $item['total_of_absent_days'] > 0;
+                        });
+                        // Sort the data by total_of_absent_days in descending order
+                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                        $filtered_total_employees = $sorted_data->count();
+                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                        break;
                     default:
                         return response()->json(['message' => 'Invalid report type. Allowed types: absences, tardiness, undertime'], 400);
                 }
@@ -985,6 +1069,17 @@ class AttendanceReportController extends Controller
                                         break;
                                     case 'undertime':
                                         break;
+                                    case 'perfect_attendance':
+                                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                        $filtered_data = collect($data)->filter(function ($item) {
+                                            return $item['total_of_absent_days'] > 0;
+                                        });
+                                        // Sort the data by total_of_absent_days in descending order
+                                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                        $filtered_total_employees = $sorted_data->count();
+                                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                                        break;
                                     default:
                                         return response()->json(['message' => 'Invalid report type']);
                                 }
@@ -1016,6 +1111,17 @@ class AttendanceReportController extends Controller
                                     case 'tardiness':
                                         break;
                                     case 'undertime':
+                                        break;
+                                    case 'perfect_attendance':
+                                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                        $filtered_data = collect($data)->filter(function ($item) {
+                                            return $item['total_of_absent_days'] > 0;
+                                        });
+                                        // Sort the data by total_of_absent_days in descending order
+                                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                        $filtered_total_employees = $sorted_data->count();
+                                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
                                         break;
                                     default:
                                         return response()->json(['message' => 'Invalid report type']);
@@ -1063,6 +1169,17 @@ class AttendanceReportController extends Controller
                                         break;
                                     case 'undertime':
                                         break;
+                                    case 'perfect_attendance':
+                                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                        $filtered_data = collect($data)->filter(function ($item) {
+                                            return $item['total_of_absent_days'] > 0;
+                                        });
+                                        // Sort the data by total_of_absent_days in descending order
+                                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                        $filtered_total_employees = $sorted_data->count();
+                                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                                        break;
                                     default:
                                         return response()->json(['message' => 'Invalid report type']);
                                 }
@@ -1094,6 +1211,17 @@ class AttendanceReportController extends Controller
                                     case 'tardiness':
                                         break;
                                     case 'undertime':
+                                        break;
+                                    case 'perfect_attendance':
+                                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                        $filtered_data = collect($data)->filter(function ($item) {
+                                            return $item['total_of_absent_days'] > 0;
+                                        });
+                                        // Sort the data by total_of_absent_days in descending order
+                                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                        $filtered_total_employees = $sorted_data->count();
+                                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
                                         break;
                                     default:
                                         return response()->json(['message' => 'Invalid report type']);
@@ -1138,6 +1266,17 @@ class AttendanceReportController extends Controller
                                         break;
                                     case 'undertime':
                                         break;
+                                    case 'perfect_attendance':
+                                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                        $filtered_data = collect($data)->filter(function ($item) {
+                                            return $item['total_of_absent_days'] > 0;
+                                        });
+                                        // Sort the data by total_of_absent_days in descending order
+                                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                        $filtered_total_employees = $sorted_data->count();
+                                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                                        break;
                                     default:
                                         return response()->json(['message' => 'Invalid report type']);
                                 }
@@ -1168,6 +1307,17 @@ class AttendanceReportController extends Controller
                                     case 'tardiness':
                                         break;
                                     case 'undertime':
+                                        break;
+                                    case 'perfect_attendance':
+                                        $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                        $filtered_data = collect($data)->filter(function ($item) {
+                                            return $item['total_of_absent_days'] > 0;
+                                        });
+                                        // Sort the data by total_of_absent_days in descending order
+                                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                        $filtered_total_employees = $sorted_data->count();
+                                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
                                         break;
                                     default:
                                         return response()->json(['message' => 'Invalid report type']);
@@ -1202,6 +1352,17 @@ class AttendanceReportController extends Controller
                             case 'tardiness':
                                 break;
                             case 'undertime':
+                                break;
+                            case 'perfect_attendance':
+                                $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
+                                $filtered_data = collect($data)->filter(function ($item) {
+                                    return $item['total_of_absent_days'] > 0;
+                                });
+                                // Sort the data by total_of_absent_days in descending order
+                                $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                                $filtered_total_employees = $sorted_data->count();
+                                $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
                                 break;
                             default:
                                 return response()->json(['message' => 'Invalid report type.']);
