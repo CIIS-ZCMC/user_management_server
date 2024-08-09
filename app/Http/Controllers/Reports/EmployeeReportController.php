@@ -2929,16 +2929,16 @@ class EmployeeReportController extends Controller
             $employees = collect();
             $sector =  $request->sector;
             $area_id = $request->area_id;
-            $religion_id = $request->religion_id;
+            $religion = $request->religion;
             $search = $request->search;
             $page = $request->page ?: 1;
 
             if (!$sector && !$area_id) {
                 $employees = AssignArea::with(['employeeProfile.personalInformation'])
                     ->where('employee_profile_id', '<>', 1)
-                    ->when($religion_id, function ($query) use ($religion_id) {
-                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                            $q->where('religion_id', $religion_id);
+                    ->when($religion, function ($query) use ($religion) {
+                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                            $q->where('religion', 'like', "%{$religion}%");
                         });
                     })
                     ->get();
@@ -2949,9 +2949,9 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->when($religion_id, function ($query) use ($religion_id) {
-                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                        $q->where('religion_id', $religion_id);
+                                ->when($religion, function ($query) use ($religion) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                        $q->where('religion', 'like', "%{$religion}%");
                                     });
                                 })
                                 ->when($search, function ($query) use ($search) {
@@ -2971,9 +2971,9 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $area_id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->when($religion_id, function ($query) use ($religion_id) {
-                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                            $q->where('religion_id', $religion_id);
+                                    ->when($religion, function ($query) use ($religion) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                            $q->where('religion', 'like', "%{$religion}%");
                                         });
                                     })
                                     ->when($search, function ($query) use ($search) {
@@ -2993,9 +2993,9 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('division_id', $area_id)
                                         ->where('employee_profile_id', '<>', 1)
-                                        ->when($religion_id, function ($query) use ($religion_id) {
-                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                                $q->where('religion_id', $religion_id);
+                                        ->when($religion, function ($query) use ($religion) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                                $q->where('religion', 'like', "%{$religion}%");
                                             });
                                         })
                                         ->when($search, function ($query) use ($search) {
@@ -3015,9 +3015,9 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                             ->where('division_id', $area_id)
                                             ->where('employee_profile_id', '<>', 1)
-                                            ->when($religion_id, function ($query) use ($religion_id) {
-                                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                                    $q->where('religion_id', $religion_id);
+                                            ->when($religion, function ($query) use ($religion) {
+                                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                                    $q->where('religion', 'like', "%{$religion}%");
                                                 });
                                             })
                                             ->when($search, function ($query) use ($search) {
@@ -3041,9 +3041,9 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $area_id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->when($religion_id, function ($query) use ($religion_id) {
-                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                            $q->where('religion_id', $religion_id);
+                                    ->when($religion, function ($query) use ($religion) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                            $q->where('religion', 'like', "%{$religion}%");
                                         });
                                     })
                                     ->when($search, function ($query) use ($search) {
@@ -3063,9 +3063,9 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('division_id', $area_id)
                                         ->where('employee_profile_id', '<>', 1)
-                                        ->when($religion_id, function ($query) use ($religion_id) {
-                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                                $q->where('religion_id', $religion_id);
+                                        ->when($religion, function ($query) use ($religion) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                                $q->where('religion', 'like', "%{$religion}%");
                                             });
                                         })
                                         ->when($search, function ($query) use ($search) {
@@ -3087,9 +3087,9 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->when($religion_id, function ($query) use ($religion_id) {
-                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                        $q->where('religion_id', $religion_id);
+                                ->when($religion, function ($query) use ($religion) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                        $q->where('religion', 'like', "%{$religion}%");
                                     });
                                 })
                                 ->when($search, function ($query) use ($search) {
@@ -3109,9 +3109,9 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $area_id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->when($religion_id, function ($query) use ($religion_id) {
-                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                            $q->where('religion_id', $religion_id);
+                                    ->when($religion, function ($query) use ($religion) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                            $q->where('religion', 'like', "%{$religion}%");
                                         });
                                     })
                                     ->when($search, function ($query) use ($search) {
@@ -3131,9 +3131,9 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('division_id', $area_id)
                                         ->where('employee_profile_id', '<>', 1)
-                                        ->when($religion_id, function ($query) use ($religion_id) {
-                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                                $q->where('religion_id', $religion_id);
+                                        ->when($religion, function ($query) use ($religion) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                                $q->where('religion', 'like', "%{$religion}%");
                                             });
                                         })
                                         ->when($search, function ($query) use ($search) {
@@ -3155,9 +3155,9 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->when($religion_id, function ($query) use ($religion_id) {
-                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                        $q->where('religion_id', $religion_id);
+                                ->when($religion, function ($query) use ($religion) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                        $q->where('religion', 'like', "%{$religion}%");
                                     });
                                 })
                                 ->when($search, function ($query) use ($search) {
@@ -3177,9 +3177,9 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $area_id)
                                     ->where('employee_profile_id', '<>', 1)
-                                    ->when($religion_id, function ($query) use ($religion_id) {
-                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                            $q->where('religion_id', $religion_id);
+                                    ->when($religion, function ($query) use ($religion) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                            $q->where('religion', 'like', "%{$religion}%");
                                         });
                                     })
                                     ->when($search, function ($query) use ($search) {
@@ -3200,9 +3200,9 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-                                ->when($religion_id, function ($query) use ($religion_id) {
-                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                        $q->where('religion_id', $religion_id);
+                                ->when($religion, function ($query) use ($religion) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                        $q->where('religion', 'like', "%{$religion}%");
                                     });
                                 })
                                 ->when($search, function ($query) use ($search) {
@@ -3220,9 +3220,9 @@ class EmployeeReportController extends Controller
                         $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                             ->where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-                            ->when($religion_id, function ($query) use ($religion_id) {
-                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion_id) {
-                                    $q->where('religion_id', $religion_id);
+                            ->when($religion, function ($query) use ($religion) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
+                                    $q->where('religion', 'like', "%{$religion}%");
                                 });
                             })
                             ->when($search, function ($query) use ($search) {
