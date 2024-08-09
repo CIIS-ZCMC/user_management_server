@@ -43,6 +43,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 
 Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
     Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+    Route::post('getUserInformations', 'SessionController@getUserInfo');
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
@@ -60,6 +61,7 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 });
 
 Route::middleware('auth.cookie')->group(function () {
+
 
     Route::namespace('App\Http\Controllers')->group(function () {
 

@@ -174,6 +174,8 @@ class GenerateReportController extends Controller
         return  $this->GenerateDataReport($request);
     }
 
+
+
     public function GenerateDataReport(Request $request)
     {
         ini_set('max_execution_time', 7200);
@@ -184,8 +186,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');
         $profiles = DB::table('employee_profiles')
-        //    ->whereIn('biometric_id', $biometricIds)
-        ->whereIn('biometric_id', [515,493]) // 494
+            ->whereIn('biometric_id', $biometricIds)
+       // ->whereIn('biometric_id', [515]) // 494
             ->get();
         $data = [];
         $nightDifferentials = [];
