@@ -32,7 +32,7 @@ class EmployeesDetailsReportByReligion extends JsonResource
             'name' => $name,
             'blood_type' => $personal_information->blood_type,
             'civil_status' => $personal_information->civil_status,
-            'religion' => $personal_information->religion->name,
+            'religion' => $personal_information->religion,
             'area' => $area_details,
             'designation' => $designation,
             'employment_status' => $employment_status,
