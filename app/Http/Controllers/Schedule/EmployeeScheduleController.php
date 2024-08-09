@@ -439,11 +439,12 @@ class EmployeeScheduleController extends Controller
     public function upload(Request $request)
     {
         try {
+            // Validate the file
             $request->validate([
                 'csv_file' => 'required|mimes:csv,txt|max:2048',
             ]);
 
-
+            // Check if the file is valid
             if ($request->file('csv_file')->isValid()) {
                 $file = $request->file('csv_file');
                 $filePath = $file->storeAs('csv', time() . '.' . $file->getClientOriginalExtension());
@@ -452,20 +453,27 @@ class EmployeeScheduleController extends Controller
                 $csvData = array_map('str_getcsv', file(storage_path('app/' . $filePath)));
                 $header = array_shift($csvData);
 
-                $employees = [];
-                $time_shift = [];
-
                 foreach ($csvData as $row) {
-                    // Assuming the CSV structure based on the image provided
-                    $lastname = $row[0];
+                    $employee_id = $row[0];
+                    // $lastname = $row[0];
                     $firstname = $row[1];
                     $month = $row[2];
                     $year = $row[3];
 
-                    $employee = EmployeeProfile::with('personalInformation')->whereHas('personalInformation', function ($query) use ($lastname, $firstname) {
-                        $query->where('last_name', $lastname)->where('first_name', $firstname);
-                    })->first();
+                    // Find the employee profile
+                    // $employee = EmployeeProfile::with('personalInformation')->whereHas('personalInformation', function ($query) use ($lastname, $firstname) {
+                    //     $query->where('last_name', $lastname)
+                    //         ->where('first_name', $firstname);
+                    // })->first();
 
+                    $employee = EmployeeProfile::where('employee_id', $employee_id)->first();
+
+                    if (!$employee) {
+                        // Handle the case where employee is not found (optional)
+                        continue;
+                    }
+
+                    // Loop through each day of the month
                     for ($i = 4; $i < count($row); $i++) {
                         $shift = $row[$i];
                         switch ($shift) {
@@ -481,39 +489,59 @@ class EmployeeScheduleController extends Controller
                             case '10':
                                 $time_shift = TimeShift::where('first_in', '22:00:00')->where('first_out', '06:00:00')->first()->id;
                                 break;
-                            case 'X':
+                            case 'H':
+                                $time_shift = null;
+                                break;
+                            case '✓':
                                 $time_shift = null;
                                 break;
                             default:
-                                $time_shift = null;
+                                $time_shift = TimeShift::where('first_in', '08:00:00')->where('second_out', '17:00:00')->first()->id;
+                                break;
                         }
+
                         if ($time_shift !== null) {
-                            $month_parse = Carbon::parse($month)->format('m');
+                            $month_parse = Carbon::parse("first day of $month $year")->format('m');
                             $day = $i - 3; // Because the first 4 columns are Lastname, Firstname, Month, Year
-                            $date = Carbon::parse($year, $month_parse, $day)->format('Y-m-d');
+                            $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
+
+                            $isweekend = (Carbon::parse($date))->isWeekend();
 
                             // Create or get the schedule
                             $schedule = Schedule::firstOrCreate(
-                                ['date' => $date, 'time_shift_id' => $time_shift],
-                                ['time_shift_id' => $time_shift]
+                                [
+                                    'date' => $date,
+                                    'time_shift_id' => $time_shift,
+                                    'is_weekend' => $isweekend ? 1 : 0
+                                ],
+                                [
+                                    'date' => $date,
+                                    'time_shift_id' => $time_shift,
+                                    'is_weekend' => $isweekend ? 1 : 0
+                                ],
                             );
 
-                            return $employee = EmployeeSchedule::create([
-                                'employee_profile_id' => $employee->id,
-                                'schedule_id' => $schedule->id,
-                            ]);
+                            // Create or update employee schedule
+                            EmployeeSchedule::updateOrCreate(
+                                [
+                                    'employee_profile_id' => $employee->id,
+                                    'schedule_id' => $schedule->id,
+                                ],
+                                [
+                                    'employee_profile_id' => $employee->id,
+                                    'schedule_id' => $schedule->id,
+                                ]
+                            );
                         }
                     }
                 }
 
-                return 'Success';
+                return response()->json(['message' => 'CSV data imported successfully!'], Response::HTTP_OK);
             }
-
+            return response()->json(['message' => 'Invalid file uploaded.'], Response::HTTP_NOT_ACCEPTABLE);
         } catch (\Throwable $th) {
             throw $th;
         }
-
-
     }
 
     private function generateAndAssignSchedules($employees, $employmentTypeId, $shiftType, $date)
