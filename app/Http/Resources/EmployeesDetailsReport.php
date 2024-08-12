@@ -53,6 +53,9 @@ class EmployeesDetailsReport extends JsonResource
                 'total_months_zcmc_as_jo' => $this->service_length['total_months_zcmc_as_jo'],
                 'total_years_zcmc_as_jo' => $this->service_length['total_years_zcmc_as_jo'],
                 'total_remaining_months_zcmc_as_jo' => $this->service_length['total_remaining_months_zcmc_as_jo'],
+                'total_months_outside_zcmc' => $this->service_length['total_months_outside_zcmc'], // New field
+                'total_years_outside_zcmc' => $this->service_length['total_years_outside_zcmc'],   // New field
+                'total_remaining_months_outside_zcmc' => $this->service_length['total_remaining_months_outside_zcmc'], // New field
             ]);
         }
 
