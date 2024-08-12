@@ -1992,6 +1992,21 @@ class EmployeeReportController extends Controller
                 return $employee->employeeProfile->personalInformation->first_name;
             });
 
+            $male_count = AssignArea::with(['employeeProfile.personalInformation'])
+                ->where('employee_profile_id', '<>', 1)
+                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                    $query->where('sex', 'Male');
+                })->count();
+            $female_count = AssignArea::with(['employeeProfile.personalInformation'])
+                ->where('employee_profile_id', '<>', 1)
+                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                    $query->where('sex', 'Female');
+                })->count();
+
+            $total_count = $male_count + $female_count;
+            $male_percentage = floatval($total_count > 0 ? number_format(($male_count / $total_count) * 100, 2) : 0);
+            $female_percentage = floatval($total_count > 0 ? number_format(($female_count / $total_count) * 100, 2) : 0);
+
             // Paginate the results
             $current_page = LengthAwarePaginator::resolveCurrentPage();
             $paginated_employees = new LengthAwarePaginator(
@@ -2002,7 +2017,7 @@ class EmployeeReportController extends Controller
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
 
-            // TRansform and paginate employee data
+            // Transform and paginate employee data
             $data = $paginated_employees;
 
             return response()->json([
@@ -2014,6 +2029,10 @@ class EmployeeReportController extends Controller
                     'has_more_pages' => $paginated_employees->hasMorePages(),
                 ],
                 'count' => COUNT($paginated_employees),
+                'female_count' => $female_count,
+                'male_count' => $male_count,
+                'female_percentage' => $female_percentage,
+                'male_percentage' => $male_percentage,
                 'data' => EmployeesDetailsReportBySex::collection($data),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
@@ -3246,7 +3265,7 @@ class EmployeeReportController extends Controller
             }
 
             // Sort employees by total years of service safely
-            $employees = $employees->sortByDesc(function ($employee) {
+            $employees = $employees->sortBy(function ($employee) {
                 return $employee->service_length['total_years_zcmc_regular'] ?? 0;
             });
 
