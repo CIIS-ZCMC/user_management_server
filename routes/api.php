@@ -2470,7 +2470,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees by Solo Parent
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-pwd', 'EmployeeReportController@filterEmployeesBySoloParent');
+            Route::post('employee-by-solo-parent', 'EmployeeReportController@filterEmployeesBySoloParent');
         });
         // Filter Employees by Religion
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
