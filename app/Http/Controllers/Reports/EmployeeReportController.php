@@ -1693,6 +1693,11 @@ class EmployeeReportController extends Controller
             if (!$sector && !$area_id) {
                 $employees = AssignArea::with(['employeeProfile.personalInformation'])
                     ->where('employee_profile_id', '<>', 1)
+                    ->when($sex, function ($query) use ($sex) {
+                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
+                            $q->where('sex', $sex);
+                        });
+                    })
                     ->get();
             } else {
                 switch ($sector) {
