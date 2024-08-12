@@ -2133,39 +2133,50 @@ class EmployeeProfileController extends Controller
     }
 
     /**
-     * Display a paginated and searchable list of employee profiles.
+     * Display a searchable list of employee profiles.
      *
-     * This method retrieves a paginated list of active employee profiles
-     * and returns them in a JSON response along with pagination metadata.
-     * The data is fetched in chunks of 10 rows per page to improve performance.
-     * If a search term is provided, the method filters the employee profiles
-     * based on the search term before applying pagination.
+     * This method retrieves a list of active employee profiles
+     * and returns them in a JSON response. If a search term is provided,
+     * the method filters the employee profiles based on the search term.
      *
      * @param \Illuminate\Http\Request $request The incoming HTTP request.
-     * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles and pagination metadata.
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles.
      */
     public function indexDropdown(Request $request)
     {
-        try 
-
+        try {
             // Create the base query for active employee profiles, excluding the profile with id 1
             $query = EmployeeProfile::with('personalInformation')
                 ->whereNotIn('employee_profiles.id', [1])
-                ->whereNull('employee_profiles.deactivated_at')->get();
+                ->whereNull('employee_profiles.deactivated_at');
 
-           
-            // Return a JSON response with the paginated employee profiles and pagination metadata
+            // Apply search filter if a search term is provided
+            if ($search = $request->input('search')) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('employee_profiles.first_name', 'like', "%{$search}%")
+                        ->orWhere('employee_profiles.last_name', 'like', "%{$search}%")
+                        ->orWhereHas('personalInformation', function ($query) use ($search) {
+                            $query->where('personal_informations.email', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            // Execute the query to get all filtered results
+            $employeeProfiles = $query->get();
+
+            // Return a JSON response with the employee profiles
             return response()->json([
-                'data' => EmployeeProfileResource::collection($query), // Current page items
-                'total' => count($query), // Total number of items
+                'data' => EmployeeProfileResource::collection($employeeProfiles), // All matching employee profiles
+                'total' => count($employeeProfiles), // Total number of items
                 'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             // Log any exceptions and return an error response
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'indexDropdown', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Display a paginated and searchable list of employee profiles.
