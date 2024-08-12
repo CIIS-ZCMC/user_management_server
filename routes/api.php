@@ -936,6 +936,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-profile-all-dropdown', 'EmployeeProfileController@indexDropdown');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employee-profile-bytypes', 'EmployeeProfileController@getEmployeeListByEmployementTypes');
         });
 

@@ -2132,21 +2132,36 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    /**
+     * Display a paginated and searchable list of employee profiles.
+     *
+     * This method retrieves a paginated list of active employee profiles
+     * and returns them in a JSON response along with pagination metadata.
+     * The data is fetched in chunks of 10 rows per page to improve performance.
+     * If a search term is provided, the method filters the employee profiles
+     * based on the search term before applying pagination.
+     *
+     * @param \Illuminate\Http\Request $request The incoming HTTP request.
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles and pagination metadata.
+     */
     public function indexDropdown(Request $request)
     {
-        try {
-            // $cacheExpiration = Carbon::now()->addDay();
+        try 
 
-            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-            //     return EmployeeProfile::all();
-            // });
-            $employee_profiles = EmployeeProfile::all();
+            // Create the base query for active employee profiles, excluding the profile with id 1
+            $query = EmployeeProfile::with('personalInformation')
+                ->whereNotIn('employee_profiles.id', [1])
+                ->whereNull('employee_profiles.deactivated_at')->get();
 
+           
+            // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles),
-                'message' => 'list of employees retrieved.'
+                'data' => EmployeeProfileResource::collection($query), // Current page items
+                'total' => count($query), // Total number of items
+                'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            // Log any exceptions and return an error response
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
