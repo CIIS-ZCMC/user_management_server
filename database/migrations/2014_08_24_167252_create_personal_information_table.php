@@ -23,6 +23,7 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->string('place_of_birth');
             $table->string('civil_status');
+            $table->string('religion')->nullable();
             $table->date('date_of_marriage')->nullable();
             $table->string('citizenship')->default('Filipino');
             $table->string('country')->default('Philippines');

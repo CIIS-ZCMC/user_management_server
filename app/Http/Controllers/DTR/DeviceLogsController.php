@@ -24,6 +24,28 @@ class DeviceLogsController extends Controller
 
     }
 
+    public function ClearDeviceLogs($startDate){
+        if(!$startDate){
+            $startDate = date('Y-m-d');
+        }
+        /**
+         * Deletion of Device logs stored from Database
+         * Every 3 months from current Date
+         */
+        $startDateTime = Carbon::parse($startDate);
+        $currentDateTime = Carbon::now();
+        $diffInMonths = $currentDateTime->diffInMonths($startDateTime, false);
+        if ($diffInMonths <= 3 && $diffInMonths >= 0) {
+            $threeMonthsFromStartDate = $startDateTime->copy()->sub("9 days");
+
+            $date = $threeMonthsFromStartDate->format('Y-m-d');
+            DeviceLogs::where('dtr_date',"<=",$date)->delete();
+            Log::channel("custom-dtr-log")->info('DEVICE LOGS CLEARED FROM  '.$date.' and LATE on.. '.date('Y-m-d H:i'));
+        } else {
+            return null;
+        }
+    }
+
     public function CheckDTR($biometric_id) {
         $data = DB::table('device_logs')
                   ->where('biometric_id', $biometric_id)
@@ -68,7 +90,7 @@ class DeviceLogsController extends Controller
                     'dtr_date'=>date("Y-m-d",strtotime($row['date_time'])),
                     'date_time'=>$row['date_time'],
                     'status'=>$row['status'],
-                    'is_Shifting'=>$employee->shifting,
+                    'is_Shifting'=>$employee->shifting ?? 0,
                     'schedule'=>json_encode($DaySchedule),
                     'active'=>$this->helper->isEmployee($row['biometric_id'])
                 ]);
@@ -217,7 +239,7 @@ class DeviceLogsController extends Controller
         $entryTime = Carbon::createFromFormat('H:i:s', $entryTime);
 
         // Define the time allowance (4 hours)
-        $timeAllowance = CarbonInterval::hours(4);
+        $timeAllowance = CarbonInterval::hours(3);
 
         // Calculate the start and end of the allowed window
         $startWindow = $timeSched->copy()->sub($timeAllowance);
@@ -257,8 +279,10 @@ class DeviceLogsController extends Controller
 
 
 
+
         //CHECK Devicelogs
         $dvl = DeviceLogs::where('dtr_date',$tomorrow)->where('biometric_id',$biometric_id)->get();
+
 
 
         if($dvl->count()){
@@ -275,12 +299,15 @@ class DeviceLogsController extends Controller
             //Delete DTR containing the data/
             $dtr = DailyTimeRecords::where('dtr_date',$dvl->first()->dtr_date)
             ->where('first_in',$dvl->first()->date_time);
+
             if($dtr->get()->count()){
                 $dtr->delete();
 
             }
-            if($this->withinSchedule($timeSched,date('H:i:s',strtotime($dvl->first()->date_time)))){
-                return $dvl->first()->date_time;
+            foreach($dvl as $dlogs){
+                if($this->withinSchedule($timeSched,date('H:i:s',strtotime($dlogs->date_time)))){
+                    return $dlogs->date_time;
+                }
             }
         }
     }
@@ -342,7 +369,8 @@ class DeviceLogsController extends Controller
     public function ConsiderNightToDay($datetime) {
              $hour =date('H',strtotime($datetime));
 
-        if ($hour >= 20 && $hour < 24) {
+
+        if ($hour >= 17 && $hour < 24) {
             return true;
         } else {
             return false;
@@ -410,17 +438,30 @@ class DeviceLogsController extends Controller
     private function first_out($datetime,$is_shifter,$DaySchedule){
 
         if($this->getEntries($datetime,$DaySchedule)['firstEntry']){
+
+
                 if($this->getEntries($datetime,$DaySchedule)['firstEntry']){
 
-                    if(count($this->getEntries($datetime,$DaySchedule)['secondentry'])  == 3){
-                        return $this->getEntries($datetime,$DaySchedule)['secondentry'][1]['date_time']  ;
-                    }else if (count($this->getEntries($datetime,$DaySchedule)['secondentry']) == 2) {
-                        return $this->getEntries($datetime,$DaySchedule)['secondentry'][0]['date_time']  ;
+                    if($this->ConsiderNightToDay($this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['date_time'])){
+
+                        if(count($this->getEntries($datetime,$DaySchedule)['secondentry'])  == 3){
+                            return $this->getEntries($datetime,$DaySchedule)['secondentry'][1]['date_time']  ;
+                        }else if (count($this->getEntries($datetime,$DaySchedule)['secondentry']) == 2) {
+                            return $this->getEntries($datetime,$DaySchedule)['secondentry'][0]['date_time']  ;
+                        }
+
+                    }else {
+                      //  return $this->getEntries($datetime,$DaySchedule)['secondentry'];
+
+                        return $this->getEntries($datetime,$DaySchedule)['secondentry'][0]['date_time'] ?? null  ;
                     }
+
 
         }
 
+
         if($this->ConsiderNightToDay($this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['date_time'])){
+
             $biometric_id = $this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['biometric_id'];
 
             return $this->getAdvanceEntry($this->getEntries($datetime,$DaySchedule)['firstEntry'][0]['date_time'],$biometric_id,$DaySchedule['second_entry']);
@@ -431,11 +472,26 @@ class DeviceLogsController extends Controller
         return null;
     }
 
-    private function second_in($datetime,$hasbreak,$DaySchedule){
+    private function second_in($datetime, $hasbreak, $DaySchedule)
+    {
+        $entries = $this->getEntries($datetime, $DaySchedule);
+        $thirdEntry = $entries['thirdentry'] ?? null;
 
-        return $this->getEntries($datetime,$DaySchedule)['thirdentry'][1]['date_time'] ?? null;
+        if ($thirdEntry === null) {
+            return null;
+        }
 
+        if (isset($thirdEntry[1]['date_time'])) {
+            return $thirdEntry[1]['date_time'];
+        }
+
+        if (isset($thirdEntry[0]['date_time'])) {
+            return $thirdEntry[0]['date_time'];
+        }
+
+        return null;
     }
+
 
     private function second_out($datetime,$hasbreak,$DaySchedule){
         $allowed = [
@@ -466,6 +522,11 @@ class DeviceLogsController extends Controller
                 }
             }
         }
+
+        DB::table('daily_time_records')
+        ->whereRaw('DATE(dtr_date) != DATE(first_in)')
+        ->delete();
+
         if($count == 4){
             DailyTimeRecords::where('biometric_id',$biometric_id)
             ->where('dtr_date',$dtrDate)
@@ -473,47 +534,22 @@ class DeviceLogsController extends Controller
             return false;
         }
 
+
         return true;
     }
-    public function RegenerateEntry($deviceLogs,$biometric_id){
+    public function RegenerateEntry($deviceLogs,$biometric_id,$dtrdate,$Schedule){
         try {
-            $Entry = $this->getEntryLineup($deviceLogs);
-
-            $bioEntry = [
-                'first_entry' => $Entry[0]['date_time'] ?? $Entry[2]['date_time'],
-                'date_time' => $Entry[0]['date_time'] ?? $Entry[2]['date_time']
-            ];
-
-
-
-            $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-
-            // $DaySchedule = [
-            //     "scheduleDate" => "2024-07-11",
-            //     "first_entry" => "22:00:00",
-            //     "second_entry" => "06:00:00",
-            //     "third_entry" =>null,
-            //     "last_entry" =>null,
-            //     "total_hours" => 8,
-            //     "arrival_departure" => "8AM-12PM|1PM-5PM"
-            // ];
-
-
-         $DaySchedule =$Schedule['daySchedule'];
-
-
-
+            $Entry = $deviceLogs;
+            $DaySchedule =$Schedule['daySchedule'];
             $BreakTime = $Schedule['break_Time_Req'];
-
             $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
+
             if(count($DaySchedule) == 0){
                 return $this->removedDTRnoschedule($Entry[0]['dtr_date'],$Entry[0]['biometric_id']);
             }
 
 
-
-
-            if($BreakTime){
+            if(count($BreakTime)){
                 //Add here if its lunch
               //  return $this->first_in($Entry  ?? null,false,$DaySchedule);
               $dtr = [
@@ -525,8 +561,6 @@ class DeviceLogsController extends Controller
               ];
 
             $dtr =  $this->UniqueEntry($dtr);
-
-
 
 
             }else {
@@ -541,101 +575,34 @@ class DeviceLogsController extends Controller
               ];
 
             }
+
             $dtr = $this->adjustEntries($dtr);
 
 
-            if($this->cleanEntry($dtr,$biometric_id,$Entry[0]['dtr_date'])){
-              DailyTimeRecords::where('biometric_id',$biometric_id)
-            ->where('dtr_date',$Entry[0]['dtr_date'])
-            ->where('is_time_adjustment',0)
-            ->where('is_generated',0)
-            ->update($dtr);
+            if($this->cleanEntry($dtr,$biometric_id,$dtrdate)){
 
+                $validate =  DailyTimeRecords::where('biometric_id',$biometric_id)
+                ->where('dtr_date',$dtrdate)
+                ->where('is_time_adjustment',0)
+                ->where('is_generated',0);
+
+
+                if($validate->count()){
+                    $validate->update($dtr);
+                }else {
+                    $data = [
+                        'dtr_date'=>$dtrdate,
+                        'biometric_id'=>$biometric_id ?? null,
+                    ];
+                   $dtr =  array_merge($data,$dtr);
+                    DailyTimeRecords::create($dtr);
+                }
             }
-
-
         } catch (\Throwable $th) {
            // return $th;
            Log::channel("custom-dtr-log")->info('Error: '.$th->getMessage());
 
         }
     }
-    public function GenerateEntry($deviceLogs,$dtrdate,$generateEntry){
-        /**
-         * TO DO..
-         * disallow pulling of DTR if no schedule attached..
-         *
-         */
-        $Entry = $this->getEntryLineup($deviceLogs);
 
-        if($generateEntry){
-            foreach ($Entry as $attendance_Log) {
-                $dtrDates[] = $attendance_Log['dtr_date'];
-            }
-            $dtrDates = array_values(array_unique($dtrDates));
-            foreach($dtrDates as $dates){
-               $ent = array_values(array_filter($Entry,function($x) use($dates){
-                    return $x['dtr_date'] === $dates;
-                }));
-
-                $bioEntry = [
-                    'first_entry' => $ent[0]['date_time'] ?? $ent[2]['date_time'],
-                    'date_time' => $ent[0]['date_time'] ?? $ent[2]['date_time']
-                ];
-
-
-                $Schedule = $this->helper->CurrentSchedule($ent[0]['biometric_id'], $bioEntry, false);
-
-                $DaySchedule = $Schedule['daySchedule'];
-
-                $BreakTime = $Schedule['break_Time_Req'];
-                $dtr = ['dtr_date'=>$Entry[0]['dtr_date']];
-                if(!isset($DaySchedule)){
-                    return $this->removedDTRnoschedule($Entry[0]['dtr_date'],$Entry[0]['biometric_id']);
-                }
-
-                if($BreakTime){
-                    //Add here if its lunch
-                  $dtr = [
-                    'dtr_date'=>$dates,
-                    'biometric_id'=>$ent[0]['biometric_id'] ?? null,
-                    'first_in'=>$this->first_in($Entry  ?? null,false,$DaySchedule),
-                    'first_out'=>$this->first_out($Entry ?? null,false,$DaySchedule),
-                    'second_in'=>$this->second_in($Entry ?? null,true,$DaySchedule),
-                    'second_out'=>$this->second_out($Entry ?? null,true,$DaySchedule),
-                    'is_generated'=>1
-                  ];
-                }else {
-                   $dtr = [
-                    'dtr_date'=>$dates,
-                    'biometric_id'=>$ent[0]['biometric_id'] ?? null,
-                    'first_in'=>$this->first_in($Entry ?? null,true,$DaySchedule),
-                    'first_out'=>$this->first_out($Entry ?? null,true,$DaySchedule),
-                    'second_in'=>null,
-                    'second_out'=>null,
-                    'is_generated'=>1
-                  ];
-                }
-                $dtr = $this->UniqueEntry($dtr);
-                $dtr = $this->adjustEntries($dtr);
-
-
-                if($this->cleanEntry($dtr,$ent[0]['biometric_id'],$Entry[0]['dtr_date'])){
-
-                    DailyTimeRecords::create($dtr);
-                  }
-
-            }
-            return;
-        }
-        // DailyTimeRecords::create([
-        //     'dtr_date'=>$dtrdate,
-        //     'biometric_id'=>$Entry[0]['biometric_id'] ?? null,
-        //     'first_in'=>$this->first_in($Entry  ?? null,false,$DaySchedule),
-        //     'first_out'=>$this->first_out($Entry ?? null,false,$DaySchedule),
-        //     'second_in'=>$this->second_in($Entry ?? null,true,$DaySchedule),
-        //     'second_out'=>$this->second_out($Entry ?? null,true,$DaySchedule),
-        //     'is_generated'=>1
-        // ]);
-    }
 }
