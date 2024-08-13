@@ -369,6 +369,8 @@ class EmployeeReportController extends Controller
                 }
             }
 
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->employeeProfile->personalInformation->first_name;
@@ -701,6 +703,8 @@ class EmployeeReportController extends Controller
                     return response()->json(['message', 'Invalid input. Please input a valid sector'], 400);
             }
 
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->employeeProfile->personalInformation->first_name;
@@ -1093,6 +1097,9 @@ class EmployeeReportController extends Controller
             $job_order = $employees->filter(function ($row) {
                 return $row->employeeProfile->employmentType->id === 5;
             });
+
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
 
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
@@ -1668,6 +1675,9 @@ class EmployeeReportController extends Controller
                             ->get();
                 }
             }
+
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->employeeProfile->personalInformation->first_name;
@@ -2005,6 +2015,9 @@ class EmployeeReportController extends Controller
                         return response()->json(['message', 'Invalid input. Please input a valid sector'], 400);
                 }
             }
+
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->employeeProfile->personalInformation->first_name;
@@ -2361,6 +2374,9 @@ class EmployeeReportController extends Controller
                         return response()->json(['message', 'Invalid input. Please input a valid sector'], 400);
                 }
             }
+
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->employeeProfile->personalInformation->first_name;
@@ -2698,6 +2714,9 @@ class EmployeeReportController extends Controller
                         return response()->json(['message', 'Invalid input. Please input a valid sector'], 400);
                 }
             }
+
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->employeeProfile->personalInformation->first_name;
@@ -3258,6 +3277,8 @@ class EmployeeReportController extends Controller
                 });
             }
 
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
             // Sort employees by total years of service safely
             $employees = $employees->sortBy(function ($employee) {
                 return $employee->service_length['total_years_zcmc_regular'] ?? 0;
