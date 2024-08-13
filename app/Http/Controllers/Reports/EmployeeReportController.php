@@ -1810,6 +1810,19 @@ class EmployeeReportController extends Controller
                                 ->get()
                         );
 
+                        // Count male and female by section
+                        $male_count_by_area += AssignArea::where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                $query->where('sex', 'Male');
+                            })->count();
+
+                        $female_count_by_area += AssignArea::where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                $query->where('sex', 'Female');
+                            })->count();
+
                         $departments = Department::where('division_id', $area_id)->get();
                         foreach ($departments as $department) {
                             $employees = $employees->merge(
@@ -1831,6 +1844,19 @@ class EmployeeReportController extends Controller
                                     })
                                     ->get()
                             );
+
+                            // Count male and female by section
+                            $male_count_by_area += AssignArea::where('department_id', $department->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                    $query->where('sex', 'Male');
+                                })->count();
+
+                            $female_count_by_area += AssignArea::where('department_id', $department->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                    $query->where('sex', 'Female');
+                                })->count();
 
                             $sections = Section::where('department_id', $department->id)->get();
                             foreach ($sections as $section) {
@@ -1854,6 +1880,19 @@ class EmployeeReportController extends Controller
                                         ->get()
                                 );
 
+                                // Count male and female by section
+                                $male_count_by_area += AssignArea::where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                        $query->where('sex', 'Male');
+                                    })->count();
+
+                                $female_count_by_area += AssignArea::where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                        $query->where('sex', 'Female');
+                                    })->count();
+
                                 $units = Unit::where('section_id', $section->id)->get();
                                 foreach ($units as $unit) {
                                     $employees = $employees->merge(
@@ -1875,22 +1914,97 @@ class EmployeeReportController extends Controller
                                             })
                                             ->get()
                                     );
+
+                                    // Count male and female by section
+                                    $male_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                            $query->where('sex', 'Male');
+                                        })->count();
+
+                                    $female_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                            $query->where('sex', 'Female');
+                                        })->count();
                                 }
                             }
+                        }
 
-                            // Count male and female by division
-                            $male_count_by_area += AssignArea::where('division_id', $area_id)
+
+                        // Get sections directly under the division (if any) that are not under any department
+                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($sex, function ($query) use ($sex) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
+                                            $q->where('sex', $sex);
+                                        });
+                                    })
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            // Count male and female by section
+                            $male_count_by_area += AssignArea::where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Male');
                                 })->count();
 
-                            $female_count_by_area += AssignArea::where('division_id', $area_id)
+                            $female_count_by_area += AssignArea::where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Female');
                                 })->count();
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($sex, function ($query) use ($sex) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
+                                                $q->where('sex', $sex);
+                                            });
+                                        })
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
+                                        ->get()
+                                );
+
+                                // Count male and female by section
+                                $male_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                        $query->where('sex', 'Male');
+                                    })->count();
+
+                                $female_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                        $query->where('sex', 'Female');
+                                    })->count();
+                            }
                         }
+
                         break;
 
                     case 'department':
@@ -1914,6 +2028,19 @@ class EmployeeReportController extends Controller
                                 ->get()
                         );
 
+                        // Count male and female by section
+                        $male_count_by_area += AssignArea::where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                $query->where('sex', 'Male');
+                            })->count();
+
+                        $female_count_by_area += AssignArea::where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                $query->where('sex', 'Female');
+                            })->count();
+
                         $sections = Section::where('department_id', $area_id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
@@ -1936,6 +2063,19 @@ class EmployeeReportController extends Controller
                                     ->get()
                             );
 
+                            // Count male and female by section
+                            $male_count_by_area += AssignArea::where('section_id', $section->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                    $query->where('sex', 'Male');
+                                })->count();
+
+                            $female_count_by_area += AssignArea::where('section_id', $section->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                    $query->where('sex', 'Female');
+                                })->count();
+
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
@@ -1957,21 +2097,21 @@ class EmployeeReportController extends Controller
                                         })
                                         ->get()
                                 );
+
+                                // Count male and female by section
+                                $male_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                        $query->where('sex', 'Male');
+                                    })->count();
+
+                                $female_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                        $query->where('sex', 'Female');
+                                    })->count();
                             }
                         }
-
-                        // Count male and female by department
-                        $male_count_by_area += AssignArea::where('department_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($query) {
-                                $query->where('sex', 'Male');
-                            })->count();
-
-                        $female_count_by_area += AssignArea::where('department_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($query) {
-                                $query->where('sex', 'Female');
-                            })->count();
                         break;
 
                     case 'section':
@@ -1995,6 +2135,19 @@ class EmployeeReportController extends Controller
                                 ->get()
                         );
 
+                        // Count male and female by section
+                        $male_count_by_area += AssignArea::where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                $query->where('sex', 'Male');
+                            })->count();
+
+                        $female_count_by_area += AssignArea::where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                $query->where('sex', 'Female');
+                            })->count();
+
                         $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
@@ -2016,20 +2169,20 @@ class EmployeeReportController extends Controller
                                     })
                                     ->get()
                             );
+
+                            // Count male and female by section
+                            $male_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                    $query->where('sex', 'Male');
+                                })->count();
+
+                            $female_count_by_area += AssignArea::where('unit_id', $unit->id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->whereHas('employeeProfile.personalInformation', function ($query) {
+                                    $query->where('sex', 'Female');
+                                })->count();
                         }
-
-                        // Count male and female by section
-                        $male_count_by_area += AssignArea::where('section_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($query) {
-                                $query->where('sex', 'Male');
-                            })->count();
-
-                        $female_count_by_area += AssignArea::where('section_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->whereHas('employeeProfile.personalInformation', function ($query) {
-                                $query->where('sex', 'Female');
-                            })->count();
                         break;
 
                     case 'unit':
