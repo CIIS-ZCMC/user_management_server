@@ -2344,7 +2344,14 @@ class AttendanceReportController extends Controller
                 $employees = $this->retrieveAllEmployees();
                 switch ($report_type) {
                     case 'absences':
-                        $data = $this->AbsencesByPeriod($first_half, $second_half, $month_of, $year_of, $employees);
+                        if ($by_date_range) {
+                            $data = $this->AbsencesByDateRange($start_date, $end_date, $employees);
+                        } elseif ($by_period) {
+                            $data = $this->AbsencesByPeriod($first_half, $second_half, $month_of, $year_of, $employees);
+                        } else {
+                            return response()->json(['message' => 'Please provide either a valid date range or month and year for the report.'], 400);
+                        }
+
                         $filtered_data = collect($data)->filter(function ($item) {
                             return $item['total_of_absent_days'] > 0;
                         });
@@ -2355,6 +2362,21 @@ class AttendanceReportController extends Controller
                         $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
                         break;
                     case 'tardiness':
+                        if ($by_date_range) {
+                            $data = $this->TardinessByDateRange($start_date, $end_date, $employees);
+                        } elseif ($by_period) {
+                            $data = $this->TardinessByPeriod($first_half, $second_half, $month_of, $year_of, $employees);
+                        } else {
+                            return response()->json(['message' => 'Please provide either a valid date range or month and year for the report.'], 400);
+                        }
+                        $filtered_data = collect($data)->filter(function ($item) {
+                            return $item['total_of_absent_days'] > 0;
+                        });
+                        // Sort the data by total_of_absent_days in descending order
+                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
+
+                        $filtered_total_employees = $sorted_data->count();
+                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
                         break;
                     case 'undertime':
                         if ($by_date_range) {
