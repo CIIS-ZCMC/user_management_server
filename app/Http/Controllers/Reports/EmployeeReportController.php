@@ -2789,7 +2789,7 @@ class EmployeeReportController extends Controller
                         foreach ($departments as $department) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                    ->where('division_id', $area_id)
+                                    ->where('division_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2811,7 +2811,7 @@ class EmployeeReportController extends Controller
                             foreach ($sections as $section) {
                                 $employees = $employees->merge(
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                        ->where('division_id', $area_id)
+                                        ->where('division_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2833,7 +2833,7 @@ class EmployeeReportController extends Controller
                                 foreach ($units as $unit) {
                                     $employees = $employees->merge(
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                            ->where('division_id', $area_id)
+                                            ->where('division_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($religion, function ($query) use ($religion) {
                                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2859,7 +2859,7 @@ class EmployeeReportController extends Controller
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                    ->where('division_id', $area_id)
+                                    ->where('division_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2881,7 +2881,7 @@ class EmployeeReportController extends Controller
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                        ->where('division_id', $area_id)
+                                        ->where('division_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2927,7 +2927,7 @@ class EmployeeReportController extends Controller
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                    ->where('division_id', $area_id)
+                                    ->where('division_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2949,7 +2949,7 @@ class EmployeeReportController extends Controller
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                        ->where('division_id', $area_id)
+                                        ->where('division_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -2995,7 +2995,7 @@ class EmployeeReportController extends Controller
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
-                                    ->where('division_id', $area_id)
+                                    ->where('division_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
