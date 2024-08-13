@@ -1381,6 +1381,19 @@ class EmployeeReportController extends Controller
             if (!$sector && !$area_id) {
                 $employees = AssignArea::with(['employeeProfile.personalInformation'])
                     ->where('employee_profile_id', '<>', 1)
+                    ->when($barangay, function ($query) use ($barangay) {
+                        $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
+                            $q->where('address', 'LIKE', '%' . $barangay . '%');
+                        });
+                    })
+                    ->when($search, function ($query) use ($search) {
+                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                            if (!empty($search)) {
+                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                            }
+                        });
+                    })
                     ->get();
             } else {
                 switch ($sector) {
