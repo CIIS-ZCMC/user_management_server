@@ -27,7 +27,7 @@ class EmployeesDetailsReport extends JsonResource
         $employment_status = $employment_type->name;
 
         $data = [
-            'id' => $this->id,
+            'id' => $employee_profile->id,
             'employee_id' => $employee_profile->employee_id,
             'name' => $name,
             'blood_type' => $personal_information->blood_type,
