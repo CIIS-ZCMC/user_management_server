@@ -3464,6 +3464,10 @@ class EmployeeReportController extends Controller
                     return stripos($employeeName, $search) !== false;
                 });
             }
+            // Sort employees by total years of service in descending order
+            $employees = $employees->sortByDesc(function ($employee) {
+                return $employee->service_length['total_years_zcmc_regular'] ?? 0;
+            });
 
             // Calculate service length for each employee and handle potential null values
             $employees = $employees->map(function ($employee) {
