@@ -26,7 +26,8 @@ class PersonalInformation extends Model
         'country',
         'height',
         'weight',
-        'blood_type'
+        'blood_type',
+        'religion'
     ];
 
     public $timestamps = TRUE;
