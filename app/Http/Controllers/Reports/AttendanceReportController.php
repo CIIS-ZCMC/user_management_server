@@ -2375,8 +2375,7 @@ class AttendanceReportController extends Controller
                         // Sort the data by total_of_absent_days in descending order
                         $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
 
-                        $filtered_total_employees = $sorted_data->count();
-                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                        $data = $sorted_data;
                         break;
                     case 'tardiness':
                         if ($by_date_range) {
@@ -2392,8 +2391,7 @@ class AttendanceReportController extends Controller
                         // Sort the data by total_days_with_tardiness in descending order
                         $sorted_data = $filtered_data->sortByDesc('total_days_with_tardiness');
 
-                        $filtered_total_employees = $sorted_data->count();
-                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                        $data = $sorted_data;
                         break;
                     case 'undertime':
                         if ($by_date_range) {
@@ -2411,8 +2409,7 @@ class AttendanceReportController extends Controller
                             ? $filtered_data->sortBy('total_undertime_minutes')
                             : $filtered_data->sortByDesc('total_undertime_minutes');
 
-                        $filtered_total_employees = $sorted_data->count();
-                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                        $data = $sorted_data;
                         break;
                     case 'perfect_attendance':
                         $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
@@ -2422,8 +2419,7 @@ class AttendanceReportController extends Controller
                         // Sort the data by total_of_absent_days in descending order
                         $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
 
-                        $filtered_total_employees = $sorted_data->count();
-                        $paginated_data = $filtered_total_employees > $per_page ? $sorted_data->forPage($page, $per_page)->take($limit) : $sorted_data->take($limit);
+                        $data = $sorted_data;
                         break;
                     default:
                         return response()->json(['message' => 'Invalid report type. Allowed types: absences, tardiness, undertime'], 400);
