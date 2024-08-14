@@ -936,6 +936,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-profile-all-dropdown', 'EmployeeProfileController@indexDropdown');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employee-profile-bytypes', 'EmployeeProfileController@getEmployeeListByEmployementTypes');
         });
 
@@ -2452,6 +2456,27 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
         });
+        // Filter Employees by Address
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-address', 'EmployeeReportController@filterEmployeesByAddress');
+        });
+        // Filter Employees by Sex
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-sex', 'EmployeeReportController@filterEmployeesBySex');
+        });
+        // Filter Employees by PWD
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-pwd', 'EmployeeReportController@filterEmployeesByPWD');
+        });
+        // Filter Employees by Solo Parent
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-solo-parent', 'EmployeeReportController@filterEmployeesBySoloParent');
+        });
+        // Filter Employees by Religion
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('employee-by-religion', 'EmployeeReportController@filterEmployeesByReligion');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-blood-type', 'EmployeeReportController@allEmployeesBloodType');

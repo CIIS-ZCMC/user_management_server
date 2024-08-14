@@ -26,7 +26,8 @@ class PersonalInformation extends Model
         'country',
         'height',
         'weight',
-        'blood_type'
+        'blood_type',
+        'religion'
     ];
 
     public $timestamps = TRUE;
@@ -139,5 +140,9 @@ class PersonalInformation extends Model
     public function employeeProfile()
     {
         return $this->hasOne(EmployeeProfile::class);
+    }
+    public function religion()
+    {
+        return $this->belongsTo(Religion::class);
     }
 }

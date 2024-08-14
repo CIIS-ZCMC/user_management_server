@@ -2132,25 +2132,51 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    /**
+     * Display a searchable list of employee profiles.
+     *
+     * This method retrieves a list of active employee profiles
+     * and returns them in a JSON response. If a search term is provided,
+     * the method filters the employee profiles based on the search term.
+     *
+     * @param \Illuminate\Http\Request $request The incoming HTTP request.
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles.
+     */
     public function indexDropdown(Request $request)
     {
         try {
-            // $cacheExpiration = Carbon::now()->addDay();
+            // Create the base query for active employee profiles, excluding the profile with id 1
+            $query = EmployeeProfile::with('personalInformation')
+                ->whereNotIn('employee_profiles.id', [1])
+                ->whereNull('employee_profiles.deactivated_at');
 
-            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-            //     return EmployeeProfile::all();
-            // });
-            $employee_profiles = EmployeeProfile::all();
+            // Apply search filter if a search term is provided
+            if ($search = $request->input('search')) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('employee_profiles.first_name', 'like', "%{$search}%")
+                        ->orWhere('employee_profiles.last_name', 'like', "%{$search}%")
+                        ->orWhereHas('personalInformation', function ($query) use ($search) {
+                            $query->where('personal_informations.email', 'like', "%{$search}%");
+                        });
+                });
+            }
 
+            // Execute the query to get all filtered results
+            $employeeProfiles = $query->get();
+
+            // Return a JSON response with the employee profiles
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles),
-                'message' => 'list of employees retrieved.'
+                'data' => EmployeeProfileResource::collection($employeeProfiles), // All matching employee profiles
+                'total' => count($employeeProfiles), // Total number of items
+                'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            // Log any exceptions and return an error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'indexDropdown', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Display a paginated and searchable list of employee profiles.
