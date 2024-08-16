@@ -3029,6 +3029,7 @@ class AttendanceReportController extends Controller
 
             $employees = collect();
 
+            // TODO test filtering if area id and sector is empty
             if (!$sector && !$area_id) {
                 switch ($report_type) {
                     case 'absences':
@@ -3614,15 +3615,20 @@ class AttendanceReportController extends Controller
                         }
                         break;
                     case 'department':
+                        // TODO implement the filtering for department
+                            //  TODO change the query conditions that will filter the employees under department
                         break;
                     case 'section':
+                        // TODO implement the filtering for section
+                        //  TODO change the query conditions that will filter the employees under section
                         break;
                     case 'unit':
+                        // TODO implement the filtering for unit
+                        //  TODO change the query conditions that will filter the employees under unit
                         break;
                     default:
                         return response()->json(['message' => 'Unknown sector.'], 400);
                 }
-
             }
 
 //            switch ($sector) {
