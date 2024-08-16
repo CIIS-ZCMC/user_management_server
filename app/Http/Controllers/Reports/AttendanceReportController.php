@@ -21,7 +21,9 @@ use App\Models\EmploymentType;
 use App\Models\LeaveType;
 use App\Models\Section;
 use App\Models\Unit;
-use PhpParser\Node\Expr\Assign;;
+use PhpParser\Node\Expr\Assign;
+
+;
 
 use App\Http\Controllers\DTR\DeviceLogsController;
 use App\Http\Controllers\DTR\DTRcontroller;
@@ -34,7 +36,7 @@ use SebastianBergmann\CodeCoverage\Report\Xml\Report;
 /**
  * Class AttendanceReportController
  * @package App\Http\Controllers\Reports
- * 
+ *
  * Controller for handling attendance reports.
  */
 class AttendanceReportController extends Controller
@@ -264,255 +266,250 @@ class AttendanceReportController extends Controller
     }
 
     /**
-     * 
+     *
      * START OF ABSENCES
-     * 
+     *
      */
     private function AbsencesByPeriod($first_half, $second_half, $month_of, $year_of, $employees)
     {
-        $cacheKey = "absences_by_period_{$first_half}_{$second_half}_{$month_of}_{$year_of}_" . md5(serialize($employees));
-        return Cache::remember($cacheKey, 60 * 60, function () use ($first_half, $second_half, $month_of, $year_of, $employees) {
-            $data = [];
 
-            $init = 1;
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+        $init = 1;
+        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
 
-            if ($first_half) {
-                $days_In_Month = 15;
-            } else if ($second_half) {
-                $init = 16;
+        if ($first_half) {
+            $days_In_Month = 15;
+        } else if ($second_half) {
+            $init = 16;
+        }
+
+        foreach ($employees as $row) {
+            $biometric_id = $row->biometric_id;
+            $dtr = DB::table('daily_time_records')
+                ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->get();
+
+            $empschedule = [];
+            $total_Month_Hour_Missed = 0;
+
+            foreach ($dtr as $val) {
+                $dayOfMonth = $val->day;
+
+                $bioEntry = [
+                    'first_entry' => $val->first_in ?? $val->second_in,
+                    'date_time' => $val->first_in ?? $val->second_in
+                ];
+
+                // Ensure the record falls within the selected half of the month
+                if ($dayOfMonth < $init || $dayOfMonth > $days_In_Month) {
+                    continue; // Skip records outside the selected half
+                }
+
+                $Schedule = ReportHelpers::CurrentSchedule($biometric_id, $bioEntry, false);
+                $DaySchedule = $Schedule['daySchedule'];
+                $empschedule[] = $DaySchedule;
             }
 
-            foreach ($employees as $row) {
-                $biometric_id = $row->biometric_id;
-                $dtr = DB::table('daily_time_records')
-                    ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-                    ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                        $query->where('biometric_id', $biometric_id)
-                            ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                            ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                    })
-                    ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                        $query->where('biometric_id', $biometric_id)
-                            ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                            ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                    })
-                    ->get();
 
-                $empschedule = [];
-                $total_Month_Hour_Missed = 0;
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
-                foreach ($dtr as $val) {
-                    $dayOfMonth = $val->day;
 
-                    $bioEntry = [
-                        'first_entry' => $val->first_in ?? $val->second_in,
-                        'date_time' => $val->first_in ?? $val->second_in
+            if ($employee->leaveApplications) {
+                //Leave Applications
+                $leaveapp = $employee->leaveApplications->filter(function ($row) {
+                    return $row['status'] == "received";
+                });
+
+                $leavedata = [];
+                foreach ($leaveapp as $rows) {
+                    $leavedata[] = [
+                        'country' => $rows['country'],
+                        'city' => $rows['city'],
+                        'from' => $rows['date_from'],
+                        'to' => $rows['date_to'],
+                        'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
+                        'without_pay' => $rows['without_pay'],
+                        'dates_covered' => ReportHelpers::getDateIntervals($rows['date_from'], $rows['date_to'])
                     ];
-
-                    // Ensure the record falls within the selected half of the month
-                    if ($dayOfMonth < $init || $dayOfMonth > $days_In_Month) {
-                        continue; // Skip records outside the selected half
-                    }
-
-                    $Schedule = ReportHelpers::CurrentSchedule($biometric_id, $bioEntry, false);
-                    $DaySchedule = $Schedule['daySchedule'];
-                    $empschedule[] = $DaySchedule;
                 }
+            }
 
 
+            //Official business
+            if ($employee->officialBusinessApplications) {
+                $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                })->toarray());
+                $obData = [];
+                foreach ($officialBusiness as $rows) {
+                    $obData[] = [
+                        'purpose' => $rows['purpose'],
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'dates_covered' => ReportHelpers::getDateIntervals($rows['date_from'], $rows['date_to']),
+                    ];
+                }
+            }
 
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+            if ($employee->officialTimeApplications) {
+                //Official Time
+                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+                $otData = [];
+                foreach ($officialTime as $rows) {
+                    $otData[] = [
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'purpose' => $rows['purpose'],
+                        'dates_covered' => ReportHelpers::getDateIntervals($rows['date_from'], $rows['date_to'])
+                    ];
+                }
+            }
+
+            if ($employee->ctoApplications) {
+                $CTO = $employee->ctoApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+                $ctoData = [];
+                foreach ($CTO as $rows) {
+                    $ctoData[] = [
+                        'date' => date('Y-m-d', strtotime($rows['date'])),
+                        'purpose' => $rows['purpose'],
+                        'remarks' => $rows['remarks'],
+                    ];
+                }
+            }
+            if (count($empschedule) >= 1) {
+                $empschedule = array_map(function ($sc) {
+                    // return isset($sc['scheduleDate']) && (int)date('d', strtotime($sc['scheduleDate']));
+                    return (int)date('d', strtotime($sc['scheduleDate']));
+                }, ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule']);
+            }
+
+            $attd = [];
+            $lwop = [];
+            $lwp = [];
+            $obot = [];
+            $absences = [];
+            $dayoff = [];
+            $total_Month_WorkingMinutes = 0;
+            $total_Month_Overtime = 0;
+            $total_Month_Undertime = 0;
+            $invalidEntry = [];
+
+            $presentDays = array_map(function ($d) use ($empschedule) {
+                if (in_array($d->day, $empschedule)) {
+                    return $d->day;
+                }
+            }, $dtr->toArray());
 
 
-                if ($employee->leaveApplications) {
-                    //Leave Applications
-                    $leaveapp  = $employee->leaveApplications->filter(function ($row) {
-                        return $row['status'] == "received";
-                    });
+            // Ensure you handle object properties correctly
+            $AbsentDays = array_values(array_filter(array_map(function ($d) use ($presentDays) {
+                if (!in_array($d, $presentDays) && $d !== null) {
+                    return $d;
+                }
+            }, $empschedule)));
 
-                    $leavedata = [];
-                    foreach ($leaveapp as $rows) {
-                        $leavedata[] = [
-                            'country' => $rows['country'],
-                            'city' => $rows['city'],
-                            'from' => $rows['date_from'],
-                            'to' => $rows['date_to'],
-                            'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
-                            'without_pay' => $rows['without_pay'],
-                            'dates_covered' => ReportHelpers::getDateIntervals($rows['date_from'], $rows['date_to'])
+
+            for ($i = $init; $i <= $days_In_Month; $i++) {
+
+                $filteredleaveDates = [];
+                // $leaveStatus = [];
+                foreach ($leavedata as $row) {
+                    foreach ($row['dates_covered'] as $date) {
+                        $filteredleaveDates[] = [
+                            'dateReg' => strtotime($date),
+                            'status' => $row['without_pay']
                         ];
                     }
                 }
+                $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
+                    $year_of,
+                    $month_of,
+                    $i,
+                ) {
+                    $dateToCompare = date('Y-m-d', $timestamp['dateReg']);
+                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    return $dateToCompare === $dateToMatch;
+                });
 
 
-                //Official business
-                if ($employee->officialBusinessApplications) {
-                    $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
-                        return $row['status'] == "approved";
-                    })->toarray());
-                    $obData = [];
-                    foreach ($officialBusiness as $rows) {
-                        $obData[] = [
-                            'purpose' => $rows['purpose'],
-                            'date_from' => $rows['date_from'],
-                            'date_to' => $rows['date_to'],
-                            'dates_covered' => ReportHelpers::getDateIntervals($rows['date_from'], $rows['date_to']),
-                        ];
+                $leave_Count = count($leaveApplication);
+
+                //Check obD ates
+                $filteredOBDates = [];
+                foreach ($obData as $row) {
+                    foreach ($row['dates_covered'] as $date) {
+                        $filteredOBDates[] = strtotime($date);
                     }
                 }
 
-                if ($employee->officialTimeApplications) {
-                    //Official Time
-                    $officialTime = $employee->officialTimeApplications->filter(function ($row) {
-                        return $row['status'] == "approved";
-                    });
-                    $otData = [];
-                    foreach ($officialTime as $rows) {
-                        $otData[] = [
-                            'date_from' => $rows['date_from'],
-                            'date_to' => $rows['date_to'],
-                            'purpose' => $rows['purpose'],
-                            'dates_covered' => ReportHelpers::getDateIntervals($rows['date_from'], $rows['date_to'])
-                        ];
+                $obApplication = array_filter($filteredOBDates, function ($timestamp) use ($year_of, $month_of, $i) {
+                    $dateToCompare = date('Y-m-d', $timestamp);
+                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    return $dateToCompare === $dateToMatch;
+                });
+                $ob_Count = count($obApplication);
+
+                //Check otDates
+                $filteredOTDates = [];
+                foreach ($otData as $row) {
+                    foreach ($row['dates_covered'] as $date) {
+                        $filteredOTDates[] = strtotime($date);
                     }
                 }
+                $otApplication = array_filter($filteredOTDates, function ($timestamp) use ($year_of, $month_of, $i) {
+                    $dateToCompare = date('Y-m-d', $timestamp);
+                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    return $dateToCompare === $dateToMatch;
+                });
+                $ot_Count = count($otApplication);
 
-                if ($employee->ctoApplications) {
-                    $CTO =  $employee->ctoApplications->filter(function ($row) {
-                        return $row['status'] == "approved";
-                    });
-                    $ctoData = [];
-                    foreach ($CTO as $rows) {
-                        $ctoData[] = [
-                            'date' => date('Y-m-d', strtotime($rows['date'])),
-                            'purpose' => $rows['purpose'],
-                            'remarks' => $rows['remarks'],
-                        ];
-                    }
-                }
-                if (count($empschedule) >= 1) {
-                    $empschedule = array_map(function ($sc) {
-                        // return isset($sc['scheduleDate']) && (int)date('d', strtotime($sc['scheduleDate']));
-                        return (int)date('d', strtotime($sc['scheduleDate']));
-                    }, ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule']);
-                }
+                $ctoApplication = array_filter($ctoData, function ($row) use ($year_of, $month_of, $i) {
+                    $dateToCompare = date('Y-m-d', strtotime($row['date']));
+                    $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                    return $dateToCompare === $dateToMatch;
+                });
 
-                $attd = [];
-                $lwop = [];
-                $lwp = [];
-                $obot = [];
-                $absences = [];
-                $dayoff = [];
-                $total_Month_WorkingMinutes = 0;
-                $total_Month_Overtime = 0;
-                $total_Month_Undertime = 0;
-                $invalidEntry = [];
-
-                $presentDays = array_map(function ($d) use ($empschedule) {
-                    if (in_array($d->day, $empschedule)) {
-                        return $d->day;
-                    }
-                }, $dtr->toArray());
+                $cto_Count = count($ctoApplication);
 
 
-                // Ensure you handle object properties correctly
-                $AbsentDays = array_values(array_filter(array_map(function ($d) use ($presentDays) {
-                    if (!in_array($d, $presentDays) && $d !== null) {
-                        return $d;
-                    }
-                }, $empschedule)));
+                if ($leave_Count) {
 
-
-
-                for ($i = $init; $i <= $days_In_Month; $i++) {
-
-                    $filteredleaveDates = [];
-                    // $leaveStatus = [];
-                    foreach ($leavedata as $row) {
-                        foreach ($row['dates_covered'] as $date) {
-                            $filteredleaveDates[] = [
-                                'dateReg' => strtotime($date),
-                                'status' => $row['without_pay']
-                            ];
-                        }
-                    }
-                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
-                        $year_of,
-                        $month_of,
-                        $i,
-                    ) {
-                        $dateToCompare = date('Y-m-d', $timestamp['dateReg']);
-                        $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-
-
-                    $leave_Count = count($leaveApplication);
-
-                    //Check obD ates
-                    $filteredOBDates = [];
-                    foreach ($obData as $row) {
-                        foreach ($row['dates_covered'] as $date) {
-                            $filteredOBDates[] = strtotime($date);
-                        }
-                    }
-
-                    $obApplication = array_filter($filteredOBDates, function ($timestamp) use ($year_of, $month_of, $i) {
-                        $dateToCompare = date('Y-m-d', $timestamp);
-                        $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-                    $ob_Count = count($obApplication);
-
-                    //Check otDates
-                    $filteredOTDates = [];
-                    foreach ($otData as $row) {
-                        foreach ($row['dates_covered'] as $date) {
-                            $filteredOTDates[] = strtotime($date);
-                        }
-                    }
-                    $otApplication = array_filter($filteredOTDates, function ($timestamp) use ($year_of, $month_of, $i) {
-                        $dateToCompare = date('Y-m-d', $timestamp);
-                        $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-                    $ot_Count = count($otApplication);
-
-                    $ctoApplication = array_filter($ctoData, function ($row) use ($year_of, $month_of, $i) {
-                        $dateToCompare = date('Y-m-d', strtotime($row['date']));
-                        $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-
-                    $cto_Count = count($ctoApplication);
-
-
-                    if ($leave_Count) {
-
-                        if (array_values($leaveApplication)[0]['status']) {
-                            //  echo $i."-LwoPay \n";
-                            $lwop[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
-                            // deduct to salary
-                        } else {
-                            //  echo $i."-LwPay \n";
-                            $lwp[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
-                            $total_Month_WorkingMinutes += 480;
-                        }
-                    } else if ($ob_Count ||  $ot_Count) {
-                        // echo $i."-ob or ot Paid \n";
-                        $obot[] = [
+                    if (array_values($leaveApplication)[0]['status']) {
+                        //  echo $i."-LwoPay \n";
+                        $lwop[] = [
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-
+                        ];
+                        // deduct to salary
+                    } else {
+                        //  echo $i."-LwPay \n";
+                        $lwp[] = [
+                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                         ];
                         $total_Month_WorkingMinutes += 480;
-                    } else
-   
-                       if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
+                    }
+                } else if ($ob_Count || $ot_Count) {
+                    // echo $i."-ob or ot Paid \n";
+                    $obot[] = [
+                        'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+
+                    ];
+                    $total_Month_WorkingMinutes += 480;
+                } else
+
+                    if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
                         $dtrArray = $dtr->toArray(); // Convert object to array
 
@@ -539,7 +536,7 @@ class AttendanceReportController extends Controller
                     } else if (
                         in_array($i, $AbsentDays) &&
                         in_array($i, $empschedule) &&
-                        strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) <  strtotime(date('Y-m-d'))
+                        strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
                     ) {
                         //echo $i."-A  \n";
 
@@ -552,55 +549,54 @@ class AttendanceReportController extends Controller
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                         ];
                     }
-                }
-
-
-                $presentCount = count(array_filter($attd, function ($d) {
-                    return $d['total_working_minutes'] !== 0;
-                }));
-
-                $Number_Absences = count($absences) - count($lwop);
-                $schedule_ = ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
-
-                $scheds = array_map(function ($d) {
-                    return (int)date('d', strtotime($d['scheduleDate']));
-                }, $schedule_);
-
-                $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($init, $days_In_Month) {
-                    return $value >= $init && $value <= $days_In_Month;
-                }));
-
-                $data[] = [
-                    'id' => $employee->id,
-                    'employee_biometric_id' => $employee->biometric_id,
-                    'employee_id' => $employee->employee_id,
-                    'employee_name' => $employee->personalInformation->employeeName(),
-                    'employment_type' => $employee->employmentType->name,
-                    'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
-                    'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
-                    'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
-                    'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
-                    'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
-                    'from' => $init,
-                    'to' => $days_In_Month,
-                    'month' => $month_of,
-                    'year' => $year_of,
-                    'total_working_minutes' => $total_Month_WorkingMinutes,
-                    'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
-                    'total_overtime_minutes' => $total_Month_Overtime,
-                    'total_hours_missed' =>       $total_Month_Hour_Missed,
-                    'total_of_absent_days' => $Number_Absences,
-                    'total_of_present_days' => $presentCount,
-                    'total_of_absent_leave_without_pay' => count($lwop),
-                    'total_of_leave_with_pay' => count($lwp),
-                    'total_invalid_entry' => count($invalidEntry),
-                    'total_of_day_off' => count($dayoff),
-                    'schedule' => count($filtered_scheds),
-                ];
             }
 
-            return $data;
-        });
+
+            $presentCount = count(array_filter($attd, function ($d) {
+                return $d['total_working_minutes'] !== 0;
+            }));
+
+            $Number_Absences = count($absences) - count($lwop);
+            $schedule_ = ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
+
+            $scheds = array_map(function ($d) {
+                return (int)date('d', strtotime($d['scheduleDate']));
+            }, $schedule_);
+
+            $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($init, $days_In_Month) {
+                return $value >= $init && $value <= $days_In_Month;
+            }));
+
+            $data[] = [
+                'id' => $employee->id,
+                'employee_biometric_id' => $employee->biometric_id,
+                'employee_id' => $employee->employee_id,
+                'employee_name' => $employee->personalInformation->employeeName(),
+                'employment_type' => $employee->employmentType->name,
+                'employee_designation_name' => $employee->findDesignation()['name'] ?? '',
+                'employee_designation_code' => $employee->findDesignation()['code'] ?? '',
+                'sector' => $employee->assignedArea->findDetails()['sector'] ?? '',
+                'area_name' => $employee->assignedArea->findDetails()['details']['name'] ?? '',
+                'area_code' => $employee->assignedArea->findDetails()['details']['code'] ?? '',
+                'from' => $init,
+                'to' => $days_In_Month,
+                'month' => $month_of,
+                'year' => $year_of,
+                'total_working_minutes' => $total_Month_WorkingMinutes,
+                'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
+                'total_overtime_minutes' => $total_Month_Overtime,
+                'total_hours_missed' => $total_Month_Hour_Missed,
+                'total_of_absent_days' => $Number_Absences,
+                'total_of_present_days' => $presentCount,
+                'total_of_absent_leave_without_pay' => count($lwop),
+                'total_of_leave_with_pay' => count($lwp),
+                'total_invalid_entry' => count($invalidEntry),
+                'total_of_day_off' => count($dayoff),
+                'schedule' => count($filtered_scheds),
+            ];
+        }
+
+        return $data;
     }
 
     private function AbsencesByDateRange($start_date, $end_date, $employees)
@@ -659,13 +655,12 @@ class AttendanceReportController extends Controller
                 }
 
 
-
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
                 if ($employee->leaveApplications) {
                     //Leave Applications
-                    $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    $leaveapp = $employee->leaveApplications->filter(function ($row) {
                         return $row['status'] == "received";
                     });
 
@@ -717,7 +712,7 @@ class AttendanceReportController extends Controller
                 }
 
                 if ($employee->ctoApplications) {
-                    $CTO =  $employee->ctoApplications->filter(function ($row) {
+                    $CTO = $employee->ctoApplications->filter(function ($row) {
                         return $row['status'] == "approved";
                     });
                     $ctoData = [];
@@ -761,7 +756,6 @@ class AttendanceReportController extends Controller
                         return $d;
                     }
                 }, $empschedule)));
-
 
 
                 for ($i = $firstDayOfRange; $i <= $lastDayOfRange; $i++) {
@@ -842,7 +836,7 @@ class AttendanceReportController extends Controller
                             ];
                             $total_Month_WorkingMinutes += 480;
                         }
-                    } else if ($ob_Count ||  $ot_Count) {
+                    } else if ($ob_Count || $ot_Count) {
                         // echo $i."-ob or ot Paid \n";
                         $obot[] = [
                             'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
@@ -850,47 +844,47 @@ class AttendanceReportController extends Controller
                         ];
                         $total_Month_WorkingMinutes += 480;
                     } else
-       
-                           if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $dtrArray = $dtr->toArray(); // Convert object to array
+                        if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($startYear, $startMonth, $i) {
-                            return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i));
-                        }));
+                            $dtrArray = $dtr->toArray(); // Convert object to array
+
+                            $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($startYear, $startMonth, $i) {
+                                return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i));
+                            }));
 
 
-                        if (
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            ) {
+                                $attd[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                                $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
+                                $total_Month_Hour_Missed += $missedHours;
+                            } else {
+                                $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
+                            }
+                        } else if (
+                            in_array($i, $AbsentDays) &&
+                            in_array($i, $empschedule) &&
+                            strtotime(date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i))) < strtotime(date('Y-m-d'))
                         ) {
-                            $attd[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
-                            $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                            $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                            $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
-                            $total_Month_Hour_Missed += $missedHours;
-                        } else {
-                            $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
-                        }
-                    } else if (
-                        in_array($i, $AbsentDays) &&
-                        in_array($i, $empschedule) &&
-                        strtotime(date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i))) <  strtotime(date('Y-m-d'))
-                    ) {
-                        //echo $i."-A  \n";
+                            //echo $i."-A  \n";
 
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
-                        ];
-                    } else {
-                        //   echo $i."-DO\n";
-                        $dayoff[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
-                        ];
-                    }
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
+                            ];
+                        } else {
+                            //   echo $i."-DO\n";
+                            $dayoff[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
+                            ];
+                        }
                 }
 
 
@@ -927,7 +921,7 @@ class AttendanceReportController extends Controller
                     'total_working_minutes' => $total_Month_WorkingMinutes,
                     'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
                     'total_overtime_minutes' => $total_Month_Overtime,
-                    'total_hours_missed' =>       $total_Month_Hour_Missed,
+                    'total_hours_missed' => $total_Month_Hour_Missed,
                     'total_of_absent_days' => $Number_Absences,
                     'total_of_present_days' => $presentCount,
                     'total_of_absent_leave_without_pay' => count($lwop),
@@ -942,13 +936,13 @@ class AttendanceReportController extends Controller
         });
     }
     /**
-     * 
+     *
      * END OF ABSENCES
-     * 
+     *
      */
 
     /**
-     * 
+     *
      * START OF UNDERTIME
      *
      */
@@ -1006,13 +1000,12 @@ class AttendanceReportController extends Controller
                 }
 
 
-
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
                 if ($employee->leaveApplications) {
                     //Leave Applications
-                    $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    $leaveapp = $employee->leaveApplications->filter(function ($row) {
                         return $row['status'] == "received";
                     });
 
@@ -1064,7 +1057,7 @@ class AttendanceReportController extends Controller
                 }
 
                 if ($employee->ctoApplications) {
-                    $CTO =  $employee->ctoApplications->filter(function ($row) {
+                    $CTO = $employee->ctoApplications->filter(function ($row) {
                         return $row['status'] == "approved";
                     });
                     $ctoData = [];
@@ -1107,7 +1100,6 @@ class AttendanceReportController extends Controller
                         return $d;
                     }
                 }, $empschedule)));
-
 
 
                 for ($i = $init; $i <= $days_In_Month; $i++) {
@@ -1185,7 +1177,7 @@ class AttendanceReportController extends Controller
                             ];
                             $total_Month_WorkingMinutes += 480;
                         }
-                    } else if ($ob_Count ||  $ot_Count) {
+                    } else if ($ob_Count || $ot_Count) {
                         // echo $i."-ob or ot Paid \n";
                         $obot[] = [
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
@@ -1193,47 +1185,47 @@ class AttendanceReportController extends Controller
                         ];
                         $total_Month_WorkingMinutes += 480;
                     } else
-         
-                             if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $dtrArray = $dtr->toArray(); // Convert object to array
+                        if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($year_of, $month_of, $i) {
-                            return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                        }));
+                            $dtrArray = $dtr->toArray(); // Convert object to array
+
+                            $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($year_of, $month_of, $i) {
+                                return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                            }));
 
 
-                        if (
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            ) {
+                                $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                                $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
+                                $total_Month_Hour_Missed += $missedHours;
+                            } else {
+                                $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                            }
+                        } else if (
+                            in_array($i, $AbsentDays) &&
+                            in_array($i, $empschedule) &&
+                            strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
                         ) {
-                            $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                            $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                            $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                            $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
-                            $total_Month_Hour_Missed += $missedHours;
-                        } else {
-                            $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                        }
-                    } else if (
-                        in_array($i, $AbsentDays) &&
-                        in_array($i, $empschedule) &&
-                        strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) <  strtotime(date('Y-m-d'))
-                    ) {
-                        //echo $i."-A  \n";
+                            //echo $i."-A  \n";
 
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
-                    } else {
-                        //   echo $i."-DO\n";
-                        $dayoff[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
-                    }
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                            ];
+                        } else {
+                            //   echo $i."-DO\n";
+                            $dayoff[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                            ];
+                        }
                 }
 
                 $schedule_ = ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
@@ -1264,7 +1256,7 @@ class AttendanceReportController extends Controller
                     'total_working_minutes' => $total_Month_WorkingMinutes,
                     'total_working_hours' => ReportHelpers::ToHours($total_Month_WorkingMinutes),
                     'total_overtime_minutes' => $total_Month_Overtime,
-                    'total_hours_missed' =>       $total_Month_Hour_Missed,
+                    'total_hours_missed' => $total_Month_Hour_Missed,
                     'total_undertime_minutes' => $total_Month_Undertime,
                     'total_of_absent_leave_without_pay' => count($lwop),
                     'total_of_leave_with_pay' => count($lwp),
@@ -1332,13 +1324,12 @@ class AttendanceReportController extends Controller
                 }
 
 
-
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
                 if ($employee->leaveApplications) {
                     //Leave Applications
-                    $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    $leaveapp = $employee->leaveApplications->filter(function ($row) {
                         return $row['status'] == "received";
                     });
 
@@ -1390,7 +1381,7 @@ class AttendanceReportController extends Controller
                 }
 
                 if ($employee->ctoApplications) {
-                    $CTO =  $employee->ctoApplications->filter(function ($row) {
+                    $CTO = $employee->ctoApplications->filter(function ($row) {
                         return $row['status'] == "approved";
                     });
                     $ctoData = [];
@@ -1434,7 +1425,6 @@ class AttendanceReportController extends Controller
                         return $d;
                     }
                 }, $empschedule)));
-
 
 
                 for ($i = $firstDayOfRange; $i <= $lastDayOfRange; $i++) {
@@ -1515,7 +1505,7 @@ class AttendanceReportController extends Controller
                             ];
                             $total_Month_WorkingMinutes += 480;
                         }
-                    } else if ($ob_Count ||  $ot_Count) {
+                    } else if ($ob_Count || $ot_Count) {
                         // echo $i."-ob or ot Paid \n";
                         $obot[] = [
                             'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
@@ -1523,47 +1513,47 @@ class AttendanceReportController extends Controller
                         ];
                         $total_Month_WorkingMinutes += 480;
                     } else
-   
-                       if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $dtrArray = $dtr->toArray(); // Convert object to array
+                        if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($startYear, $startMonth, $i) {
-                            return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i));
-                        }));
+                            $dtrArray = $dtr->toArray(); // Convert object to array
+
+                            $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($startYear, $startMonth, $i) {
+                                return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i));
+                            }));
 
 
-                        if (
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            ) {
+                                $attd[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                                $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
+                                $total_Month_Hour_Missed += $missedHours;
+                            } else {
+                                $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
+                            }
+                        } else if (
+                            in_array($i, $AbsentDays) &&
+                            in_array($i, $empschedule) &&
+                            strtotime(date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i))) < strtotime(date('Y-m-d'))
                         ) {
-                            $attd[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
-                            $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                            $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                            $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
-                            $total_Month_Hour_Missed += $missedHours;
-                        } else {
-                            $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
-                        }
-                    } else if (
-                        in_array($i, $AbsentDays) &&
-                        in_array($i, $empschedule) &&
-                        strtotime(date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i))) <  strtotime(date('Y-m-d'))
-                    ) {
-                        //echo $i."-A  \n";
+                            //echo $i."-A  \n";
 
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
-                        ];
-                    } else {
-                        //   echo $i."-DO\n";
-                        $dayoff[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
-                        ];
-                    }
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
+                            ];
+                        } else {
+                            //   echo $i."-DO\n";
+                            $dayoff[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
+                            ];
+                        }
                 }
 
 
@@ -1614,13 +1604,13 @@ class AttendanceReportController extends Controller
         });
     }
     /**
-     * 
+     *
      * END OF UNDERTIME
      *
      */
 
     /**
-     * 
+     *
      *START OF TARDINESS
      *
      */
@@ -1690,13 +1680,12 @@ class AttendanceReportController extends Controller
                 }
 
 
-
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
                 if ($employee->leaveApplications) {
                     //Leave Applications
-                    $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    $leaveapp = $employee->leaveApplications->filter(function ($row) {
                         return $row['status'] == "received";
                     });
 
@@ -1748,7 +1737,7 @@ class AttendanceReportController extends Controller
                 }
 
                 if ($employee->ctoApplications) {
-                    $CTO =  $employee->ctoApplications->filter(function ($row) {
+                    $CTO = $employee->ctoApplications->filter(function ($row) {
                         return $row['status'] == "approved";
                     });
                     $ctoData = [];
@@ -1792,7 +1781,6 @@ class AttendanceReportController extends Controller
                         return $d;
                     }
                 }, $empschedule)));
-
 
 
                 for ($i = $init; $i <= $days_In_Month; $i++) {
@@ -1870,7 +1858,7 @@ class AttendanceReportController extends Controller
                             ];
                             $total_Month_WorkingMinutes += 480;
                         }
-                    } else if ($ob_Count ||  $ot_Count) {
+                    } else if ($ob_Count || $ot_Count) {
                         // echo $i."-ob or ot Paid \n";
                         $obot[] = [
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
@@ -1878,47 +1866,47 @@ class AttendanceReportController extends Controller
                         ];
                         $total_Month_WorkingMinutes += 480;
                     } else
-     
-                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $dtrArray = $dtr->toArray(); // Convert object to array
+                        if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($year_of, $month_of, $i) {
-                            return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                        }));
+                            $dtrArray = $dtr->toArray(); // Convert object to array
+
+                            $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($year_of, $month_of, $i) {
+                                return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                            }));
 
 
-                        if (
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            ) {
+                                $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                                $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
+                                $total_Month_Hour_Missed += $missedHours;
+                            } else {
+                                $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                            }
+                        } else if (
+                            in_array($i, $AbsentDays) &&
+                            in_array($i, $empschedule) &&
+                            strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
                         ) {
-                            $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                            $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                            $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                            $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
-                            $total_Month_Hour_Missed += $missedHours;
-                        } else {
-                            $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                        }
-                    } else if (
-                        in_array($i, $AbsentDays) &&
-                        in_array($i, $empschedule) &&
-                        strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) <  strtotime(date('Y-m-d'))
-                    ) {
-                        //echo $i."-A  \n";
+                            //echo $i."-A  \n";
 
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
-                    } else {
-                        //   echo $i."-DO\n";
-                        $dayoff[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
-                    }
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                            ];
+                        } else {
+                            //   echo $i."-DO\n";
+                            $dayoff[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                            ];
+                        }
                 }
 
                 $schedule_ = ReportHelpers::Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
@@ -2028,7 +2016,7 @@ class AttendanceReportController extends Controller
 
                 if ($employee->leaveApplications) {
                     //Leave Applications
-                    $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    $leaveapp = $employee->leaveApplications->filter(function ($row) {
                         return $row['status'] == "received";
                     });
 
@@ -2080,7 +2068,7 @@ class AttendanceReportController extends Controller
                 }
 
                 if ($employee->ctoApplications) {
-                    $CTO =  $employee->ctoApplications->filter(function ($row) {
+                    $CTO = $employee->ctoApplications->filter(function ($row) {
                         return $row['status'] == "approved";
                     });
                     $ctoData = [];
@@ -2124,7 +2112,6 @@ class AttendanceReportController extends Controller
                         return $d;
                     }
                 }, $empschedule)));
-
 
 
                 for ($i = $firstDayOfRange; $i <= $lastDayOfRange; $i++) {
@@ -2205,7 +2192,7 @@ class AttendanceReportController extends Controller
                             ];
                             $total_Month_WorkingMinutes += 480;
                         }
-                    } else if ($ob_Count ||  $ot_Count) {
+                    } else if ($ob_Count || $ot_Count) {
                         // echo $i."-ob or ot Paid \n";
                         $obot[] = [
                             'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
@@ -2213,47 +2200,47 @@ class AttendanceReportController extends Controller
                         ];
                         $total_Month_WorkingMinutes += 480;
                     } else
-   
-                       if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $dtrArray = $dtr->toArray(); // Convert object to array
+                        if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                        $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($startYear, $startMonth, $i) {
-                            return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i));
-                        }));
+                            $dtrArray = $dtr->toArray(); // Convert object to array
+
+                            $recordDTR = array_values(array_filter($dtrArray, function ($d) use ($startYear, $startMonth, $i) {
+                                return isset($d->dtr_date) && $d->dtr_date === date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i));
+                            }));
 
 
-                        if (
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
-                            ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) ||
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out)
+                            ) {
+                                $attd[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
+                                $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
+                                $total_Month_Hour_Missed += $missedHours;
+                            } else {
+                                $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
+                            }
+                        } else if (
+                            in_array($i, $AbsentDays) &&
+                            in_array($i, $empschedule) &&
+                            strtotime(date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i))) < strtotime(date('Y-m-d'))
                         ) {
-                            $attd[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
-                            $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                            $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                            $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                            $missedHours = round((480 - $recordDTR[0]->total_working_minutes) / 60);
-                            $total_Month_Hour_Missed += $missedHours;
-                        } else {
-                            $invalidEntry[] = $this->Attendance($startYear, $startMonth, $i, $recordDTR);
-                        }
-                    } else if (
-                        in_array($i, $AbsentDays) &&
-                        in_array($i, $empschedule) &&
-                        strtotime(date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i))) <  strtotime(date('Y-m-d'))
-                    ) {
-                        //echo $i."-A  \n";
+                            //echo $i."-A  \n";
 
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
-                        ];
-                    } else {
-                        //   echo $i."-DO\n";
-                        $dayoff[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
-                        ];
-                    }
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
+                            ];
+                        } else {
+                            //   echo $i."-DO\n";
+                            $dayoff[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($startYear . '-' . $startMonth . '-' . $i)),
+                            ];
+                        }
                 }
 
 
@@ -2303,27 +2290,28 @@ class AttendanceReportController extends Controller
             return $data;
         });
     }
+
     /**
-     * 
+     *
      *END OF TARDINESS
      *
      */
-    public function report(Request $request)
+    public function xreport(Request $request)
     {
         try {
             $area_id = $request->area_id;
             $sector = ucfirst($request->sector);
             $area_under = strtolower($request->area_under);
-            $month_of = (int) $request->month_of;
-            $year_of = (int) $request->year_of;
+            $month_of = (int)$request->month_of;
+            $year_of = (int)$request->year_of;
             $start_date = $request->start_date;
             $end_date = $request->end_date;
             $employment_type = $request->employment_type_id;
             $designation_id = $request->designation_id;
             $absent_leave_without_pay = $request->absent_leave_without_pay;
             $absent_without_official_leave = $request->absent_without_official_leave;
-            $first_half = (bool) $request->first_half;
-            $second_half = (bool) $request->second_half;
+            $first_half = (bool)$request->first_half;
+            $second_half = (bool)$request->second_half;
             $limit = $request->limit;
             $sort_order = $request->sort_order;
             $report_type = $request->report_type;
@@ -2401,6 +2389,7 @@ class AttendanceReportController extends Controller
                         } else {
                             return response()->json(['message' => 'Please provide either a valid date range or month and year for the report.'], 400);
                         }
+
                         $filtered_data = collect($data)->filter(function ($item) {
                             return $item['total_undertime_minutes'] > 0;
                         });
@@ -2413,13 +2402,7 @@ class AttendanceReportController extends Controller
                         break;
                     case 'perfect_attendance':
                         $data = $this->getPerfectAttendance($first_half, $second_half, $month_of, $year_of, $employees);
-                        $filtered_data = collect($data)->filter(function ($item) {
-                            return $item['total_of_absent_days'] > 0;
-                        });
-                        // Sort the data by total_of_absent_days in descending order
-                        $sorted_data = $filtered_data->sortByDesc('total_of_absent_days');
 
-                        $data = $sorted_data;
                         break;
                     default:
                         return response()->json(['message' => 'Invalid report type. Allowed types: absences, tardiness, undertime'], 400);
@@ -2998,10 +2981,478 @@ class AttendanceReportController extends Controller
                 }
             }
 
+            $data = $data->toArray();
             return response()->json([
                 'count' => COUNT($data),
                 'message' => 'Successfully retrieved data.',
-                'data' => $data,
+                'data' => array_values($data) // Ensure it's reindexed properly
+
+            ]);
+        } catch (\Throwable $th) {
+            // Log the error and return an internal server error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
+            return response()->json(
+                [
+                    'message' => $th->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    public function report(Request $request)
+    {
+        try {
+            $area_id = $request->area_id;
+            $sector = $request->sector;
+            $area_under = strtolower($request->area_under);
+            $month_of = (int)$request->month_of;
+            $year_of = (int)$request->year_of;
+            $start_date = $request->start_date;
+            $end_date = $request->end_date;
+            $employment_type = $request->employment_type_id;
+            $designation_id = $request->designation_id;
+            $absent_leave_without_pay = $request->absent_leave_without_pay;
+            $absent_without_official_leave = $request->absent_without_official_leave;
+            $first_half = (bool)$request->first_half;
+            $second_half = (bool)$request->second_half;
+            $limit = $request->limit;
+            $sort_order = $request->sort_order;
+            $report_type = $request->report_type;
+
+            $query = '';
+
+            if ($sector && !$area_id) {
+                return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
+            }
+
+            $employees = collect();
+
+            if (!$sector && !$area_id) {
+                switch ($report_type) {
+                    case 'absences':
+                        $employees = DB::table('assigned_areas as a')
+                            ->when($designation_id, function ($query, $designation_id) {
+                                return $query->where('a.designation_id', $designation_id);
+                            })
+                            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+                            ->when($employment_type, function ($query, $employment_type) {
+                                return $query->where('ep.employment_type_id', $employment_type);
+                            })
+                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+                            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+                            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+                            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+                            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+                            ->leftJoin('daily_time_records as dtr', function ($join) use ($month_of, $year_of) {
+                                $join->on('b.biometric_id', '=', 'dtr.biometric_id')
+                                    ->whereMonth('dtr.dtr_date', '=', $month_of)
+                                    ->whereYear('dtr.dtr_date', '=', $year_of);
+                            })
+                            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+                            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+                            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+                            ->leftJoin('cto_applications as cto', function ($join) {
+                                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                                    ->where('cto.status', '=', 'approved')
+                                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+                            })
+                            ->leftJoin('official_business_applications as oba', function ($join) {
+                                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                                    ->where('oba.status', '=', 'approved')
+                                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+                            })
+                            ->leftJoin('leave_applications as la', function ($join) {
+                                $join->on('ep.id', '=', 'la.employee_profile_id')
+                                    ->where('la.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+                            })
+                            ->leftJoin('official_time_applications as ota', function ($join) {
+                                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                                    ->where('ota.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+                            })
+                            ->select(
+                                'ep.id as employee_profile_id',
+                                'ep.employee_id',
+                                DB::raw("CONCAT(
+            pi.first_name, ' ',
+            IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+            pi.last_name,
+            IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+            IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+        ) as employee_name"),
+                                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_designation_name'),
+                                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_designation_code'),
+                                DB::raw('COUNT(DISTINCT CASE WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' AND YEAR(dtr.dtr_date) = ' . $year_of . ' THEN dtr.dtr_date END) as days_present'),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                DB::raw("COUNT(DISTINCT CASE WHEN MONTH(sch.date) = $month_of AND YEAR(sch.date) = $year_of THEN sch.date END) as scheduled_days"),
+                                DB::raw("GREATEST(
+            COUNT(DISTINCT CASE
+                WHEN MONTH(sch.date) = $month_of AND YEAR(sch.date) = $year_of
+                AND la.id IS NULL
+                AND cto.id IS NULL
+                AND oba.id IS NULL
+                AND ota.id IS NULL
+                THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
+                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                            )
+                            ->groupBy('ep.id', 'ep.employee_id', 'employee_name', 'employee_designation_name', 'employee_designation_code')
+                            ->havingRaw('days_absent > 0')
+                            ->when($sort_order, function ($query, $sort_order) {
+                                if ($sort_order === 'asc') {
+                                    return $query->orderByRaw('days_absent ASC');
+                                } elseif ($sort_order === 'desc') {
+                                    return $query->orderByRaw('days_absent DESC');
+                                } else {
+                                    return response()->json(['message' => 'Invalid sort order'], 400);
+                                }
+                            })
+                            ->orderBy('employee_designation_name')->orderBy('ep.id')
+                            ->when($limit, function ($query, $limit) {
+                                return $query->limit($limit);
+                            })
+                            ->get();
+                        break;
+                    case 'tardiness':
+                        $employees = DB::table('assigned_areas as a')
+                            ->when($designation_id, function ($query, $designation_id) {
+                                return $query->where('a.designation_id', $designation_id);
+                            })
+                            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+                            ->when($employment_type, function ($query, $employment_type) {
+                                return $query->where('ep.employment_type_id', $employment_type);
+                            })
+                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+                            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+                            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+                            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+                            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+                            ->leftJoin('daily_time_records as dtr', function ($join) use ($month_of, $year_of) {
+                                $join->on('b.biometric_id', '=', 'dtr.biometric_id')
+                                    ->whereMonth('dtr.dtr_date', '=', $month_of)
+                                    ->whereYear('dtr.dtr_date', '=', $year_of);
+                            })
+                            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+                            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+                            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+                            ->leftJoin('cto_applications as cto', function ($join) {
+                                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                                    ->where('cto.status', '=', 'approved')
+                                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+                            })
+                            ->leftJoin('official_business_applications as oba', function ($join) {
+                                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                                    ->where('oba.status', '=', 'approved')
+                                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+                            })
+                            ->leftJoin('leave_applications as la', function ($join) {
+                                $join->on('ep.id', '=', 'la.employee_profile_id')
+                                    ->where('la.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+                            })
+                            ->leftJoin('official_time_applications as ota', function ($join) {
+                                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                                    ->where('ota.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+                            })
+                            ->select(
+                                'ep.id as employee_profile_id',
+                                'ep.employee_id',
+                                DB::raw("CONCAT(
+            pi.first_name, ' ',
+            IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+            pi.last_name,
+            IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+            IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+        ) as employee_name"),
+                                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_designation_name'),
+                                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_designation_code'),
+                                DB::raw('COUNT(DISTINCT CASE WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' AND YEAR(dtr.dtr_date) = ' . $year_of . ' THEN dtr.dtr_date END) as days_present'),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                DB::raw("COUNT(DISTINCT CASE WHEN MONTH(sch.date) = $month_of AND YEAR(sch.date) = $year_of THEN sch.date END) as scheduled_days"),
+                                DB::raw("COUNT(DISTINCT CASE
+                                                WHEN dtr.first_in > ts.first_in OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in)
+                                                THEN dtr.dtr_date
+                                            END) as days_with_tardiness"),
+                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                            )
+                            ->groupBy('ep.id', 'ep.employee_id', 'employee_name', 'employee_designation_name', 'employee_designation_code')
+                            ->havingRaw('days_with_tardiness > 0')
+                            ->when($sort_order, function ($query, $sort_order) {
+                                if ($sort_order === 'asc') {
+                                    return $query->orderByRaw('days_with_tardiness ASC');
+                                } elseif ($sort_order === 'desc') {
+                                    return $query->orderByRaw('days_with_tardiness DESC');
+                                } else {
+                                    return response()->json(['message' => 'Invalid sort order'], 400);
+                                }
+                            })
+                            ->orderBy('employee_designation_name')->orderBy('ep.id')
+                            ->when($limit, function ($query, $limit) {
+                                return $query->limit($limit);
+                            })
+                            ->get();
+                        break;
+                    case 'undertime':
+                        $employees = DB::table('assigned_areas as a')
+                            ->when($designation_id, function ($query, $designation_id) {
+                                return $query->where('a.designation_id', $designation_id);
+                            })
+                            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+                            ->when($employment_type, function ($query, $employment_type) {
+                                return $query->where('ep.employment_type_id', $employment_type);
+                            })
+                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+                            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+                            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+                            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+                            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+                            ->leftJoin('daily_time_records as dtr', function ($join) use ($month_of, $year_of) {
+                                $join->on('b.biometric_id', '=', 'dtr.biometric_id')
+                                    ->whereMonth('dtr.dtr_date', '=', $month_of)
+                                    ->whereYear('dtr.dtr_date', '=', $year_of);
+                            })
+                            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+                            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+                            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+                            ->leftJoin('cto_applications as cto', function ($join) {
+                                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                                    ->where('cto.status', '=', 'approved')
+                                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+                            })
+                            ->leftJoin('official_business_applications as oba', function ($join) {
+                                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                                    ->where('oba.status', '=', 'approved')
+                                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+                            })
+                            ->leftJoin('leave_applications as la', function ($join) {
+                                $join->on('ep.id', '=', 'la.employee_profile_id')
+                                    ->where('la.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+                            })
+                            ->leftJoin('official_time_applications as ota', function ($join) {
+                                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                                    ->where('ota.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+                            })
+                            ->select(
+                                'ep.id as employee_profile_id',
+                                'ep.employee_id',
+                                DB::raw("CONCAT(
+            pi.first_name, ' ',
+            IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+            pi.last_name,
+            IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+            IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+        ) as employee_name"),
+                                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_designation_name'),
+                                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_designation_code'),
+                                DB::raw('COUNT(DISTINCT CASE WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' AND YEAR(dtr.dtr_date) = ' . $year_of . ' THEN dtr.dtr_date END) as days_present'),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                DB::raw("CONVERT(SUM(DISTINCT IF(MONTH(dtr.dtr_date) = $month_of AND YEAR(dtr.dtr_date) = $year_of, dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                DB::raw("COUNT(DISTINCT CASE WHEN MONTH(sch.date) = $month_of AND YEAR(sch.date) = $year_of THEN sch.date END) as scheduled_days"),
+                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                            )
+                            ->groupBy('ep.id', 'ep.employee_id', 'employee_name', 'employee_designation_name', 'employee_designation_code')
+                            ->havingRaw('total_undertime_minutes > 0')
+                            ->when($sort_order, function ($query, $sort_order) {
+                                if ($sort_order === 'asc') {
+                                    return $query->orderByRaw('total_undertime_minutes ASC');
+                                } elseif ($sort_order === 'desc') {
+                                    return $query->orderByRaw('total_undertime_minutes DESC');
+                                } else {
+                                    return response()->json(['message' => 'Invalid sort order'], 400);
+                                }
+                            })
+                            ->orderBy('employee_designation_name')->orderBy('ep.id')
+                            ->when($limit, function ($query, $limit) {
+                                return $query->limit($limit);
+                            })
+                            ->get();
+                        break;
+                    case 'perfect':
+                        $employees = DB::table('assigned_areas as a')
+                            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+                            ->when($designation_id, function ($query, $designation_id) {
+                                return $query->where('a.designation_id', $designation_id);
+                            })
+                            ->when($employment_type, function ($query, $employment_type) {
+                                return $query->where('ep.employment_type_id', $employment_type);
+                            })
+                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+                            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+                            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+                            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+                            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+                            ->leftJoin('daily_time_records as dtr', function($join) use ($month_of, $year_of) {
+                                $join->on('b.biometric_id', '=', 'dtr.biometric_id')
+                                    ->whereMonth('dtr.dtr_date', '=', $month_of)
+                                    ->whereYear('dtr.dtr_date', '=', $year_of);
+                            })
+                            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+                            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+                            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+                            ->leftJoin('cto_applications as cto', function($join) {
+                                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                                    ->where('cto.status', '=', 'approved')
+                                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+                            })
+                            ->leftJoin('official_business_applications as oba', function($join) {
+                                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                                    ->where('oba.status', '=', 'approved')
+                                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+                            })
+                            ->leftJoin('leave_applications as la', function($join) {
+                                $join->on('ep.id', '=', 'la.employee_profile_id')
+                                    ->where('la.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+                            })
+                            ->leftJoin('official_time_applications as ota', function($join) {
+                                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                                    ->where('ota.status', '=', 'approved')
+                                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+                            })
+                            ->select(
+                                'ep.id as employee_profile_id',
+                                'ep.employee_id',
+                                DB::raw("CONCAT(
+            pi.first_name, ' ',
+            IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+            pi.last_name,
+            IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+            IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+        ) as employee_name"),
+                                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_designation_name'),
+                                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_designation_code')
+                            )
+                            ->groupBy('ep.id', 'ep.employee_id', 'employee_name', 'employee_designation_name', 'employee_designation_code')
+                            ->havingRaw('
+        SUM(CASE WHEN dtr.first_in > ts.first_in OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in) THEN 1 ELSE 0 END) = 0 AND
+        SUM(CASE WHEN dtr.undertime_minutes > 0 THEN 1 ELSE 0 END) = 0 AND
+        COUNT(DISTINCT sch.date) = COUNT(DISTINCT dtr.dtr_date)
+    ')
+                            ->orderBy('employee_designation_name')
+                            ->orderBy('ep.id')
+                            ->get();
+
+                        break;
+                }
+            } else {
+                switch($report_type) {
+                    case 'absences':
+                        break;
+                    case 'tardiness':
+                        break;
+                    case 'undertime':
+                        break;
+                    case 'perfect':
+                        break;
+                }
+            }
+
+            $data = collect();
+//            switch ($sector) {
+//                case "division":
+//                    $divisionId = $area_id;
+//                    $employees = DB::table('assigned_areas as a')
+//                        ->select(
+//                            'ep.id',
+//                            'ep.biometric_id as employee_biometric_id',
+//                            'ep.employee_id',
+//                            DB::raw("
+//                                            CONCAT(
+//                                                pi.first_name, ' ',
+//                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+//                                                pi.last_name,
+//                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+//                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+//                                            ) as employee_name
+//                                        "),
+//                            'ept.name as employment_type',
+//                            DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_designation_name'),
+//                            DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_designation_code'),
+//                        )
+//                        ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+//                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+//                        ->leftJoin('user_management_den.employment_types as ept', 'ep.employment_type_id', '=', 'ept.id')
+//                        ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+//                        ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+//                        ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+//                        ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+//                        ->where(function ($query) use ($divisionId) {
+//                            $query->where('a.division_id', $divisionId)
+//                                ->orWhereIn('a.department_id', function ($query) use ($divisionId) {
+//                                    $query->select('id')
+//                                        ->from('departments')
+//                                        ->where('division_id', $divisionId);
+//                                })
+//                                ->orWhereIn('a.section_id', function ($query) use ($divisionId) {
+//                                    $query->select('id')
+//                                        ->from('sections')
+//                                        ->where('division_id', $divisionId)
+//                                        ->orWhereIn('department_id', function ($query) use ($divisionId) {
+//                                            $query->select('id')
+//                                                ->from('departments')
+//                                                ->where('division_id', $divisionId);
+//                                        });
+//                                })
+//                                ->orWhereIn('a.unit_id', function ($query) use ($divisionId) {
+//                                    $query->select('id')
+//                                        ->from('units')
+//                                        ->whereIn('section_id', function ($query) use ($divisionId) {
+//                                            $query->select('id')
+//                                                ->from('sections')
+//                                                ->where('division_id', $divisionId)
+//                                                ->orWhereIn('department_id', function ($query) use ($divisionId) {
+//                                                    $query->select('id')
+//                                                        ->from('departments')
+//                                                        ->where('division_id', $divisionId);
+//                                                });
+//                                        });
+//                                });
+//                        })
+//                        ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+//                        ->where('ep.employee_id', 2024061050)
+//                        ->orderBy('employee_designation_name')
+//                        ->orderBy('ep.id')
+//                        ->get();
+//
+//
+//                    break;
+//                case "department":
+//                    break;
+//                case "section":
+//                    break;
+//                case "unit":
+//                    break;
+//                default:
+//            }
+            return response()->json([
+                'count' => COUNT($employees),
+                'message' => 'Successfully retrieved data.',
+                'data' => $employees
 
             ]);
         } catch (\Throwable $th) {
