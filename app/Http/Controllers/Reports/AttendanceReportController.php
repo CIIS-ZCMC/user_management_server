@@ -97,6 +97,7 @@ class AttendanceReportController extends Controller
                                     ->where('ota.status', '=', 'approved')
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
+
                             ->select(
                                 'ep.id as employee_profile_id',
                                 'ep.employee_id',
@@ -538,6 +539,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                            ->whereNull('ep.deactivated_at')
                             ->select(
                                 'ep.id as employee_profile_id',
                                 'ep.employee_id',
@@ -712,6 +714,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -877,6 +880,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -1077,6 +1081,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -1239,6 +1244,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -1436,6 +1442,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -1588,6 +1595,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -1775,6 +1783,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -1922,6 +1931,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -2095,6 +2105,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -2260,6 +2271,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -2447,6 +2459,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -2609,6 +2622,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.department_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -2793,6 +2807,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -2945,6 +2960,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.department_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -3119,6 +3135,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -3266,6 +3283,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.department_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -3437,6 +3455,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -3602,6 +3621,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -3787,6 +3807,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -3949,6 +3970,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -4131,6 +4153,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -4277,6 +4300,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -4429,6 +4453,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -4576,6 +4601,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -4736,6 +4762,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -4910,6 +4937,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -5075,6 +5103,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -5229,6 +5258,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -5973,6 +6003,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -6117,6 +6148,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -6296,6 +6328,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -6438,6 +6471,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -6615,6 +6649,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -6758,6 +6793,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -6936,6 +6972,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -7079,6 +7116,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -7248,6 +7286,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -7392,6 +7431,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.division_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -7558,6 +7598,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -7700,6 +7741,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.department_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -7864,6 +7906,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8007,6 +8050,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.department_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8172,6 +8216,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8315,6 +8360,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.department_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8482,6 +8528,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8626,6 +8673,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8790,6 +8838,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -8932,6 +8981,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -9094,6 +9144,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -9237,6 +9288,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -9400,6 +9452,7 @@ class AttendanceReportController extends Controller
                                                         });
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -9543,6 +9596,7 @@ class AttendanceReportController extends Controller
                                                     $query->where('a.section_id', $area_id);
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                                ->whereNull('ep.deactivated_at')
                                                 ->select(
                                                     'ep.id as employee_profile_id',
                                                     'ep.employee_id',
@@ -9694,6 +9748,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -9838,6 +9893,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -9980,6 +10036,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
@@ -10123,6 +10180,7 @@ class AttendanceReportController extends Controller
                                             $query->where('a.unit_id', $area_id);
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                                        ->whereNull('ep.deactivated_at')
                                         ->select(
                                             'ep.id as employee_profile_id',
                                             'ep.employee_id',
