@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Reports;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Models\EmployeeProfile;
 use App\Models\FailedLoginTrail;
+use App\Models\LoginTrail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -21,8 +23,13 @@ class LoginActivitiesReport extends Controller
     public function getFailedLoginAttempts(Request $request)
     {
         try {
-            $query = FailedLoginTrail::get();
-            return $query;
+            $employees = EmployeeProfile::with('failedLoginTrails')->whereNull('deactivated_at');
+
+            return response()->json([
+                'count' => $employees->count(),
+
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'getFailedLoginAttempts', $th->getMessage());
             return response()->json(
@@ -43,6 +50,12 @@ class LoginActivitiesReport extends Controller
     public function getSuccessfulLogins(Request $request)
     {
         try {
+            $query = LoginTrail::get();
+            return response()->json([
+                'count' => $query->count(),
+                'data' => $query,
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'getSuccessfulLogins', $th->getMessage());
             return response()->json(
@@ -63,6 +76,17 @@ class LoginActivitiesReport extends Controller
     public function getLoginFrequency(Request $request)
     {
         try {
+            $query = LoginTrail::query();
+            // Group by employee profile ID and count the number of logins
+            $result = $query->selectRaw('employee_profile_id, COUNT(*) as login_count')
+                ->groupBy('employee_profile_id')
+                ->get();
+
+            return response()->json([
+                'count' => $result->count(),
+                'data' => $result,
+                'message' => 'List of employee blood types retrieved'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'getLoginFrequency', $th->getMessage());
             return response()->json(
