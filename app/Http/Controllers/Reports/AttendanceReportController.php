@@ -5071,6 +5071,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                                 pi.first_name, ' ',
                                                 IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -5159,7 +5162,7 @@ class AttendanceReportController extends Controller
                                                                                         AND ota.id IS NOT NULL -- No Official Time application
                                                                                         THEN sch.date END) as absent_without_official_leave"));
                                         })
-                                        ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
+                                        ->groupBy('ep.id', 'ep.employee_id', 'employee_name', 'ep.biometric_id',  'employment_type_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
                                         ->havingRaw('days_absent > 0')
                                         ->when($absent_leave_without_pay, function ($query) {
                                             return $query->havingRaw('absent_leave_without_pay > 0');
@@ -5252,6 +5255,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                                                 pi.first_name, ' ',
                                                                 IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -5424,6 +5430,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                                                 pi.first_name, ' ',
                                                                 IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -5585,6 +5594,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                                             pi.first_name, ' ',
                                                             IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -6196,39 +6208,39 @@ class AttendanceReportController extends Controller
                                 'des.code as employee_designation_code',
                                 'et.name as employment_type_name',
                                 DB::raw("CONCAT(
-            pi.first_name, ' ',
-            IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-            pi.last_name,
-            IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-            IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-        ) as employee_name"),
+                                    pi.first_name, ' ',
+                                    IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                    pi.last_name,
+                                    IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                    IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                ) as employee_name"),
                                 DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
                                 DB::raw('COUNT(DISTINCT CASE 
-            WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
-            THEN dtr.dtr_date END) as days_present'),
+                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                    THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
                                 DB::raw("SUM(DISTINCT IF(
-            dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-            dtr.total_working_minutes, 0)) as total_working_minutes"),
+                                    dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
+                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-            dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-            dtr.overtime_minutes, 0)) as total_overtime_minutes"),
+                                    dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
+                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-            dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-            dtr.undertime_minutes, 0)) as total_undertime_minutes"),
+                                    dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
+                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
-            WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
-            THEN sch.date END) as scheduled_days'),
+                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                    THEN sch.date END) as scheduled_days'),
 
                                 // Total Hours Scheduled
                                 DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -6252,18 +6264,18 @@ class AttendanceReportController extends Controller
                             // Apply conditions based on variables
                             ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                 return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-            AND la.id IS NOT NULL  -- No approved leave application
-            THEN sch.date END) as absent_leave_without_pay"));
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NOT NULL  -- No approved leave application
+                                    THEN sch.date END) as absent_leave_without_pay"));
                             })
                             ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
                                 return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-            AND la.id IS NOT NULL  -- No approved leave application
-            AND cto.id IS NOT NULL -- No CTO application
-            AND oba.id IS NOT NULL -- No Official Business application
-            AND ota.id IS NOT NULL -- No Official Time application
-            THEN sch.date END) as absent_without_official_leave"));
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NOT NULL  -- No approved leave application
+                                    AND cto.id IS NOT NULL -- No CTO application
+                                    AND oba.id IS NOT NULL -- No Official Business application
+                                    AND ota.id IS NOT NULL -- No Official Time application
+                                    THEN sch.date END) as absent_without_official_leave"));
                             })
                             ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
                             ->havingRaw('total_undertime_minutes > 0')
@@ -6369,7 +6381,6 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -10381,6 +10392,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                                 pi.first_name, ' ',
                                                 IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -10532,6 +10546,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                                     pi.first_name, ' ',
                                                     IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -10681,6 +10698,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                                             pi.first_name, ' ',
                                             IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
@@ -10831,6 +10851,9 @@ class AttendanceReportController extends Controller
                                             'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
                                             DB::raw("CONCAT(
                         pi.first_name, ' ',
                         IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
