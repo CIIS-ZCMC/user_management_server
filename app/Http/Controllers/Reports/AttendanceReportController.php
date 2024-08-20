@@ -45,7 +45,6 @@ class AttendanceReportController extends Controller
 
             $employees = collect();
 
-            // TODO test filtering if area id and sector is empty
             if (!$sector && !$area_id) {
                 switch ($report_type) {
                     case 'absences':
@@ -99,7 +98,9 @@ class AttendanceReportController extends Controller
                                     ->where('ota.status', '=', 'approved')
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
-
+                            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                            ->whereNull('ep.deactivated_at')
+                            ->where('ep.personal_information_id', '<>', 1)
                             ->select(
                                 'ep.id',
                                 'ep.employee_id',
@@ -124,25 +125,25 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                 MONTH(dtr.dtr_date) = $month_of 
                                 AND YEAR(dtr.dtr_date) = $year_of 
                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                 MONTH(dtr.dtr_date) = $month_of 
                                 AND YEAR(dtr.dtr_date) = $year_of 
                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                 MONTH(dtr.dtr_date) = $month_of 
                                 AND YEAR(dtr.dtr_date) = $year_of 
                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -162,7 +163,7 @@ class AttendanceReportController extends Controller
                                     AND oba.id IS NULL
                                     AND ota.id IS NULL
                                     THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -260,6 +261,9 @@ class AttendanceReportController extends Controller
                                     ->where('ota.status', '=', 'approved')
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
+                            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                            ->whereNull('ep.deactivated_at')
+                            ->where('ep.personal_information_id', '<>', 1)
                             ->select(
                                 'ep.id',
                                 'ep.employee_id',
@@ -283,25 +287,25 @@ class AttendanceReportController extends Controller
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -320,7 +324,7 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
 
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -418,6 +422,9 @@ class AttendanceReportController extends Controller
                                     ->where('ota.status', '=', 'approved')
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
+                            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+                            ->whereNull('ep.deactivated_at')
+                            ->where('ep.personal_information_id', '<>', 1)
                             ->select(
                                 'ep.id',
                                 'ep.employee_id',
@@ -443,25 +450,25 @@ class AttendanceReportController extends Controller
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -470,7 +477,7 @@ class AttendanceReportController extends Controller
                                     ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                     THEN sch.date END) as scheduled_days'),
 
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -569,6 +576,7 @@ class AttendanceReportController extends Controller
                             })
                             ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                             ->whereNull('ep.deactivated_at')
+                            ->where('ep.personal_information_id', '<>', 1)
                             ->select(
                                 'ep.id',
                                 'ep.employee_id',
@@ -594,25 +602,25 @@ class AttendanceReportController extends Controller
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     MONTH(dtr.dtr_date) = $month_of 
                                     AND YEAR(dtr.dtr_date) = $year_of 
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -621,7 +629,7 @@ class AttendanceReportController extends Controller
                                     ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                     THEN sch.date END) as scheduled_days'),
 
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -753,6 +761,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -777,25 +787,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -815,7 +825,7 @@ class AttendanceReportController extends Controller
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -928,6 +938,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -952,25 +964,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -990,7 +1002,7 @@ class AttendanceReportController extends Controller
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1138,6 +1150,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1162,25 +1176,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -1198,7 +1212,7 @@ class AttendanceReportController extends Controller
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1310,6 +1324,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1334,25 +1350,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -1370,7 +1386,7 @@ class AttendanceReportController extends Controller
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1517,6 +1533,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1541,25 +1559,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -1567,7 +1585,7 @@ class AttendanceReportController extends Controller
                                                         AND YEAR(sch.date) = ' . $year_of . ' 
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1679,6 +1697,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1703,25 +1723,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -1729,7 +1749,7 @@ class AttendanceReportController extends Controller
                                                         AND YEAR(sch.date) = ' . $year_of . ' 
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1876,6 +1896,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1901,25 +1923,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -1928,7 +1950,7 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -2033,6 +2055,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -2058,25 +2082,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -2085,7 +2109,7 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -2216,6 +2240,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -2240,25 +2266,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -2278,7 +2304,7 @@ class AttendanceReportController extends Controller
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -2391,6 +2417,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -2415,25 +2443,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -2453,7 +2481,7 @@ class AttendanceReportController extends Controller
                                                                 AND oba.id IS NULL
                                                                 AND ota.id IS NULL
                                                                 THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -2588,6 +2616,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -2612,25 +2642,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -2648,7 +2678,7 @@ class AttendanceReportController extends Controller
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -2760,6 +2790,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -2784,25 +2816,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -2820,7 +2852,7 @@ class AttendanceReportController extends Controller
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -2954,6 +2986,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -2978,25 +3012,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -3004,7 +3038,7 @@ class AttendanceReportController extends Controller
                                                         AND YEAR(sch.date) = ' . $year_of . ' 
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3116,6 +3150,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3140,25 +3176,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -3166,7 +3202,7 @@ class AttendanceReportController extends Controller
                                                         AND YEAR(sch.date) = ' . $year_of . ' 
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3300,6 +3336,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3325,25 +3363,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -3352,7 +3390,7 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3457,6 +3495,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3482,25 +3522,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -3509,7 +3549,7 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3638,6 +3678,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3662,25 +3704,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -3700,7 +3742,7 @@ class AttendanceReportController extends Controller
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3813,6 +3855,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3837,25 +3881,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -3875,7 +3919,7 @@ class AttendanceReportController extends Controller
                                                                 AND oba.id IS NULL
                                                                 AND ota.id IS NULL
                                                                 THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4008,6 +4052,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4032,25 +4078,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -4068,7 +4114,7 @@ class AttendanceReportController extends Controller
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4180,6 +4226,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4204,25 +4252,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -4240,7 +4288,7 @@ class AttendanceReportController extends Controller
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4372,6 +4420,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4396,25 +4446,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -4422,7 +4472,7 @@ class AttendanceReportController extends Controller
                                                         AND YEAR(sch.date) = ' . $year_of . ' 
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4528,6 +4578,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4548,25 +4600,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -4574,7 +4626,7 @@ class AttendanceReportController extends Controller
                                                         AND YEAR(sch.date) = ' . $year_of . ' 
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4687,6 +4739,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4712,25 +4766,25 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of 
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -4739,7 +4793,7 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4844,6 +4898,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4864,25 +4920,25 @@ class AttendanceReportController extends Controller
                                             THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                             MONTH(dtr.dtr_date) = $month_of 
                                             AND YEAR(dtr.dtr_date) = $year_of 
                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                            dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                            dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                             MONTH(dtr.dtr_date) = $month_of 
                                             AND YEAR(dtr.dtr_date) = $year_of 
                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                            dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                            dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                             MONTH(dtr.dtr_date) = $month_of 
                                             AND YEAR(dtr.dtr_date) = $year_of 
                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                            dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                            dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -4890,7 +4946,7 @@ class AttendanceReportController extends Controller
                                             AND YEAR(sch.date) = ' . $year_of . ' 
                                             ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                             THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -5033,25 +5089,25 @@ class AttendanceReportController extends Controller
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -5072,7 +5128,7 @@ class AttendanceReportController extends Controller
                                                     AND ota.id IS NULL
                                                     THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -5214,25 +5270,25 @@ class AttendanceReportController extends Controller
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -5251,7 +5307,7 @@ class AttendanceReportController extends Controller
                                                                 THEN dtr.dtr_date
                                                             END) as days_with_tardiness"),
 
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -5386,25 +5442,25 @@ class AttendanceReportController extends Controller
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -5413,7 +5469,7 @@ class AttendanceReportController extends Controller
                                                 ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                 THEN sch.date END) as scheduled_days'),
 
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -5547,25 +5603,25 @@ class AttendanceReportController extends Controller
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 MONTH(dtr.dtr_date) = $month_of 
                                                 AND YEAR(dtr.dtr_date) = $year_of 
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -5574,7 +5630,7 @@ class AttendanceReportController extends Controller
                                                 ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
                                                 THEN sch.date END) as scheduled_days'),
 
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -5741,19 +5797,19 @@ class AttendanceReportController extends Controller
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -5770,7 +5826,7 @@ class AttendanceReportController extends Controller
                                         AND ota.id IS NULL
                                         THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -5880,19 +5936,19 @@ class AttendanceReportController extends Controller
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -5907,7 +5963,7 @@ class AttendanceReportController extends Controller
                                         THEN dtr.dtr_date
                                     END) as days_with_tardiness"),
 
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -6017,19 +6073,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -6037,7 +6093,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                 // Total Hours Scheduled
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -6155,19 +6211,19 @@ class AttendanceReportController extends Controller
             THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
             dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-            dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+            dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
             dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-            dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+            dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
-                                DB::raw("CONVERT(SUM(DISTINCT IF(
+                                DB::raw("SUM(DISTINCT IF(
             dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-            dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+            dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
                                 DB::raw('COUNT(DISTINCT CASE 
@@ -6175,7 +6231,7 @@ class AttendanceReportController extends Controller
             THEN sch.date END) as scheduled_days'),
 
                                 // Total Hours Scheduled
-                                DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                 // Count of Leaves with Pay
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                 // Count of Leaves without Pay
@@ -6312,6 +6368,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -6335,19 +6393,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -6364,7 +6422,7 @@ class AttendanceReportController extends Controller
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -6466,6 +6524,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -6489,19 +6549,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -6518,7 +6578,7 @@ class AttendanceReportController extends Controller
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -6655,6 +6715,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -6678,19 +6740,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -6705,7 +6767,7 @@ class AttendanceReportController extends Controller
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -6807,6 +6869,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -6830,19 +6894,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -6857,7 +6921,7 @@ class AttendanceReportController extends Controller
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -6994,6 +7058,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -7017,19 +7083,19 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -7037,7 +7103,7 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -7147,6 +7213,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -7170,19 +7238,19 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -7190,7 +7258,7 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -7335,6 +7403,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -7358,19 +7428,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -7378,7 +7448,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -7488,6 +7558,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -7511,19 +7583,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -7531,7 +7603,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -7667,6 +7739,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -7690,19 +7764,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -7719,7 +7793,7 @@ class AttendanceReportController extends Controller
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -7821,6 +7895,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -7844,19 +7920,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -7873,7 +7949,7 @@ class AttendanceReportController extends Controller
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -7997,6 +8073,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -8020,19 +8098,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -8047,7 +8125,7 @@ class AttendanceReportController extends Controller
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -8149,6 +8227,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -8172,19 +8252,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -8199,7 +8279,7 @@ class AttendanceReportController extends Controller
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -8323,6 +8403,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -8346,19 +8428,19 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -8366,7 +8448,7 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -8476,6 +8558,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -8499,19 +8583,19 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -8519,7 +8603,7 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -8651,6 +8735,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -8674,19 +8760,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -8694,7 +8780,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -8804,6 +8890,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -8827,19 +8915,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -8847,7 +8935,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -8981,6 +9069,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9004,19 +9094,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -9033,7 +9123,7 @@ class AttendanceReportController extends Controller
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -9135,6 +9225,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9158,19 +9250,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -9187,7 +9279,7 @@ class AttendanceReportController extends Controller
                                                             AND ota.id IS NULL
                                                             THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -9309,6 +9401,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9332,19 +9426,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -9359,7 +9453,7 @@ class AttendanceReportController extends Controller
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -9461,6 +9555,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9484,19 +9580,19 @@ class AttendanceReportController extends Controller
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -9511,7 +9607,7 @@ class AttendanceReportController extends Controller
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -9633,6 +9729,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9656,19 +9754,19 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -9676,7 +9774,7 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -9786,6 +9884,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9809,19 +9909,19 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                                     dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                    dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -9829,7 +9929,7 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -9959,6 +10059,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -9982,19 +10084,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -10002,7 +10104,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -10112,6 +10214,8 @@ class AttendanceReportController extends Controller
                                                 })
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
+                                                ->where('ep.personal_information_id', '<>', 1)
+
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -10135,19 +10239,19 @@ class AttendanceReportController extends Controller
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
-                                                    DB::raw("CONVERT(SUM(DISTINCT IF(
+                                                    DB::raw("SUM(DISTINCT IF(
                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE 
@@ -10155,7 +10259,7 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
-                                                    DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -10293,19 +10397,19 @@ class AttendanceReportController extends Controller
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -10322,7 +10426,7 @@ class AttendanceReportController extends Controller
                                                     AND ota.id IS NULL
                                                     THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
 
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -10444,19 +10548,19 @@ class AttendanceReportController extends Controller
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                                 dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                                dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -10471,7 +10575,7 @@ class AttendanceReportController extends Controller
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
 
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -10593,19 +10697,19 @@ class AttendanceReportController extends Controller
                                             THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                             dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                            dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                                            dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                             dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                            dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                                            dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                                             dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                                            dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                                            dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -10613,7 +10717,7 @@ class AttendanceReportController extends Controller
                                             THEN sch.date END) as scheduled_days'),
 
                                             // Total Hours Scheduled
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -10743,19 +10847,19 @@ class AttendanceReportController extends Controller
                         THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                        dtr.total_working_minutes, 0)), UNSIGNED) as total_working_minutes"),
+                        dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                        dtr.overtime_minutes, 0)), UNSIGNED) as total_overtime_minutes"),
+                        dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
-                                            DB::raw("CONVERT(SUM(DISTINCT IF(
+                                            DB::raw("SUM(DISTINCT IF(
                         dtr.dtr_date BETWEEN '$start_date' AND '$end_date',
-                        dtr.undertime_minutes, 0)), UNSIGNED) as total_undertime_minutes"),
+                        dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE 
@@ -10763,7 +10867,7 @@ class AttendanceReportController extends Controller
                         THEN sch.date END) as scheduled_days'),
 
                                             // Total Hours Scheduled
-                                            DB::raw('CONVERT(SUM(ts.total_hours), UNSIGNED) as scheduled_total_hours'),
+                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
