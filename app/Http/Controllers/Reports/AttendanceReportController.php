@@ -57,7 +57,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -99,7 +99,7 @@ class AttendanceReportController extends Controller
                             })
 
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -209,7 +209,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -250,7 +250,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -358,7 +358,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -399,7 +399,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -498,7 +498,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -541,7 +541,7 @@ class AttendanceReportController extends Controller
                             ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                             ->whereNull('ep.deactivated_at')
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -641,7 +641,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -716,7 +716,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -836,7 +836,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -882,7 +882,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -1008,7 +1008,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -1083,7 +1083,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -1200,7 +1200,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -1246,7 +1246,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -1369,7 +1369,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -1444,7 +1444,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -1551,7 +1551,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -1597,7 +1597,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -1710,7 +1710,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -1785,7 +1785,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -1887,7 +1887,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -1933,7 +1933,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -2045,7 +2045,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -2107,7 +2107,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -2227,7 +2227,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -2273,7 +2273,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -2399,7 +2399,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -2461,7 +2461,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -2578,7 +2578,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -2624,7 +2624,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -2747,7 +2747,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -2809,7 +2809,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -2916,7 +2916,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -2962,7 +2962,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -3075,7 +3075,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -3137,7 +3137,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -3239,7 +3239,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -3285,7 +3285,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -3397,7 +3397,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -3457,7 +3457,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -3577,7 +3577,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -3623,7 +3623,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -3749,7 +3749,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -3809,7 +3809,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -3926,7 +3926,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -3972,7 +3972,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -4095,7 +4095,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -4155,7 +4155,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -4262,7 +4262,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -4302,7 +4302,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     DB::raw("CONCAT(
                                                                 pi.first_name, ' ',
@@ -4395,7 +4395,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -4455,7 +4455,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -4557,7 +4557,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -4603,7 +4603,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     DB::raw("CONCAT(
                                                                 pi.first_name, ' ',
@@ -4717,7 +4717,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -4764,7 +4764,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -4893,7 +4893,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -4939,7 +4939,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -5059,7 +5059,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -5105,7 +5105,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -5214,7 +5214,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -5260,7 +5260,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -5413,7 +5413,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -5447,7 +5447,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -5543,7 +5543,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -5577,7 +5577,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -5671,7 +5671,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -5705,7 +5705,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -5800,7 +5800,7 @@ class AttendanceReportController extends Controller
                             ->when($employment_type, function ($query, $employment_type) {
                                 return $query->where('ep.employment_type_id', $employment_type);
                             })
-                            ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                             ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                             ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                             ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -5834,7 +5834,7 @@ class AttendanceReportController extends Controller
                                     ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
                             })
                             ->select(
-                                'ep.id as employee_profile_id',
+                                'ep.id',
                                 'ep.employee_id',
                                 'ep.biometric_id',
                                 DB::raw("CONCAT(
@@ -5937,7 +5937,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6005,7 +6005,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -6111,7 +6111,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6150,7 +6150,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -6262,7 +6262,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6330,7 +6330,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -6434,7 +6434,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6473,7 +6473,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -6583,7 +6583,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6651,7 +6651,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -6756,7 +6756,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6795,7 +6795,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -6906,7 +6906,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -6974,7 +6974,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -7079,7 +7079,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -7118,7 +7118,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -7233,7 +7233,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -7288,7 +7288,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -7394,7 +7394,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -7433,7 +7433,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -7545,7 +7545,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -7600,7 +7600,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -7704,7 +7704,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -7743,7 +7743,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -7853,7 +7853,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -7908,7 +7908,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8013,7 +8013,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8052,7 +8052,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8163,7 +8163,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8218,7 +8218,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8323,7 +8323,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8362,7 +8362,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8477,7 +8477,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8530,7 +8530,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8636,7 +8636,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8675,7 +8675,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8787,7 +8787,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8840,7 +8840,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -8944,7 +8944,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -8983,7 +8983,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -9093,7 +9093,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -9146,7 +9146,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -9251,7 +9251,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -9290,7 +9290,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -9401,7 +9401,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -9454,7 +9454,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -9559,7 +9559,7 @@ class AttendanceReportController extends Controller
                                                 ->when($employment_type, function ($query, $employment_type) {
                                                     return $query->where('ep.employment_type_id', $employment_type);
                                                 })
-                                                ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                                ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                                 ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                                 ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                                 ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -9598,7 +9598,7 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->select(
-                                                    'ep.id as employee_profile_id',
+                                                    'ep.id',
                                                     'ep.employee_id',
                                                     'ep.biometric_id',
                                                     DB::raw("CONCAT(
@@ -9711,7 +9711,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -9750,7 +9750,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -9856,7 +9856,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -9895,7 +9895,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -9999,7 +9999,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -10038,7 +10038,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
@@ -10143,7 +10143,7 @@ class AttendanceReportController extends Controller
                                         ->when($employment_type, function ($query, $employment_type) {
                                             return $query->where('ep.employment_type_id', $employment_type);
                                         })
-                                        ->leftJoin('user_management_den.personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+                                        ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
                                         ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
                                         ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
                                         ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
@@ -10182,7 +10182,7 @@ class AttendanceReportController extends Controller
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
                                         ->select(
-                                            'ep.id as employee_profile_id',
+                                            'ep.id',
                                             'ep.employee_id',
                                             'ep.biometric_id',
                                             DB::raw("CONCAT(
