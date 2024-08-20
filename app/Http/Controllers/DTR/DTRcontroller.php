@@ -319,7 +319,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of,$dtr_date){
     public function RegenerateDTR(){
 
         Log::channel("custom-dtr-log")->info('Performing RegenerateDTR @ '.date('H:i'));
-        ini_set('max_execution_time', 7200);
+        ini_set('max_execution_time', 86400);
 
 
         $start_date = strtotime(date('Y-m-d',strtotime('-3 days')));
@@ -629,7 +629,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of,$dtr_date){
             }
             }
         } catch (\Throwable $th) {
-          
+
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
            // return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());

@@ -15,6 +15,8 @@ use App\Http\Controllers\PayrollHooks\ComputationController;
 use App\Http\Controllers\DTR\DeviceLogsController;
 use App\Http\Controllers\DTR\DTRcontroller;
 use Carbon\Carbon;
+use App\Models\InActiveEmployee;
+
 //SalaryGrade
 class GenerateReportController extends Controller
 {
@@ -178,18 +180,21 @@ class GenerateReportController extends Controller
 
     public function GenerateDataReport(Request $request)
     {
-        ini_set('max_execution_time', 7200);
+        ini_set('max_execution_time', 86400); //24 hours compiling time
         $month_of = $request->month_of;
         $year_of = $request->year_of;
-        $biometricIds = DB::table('daily_time_records')
-            ->whereYear('dtr_date', $year_of)
-            ->whereMonth('dtr_date', $month_of)
-            ->pluck('biometric_id');
-        $profiles = DB::table('employee_profiles')
-            ->whereIn('biometric_id', $biometricIds)
-       // ->whereIn('biometric_id', [515]) // 494
-            ->get();
+        // $employeeIds = DB::table('daily_time_records')
+        //     ->whereYear('dtr_date', $year_of)
+        //     ->whereMonth('dtr_date', $month_of)
+        //     ->pluck('employee_id');//employee_id
+        // $profiles = DB::table('employee_profiles')
+        //     ->whereIn('biometric_id', $biometricIds)
+        //     ->get();
+
+        $profiles = EmployeeProfile::all();
         $data = [];
+
+
         $nightDifferentials = [];
         $whole_month = $request->whole_month;
         $first_half = $request->first_half;
@@ -202,7 +207,16 @@ class GenerateReportController extends Controller
         }
 
         foreach ($profiles as $row) {
-            $Employee = EmployeeProfile::find($row->id);
+            $Employee = $row;
+
+           if (!$Employee->assignedArea){
+            continue;
+           }
+
+        //    if(!InActiveEmployee::where('employee_id',$Employee->employee_id)->first()){
+        //     continue;
+        //    }
+
 
             $biometric_id = $row->biometric_id;
             $dtr = DB::table('daily_time_records')
@@ -253,9 +267,7 @@ class GenerateReportController extends Controller
             }
 
 
-            $employee = EmployeeProfile::where('biometric_id', $biometric_id)
-            ->whereNull('deactivated_at')
-            ->whereNull('deleted_at')->first();
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
             if ($employee) {
 
@@ -515,8 +527,8 @@ class GenerateReportController extends Controller
                 }));
 
                 $employeeAssignedAreas =  $employee->assignedAreas->first();
-                $salaryGrade = $employeeAssignedAreas->salary_grade_id;
-                $salaryStep  = $employeeAssignedAreas->salary_grade_step;
+                $salaryGrade = $employeeAssignedAreas->salary_grade_id ?? 1;
+                $salaryStep  = $employeeAssignedAreas->salary_grade_step ?? 1;
 
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
@@ -526,7 +538,14 @@ class GenerateReportController extends Controller
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
                 $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
 
+              //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
 
+
+              $leaveApplication = array_values($Employee->leaveApplications->filter(function($row) use($month_of, $year_of) {
+                    if($row->name == "Study Leave"){
+                        return date('Y', strtotime($row->date_from)) === $year_of && date('m', strtotime($row->date_from)) === $month_of;
+                    }
+            })->toArray());
 
                 $data[] = [
                     'Biometric_id' => $biometric_id,
@@ -536,8 +555,12 @@ class GenerateReportController extends Controller
                         'Designation'=>$Employee->findDesignation(),
                         'Hired'=>$Employee->date_hired,
                         'EmploymentType'=> $Employee->employmentType,
-                    ],
+                        'Excluded'=> InActiveEmployee::where('employee_id',$Employee->employee_id)->first(),
+                        'leaveApplications'=>$leaveApplication,
+                        'employeeLeaveCredits'=>$Employee->employeeLeaveCredits
 
+                    ],
+                    'Assigned_area'=>$Employee->assignedArea->findDetails(),
                     'SalaryData' =>[
                         'step'=>$Employee->assignedArea->salary_grade_step,
                         'salaryGroup'=>$Employee->assignedArea->salaryGrade,
