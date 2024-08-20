@@ -27,14 +27,34 @@ class DailyTimeRecordObserver
     public function saved($model)
     {
         // Assuming similar cache key generation logic is used
-        $cacheKey = "absences_by_period_*"; // Use a wildcard to clear relevant cache keys
-        Cache::forget($cacheKey);
+        $cacheKeyAbsencesByPeriod = "absences_by_period_*"; // Use a wildcard to clear relevant cache keys
+        $cacheKeyAbsencesByDateRange = "absences_by_date_range_*";
+        $cacheKeyTardinessByPeriod = "tardiness_by_period_*";
+        $cacheKeyTardinessByDateRange = "tardiness_by_date_range_*";
+        $cacheKeyUndertimeByPeriod = "undertime_by_period_*";
+        $cacheKeyUndertimeByDateRange = "undertime_by_date_range_*";
+        Cache::forget($cacheKeyAbsencesByDateRange);
+        Cache::forget($cacheKeyAbsencesByPeriod);
+        Cache::forget($cacheKeyTardinessByPeriod);
+        Cache::forget($cacheKeyTardinessByDateRange);
+        Cache::forget($cacheKeyUndertimeByPeriod);
+        Cache::forget($cacheKeyUndertimeByDateRange);
     }
 
     public function deleted($model)
     {
-        $cacheKey = "absences_by_period_*"; // Use a wildcard to clear relevant cache keys
-        Cache::forget($cacheKey);
+        $cacheKeyAbsencesByPeriod = "absences_by_period_*"; // Use a wildcard to clear relevant cache keys
+        $cacheKeyAbsencesByDateRange = "absences_by_date_range_";
+        $cacheKeyTardinessByPeriod = "tardiness_by_period_*";
+        $cacheKeyTardinessByDateRange = "tardiness_by_date_range_*";
+        $cacheKeyUndertimeByPeriod = "undertime_by_period_*";
+        $cacheKeyUndertimeByDateRange = "undertime_by_date_range_*";
+        Cache::forget($cacheKeyAbsencesByDateRange);
+        Cache::forget($cacheKeyAbsencesByPeriod);
+        Cache::forget($cacheKeyTardinessByPeriod);
+        Cache::forget($cacheKeyTardinessByDateRange);
+        Cache::forget($cacheKeyUndertimeByPeriod);
+        Cache::forget($cacheKeyUndertimeByDateRange);
     }
 
     /**
