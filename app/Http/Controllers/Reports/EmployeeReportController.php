@@ -16,7 +16,6 @@ use App\Models\EmployeeProfile;
 use App\Models\PersonalInformation;
 use App\Models\Section;
 use App\Models\Unit;
-use App\Models\WorkExperience;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -2285,7 +2284,7 @@ class EmployeeReportController extends Controller
     }
 
 
-    public function filterEmployeesByPWD(Request $request)
+    public function filterEmployeesByPWD(Request $requzest)
     {
         try {
             $employees = collect();

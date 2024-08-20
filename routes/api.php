@@ -2534,5 +2534,8 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
+
+        // PRINTABLES
+        Route::post('download-employee-report', 'PrintableReportController@generatePrintableReport');
     });
 });
