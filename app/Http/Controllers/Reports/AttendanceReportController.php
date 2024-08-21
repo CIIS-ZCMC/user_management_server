@@ -319,8 +319,8 @@ class AttendanceReportController extends Controller
                                                     WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                    AND (dtr.first_in > ts.first_in 
-                                                        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
 
@@ -1208,8 +1208,8 @@ class AttendanceReportController extends Controller
                                                             WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -1382,9 +1382,9 @@ class AttendanceReportController extends Controller
                                                             WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
-                                                            THEN dtr.dtr_date
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
+    THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -2674,8 +2674,8 @@ class AttendanceReportController extends Controller
                                                             WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -2848,9 +2848,9 @@ class AttendanceReportController extends Controller
                                                             WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
-                                                            THEN dtr.dtr_date
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
+    THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -4110,8 +4110,8 @@ class AttendanceReportController extends Controller
                                                             WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -4284,8 +4284,8 @@ class AttendanceReportController extends Controller
                                                             WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -5308,8 +5308,8 @@ class AttendanceReportController extends Controller
                                                                 WHEN (MONTH(dtr.dtr_date) = $month_of 
                                                                     AND YEAR(dtr.dtr_date) = $year_of
                                                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                                AND (dtr.first_in > ts.first_in 
-                                                                    OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                                AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                    OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                                 THEN dtr.dtr_date
                                                             END) as days_with_tardiness"),
 
@@ -5970,8 +5970,8 @@ class AttendanceReportController extends Controller
                                 // Days with Tardiness
                                 DB::raw("COUNT(DISTINCT CASE
                                         WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                        AND (dtr.first_in > ts.first_in 
-                                            OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                        AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                            OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                         THEN dtr.dtr_date
                                     END) as days_with_tardiness"),
 
@@ -6773,8 +6773,8 @@ class AttendanceReportController extends Controller
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
@@ -6927,8 +6927,8 @@ class AttendanceReportController extends Controller
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
@@ -8131,8 +8131,8 @@ class AttendanceReportController extends Controller
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
@@ -8285,8 +8285,8 @@ class AttendanceReportController extends Controller
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
@@ -9459,8 +9459,8 @@ class AttendanceReportController extends Controller
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
@@ -9613,8 +9613,8 @@ class AttendanceReportController extends Controller
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ts.first_in 
-                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
 
@@ -10587,8 +10587,8 @@ class AttendanceReportController extends Controller
                                             // Days with Tardiness
                                             DB::raw("COUNT(DISTINCT CASE
                                                     WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                    AND (dtr.first_in > ts.first_in 
-                                                        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in))
+                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
 
