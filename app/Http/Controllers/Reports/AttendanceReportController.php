@@ -1383,8 +1383,8 @@ class AttendanceReportController extends Controller
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
                                                             AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
-        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
-    THEN dtr.dtr_date
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
+                                                            THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -2849,8 +2849,8 @@ class AttendanceReportController extends Controller
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
                                                             AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
-        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
-    THEN dtr.dtr_date
+                                                                OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
+                                                            THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
