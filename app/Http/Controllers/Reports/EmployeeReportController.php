@@ -21,6 +21,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class EmployeeReportController extends Controller
 {
@@ -43,6 +45,7 @@ class EmployeeReportController extends Controller
             $area_id = $request->area_id;
             $blood_type = $request->blood_type;
             $search = $request->search;
+            $columns = $request->columns;
             $page = $request->page ?: 1;
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
@@ -387,6 +390,28 @@ class EmployeeReportController extends Controller
 
             // Transform and paginate employee data
             $data = EmployeesDetailsReport::collection($paginated_employees);
+            $unpaginated_employees = EmployeesDetailsReport::collection($employees);
+
+
+            if ($request->isPrint === 1) {
+                $options = new Options();
+                $options->set('isPhpEnabled', true);
+                $options->set('isHtml5ParserEnabled', true);
+                $options->set('isRemoteEnabled', true);
+                $dompdf = new Dompdf($options);
+                $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+                $html = view('report.employee_record_report',  [
+                'columns' => $columns, 'rows' => $unpaginated_employees, 'type' => "blood_type", 'report_name' => "Blood Type Report"
+                ])->render();
+                $dompdf->loadHtml($html);
+    
+                $dompdf->setPaper('Legal', 'portrait');
+                $dompdf->render();
+                $filename = 'PDS.pdf';
+                
+                // /* Downloads as PDF */
+                $dompdf->stream($filename); 
+            }
 
             return response()->json([
                 'pagination' => [
