@@ -152,24 +152,24 @@ class AttendanceReportController extends Controller
                                 ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                 THEN sch.date END) as scheduled_days'),
 
-                                // Days Absent
+                                // Days Absent 
                                 DB::raw("GREATEST(
-                                COUNT(DISTINCT CASE
-                                    WHEN MONTH(sch.date) = $month_of
-                                    AND YEAR(sch.date) = $year_of
-                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
-                                    AND la.id IS NULL
-                                    AND cto.id IS NULL
-                                    AND oba.id IS NULL
-                                    AND ota.id IS NULL
-                                    THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                // Count of Leaves with Pay
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                // Count of Leaves without Pay
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
+                                                COUNT(DISTINCT CASE
+                                                    WHEN MONTH(sch.date) = $month_of
+                                                    AND YEAR(sch.date) = $year_of
+                                                    AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                    AND la.id IS NULL
+                                                    AND cto.id IS NULL
+                                                    AND oba.id IS NULL
+                                                    AND ota.id IS NULL
+                                                    THEN sch.date END) 
+                                                - COUNT(DISTINCT CASE 
+                                                    WHEN MONTH(dtr.dtr_date) = $month_of
+                                                    AND YEAR(dtr.dtr_date) = $year_of
+                                                    AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                    THEN dtr.dtr_date END), 0) as days_absent"),
                                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
                                 DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
                             )
@@ -814,27 +814,27 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
                                                             WHEN MONTH(sch.date) = $month_of
                                                             AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
                                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -996,22 +996,22 @@ class AttendanceReportController extends Controller
                                                         COUNT(DISTINCT CASE
                                                             WHEN MONTH(sch.date) = $month_of
                                                             AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
                                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -2293,27 +2293,27 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
                                                             WHEN MONTH(sch.date) = $month_of
                                                             AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
                                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -2470,27 +2470,27 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
-                                                            COUNT(DISTINCT CASE
-                                                                WHEN MONTH(sch.date) = $month_of
-                                                                AND YEAR(sch.date) = $year_of
-                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
-                                                                AND la.id IS NULL
-                                                                AND cto.id IS NULL
-                                                                AND oba.id IS NULL
-                                                                AND ota.id IS NULL
-                                                                THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                        COUNT(DISTINCT CASE
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                            AND la.id IS NULL
+                                                            AND cto.id IS NULL
+                                                            AND oba.id IS NULL
+                                                            AND ota.id IS NULL
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -3731,27 +3731,27 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
                                                             WHEN MONTH(sch.date) = $month_of
                                                             AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
                                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -3908,27 +3908,27 @@ class AttendanceReportController extends Controller
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
-                                                            COUNT(DISTINCT CASE
-                                                                WHEN MONTH(sch.date) = $month_of
-                                                                AND YEAR(sch.date) = $year_of
-                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
-                                                                AND la.id IS NULL
-                                                                AND cto.id IS NULL
-                                                                AND oba.id IS NULL
-                                                                AND ota.id IS NULL
-                                                                THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                        COUNT(DISTINCT CASE
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                            AND la.id IS NULL
+                                                            AND cto.id IS NULL
+                                                            AND oba.id IS NULL
+                                                            AND ota.id IS NULL
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -5119,17 +5119,24 @@ class AttendanceReportController extends Controller
                                                 ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                 THEN sch.date END) as scheduled_days'),
 
-                                            // Days Absent
-                                            DB::raw("GREATEST(
+                                           // Days Absent 
+                                           DB::raw("GREATEST(
                                                 COUNT(DISTINCT CASE
                                                     WHEN MONTH(sch.date) = $month_of
                                                     AND YEAR(sch.date) = $year_of
+                                                    AND sch.date <= CURDATE() -- Ensure counting only up to the current date
                                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                     AND la.id IS NULL
                                                     AND cto.id IS NULL
                                                     AND oba.id IS NULL
                                                     AND ota.id IS NULL
-                                                    THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
+                                                    THEN sch.date END) 
+                                                - COUNT(DISTINCT CASE 
+                                                    WHEN MONTH(dtr.dtr_date) = $month_of
+                                                    AND YEAR(dtr.dtr_date) = $year_of
+                                                    AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                    THEN dtr.dtr_date END), 0) as days_absent"),
 
                                             DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
@@ -5828,24 +5835,24 @@ class AttendanceReportController extends Controller
                                     WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
 
-                                // Days Absent
+                                // Days Absent 
                                 DB::raw("GREATEST(
-                                    COUNT(DISTINCT CASE
-                                        WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                        AND la.id IS NULL
-                                        AND cto.id IS NULL
-                                        AND oba.id IS NULL
-                                        AND ota.id IS NULL
-                                        THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                // Count of Leaves with Pay
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                // Count of Leaves without Pay
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                COUNT(DISTINCT CASE
+                                                    WHEN MONTH(sch.date) = $month_of
+                                                    AND YEAR(sch.date) = $year_of
+                                                    AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                    AND la.id IS NULL
+                                                    AND cto.id IS NULL
+                                                    AND oba.id IS NULL
+                                                    AND ota.id IS NULL
+                                                    THEN sch.date END) 
+                                                - COUNT(DISTINCT CASE 
+                                                    WHEN MONTH(dtr.dtr_date) = $month_of
+                                                    AND YEAR(dtr.dtr_date) = $year_of
+                                                    AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                    THEN dtr.dtr_date END), 0) as days_absent"),
                                 DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
                             )
                             // Apply conditions based on variables
@@ -6423,26 +6430,26 @@ class AttendanceReportController extends Controller
                                                         WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
-                                                        COUNT(DISTINCT CASE
-                                                            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                                            AND la.id IS NULL
-                                                            AND cto.id IS NULL
-                                                            AND oba.id IS NULL
-                                                            AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                    COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = $month_of
+                                                        AND YEAR(sch.date) = $year_of
+                                                        AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                        AND la.id IS NULL
+                                                        AND cto.id IS NULL
+                                                        AND oba.id IS NULL
+                                                        AND ota.id IS NULL
+                                                        THEN sch.date END) 
+                                                    - COUNT(DISTINCT CASE 
+                                                        WHEN MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                        THEN dtr.dtr_date END), 0) as days_absent"),
+                                                        DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                    )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -6579,26 +6586,26 @@ class AttendanceReportController extends Controller
                                                         WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -7794,26 +7801,26 @@ class AttendanceReportController extends Controller
                                                         WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -7950,26 +7957,26 @@ class AttendanceReportController extends Controller
                                                         WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -9124,26 +9131,26 @@ class AttendanceReportController extends Controller
                                                         WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
-                                                        COUNT(DISTINCT CASE
-                                                            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                                            AND la.id IS NULL
-                                                            AND cto.id IS NULL
-                                                            AND oba.id IS NULL
-                                                            AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
+                                                    COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = $month_of
+                                                        AND YEAR(sch.date) = $year_of
+                                                        AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                        AND la.id IS NULL
+                                                        AND cto.id IS NULL
+                                                        AND oba.id IS NULL
+                                                        AND ota.id IS NULL
+                                                        THEN sch.date END) 
+                                                    - COUNT(DISTINCT CASE 
+                                                        WHEN MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                        THEN dtr.dtr_date END), 0) as days_absent"),
+                                                        DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                    )
                                                 // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
@@ -9280,27 +9287,27 @@ class AttendanceReportController extends Controller
                                                         WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
-                                                    // Days Absent
+                                                    // Days Absent 
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
                                                             AND ota.id IS NULL
-                                                            THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                                    // Count of Leaves with Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                                    // Count of Leaves without Pay
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                                    DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                                    DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                                                )
-                                                // Apply conditions based on variables
+                                                            THEN sch.date END) 
+                                                        - COUNT(DISTINCT CASE 
+                                                            WHEN MONTH(dtr.dtr_date) = $month_of
+                                                            AND YEAR(dtr.dtr_date) = $year_of
+                                                            AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                            THEN dtr.dtr_date END), 0) as days_absent"),
+                                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                                        )
+                                                        // Apply conditions based on variables
                                                 ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                                                     return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
                                                         WHEN sch.date BETWEEN '$start_date' AND '$end_date'
@@ -10430,24 +10437,24 @@ class AttendanceReportController extends Controller
                                                 WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                 THEN sch.date END) as scheduled_days'),
 
-                                            // Days Absent
+                                            // Days Absent 
                                             DB::raw("GREATEST(
                                                 COUNT(DISTINCT CASE
-                                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                                    WHEN MONTH(sch.date) = $month_of
+                                                    AND YEAR(sch.date) = $year_of
+                                                    AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                     AND la.id IS NULL
                                                     AND cto.id IS NULL
                                                     AND oba.id IS NULL
                                                     AND ota.id IS NULL
-                                                    THEN sch.date END) - COUNT(DISTINCT dtr.dtr_date), 0) as days_absent"),
-
-                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
-                                            // Count of Leaves with Pay
-                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                            // Count of Leaves without Pay
-                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                            DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                            DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                                    THEN sch.date END) 
+                                                - COUNT(DISTINCT CASE 
+                                                    WHEN MONTH(dtr.dtr_date) = $month_of
+                                                    AND YEAR(dtr.dtr_date) = $year_of
+                                                    AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                    THEN dtr.dtr_date END), 0) as days_absent"),
                                             DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
                                         )
                                         // Apply conditions based on variables
