@@ -3611,10 +3611,6 @@ class EmployeeReportController extends Controller
         ];
     }
 
-
-
-
-
     /*******************************************************************************************
      * 
      * OLD FUNCTIONS

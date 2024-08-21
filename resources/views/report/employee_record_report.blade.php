@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+    <style>
+        header {
+            width: 90%;
+            text-align: center;
+            display: table;
+            margin: auto;
+        }
+
+        .header-container {
+            display: table-row;
+        }
+
+        .header-item {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        #zcmclogo, #dohlogo {
+            height: 65px;
+        }
+
+        .header-text {
+            text-align: center;
+        }
+
+        .header-text h6 {
+            margin: 0;
+        }
+
+        .logo-container {
+            width: 20%;
+        }
+
+        .text-container {
+            width: 60%;
+        }
+
+        /* Horizontal Divider */
+        .divider {
+            width: 80%;
+            border-top: 1px solid rgb(212, 212, 212);
+            margin: 30px 10%;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+         th,
+         td {
+            border: 1px solid #696969;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #e4e4e4;
+        }
+    </style>
+</head>
+<body>  
+    <header>
+        <div class="header-container">
+            <div class="header-item logo-container">
+                <img id="zcmclogo" src="{{ base_path() . '/public/storage/logo/zcmc.jpeg' }}" alt="ZCMC Logo">
+            </div>
+            <div class="header-item text-container header-text">
+                <span>Republic of the Philippines</span>
+                <h6>ZAMBOANGA CITY MEDICAL CENTER</h6>
+                <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
+            </div>
+            <div class="header-item logo-container">
+                <img id="dohlogo" src="{{ base_path() . '/public/storage/logo/doh.jpeg' }}" alt="DOH Logo">
+            </div>
+        </div>
+    </header>
+       
+        <!-- Horizontal Divider -->
+    <div class="divider"></div>
+    @php
+        use Carbon\Carbon;
+
+        // Get the current date and time
+        $now = Carbon::now();
+        // Format the date in a human-readable format
+        $formattedDate = $now->format('F j, Y');
+    @endphp
+
+    <div  style="text-align:center;">  
+        <h3 >Blood Type Report</h3>
+        <p style="font-size: 14px">as of {{ $formattedDate }}</p>
+    </div>
+
+    <table  cellspacing="0" cellpadding="0">
+        <tr>
+            @foreach ($columns as $column)
+                <th>
+                    {{ $column['headerName'] }} 
+                </th>
+            @endforeach
+        </tr>
+
+       
+            @foreach ($rows as $row)
+            <tr>
+                <td>
+                    {{ $row['name'] }} 
+                </td>
+
+                <td>
+                    {{ $row['area']['details']['name'] }} 
+                </td>
+
+                <td>
+                    {{ $row['blood_type'] }} 
+                 </td>
+                </tr>
+            @endforeach
+    
+    </table>
+      
+   
+</body>
+</html>
+

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class PrintableReportController extends Controller
 {
@@ -20,14 +21,11 @@ class PrintableReportController extends Controller
 
             $type = $request->type;
             $columns = $request->columns;  // field and headerName
-
+            $rows = $request->rows;  
             // return response()->json(['data' => $columns], 200);
-
-
             // return view('report.blood_type_report',  [
             // 'columns' => $columns
             // ]);
-
             // $options = new Options();
             // $options->set('isPhpEnabled', true);
             // $options->set('isHtml5ParserEnabled', true);
@@ -43,17 +41,15 @@ class PrintableReportController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('report.blood_type_report',  [
-            'columns' => $columns
+            $html = view('report.employee_record_report',  [
+            'columns' => $columns, 'rows' => $rows
             ])->render();
             $dompdf->loadHtml($html);
 
-            $dompdf->setPaper('Legal', 'landscape');
+            $dompdf->setPaper('Legal', 'portrait');
             $dompdf->render();
             $filename = 'PDS.pdf';
-
-
-
+            
             // /* Downloads as PDF */
             $dompdf->stream($filename); 
         }catch(\Throwable $th){
