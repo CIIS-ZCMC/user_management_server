@@ -118,46 +118,46 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                 THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                MONTH(dtr.dtr_date) = $month_of 
-                                AND YEAR(dtr.dtr_date) = $year_of 
+                                MONTH(dtr.dtr_date) = $month_of
+                                AND YEAR(dtr.dtr_date) = $year_of
                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                 dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                MONTH(dtr.dtr_date) = $month_of 
-                                AND YEAR(dtr.dtr_date) = $year_of 
+                                MONTH(dtr.dtr_date) = $month_of
+                                AND YEAR(dtr.dtr_date) = $year_of
                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                 dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                MONTH(dtr.dtr_date) = $month_of 
-                                AND YEAR(dtr.dtr_date) = $year_of 
+                                MONTH(dtr.dtr_date) = $month_of
+                                AND YEAR(dtr.dtr_date) = $year_of
                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                AND YEAR(sch.date) = ' . $year_of . ' 
-                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                WHEN MONTH(sch.date) = ' . $month_of . '
+                                AND YEAR(sch.date) = ' . $year_of . '
+                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                 THEN sch.date END) as scheduled_days'),
 
                                 // Days Absent
                                 DB::raw("GREATEST(
                                 COUNT(DISTINCT CASE
-                                    WHEN MONTH(sch.date) = $month_of 
-                                    AND YEAR(sch.date) = $year_of 
-                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                    WHEN MONTH(sch.date) = $month_of
+                                    AND YEAR(sch.date) = $year_of
+                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                     AND la.id IS NULL
                                     AND cto.id IS NULL
                                     AND oba.id IS NULL
@@ -280,46 +280,46 @@ class AttendanceReportController extends Controller
                                         ) as employee_name"),
                                 DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'), // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                    AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                    AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                    AND YEAR(sch.date) = ' . $year_of . ' 
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(sch.date) = ' . $month_of . '
+                                    AND YEAR(sch.date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                     THEN sch.date END) as scheduled_days'),
 
                                 // Days with Tardiness
                                 DB::raw("COUNT(DISTINCT CASE
-                                                    WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                    WHEN (MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                         OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
@@ -443,38 +443,38 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                    AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                    AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                    AND YEAR(sch.date) = ' . $year_of . ' 
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(sch.date) = ' . $month_of . '
+                                    AND YEAR(sch.date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                     THEN sch.date END) as scheduled_days'),
 
                                 DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -595,38 +595,38 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                    AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                    AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                 // Total Overtime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                 // Total Undertime Minutes
                                 DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of 
-                                    AND YEAR(dtr.dtr_date) = $year_of 
+                                    MONTH(dtr.dtr_date) = $month_of
+                                    AND YEAR(dtr.dtr_date) = $year_of
                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                    AND YEAR(sch.date) = ' . $year_of . ' 
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(sch.date) = ' . $month_of . '
+                                    AND YEAR(sch.date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                     THEN sch.date END) as scheduled_days'),
 
                                 DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -780,46 +780,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN MONTH(sch.date) = $month_of 
-                                                            AND YEAR(sch.date) = $year_of 
-                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
@@ -957,46 +957,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN MONTH(sch.date) = $month_of 
-                                                            AND YEAR(sch.date) = $year_of 
-                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
@@ -1169,46 +1169,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
-                                                            WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                            WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -1343,46 +1343,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
-                                                            WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                            WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
         OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
     THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -1552,38 +1552,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -1716,38 +1716,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -1916,38 +1916,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -2075,38 +2075,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -2259,46 +2259,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN MONTH(sch.date) = $month_of 
-                                                            AND YEAR(sch.date) = $year_of 
-                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
@@ -2436,46 +2436,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
                                                     DB::raw("GREATEST(
                                                             COUNT(DISTINCT CASE
-                                                                WHEN MONTH(sch.date) = $month_of 
-                                                                AND YEAR(sch.date) = $year_of 
-                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                                WHEN MONTH(sch.date) = $month_of
+                                                                AND YEAR(sch.date) = $year_of
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                                 AND la.id IS NULL
                                                                 AND cto.id IS NULL
                                                                 AND oba.id IS NULL
@@ -2635,46 +2635,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
-                                                            WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                            WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -2809,46 +2809,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
-                                                            WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                            WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
         OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
     THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -3005,38 +3005,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -3169,38 +3169,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -3356,38 +3356,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -3515,38 +3515,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -3697,46 +3697,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
                                                     DB::raw("GREATEST(
                                                         COUNT(DISTINCT CASE
-                                                            WHEN MONTH(sch.date) = $month_of 
-                                                            AND YEAR(sch.date) = $year_of 
-                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                            WHEN MONTH(sch.date) = $month_of
+                                                            AND YEAR(sch.date) = $year_of
+                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                             AND la.id IS NULL
                                                             AND cto.id IS NULL
                                                             AND oba.id IS NULL
@@ -3874,46 +3874,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
                                                     DB::raw("GREATEST(
                                                             COUNT(DISTINCT CASE
-                                                                WHEN MONTH(sch.date) = $month_of 
-                                                                AND YEAR(sch.date) = $year_of 
-                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                                WHEN MONTH(sch.date) = $month_of
+                                                                AND YEAR(sch.date) = $year_of
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                                 AND la.id IS NULL
                                                                 AND cto.id IS NULL
                                                                 AND oba.id IS NULL
@@ -4071,46 +4071,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
-                                                            WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                            WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -4245,46 +4245,46 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
-                                                            WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                            WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                 AND YEAR(dtr.dtr_date) = $year_of
                                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -4439,38 +4439,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -4593,38 +4593,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -4759,38 +4759,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                                        MONTH(dtr.dtr_date) = $month_of 
-                                                        AND YEAR(dtr.dtr_date) = $year_of 
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                        AND YEAR(sch.date) = ' . $year_of . ' 
-                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN MONTH(sch.date) = ' . $month_of . '
+                                                        AND YEAR(sch.date) = ' . $year_of . '
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -4913,38 +4913,38 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                            WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                            AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                            ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                            WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                            AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                            ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                             THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                            MONTH(dtr.dtr_date) = $month_of 
-                                            AND YEAR(dtr.dtr_date) = $year_of 
+                                            MONTH(dtr.dtr_date) = $month_of
+                                            AND YEAR(dtr.dtr_date) = $year_of
                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                             dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                            MONTH(dtr.dtr_date) = $month_of 
-                                            AND YEAR(dtr.dtr_date) = $year_of 
+                                            MONTH(dtr.dtr_date) = $month_of
+                                            AND YEAR(dtr.dtr_date) = $year_of
                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                             dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
-                                            MONTH(dtr.dtr_date) = $month_of 
-                                            AND YEAR(dtr.dtr_date) = $year_of 
+                                            MONTH(dtr.dtr_date) = $month_of
+                                            AND YEAR(dtr.dtr_date) = $year_of
                                             " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                             dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                            WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                            AND YEAR(sch.date) = ' . $year_of . ' 
-                                            ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                            WHEN MONTH(sch.date) = ' . $month_of . '
+                                            AND YEAR(sch.date) = ' . $year_of . '
+                                            ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                             THEN sch.date END) as scheduled_days'),
                                                     DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                                     // Count of Leaves with Pay
@@ -5085,46 +5085,46 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                AND YEAR(sch.date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(sch.date) = ' . $month_of . '
+                                                AND YEAR(sch.date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                 THEN sch.date END) as scheduled_days'),
 
                                             // Days Absent
                                             DB::raw("GREATEST(
                                                 COUNT(DISTINCT CASE
-                                                    WHEN MONTH(sch.date) = $month_of 
-                                                    AND YEAR(sch.date) = $year_of 
-                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . " 
+                                                    WHEN MONTH(sch.date) = $month_of
+                                                    AND YEAR(sch.date) = $year_of
+                                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
                                                     AND la.id IS NULL
                                                     AND cto.id IS NULL
                                                     AND oba.id IS NULL
@@ -5269,46 +5269,46 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                AND YEAR(sch.date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(sch.date) = ' . $month_of . '
+                                                AND YEAR(sch.date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                 THEN sch.date END) as scheduled_days'),
 
                                             // Days with Tardiness
                                             DB::raw("COUNT(DISTINCT CASE
-                                                                WHEN (MONTH(dtr.dtr_date) = $month_of 
+                                                                WHEN (MONTH(dtr.dtr_date) = $month_of
                                                                     AND YEAR(dtr.dtr_date) = $year_of
                                                                     " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                                AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                                AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                     OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                                 THEN dtr.dtr_date
                                                             END) as days_with_tardiness"),
@@ -5444,38 +5444,38 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                AND YEAR(sch.date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(sch.date) = ' . $month_of . '
+                                                AND YEAR(sch.date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                 THEN sch.date END) as scheduled_days'),
 
                                             DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -5608,38 +5608,38 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . ' 
-                                                AND YEAR(dtr.dtr_date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.total_working_minutes, 0)) as total_working_minutes"),
 
                                             // Total Overtime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
                                             // Total Undertime Minutes
                                             DB::raw("SUM(DISTINCT IF(
-                                                MONTH(dtr.dtr_date) = $month_of 
-                                                AND YEAR(dtr.dtr_date) = $year_of 
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN MONTH(sch.date) = ' . $month_of . ' 
-                                                AND YEAR(sch.date) = ' . $year_of . ' 
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . ' 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(sch.date) = ' . $month_of . '
+                                                AND YEAR(sch.date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                 THEN sch.date END) as scheduled_days'),
 
                                             DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
@@ -5804,8 +5804,8 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
@@ -5824,8 +5824,8 @@ class AttendanceReportController extends Controller
                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
 
                                 // Days Absent
@@ -5943,8 +5943,8 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
@@ -5963,14 +5963,14 @@ class AttendanceReportController extends Controller
                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
 
                                 // Days with Tardiness
                                 DB::raw("COUNT(DISTINCT CASE
                                         WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                        AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                        AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                             OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                         THEN dtr.dtr_date
                                     END) as days_with_tardiness"),
@@ -6080,8 +6080,8 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
@@ -6100,8 +6100,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                 // Total Hours Scheduled
@@ -6218,8 +6218,8 @@ class AttendanceReportController extends Controller
                                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                 // Days Present
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN dtr.dtr_date END) as days_present'),
 
                                 // Total Working Minutes
@@ -6238,8 +6238,8 @@ class AttendanceReportController extends Controller
                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                 // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE 
-                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
 
                                 // Total Hours Scheduled
@@ -6399,8 +6399,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -6419,8 +6419,8 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
@@ -6555,8 +6555,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -6575,8 +6575,8 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
@@ -6746,8 +6746,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -6766,14 +6766,14 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -6900,8 +6900,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -6920,14 +6920,14 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -7089,8 +7089,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -7109,8 +7109,8 @@ class AttendanceReportController extends Controller
                                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -7244,8 +7244,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -7264,8 +7264,8 @@ class AttendanceReportController extends Controller
                                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -7434,8 +7434,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -7454,8 +7454,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -7589,8 +7589,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -7609,8 +7609,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -7770,8 +7770,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -7790,8 +7790,8 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
@@ -7926,8 +7926,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -7946,8 +7946,8 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
@@ -8104,8 +8104,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -8124,14 +8124,14 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -8258,8 +8258,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -8278,14 +8278,14 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -8434,8 +8434,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -8454,8 +8454,8 @@ class AttendanceReportController extends Controller
                                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -8589,8 +8589,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -8609,8 +8609,8 @@ class AttendanceReportController extends Controller
                                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -8766,8 +8766,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -8786,8 +8786,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -8921,8 +8921,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -8941,8 +8941,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -9100,8 +9100,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -9120,8 +9120,8 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
@@ -9256,8 +9256,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -9276,8 +9276,8 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days Absent
@@ -9432,8 +9432,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -9452,14 +9452,14 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -9586,8 +9586,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -9606,14 +9606,14 @@ class AttendanceReportController extends Controller
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                         THEN sch.date END) as scheduled_days'),
 
                                                     // Days with Tardiness
                                                     DB::raw("COUNT(DISTINCT CASE
                                                             WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                            AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                                 OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                             THEN dtr.dtr_date
                                                         END) as days_with_tardiness"),
@@ -9760,8 +9760,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -9780,8 +9780,8 @@ class AttendanceReportController extends Controller
                                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -9915,8 +9915,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -9935,8 +9935,8 @@ class AttendanceReportController extends Controller
                                                     dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                     THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -10090,8 +10090,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -10110,8 +10110,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -10245,8 +10245,8 @@ class AttendanceReportController extends Controller
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                                     // Days Present
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN dtr.dtr_date END) as days_present'),
 
                                                     // Total Working Minutes
@@ -10265,8 +10265,8 @@ class AttendanceReportController extends Controller
                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                                     // Scheduled Days
-                                                    DB::raw('COUNT(DISTINCT CASE 
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
 
                                                     // Total Hours Scheduled
@@ -10406,8 +10406,8 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
@@ -10426,8 +10426,8 @@ class AttendanceReportController extends Controller
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                 THEN sch.date END) as scheduled_days'),
 
                                             // Days Absent
@@ -10560,8 +10560,8 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                 THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
@@ -10580,14 +10580,14 @@ class AttendanceReportController extends Controller
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                                 THEN sch.date END) as scheduled_days'),
 
                                             // Days with Tardiness
                                             DB::raw("COUNT(DISTINCT CASE
                                                     WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00') 
+                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
                                                         OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
@@ -10712,8 +10712,8 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                            WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                            WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                             THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
@@ -10732,8 +10732,8 @@ class AttendanceReportController extends Controller
                                             dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                                            WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                                            WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                             THEN sch.date END) as scheduled_days'),
 
                                             // Total Hours Scheduled
@@ -10865,8 +10865,8 @@ class AttendanceReportController extends Controller
                                             DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
                                             // Days Present
-                                            DB::raw('COUNT(DISTINCT CASE 
-                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                        WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                         THEN dtr.dtr_date END) as days_present'),
 
                                             // Total Working Minutes
@@ -10885,8 +10885,8 @@ class AttendanceReportController extends Controller
                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
                                             // Scheduled Days
-                                            DB::raw('COUNT(DISTINCT CASE 
-                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '" 
+                                            DB::raw('COUNT(DISTINCT CASE
+                        WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                         THEN sch.date END) as scheduled_days'),
 
                                             // Total Hours Scheduled
