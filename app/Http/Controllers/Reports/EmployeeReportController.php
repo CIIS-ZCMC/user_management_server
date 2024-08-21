@@ -411,20 +411,22 @@ class EmployeeReportController extends Controller
                 
                 // /* Downloads as PDF */
                 $dompdf->stream($filename); 
+            } else {
+                return response()->json([
+                    'pagination' => [
+                        'current_page' => $paginated_employees->currentPage(),
+                        'per_page' => $paginated_employees->perPage(),
+                        'total' => $paginated_employees->total(),
+                        'last_page' => $paginated_employees->lastPage(),
+                        'has_more_pages' => $paginated_employees->hasMorePages(),
+                    ],
+                    'count' => $paginated_employees->count(),
+                    'data' => $data,
+                    'message' => 'List of employee blood types retrieved'
+                ], Response::HTTP_OK);
             }
 
-            return response()->json([
-                'pagination' => [
-                    'current_page' => $paginated_employees->currentPage(),
-                    'per_page' => $paginated_employees->perPage(),
-                    'total' => $paginated_employees->total(),
-                    'last_page' => $paginated_employees->lastPage(),
-                    'has_more_pages' => $paginated_employees->hasMorePages(),
-                ],
-                'count' => $paginated_employees->count(),
-                'data' => $data,
-                'message' => 'List of employee blood types retrieved'
-            ], Response::HTTP_OK);
+           
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
