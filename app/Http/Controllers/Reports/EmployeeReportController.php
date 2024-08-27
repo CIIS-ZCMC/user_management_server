@@ -401,16 +401,19 @@ class EmployeeReportController extends Controller
                 $dompdf = new Dompdf($options);
                 $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
                 $html = view('report.employee_record_report',  [
-                'columns' => $columns, 'rows' => $unpaginated_employees, 'type' => "blood_type", 'report_name' => "Blood Type Report"
+                    'columns' => $columns,
+                    'rows' => $unpaginated_employees,
+                    'type' => "blood_type",
+                    'report_name' => "Blood Type Report"
                 ])->render();
                 $dompdf->loadHtml($html);
-    
+
                 $dompdf->setPaper('Legal', 'portrait');
                 $dompdf->render();
                 $filename = 'PDS.pdf';
-                
+
                 // /* Downloads as PDF */
-                $dompdf->stream($filename); 
+                $dompdf->stream($filename);
             } else {
                 return response()->json([
                     'pagination' => [
@@ -425,8 +428,6 @@ class EmployeeReportController extends Controller
                     'message' => 'List of employee blood types retrieved'
                 ], Response::HTTP_OK);
             }
-
-           
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
