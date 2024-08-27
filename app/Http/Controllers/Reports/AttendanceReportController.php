@@ -424,136 +424,148 @@ class AttendanceReportController extends Controller
                             ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                             ->whereNull('ep.deactivated_at')
                             ->where('ep.personal_information_id', '<>', 1)
-                            ->select(
-                                'ep.id',
-                                'ep.employee_id',
-                                'ep.biometric_id',
-                                'des.name as employee_designation_name',
-                                'des.code as employee_designation_code',
-                                'et.name as employment_type_name',
-                                DB::raw("CONCAT(
-                                                    pi.first_name, ' ',
-                                                    IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                    pi.last_name,
-                                                    IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                    IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                ) as employee_name"),
-                                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
-                                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+                            ->where('ep.personal_information_id', '<>', 1)
+                                        ->select(
+                                            'ep.id',
+                                            'ep.employee_id',
+                                            'ep.biometric_id',
+                                            'des.name as employee_designation_name',
+                                            'des.code as employee_designation_code',
+                                            'et.name as employment_type_name',
+                                            DB::raw("CONCAT(
+                                                                pi.first_name, ' ',
+                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                pi.last_name,
+                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                            ) as employee_name"),
+                                            DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
+                                            DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
 
-                                // Days Present
-                                DB::raw('COUNT(DISTINCT CASE
-                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
-                                    AND YEAR(dtr.dtr_date) = ' . $year_of . '
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
-                                    THEN dtr.dtr_date END) as days_present'),
+                                            // Days Present
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                THEN dtr.dtr_date END) as days_present'),
 
-                                // Total Working Minutes
-                                DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of
-                                    AND YEAR(dtr.dtr_date) = $year_of
-                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.total_working_minutes, 0)) as total_working_minutes"),
+                                            // Total Working Minutes
+                                            DB::raw("SUM(DISTINCT IF(
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
+                                                dtr.total_working_minutes, 0)) as total_working_minutes"),
 
-                                // Total Overtime Minutes
-                                DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of
-                                    AND YEAR(dtr.dtr_date) = $year_of
-                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.overtime_minutes, 0)) as total_overtime_minutes"),
+                                            // Total Overtime Minutes
+                                            DB::raw("SUM(DISTINCT IF(
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
+                                                dtr.overtime_minutes, 0)) as total_overtime_minutes"),
 
-                                // Total Undertime Minutes
-                                DB::raw("SUM(DISTINCT IF(
-                                    MONTH(dtr.dtr_date) = $month_of
-                                    AND YEAR(dtr.dtr_date) = $year_of
-                                    " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
-                                    dtr.undertime_minutes, 0)) as total_undertime_minutes"),
+                                            // Total Undertime Minutes
+                                            DB::raw("SUM(DISTINCT IF(
+                                                MONTH(dtr.dtr_date) = $month_of
+                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
+                                                dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
-                                // Total Days with Early Out
-                                DB::raw('COUNT(DISTINCT CASE
-                                WHEN (
-                                    MONTH(dtr.dtr_date) = ' . $month_of . '
-                                    AND YEAR(dtr.dtr_date) = ' . $year_of . '
-                                    AND dtr.dtr_date <= CURDATE()
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
-                                    AND (
-                                        (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
-                                        (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
-                                    )
-                                ) THEN dtr.dtr_date
-                                END) as total_days_with_early_out'),
+                                            // Total Days with Early Out
+                                            DB::raw('COUNT(DISTINCT CASE
+                                            WHEN (
+                                                MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                AND dtr.dtr_date <= CURDATE()
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                AND (
+                                                    (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                    (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                )
+                                            ) THEN dtr.dtr_date
+                                            END) as total_days_with_early_out'),
+                                            
+                                            // Total Early Out Minutes
+                                            DB::raw("
+                                            ROUND(
+                                                    IF(
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date < CURDATE()
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                        HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                        MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                        SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                        0
+                                                    )
+                                                    +
+                                                    IF(
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date < CURDATE()
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                        HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                        MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                        SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                        0
+                                                    ),
+                                                    2
+                                                ) AS total_early_out_minutes
+                                            "),
+                                            
+                                            // Scheduled Days
+                                            DB::raw('COUNT(DISTINCT CASE
+                                                WHEN MONTH(sch.date) = ' . $month_of . '
+                                                AND YEAR(sch.date) = ' . $year_of . '
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
+                                                THEN sch.date END) as scheduled_days'),
 
-                                // Total Early Out Minutes (as an integer)
-                                DB::raw("CAST(SUM(
-                                    IF(
-                                        MONTH(dtr.dtr_date) = $month_of
-                                        AND YEAR(dtr.dtr_date) = $year_of
-                                        AND dtr.dtr_date <= CURDATE()
-                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
-                                        AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s')  < ts.first_out
-                                        AND dtr.first_out IS NOT NULL, 
-                                        TIMESTAMPDIFF(MINUTE, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') , ts.first_out), 0) + 
-                                    IF(
-                                        MONTH(dtr.dtr_date) = $month_of
-                                        AND YEAR(dtr.dtr_date) = $year_of
-                                        AND dtr.dtr_date <= CURDATE()
-                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
-                                        AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s')  < ts.second_out
-                                        AND dtr.second_out IS NOT NULL, 
-                                        TIMESTAMPDIFF(MINUTE, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') , ts.second_out), 0)
-                                ) AS UNSIGNED) as total_early_out_minutes"),                                
-
-                                // Scheduled Days
-                                DB::raw('COUNT(DISTINCT CASE
-                                    WHEN MONTH(sch.date) = ' . $month_of . '
-                                    AND YEAR(sch.date) = ' . $year_of . '
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
-                                    THEN sch.date END) as scheduled_days'),
-
-                                // Count of Leaves with Pay
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
-                                // Count of Leaves without Pay
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
-                                DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
-                                DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
-                                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-                            )
-                            ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
-                                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                                                            WHEN MONTH(sch.date) = $month_of
-                                                                            AND YEAR(sch.date) = $year_of
-                                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
-                                                                            AND la.id IS NOT NULL  -- No approved leave application
-                                                                            THEN sch.date END) as absent_leave_without_pay"));
-                            })
-                            ->when($absent_without_official_leave, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
-                                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                                                            WHEN MONTH(sch.date) = $month_of
-                                                                            AND YEAR(sch.date) = $year_of
-                                                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
-                                                                            AND la.id IS NOT NULL  -- No approved leave application
-                                                                            AND cto.id IS NOT NULL -- No CTO application
-                                                                            AND oba.id IS NOT NULL -- No Official Business application
-                                                                            AND ota.id IS NOT NULL -- No Official Time application
-                                                                            THEN sch.date END) as absent_without_official_leave"));
-                            })
-                            ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employee_name', 'employment_type_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                            ->havingRaw('total_undertime_minutes > 0')
-                            ->when($sort_order, function ($query, $sort_order) {
-                                if ($sort_order === 'asc') {
-                                    return $query->orderByRaw('total_undertime_minutes ASC');
-                                } elseif ($sort_order === 'desc') {
-                                    return $query->orderByRaw('total_undertime_minutes DESC');
-                                } else {
-                                    return response()->json(['message' => 'Invalid sort order'], 400);
-                                }
-                            })
-                            ->orderBy('employee_area_name')->orderBy('ep.id')
-                            ->when($limit, function ($query, $limit) {
-                                return $query->limit($limit);
-                            })
-                            ->get();
+                                            // Count of Leaves with Pay
+                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
+                                            // Count of Leaves without Pay
+                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 1) as total_leave_without_pay"),
+                                            DB::raw("(SELECT COUNT(*) FROM cto_applications cto WHERE cto.employee_profile_id = ep.id AND cto.status = 'approved') as total_cto_applications"),
+                                            DB::raw("(SELECT COUNT(*) FROM official_business_applications oba WHERE oba.employee_profile_id = ep.id AND oba.status = 'approved') as total_official_business_applications"),
+                                            DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                                            DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                                        )
+                                        ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
+                                            return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                                                                        WHEN MONTH(sch.date) = $month_of
+                                                                                        AND YEAR(sch.date) = $year_of
+                                                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                                                        AND la.id IS NOT NULL  -- No approved leave application
+                                                                                        THEN sch.date END) as absent_leave_without_pay"));
+                                        })
+                                        ->when($absent_without_official_leave, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
+                                            return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                                                                        WHEN MONTH(sch.date) = $month_of
+                                                                                        AND YEAR(sch.date) = $year_of
+                                                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                                                        AND la.id IS NOT NULL  -- No approved leave application
+                                                                                        AND cto.id IS NOT NULL -- No CTO application
+                                                                                        AND oba.id IS NOT NULL -- No Official Business application
+                                                                                        AND ota.id IS NOT NULL -- No Official Time application
+                                                                                        THEN sch.date END) as absent_without_official_leave"));
+                                        })
+                                        ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                        ->havingRaw('total_days_with_early_out > 0')
+                                        ->havingRaw('SUM(total_early_out_minutes) > 0')
+                                        ->when($sort_order, function ($query, $sort_order) {
+                                            if ($sort_order === 'asc') {
+                                                return $query->orderByRaw('total_days_with_early_out ASC');
+                                            } elseif ($sort_order === 'desc') {
+                                                return $query->orderByRaw('total_days_with_early_out DESC');
+                                            } else {
+                                                return response()->json(['message' => 'Invalid sort order'], 400);
+                                            }
+                                        })
+                                        ->orderBy('employee_area_name')->orderBy('ep.id')
+                                        ->when($limit, function ($query, $limit) {
+                                            return $query->limit($limit);
+                                        })
+                                        ->get();
                         break;
                     case 'perfect':
                         $employees = DB::table('assigned_areas as a')
@@ -1565,7 +1577,6 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1574,14 +1585,15 @@ class AttendanceReportController extends Controller
                                                     'des.code as employee_designation_code',
                                                     'et.name as employment_type_name',
                                                     DB::raw("CONCAT(
-                                                                pi.first_name, ' ',
-                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                                pi.last_name,
-                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                            ) as employee_name"),
+                                                                        pi.first_name, ' ',
+                                                                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                        pi.last_name,
+                                                                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                                    ) as employee_name"),
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+
                                                     // Days Present
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
@@ -1610,13 +1622,57 @@ class AttendanceReportController extends Controller
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
+                                                    // Total Days with Early Out
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN (
+                                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        AND dtr.dtr_date <= CURDATE()
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                        AND (
+                                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                        )
+                                                    ) THEN dtr.dtr_date
+                                                    END) as total_days_with_early_out'),
+                                                    
+                                                    // Total Early Out Minutes
+                                                    DB::raw("
+                                                    ROUND(
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                                HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            )
+                                                            +
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                                HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            ),
+                                                            2
+                                                        ) AS total_early_out_minutes
+                                                    "),
+                                                    
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(sch.date) = ' . $month_of . '
                                                         AND YEAR(sch.date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
+
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1645,13 +1701,14 @@ class AttendanceReportController extends Controller
                                                                                                 AND ota.id IS NOT NULL -- No Official Time application
                                                                                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
-                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                                ->havingRaw('total_days_with_early_out > 0')
+                                                ->havingRaw('SUM(total_early_out_minutes) > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -1729,7 +1786,6 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -1738,14 +1794,15 @@ class AttendanceReportController extends Controller
                                                     'des.code as employee_designation_code',
                                                     'et.name as employment_type_name',
                                                     DB::raw("CONCAT(
-                                                                pi.first_name, ' ',
-                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                                pi.last_name,
-                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                            ) as employee_name"),
+                                                                        pi.first_name, ' ',
+                                                                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                        pi.last_name,
+                                                                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                                    ) as employee_name"),
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+
                                                     // Days Present
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
@@ -1774,13 +1831,57 @@ class AttendanceReportController extends Controller
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
+                                                    // Total Days with Early Out
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN (
+                                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        AND dtr.dtr_date <= CURDATE()
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                        AND (
+                                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                        )
+                                                    ) THEN dtr.dtr_date
+                                                    END) as total_days_with_early_out'),
+                                                    
+                                                    // Total Early Out Minutes
+                                                    DB::raw("
+                                                    ROUND(
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                                HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            )
+                                                            +
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                                HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            ),
+                                                            2
+                                                        ) AS total_early_out_minutes
+                                                    "),
+                                                    
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(sch.date) = ' . $month_of . '
                                                         AND YEAR(sch.date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
+
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -1809,13 +1910,14 @@ class AttendanceReportController extends Controller
                                                                                                 AND ota.id IS NOT NULL -- No Official Time application
                                                                                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
-                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                                ->havingRaw('total_days_with_early_out > 0')
+                                                ->havingRaw('SUM(total_early_out_minutes) > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -3018,7 +3120,6 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3027,49 +3128,94 @@ class AttendanceReportController extends Controller
                                                     'des.code as employee_designation_code',
                                                     'et.name as employment_type_name',
                                                     DB::raw("CONCAT(
-                                                                pi.first_name, ' ',
-                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                                pi.last_name,
-                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                            ) as employee_name"),
+                                                                        pi.first_name, ' ',
+                                                                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                        pi.last_name,
+                                                                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                                    ) as employee_name"),
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+        
                                                     // Days Present
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
                                                         AND YEAR(dtr.dtr_date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
-
+        
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
-
+        
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
-
+        
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
-
+        
+                                                    // Total Days with Early Out
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN (
+                                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        AND dtr.dtr_date <= CURDATE()
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                        AND (
+                                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                        )
+                                                    ) THEN dtr.dtr_date
+                                                    END) as total_days_with_early_out'),
+                                                    
+                                                    // Total Early Out Minutes
+                                                    DB::raw("
+                                                    ROUND(
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                                HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            )
+                                                            +
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                                HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            ),
+                                                            2
+                                                        ) AS total_early_out_minutes
+                                                    "),
+                                                    
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(sch.date) = ' . $month_of . '
                                                         AND YEAR(sch.date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
+        
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3098,13 +3244,14 @@ class AttendanceReportController extends Controller
                                                                                                 AND ota.id IS NOT NULL -- No Official Time application
                                                                                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
-                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                                ->havingRaw('total_days_with_early_out > 0')
+                                                ->havingRaw('SUM(total_early_out_minutes) > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -3182,7 +3329,6 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -3191,14 +3337,15 @@ class AttendanceReportController extends Controller
                                                     'des.code as employee_designation_code',
                                                     'et.name as employment_type_name',
                                                     DB::raw("CONCAT(
-                                                                pi.first_name, ' ',
-                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                                pi.last_name,
-                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                            ) as employee_name"),
+                                                                        pi.first_name, ' ',
+                                                                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                        pi.last_name,
+                                                                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                                    ) as employee_name"),
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+
                                                     // Days Present
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
@@ -3227,13 +3374,57 @@ class AttendanceReportController extends Controller
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
+                                                    // Total Days with Early Out
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN (
+                                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        AND dtr.dtr_date <= CURDATE()
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                        AND (
+                                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                        )
+                                                    ) THEN dtr.dtr_date
+                                                    END) as total_days_with_early_out'),
+                                                    
+                                                    // Total Early Out Minutes
+                                                    DB::raw("
+                                                    ROUND(
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                                HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            )
+                                                            +
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                                HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            ),
+                                                            2
+                                                        ) AS total_early_out_minutes
+                                                    "),
+                                                    
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(sch.date) = ' . $month_of . '
                                                         AND YEAR(sch.date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
+
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -3262,13 +3453,14 @@ class AttendanceReportController extends Controller
                                                                                                 AND ota.id IS NOT NULL -- No Official Time application
                                                                                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
-                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                                ->havingRaw('total_days_with_early_out > 0')
+                                                ->havingRaw('SUM(total_early_out_minutes) > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -4452,7 +4644,6 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
@@ -4461,49 +4652,94 @@ class AttendanceReportController extends Controller
                                                     'des.code as employee_designation_code',
                                                     'et.name as employment_type_name',
                                                     DB::raw("CONCAT(
-                                                                pi.first_name, ' ',
-                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                                pi.last_name,
-                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                            ) as employee_name"),
+                                                                        pi.first_name, ' ',
+                                                                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                        pi.last_name,
+                                                                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                                    ) as employee_name"),
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+        
                                                     // Days Present
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
                                                         AND YEAR(dtr.dtr_date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
                                                         THEN dtr.dtr_date END) as days_present'),
-
+        
                                                     // Total Working Minutes
                                                     DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.total_working_minutes, 0)) as total_working_minutes"),
-
+        
                                                     // Total Overtime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.overtime_minutes, 0)) as total_overtime_minutes"),
-
+        
                                                     // Total Undertime Minutes
                                                     DB::raw("SUM(DISTINCT IF(
                                                         MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
-
+        
+                                                    // Total Days with Early Out
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN (
+                                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        AND dtr.dtr_date <= CURDATE()
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                        AND (
+                                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                        )
+                                                    ) THEN dtr.dtr_date
+                                                    END) as total_days_with_early_out'),
+                                                    
+                                                    // Total Early Out Minutes
+                                                    DB::raw("
+                                                    ROUND(
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                                HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            )
+                                                            +
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                                HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            ),
+                                                            2
+                                                        ) AS total_early_out_minutes
+                                                    "),
+                                                    
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(sch.date) = ' . $month_of . '
                                                         AND YEAR(sch.date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
+        
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4532,13 +4768,14 @@ class AttendanceReportController extends Controller
                                                                                                 AND ota.id IS NOT NULL -- No Official Time application
                                                                                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
-                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                                ->havingRaw('total_days_with_early_out > 0')
+                                                ->havingRaw('SUM(total_early_out_minutes) > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -4610,19 +4847,23 @@ class AttendanceReportController extends Controller
                                                 ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                                 ->whereNull('ep.deactivated_at')
                                                 ->where('ep.personal_information_id', '<>', 1)
-
                                                 ->select(
                                                     'ep.id',
                                                     'ep.employee_id',
+                                                    'ep.biometric_id',
+                                                    'des.name as employee_designation_name',
+                                                    'des.code as employee_designation_code',
+                                                    'et.name as employment_type_name',
                                                     DB::raw("CONCAT(
-                                                                pi.first_name, ' ',
-                                                                IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
-                                                                pi.last_name,
-                                                                IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
-                                                                IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
-                                                            ) as employee_name"),
+                                                                        pi.first_name, ' ',
+                                                                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                                                                        pi.last_name,
+                                                                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                                                                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                                                                    ) as employee_name"),
                                                     DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
                                                     DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code'),
+
                                                     // Days Present
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
@@ -4651,13 +4892,57 @@ class AttendanceReportController extends Controller
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                         dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
+                                                    // Total Days with Early Out
+                                                    DB::raw('COUNT(DISTINCT CASE
+                                                    WHEN (
+                                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                        AND dtr.dtr_date <= CURDATE()
+                                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                        AND (
+                                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                        )
+                                                    ) THEN dtr.dtr_date
+                                                    END) as total_days_with_early_out'),
+                                                    
+                                                    // Total Early Out Minutes
+                                                    DB::raw("
+                                                    ROUND(
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                                HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            )
+                                                            +
+                                                            IF(
+                                                                MONTH(dtr.dtr_date) = $month_of
+                                                                AND YEAR(dtr.dtr_date) = $year_of
+                                                                AND dtr.dtr_date < CURDATE()
+                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                                AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                                HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                                MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                                SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                                0
+                                                            ),
+                                                            2
+                                                        ) AS total_early_out_minutes
+                                                    "),
+                                                    
                                                     // Scheduled Days
                                                     DB::raw('COUNT(DISTINCT CASE
                                                         WHEN MONTH(sch.date) = ' . $month_of . '
                                                         AND YEAR(sch.date) = ' . $year_of . '
                                                         ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                         THEN sch.date END) as scheduled_days'),
-                                                    DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
+
                                                     // Count of Leaves with Pay
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                                     // Count of Leaves without Pay
@@ -4667,13 +4952,33 @@ class AttendanceReportController extends Controller
                                                     DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
                                                     DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
                                                 )
-                                                ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_area_name', 'employee_designation_name', 'employee_designation_code', '')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->when($absent_leave_without_pay, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
+                                                    return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                                                                                WHEN MONTH(sch.date) = $month_of
+                                                                                                AND YEAR(sch.date) = $year_of
+                                                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                                                                AND la.id IS NOT NULL  -- No approved leave application
+                                                                                                THEN sch.date END) as absent_leave_without_pay"));
+                                                })
+                                                ->when($absent_without_official_leave, function ($query) use ($month_of, $year_of, $first_half, $second_half) {
+                                                    return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                                                                                WHEN MONTH(sch.date) = $month_of
+                                                                                                AND YEAR(sch.date) = $year_of
+                                                                                                " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . "
+                                                                                                AND la.id IS NOT NULL  -- No approved leave application
+                                                                                                AND cto.id IS NOT NULL -- No CTO application
+                                                                                                AND oba.id IS NOT NULL -- No Official Business application
+                                                                                                AND ota.id IS NOT NULL -- No Official Time application
+                                                                                                THEN sch.date END) as absent_without_official_leave"));
+                                                })
+                                                ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                                ->havingRaw('total_days_with_early_out > 0')
+                                                ->havingRaw('SUM(total_early_out_minutes) > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -5007,12 +5312,12 @@ class AttendanceReportController extends Controller
                                                                                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -5464,6 +5769,7 @@ class AttendanceReportController extends Controller
                                         })
                                         ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
                                         ->whereNull('ep.deactivated_at')
+                                        ->where('ep.personal_information_id', '<>', 1)
                                         ->select(
                                             'ep.id',
                                             'ep.employee_id',
@@ -5509,6 +5815,50 @@ class AttendanceReportController extends Controller
                                                 " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ",
                                                 dtr.undertime_minutes, 0)) as total_undertime_minutes"),
 
+                                            // Total Days with Early Out
+                                            DB::raw('COUNT(DISTINCT CASE
+                                            WHEN (
+                                                MONTH(dtr.dtr_date) = ' . $month_of . '
+                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                                AND dtr.dtr_date <= CURDATE()
+                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                                AND (
+                                                    (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                                    (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                                )
+                                            ) THEN dtr.dtr_date
+                                            END) as total_days_with_early_out'),
+                                            
+                                            // Total Early Out Minutes
+                                            DB::raw("
+                                            ROUND(
+                                                    IF(
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date < CURDATE()
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                                        HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                        MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                        SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                        0
+                                                    )
+                                                    +
+                                                    IF(
+                                                        MONTH(dtr.dtr_date) = $month_of
+                                                        AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date < CURDATE()
+                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                                        HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+                                                        MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+                                                        SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+                                                        0
+                                                    ),
+                                                    2
+                                                ) AS total_early_out_minutes
+                                            "),
+                                            
                                             // Scheduled Days
                                             DB::raw('COUNT(DISTINCT CASE
                                                 WHEN MONTH(sch.date) = ' . $month_of . '
@@ -5516,7 +5866,6 @@ class AttendanceReportController extends Controller
                                                 ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                                 THEN sch.date END) as scheduled_days'),
 
-                                            DB::raw('SUM(ts.total_hours) as scheduled_total_hours'),
                                             // Count of Leaves with Pay
                                             DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved' AND la.without_pay = 0) as total_leave_with_pay"),
                                             // Count of Leaves without Pay
@@ -5545,13 +5894,14 @@ class AttendanceReportController extends Controller
                                                                                         AND ota.id IS NOT NULL -- No Official Time application
                                                                                         THEN sch.date END) as absent_without_official_leave"));
                                         })
-                                        ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                        ->havingRaw('total_undertime_minutes > 0')
+                                        ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
+                                        ->havingRaw('total_days_with_early_out > 0')
+                                        ->havingRaw('SUM(total_early_out_minutes) > 0')
                                         ->when($sort_order, function ($query, $sort_order) {
                                             if ($sort_order === 'asc') {
-                                                return $query->orderByRaw('total_undertime_minutes ASC');
+                                                return $query->orderByRaw('total_days_with_early_out ASC');
                                             } elseif ($sort_order === 'desc') {
-                                                return $query->orderByRaw('total_undertime_minutes DESC');
+                                                return $query->orderByRaw('total_days_with_early_out DESC');
                                             } else {
                                                 return response()->json(['message' => 'Invalid sort order'], 400);
                                             }
@@ -6178,12 +6528,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                             })
                             ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                            ->havingRaw('total_undertime_minutes > 0')
+                            ->havingRaw('total_days_with_early_out > 0')
                             ->when($sort_order, function ($query, $sort_order) {
                                 if ($sort_order === 'asc') {
-                                    return $query->orderByRaw('total_undertime_minutes ASC');
+                                    return $query->orderByRaw('total_days_with_early_out ASC');
                                 } elseif ($sort_order === 'desc') {
-                                    return $query->orderByRaw('total_undertime_minutes DESC');
+                                    return $query->orderByRaw('total_days_with_early_out DESC');
                                 } else {
                                     return response()->json(['message' => 'Invalid sort order'], 400);
                                 }
@@ -6316,12 +6666,12 @@ class AttendanceReportController extends Controller
                                     THEN sch.date END) as absent_without_official_leave"));
                             })
                             ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                            ->havingRaw('total_undertime_minutes > 0')
+                            ->havingRaw('total_days_with_early_out > 0')
                             ->when($sort_order, function ($query, $sort_order) {
                                 if ($sort_order === 'asc') {
-                                    return $query->orderByRaw('total_undertime_minutes ASC');
+                                    return $query->orderByRaw('total_days_with_early_out ASC');
                                 } elseif ($sort_order === 'desc') {
-                                    return $query->orderByRaw('total_undertime_minutes DESC');
+                                    return $query->orderByRaw('total_days_with_early_out DESC');
                                 } else {
                                     return response()->json(['message' => 'Invalid sort order'], 400);
                                 }
@@ -7187,12 +7537,12 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -7342,12 +7692,12 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -7532,12 +7882,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -7687,12 +8037,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -8532,12 +8882,12 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -8687,12 +9037,12 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -8864,12 +9214,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -9019,12 +9369,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -9858,12 +10208,12 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -10013,12 +10363,12 @@ class AttendanceReportController extends Controller
                                                     THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -10188,12 +10538,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -10343,12 +10693,12 @@ class AttendanceReportController extends Controller
                                 THEN sch.date END) as absent_without_official_leave"));
                                                 })
                                                 ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                                ->havingRaw('total_undertime_minutes > 0')
+                                                ->havingRaw('total_days_with_early_out > 0')
                                                 ->when($sort_order, function ($query, $sort_order) {
                                                     if ($sort_order === 'asc') {
-                                                        return $query->orderByRaw('total_undertime_minutes ASC');
+                                                        return $query->orderByRaw('total_days_with_early_out ASC');
                                                     } elseif ($sort_order === 'desc') {
-                                                        return $query->orderByRaw('total_undertime_minutes DESC');
+                                                        return $query->orderByRaw('total_days_with_early_out DESC');
                                                     } else {
                                                         return response()->json(['message' => 'Invalid sort order'], 400);
                                                     }
@@ -10810,12 +11160,12 @@ class AttendanceReportController extends Controller
                                             THEN sch.date END) as absent_without_official_leave"));
                                         })
                                         ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                        ->havingRaw('total_undertime_minutes > 0')
+                                        ->havingRaw('total_days_with_early_out > 0')
                                         ->when($sort_order, function ($query, $sort_order) {
                                             if ($sort_order === 'asc') {
-                                                return $query->orderByRaw('total_undertime_minutes ASC');
+                                                return $query->orderByRaw('total_days_with_early_out ASC');
                                             } elseif ($sort_order === 'desc') {
-                                                return $query->orderByRaw('total_undertime_minutes DESC');
+                                                return $query->orderByRaw('total_days_with_early_out DESC');
                                             } else {
                                                 return response()->json(['message' => 'Invalid sort order'], 400);
                                             }
@@ -10963,12 +11313,12 @@ class AttendanceReportController extends Controller
                         THEN sch.date END) as absent_without_official_leave"));
                                         })
                                         ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-                                        ->havingRaw('total_undertime_minutes > 0')
+                                        ->havingRaw('total_days_with_early_out > 0')
                                         ->when($sort_order, function ($query, $sort_order) {
                                             if ($sort_order === 'asc') {
-                                                return $query->orderByRaw('total_undertime_minutes ASC');
+                                                return $query->orderByRaw('total_days_with_early_out ASC');
                                             } elseif ($sort_order === 'desc') {
-                                                return $query->orderByRaw('total_undertime_minutes DESC');
+                                                return $query->orderByRaw('total_days_with_early_out DESC');
                                             } else {
                                                 return response()->json(['message' => 'Invalid sort order'], 400);
                                             }
