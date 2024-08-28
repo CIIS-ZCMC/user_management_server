@@ -29,6 +29,8 @@ use Carbon\Carbon;
 use DateTime;
 use DateInterval;
 use DatePeriod;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -1262,5 +1264,43 @@ class Helpers
             $status = $response->status();
             return "HTTP request failed with status: $status";
         }
+    }
+
+    public static function generatePdf($employees, $columns)
+    {
+        $options = new Options();
+        $options->set('isPhpEnabled', false);
+        $options->set('isHtml5ParserEnabled', false);
+        $options->set('isRemoteEnabled', false);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+
+        // Convert the Laravel resource collection to an array with the request object
+        $data = $employees->toArray(request());
+
+        // Transform the data to extract the necessary fields
+        $employees = array_map(function($employee) {
+            return [
+                'name' => $employee['name'],
+                'area' => $employee['area']['details']['name'] ?? '',
+                'report_type' => $employee['blood_type'] ?? ''
+            ];
+        }, $data); // No 'data' key, so process the array directly
+
+        // Generate the HTML from the view
+        $html = view('report.employee_record_report', [
+            'columns' => $columns,
+            'rows' => $employees,
+            'type' => "report_type",
+            'report_name' => "Blood Type Report"
+        ])->render();
+
+        // Load HTML into Dompdf and render it
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('Legal', 'portrait');
+        $dompdf->render();
+
+        // Stream the generated PDF back to the user
+        return $dompdf->stream('PDS.pdf');
     }
 }

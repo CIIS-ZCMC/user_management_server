@@ -17,6 +17,7 @@ use App\Models\PersonalInformation;
 use App\Models\Section;
 use App\Models\Unit;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -34,19 +35,18 @@ class EmployeeReportController extends Controller
      * This function retrieves employees based on the provided sector, area, and blood type.
      * The retrieved employees are sorted by their first name and returned as a JSON response.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function filterEmployeesByBloodType(Request $request)
+    public function filterEmployeesByBloodType(Request $request): JsonResponse
     {
         try {
             $employees = collect();
             $sector =  $request->sector;
             $area_id = $request->area_id;
             $blood_type = $request->blood_type;
+            $columns = json_decode($request->columns, true);
             $search = $request->search;
-            $columns = $request->columns;
-            $page = $request->page ?: 1;
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -430,28 +430,8 @@ class EmployeeReportController extends Controller
             $data = EmployeesDetailsReport::collection($paginated_employees);
             $unpaginated_employees = EmployeesDetailsReport::collection($employees);
 
-
-            if ($request->isPrint === 1) {
-                $options = new Options();
-                $options->set('isPhpEnabled', true);
-                $options->set('isHtml5ParserEnabled', true);
-                $options->set('isRemoteEnabled', true);
-                $dompdf = new Dompdf($options);
-                $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-                $html = view('report.employee_record_report',  [
-                    'columns' => $columns,
-                    'rows' => $unpaginated_employees,
-                    'type' => "blood_type",
-                    'report_name' => "Blood Type Report"
-                ])->render();
-                $dompdf->loadHtml($html);
-
-                $dompdf->setPaper('Legal', 'portrait');
-                $dompdf->render();
-                $filename = 'PDS.pdf';
-
-                // /* Downloads as PDF */
-                $dompdf->stream($filename);
+            if ($request->isPrint == 1) {
+                return Helpers::generatePdf($unpaginated_employees, $columns);
             } else {
                 return response()->json([
                     'pagination' => [
@@ -478,8 +458,8 @@ class EmployeeReportController extends Controller
      * This function retrieves employees based on the provided sector, area, and civil status.
      * The retrieved employees are sorted by their first name and returned as a JSON response.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
     public function filterEmployeesByCivilStatus(Request $request)
     {
@@ -876,8 +856,8 @@ class EmployeeReportController extends Controller
      * Employees are categorized into regular, permanent, and job order types, sorted by first name,
      * and returned as a JSON response.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
     public function filterEmployeesByJobStatus(Request $request)
     {
@@ -1292,8 +1272,8 @@ class EmployeeReportController extends Controller
      * This function retrieves employees based on the provided sector, area, and counts them
      * per designation. Employees are sorted by first name and returned as a JSON response.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
 
     public function filterEmployeesPerPosition(Request $request)
@@ -3877,9 +3857,9 @@ class EmployeeReportController extends Controller
     }
 
     /*******************************************************************************************
-     * 
+     *
      * OLD FUNCTIONS
-     *  
+     *
      *******************************************************************************************/
 
     public function allEmployeesBloodType(Request $request)
@@ -4096,7 +4076,7 @@ class EmployeeReportController extends Controller
                 ];
             }
 
-            // Now $data array contains the aggregated data for each personal 
+            // Now $data array contains the aggregated data for each personal
 
 
 
