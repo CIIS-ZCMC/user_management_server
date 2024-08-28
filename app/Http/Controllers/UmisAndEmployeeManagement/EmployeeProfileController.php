@@ -3312,12 +3312,10 @@ class EmployeeProfileController extends Controller
                     }
                     break;
                 case "unit":
-                    $units = Unit::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area, 'code' => $unit->code];
+                    $unit = Unit::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $unit->name, 'sector' => $area, 'code' => $unit->code];
                     break;
             }
-
-
 
             return response()->json([
                 'data' => $areas,
