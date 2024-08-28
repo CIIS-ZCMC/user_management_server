@@ -1266,7 +1266,7 @@ class Helpers
         }
     }
 
-    public static function generatePdf($employees, $columns)
+    public static function generatePdf($employees, $columns, $report_type, $report_name)
     {
         $options = new Options();
         $options->set('isPhpEnabled', false);
@@ -1279,11 +1279,11 @@ class Helpers
         $data = $employees->toArray(request());
 
         // Transform the data to extract the necessary fields
-        $employees = array_map(function($employee) {
+        $employees = array_map(function($employee) use ($report_type) {
             return [
                 'name' => $employee['name'],
                 'area' => $employee['area']['details']['name'] ?? '',
-                'report_type' => $employee['blood_type'] ?? ''
+                ' ' => $employee[$report_type] ?? ''
             ];
         }, $data); // No 'data' key, so process the array directly
 
@@ -1291,8 +1291,8 @@ class Helpers
         $html = view('report.employee_record_report', [
             'columns' => $columns,
             'rows' => $employees,
-            'type' => "report_type",
-            'report_name' => "Blood Type Report"
+            'type' => $report_type,
+            'report_name' => $report_name
         ])->render();
 
         // Load HTML into Dompdf and render it
@@ -1301,6 +1301,7 @@ class Helpers
         $dompdf->render();
 
         // Stream the generated PDF back to the user
-        return $dompdf->stream('PDS.pdf');
+        return $dompdf->stream($report_name . '.pdf');
     }
+
 }

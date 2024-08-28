@@ -24,6 +24,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Psy\Util\Json;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class EmployeeReportController extends Controller
 {
@@ -42,11 +44,13 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
-            $area_id = $request->area_id;
-            $blood_type = $request->blood_type;
-            $columns = json_decode($request->columns, true);
-            $search = $request->search;
+            $report_name = 'Employee Blood Type Report';
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $blood_type = $request->query('blood_type');
+            $columns = json_decode($request->query('columns'), true);
+            $search = $request->query('search');
+            $isPrint = $request->query('isPrint');
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -82,7 +86,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($blood_type, function ($query) use ($blood_type) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                         if (!empty($blood_type)) {
@@ -109,7 +112,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($blood_type, function ($query) use ($blood_type) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                             if (!empty($blood_type)) {
@@ -136,7 +138,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($blood_type, function ($query) use ($blood_type) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                                 if (!empty($blood_type)) {
@@ -163,7 +164,6 @@ class EmployeeReportController extends Controller
                                         }])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($blood_type, function ($query) use ($blood_type) {
                                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                                     if (!empty($blood_type)) {
@@ -194,7 +194,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($blood_type, function ($query) use ($blood_type) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                             if (!empty($blood_type)) {
@@ -221,7 +220,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($blood_type, function ($query) use ($blood_type) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                                 if (!empty($blood_type)) {
@@ -250,7 +248,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($blood_type, function ($query) use ($blood_type) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                         if (!empty($blood_type)) {
@@ -276,7 +273,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($blood_type, function ($query) use ($blood_type) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                             if (!empty($blood_type)) {
@@ -302,14 +298,14 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($blood_type, function ($query) use ($blood_type) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                                 if (!empty($blood_type)) {
                                                     $q->where('blood_type', $blood_type);
                                                 }
                                             });
-                                        })->when($search, function ($query) use ($search) {
+                                        })
+                                        ->when($search, function ($query) use ($search) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
                                                 if (!empty($search)) {
                                                     $q->where('first_name', 'LIKE', '%' . $search . '%')
@@ -330,7 +326,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($blood_type, function ($query) use ($blood_type) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                         if (!empty($blood_type)) {
@@ -357,7 +352,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($blood_type, function ($query) use ($blood_type) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type) {
                                             if (!empty($blood_type)) {
@@ -385,7 +379,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($blood_type, function ($query) use ($blood_type, $search) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($blood_type, $search) {
                                         if (!empty($blood_type)) {
@@ -405,7 +398,7 @@ class EmployeeReportController extends Controller
                         );
                         break;
                     default:
-                        return response()->json(['message', 'Invalid input. Please input a valid sector'], 400);
+                        return response()->json(['message' => 'Invalid input. Please input a valid sector'], 400);
                 }
             }
 
@@ -428,29 +421,30 @@ class EmployeeReportController extends Controller
 
             // Transform and paginate employee data
             $data = EmployeesDetailsReport::collection($paginated_employees);
-            $unpaginated_employees = EmployeesDetailsReport::collection($employees);
+            $print_employees = EmployeesDetailsReport::collection($employees);
 
-            if ($request->isPrint == 1) {
-                return Helpers::generatePdf($unpaginated_employees, $columns);
-            } else {
-                return response()->json([
-                    'pagination' => [
-                        'current_page' => $paginated_employees->currentPage(),
-                        'per_page' => $paginated_employees->perPage(),
-                        'total' => $paginated_employees->total(),
-                        'last_page' => $paginated_employees->lastPage(),
-                        'has_more_pages' => $paginated_employees->hasMorePages(),
-                    ],
-                    'count' => $paginated_employees->count(),
-                    'data' => $data,
-                    'message' => 'List of employee blood types retrieved'
-                ], Response::HTTP_OK);
+            if ($isPrint) {
+                return Helpers::generatePdf($print_employees, $columns, 'blood_type', $report_name);
             }
+
+            return response()->json([
+                'pagination' => [
+                    'current_page' => $paginated_employees->currentPage(),
+                    'per_page' => $paginated_employees->perPage(),
+                    'total' => $paginated_employees->total(),
+                    'last_page' => $paginated_employees->lastPage(),
+                    'has_more_pages' => $paginated_employees->hasMorePages(),
+                ],
+                'count' => $paginated_employees->count(),
+                'data' => $data,
+                'message' => 'List of employee blood types retrieved'
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Filter employees by their civil status.
@@ -461,15 +455,17 @@ class EmployeeReportController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function filterEmployeesByCivilStatus(Request $request)
+    public function filterEmployeesByCivilStatus(Request $request): JsonResponse
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $report_name = 'Employee Civil Status Report';
+            $sector = $request->sector;
             $area_id = $request->area_id;
             $civil_status = $request->civil_status;
             $search = $request->search;
-            $page = $request->page ?: 1;
+            $columns = json_decode($request->columns, true);
+            $isPrint = $request->isPrint;
 
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
@@ -477,7 +473,7 @@ class EmployeeReportController extends Controller
             }
 
             if (!$sector && !$area_id) {
-                $employees =  AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                     $query->whereNull('deactivated_at');
                 }])
                     ->where('division_id', $area_id)
@@ -505,7 +501,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($civil_status, function ($query) use ($civil_status) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                         $q->where('civil_status', $civil_status);
@@ -530,7 +525,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($civil_status, function ($query) use ($civil_status) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                             $q->where('civil_status', $civil_status);
@@ -555,7 +549,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($civil_status, function ($query) use ($civil_status) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                                 $q->where('civil_status', $civil_status);
@@ -580,7 +573,6 @@ class EmployeeReportController extends Controller
                                         }])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($civil_status, function ($query) use ($civil_status) {
                                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                                     $q->where('civil_status', $civil_status);
@@ -609,7 +601,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($civil_status, function ($query) use ($civil_status) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                             $q->where('civil_status', $civil_status);
@@ -634,7 +625,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($civil_status, function ($query) use ($civil_status) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                                 $q->where('civil_status', $civil_status);
@@ -661,7 +651,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($civil_status, function ($query) use ($civil_status) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                         $q->where('civil_status', $civil_status);
@@ -686,7 +675,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($civil_status, function ($query) use ($civil_status) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                             $q->where('civil_status', $civil_status);
@@ -711,7 +699,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($civil_status, function ($query) use ($civil_status) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                                 $q->where('civil_status', $civil_status);
@@ -738,7 +725,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($civil_status, function ($query) use ($civil_status) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                         $q->where('civil_status', $civil_status);
@@ -763,7 +749,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($civil_status, function ($query) use ($civil_status) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                             $q->where('civil_status', $civil_status);
@@ -789,7 +774,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($civil_status, function ($query) use ($civil_status) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($civil_status) {
                                         $q->where('civil_status', $civil_status);
@@ -830,6 +814,11 @@ class EmployeeReportController extends Controller
 
             // Transform and paginate employee data
             $data = EmployeesDetailsReport::collection($paginated_employees);
+            $print_employees = EmployeesDetailsReport::collection($employees);
+
+            if ($isPrint) {
+                return Helpers::generatePdf($print_employees, $columns, 'civil_status', $report_name);
+            }
 
             return response()->json([
                 'pagination' => [
@@ -863,7 +852,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $sector = $request->sector;
             $area_id = $request->area_id;
             $employment_type_id = $request->employment_type_id;
             $search = $request->search;
@@ -898,7 +887,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
@@ -921,7 +909,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
@@ -944,7 +931,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                                 $q->where('employment_type_id', $employment_type_id);
@@ -967,7 +953,6 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                                 $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                                     $q->where('employment_type_id', $employment_type_id);
@@ -994,7 +979,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
@@ -1017,7 +1001,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                                 $q->where('employment_type_id', $employment_type_id);
@@ -1042,7 +1025,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
@@ -1065,7 +1047,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
@@ -1088,7 +1069,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                             $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                                 $q->where('employment_type_id', $employment_type_id);
@@ -1113,7 +1093,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
@@ -1136,7 +1115,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                         $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                             $q->where('employment_type_id', $employment_type_id);
@@ -1160,7 +1138,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                     $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                         $q->where('employment_type_id', $employment_type_id);
@@ -1180,7 +1157,6 @@ class EmployeeReportController extends Controller
                     default:
                         $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                             ->where('employee_profile_id', '<>', 1)
-
                             ->when($employment_type_id, function ($query) use ($employment_type_id) {
                                 $query->whereHas('employeeProfile', function ($q) use ($employment_type_id) {
                                     $q->where('employment_type_id', $employment_type_id);
@@ -1257,7 +1233,7 @@ class EmployeeReportController extends Controller
                     'total_job_order' => COUNT($job_order)
                 ],
                 'count' => COUNT($paginated_employees),
-                'data' =>  EmployeesDetailsReport::collection($data),
+                'data' => EmployeesDetailsReport::collection($data),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1301,7 +1277,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->get()
                     );
 
@@ -1311,7 +1286,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
 
@@ -1321,7 +1295,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
 
@@ -1331,7 +1304,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->get()
                                 );
                             }
@@ -1344,7 +1316,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
 
@@ -1354,7 +1325,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
                         }
@@ -1367,7 +1337,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('department_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->get()
                     );
 
@@ -1377,7 +1346,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
 
@@ -1387,7 +1355,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
                         }
@@ -1400,7 +1367,6 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('section_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->get()
                     );
 
@@ -1410,7 +1376,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile'])
                                 ->where('unit_id', $unit->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
                     }
@@ -1422,14 +1387,12 @@ class EmployeeReportController extends Controller
                         AssignArea::with(['employeeProfile'])
                             ->where('unit_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->get()
                     );
                     break;
                 default:
                     $employees = AssignArea::with(['employeeProfile'])
                         ->where('employee_profile_id', '<>', 1)
-
                         ->get();
             }
 
@@ -1502,7 +1465,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $sector = $request->sector;
             $area_id = $request->area_id;
             $barangay = $request->barangay;
             $search = $request->search;
@@ -1538,7 +1501,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($barangay, function ($query) use ($barangay) {
                                     $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                         $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1561,7 +1523,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($barangay, function ($query) use ($barangay) {
                                         $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                             $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1584,7 +1545,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($barangay, function ($query) use ($barangay) {
                                             $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                                 $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1607,7 +1567,6 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($barangay, function ($query) use ($barangay) {
                                                 $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                                     $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1634,7 +1593,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($barangay, function ($query) use ($barangay) {
                                         $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                             $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1657,7 +1615,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($barangay, function ($query) use ($barangay) {
                                             $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                                 $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1682,7 +1639,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($barangay, function ($query) use ($barangay) {
                                     $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                         $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1705,7 +1661,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($barangay, function ($query) use ($barangay) {
                                         $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                             $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1728,7 +1683,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($barangay, function ($query) use ($barangay) {
                                             $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                                 $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1753,7 +1707,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($barangay, function ($query) use ($barangay) {
                                     $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                         $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1776,7 +1729,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($barangay, function ($query) use ($barangay) {
                                         $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                             $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1800,7 +1752,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($barangay, function ($query) use ($barangay) {
                                     $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                         $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1820,7 +1771,6 @@ class EmployeeReportController extends Controller
                     default:
                         $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                             ->where('employee_profile_id', '<>', 1)
-
                             ->when($barangay, function ($query) use ($barangay) {
                                 $query->whereHas('employeeProfile.personalInformation.addresses', function ($q) use ($barangay) {
                                     $q->where('address', 'LIKE', '%' . $barangay . '%');
@@ -1868,7 +1818,7 @@ class EmployeeReportController extends Controller
                     'has_more_pages' => $paginated_employees->hasMorePages(),
                 ],
                 'count' => COUNT($paginated_employees),
-                'data' =>  EmployeesDetailsReportByAddress::collection($data),
+                'data' => EmployeesDetailsReportByAddress::collection($data),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1881,7 +1831,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $sector = $request->sector;
             $area_id = $request->area_id;
             $sex = $request->sex;
             $search = $request->search;
@@ -1920,7 +1870,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($sex, function ($query) use ($sex) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                         $q->where('sex', $sex);
@@ -1940,14 +1889,12 @@ class EmployeeReportController extends Controller
                         // Count male and female by section
                         $male_count_by_area += AssignArea::where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Male');
                             })->count();
 
                         $female_count_by_area += AssignArea::where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Female');
                             })->count();
@@ -1958,7 +1905,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($sex, function ($query) use ($sex) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                             $q->where('sex', $sex);
@@ -1978,14 +1924,12 @@ class EmployeeReportController extends Controller
                             // Count male and female by section
                             $male_count_by_area += AssignArea::where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Male');
                                 })->count();
 
                             $female_count_by_area += AssignArea::where('department_id', $department->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Female');
                                 })->count();
@@ -1996,7 +1940,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($sex, function ($query) use ($sex) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                                 $q->where('sex', $sex);
@@ -2016,14 +1959,12 @@ class EmployeeReportController extends Controller
                                 // Count male and female by section
                                 $male_count_by_area += AssignArea::where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Male');
                                     })->count();
 
                                 $female_count_by_area += AssignArea::where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Female');
                                     })->count();
@@ -2034,7 +1975,6 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($sex, function ($query) use ($sex) {
                                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                                     $q->where('sex', $sex);
@@ -2054,14 +1994,12 @@ class EmployeeReportController extends Controller
                                     // Count male and female by section
                                     $male_count_by_area += AssignArea::where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->whereHas('employeeProfile.personalInformation', function ($query) {
                                             $query->where('sex', 'Male');
                                         })->count();
 
                                     $female_count_by_area += AssignArea::where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->whereHas('employeeProfile.personalInformation', function ($query) {
                                             $query->where('sex', 'Female');
                                         })->count();
@@ -2077,7 +2015,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($sex, function ($query) use ($sex) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                             $q->where('sex', $sex);
@@ -2097,14 +2034,12 @@ class EmployeeReportController extends Controller
                             // Count male and female by section
                             $male_count_by_area += AssignArea::where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Male');
                                 })->count();
 
                             $female_count_by_area += AssignArea::where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Female');
                                 })->count();
@@ -2115,7 +2050,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($sex, function ($query) use ($sex) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                                 $q->where('sex', $sex);
@@ -2135,14 +2069,12 @@ class EmployeeReportController extends Controller
                                 // Count male and female by section
                                 $male_count_by_area += AssignArea::where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Male');
                                     })->count();
 
                                 $female_count_by_area += AssignArea::where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Female');
                                     })->count();
@@ -2156,7 +2088,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($sex, function ($query) use ($sex) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                         $q->where('sex', $sex);
@@ -2176,14 +2107,12 @@ class EmployeeReportController extends Controller
                         // Count male and female by section
                         $male_count_by_area += AssignArea::where('department_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Male');
                             })->count();
 
                         $female_count_by_area += AssignArea::where('department_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Female');
                             })->count();
@@ -2194,7 +2123,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($sex, function ($query) use ($sex) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                             $q->where('sex', $sex);
@@ -2214,14 +2142,12 @@ class EmployeeReportController extends Controller
                             // Count male and female by section
                             $male_count_by_area += AssignArea::where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Male');
                                 })->count();
 
                             $female_count_by_area += AssignArea::where('section_id', $section->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Female');
                                 })->count();
@@ -2232,7 +2158,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($sex, function ($query) use ($sex) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                                 $q->where('sex', $sex);
@@ -2252,14 +2177,12 @@ class EmployeeReportController extends Controller
                                 // Count male and female by section
                                 $male_count_by_area += AssignArea::where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Male');
                                     })->count();
 
                                 $female_count_by_area += AssignArea::where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Female');
                                     })->count();
@@ -2272,7 +2195,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($sex, function ($query) use ($sex) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                         $q->where('sex', $sex);
@@ -2292,14 +2214,12 @@ class EmployeeReportController extends Controller
                         // Count male and female by section
                         $male_count_by_area += AssignArea::where('section_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Male');
                             })->count();
 
                         $female_count_by_area += AssignArea::where('section_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Female');
                             })->count();
@@ -2310,7 +2230,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($sex, function ($query) use ($sex) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                             $q->where('sex', $sex);
@@ -2330,14 +2249,12 @@ class EmployeeReportController extends Controller
                             // Count male and female by section
                             $male_count_by_area += AssignArea::where('unit_id', $unit->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Male');
                                 })->count();
 
                             $female_count_by_area += AssignArea::where('unit_id', $unit->id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Female');
                                 })->count();
@@ -2349,7 +2266,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.addresses'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($sex, function ($query) use ($sex) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($sex) {
                                         $q->where('sex', $sex);
@@ -2369,14 +2285,12 @@ class EmployeeReportController extends Controller
                         // Count male and female by unit
                         $male_count_by_area += AssignArea::where('unit_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Male');
                             })->count();
 
                         $female_count_by_area += AssignArea::where('unit_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
-
                             ->whereHas('employeeProfile.personalInformation', function ($query) {
                                 $query->where('sex', 'Female');
                             })->count();
@@ -2457,7 +2371,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $sector = $request->sector;
             $area_id = $request->area_id;;
             $search = $request->search;
             $page = $request->page ?: 1;
@@ -2468,7 +2382,7 @@ class EmployeeReportController extends Controller
             }
 
             if (!$sector && !$area_id) {
-                $employees =  AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
+                $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
                     ->where('employee_profile_id', '<>', 1)
                     ->when($pwd, function ($query) use ($pwd) {
                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
@@ -2483,7 +2397,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($pwd, function ($query) use ($pwd) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                         $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2506,7 +2419,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($pwd, function ($query) use ($pwd) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                             $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2529,7 +2441,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($pwd, function ($query) use ($pwd) {
                                             $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                                 $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2552,7 +2463,6 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($pwd, function ($query) use ($pwd) {
                                                 $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                                     $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2579,7 +2489,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($pwd, function ($query) use ($pwd) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                             $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2602,7 +2511,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($pwd, function ($query) use ($pwd) {
                                             $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                                 $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2627,7 +2535,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($pwd, function ($query) use ($pwd) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                         $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2650,7 +2557,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($pwd, function ($query) use ($pwd) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                             $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2673,7 +2579,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($pwd, function ($query) use ($pwd) {
                                             $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                                 $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2698,7 +2603,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($pwd, function ($query) use ($pwd) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                         $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2721,7 +2625,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($pwd, function ($query) use ($pwd) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                             $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2745,7 +2648,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($pwd, function ($query) use ($pwd) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
                                         $q->where('legal_iq_id', $pwd)->where('answer', 1);
@@ -2809,7 +2711,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $sector = $request->sector;
             $area_id = $request->area_id;;
             $search = $request->search;
             $page = $request->page ?: 1;
@@ -2820,7 +2722,7 @@ class EmployeeReportController extends Controller
             }
 
             if (!$sector && !$area_id) {
-                $employees =  AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
+                $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
                     ->where('employee_profile_id', '<>', 1)
                     ->when($solo_parent, function ($query) use ($solo_parent) {
                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
@@ -2835,7 +2737,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                         $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -2858,7 +2759,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                             $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -2881,7 +2781,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($solo_parent, function ($query) use ($solo_parent) {
                                             $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                                 $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -2904,7 +2803,6 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($solo_parent, function ($query) use ($solo_parent) {
                                                 $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                                     $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -2931,7 +2829,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                             $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -2954,7 +2851,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($solo_parent, function ($query) use ($solo_parent) {
                                             $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                                 $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -2979,7 +2875,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                         $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -3002,7 +2897,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                             $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -3025,7 +2919,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($solo_parent, function ($query) use ($solo_parent) {
                                             $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                                 $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -3050,7 +2943,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                         $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -3073,7 +2965,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
                                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                             $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -3097,7 +2988,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
                                     $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
                                         $q->where('legal_iq_id', $solo_parent)->where('answer', 1);
@@ -3161,7 +3051,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector =  $request->sector;
+            $sector = $request->sector;
             $area_id = $request->area_id;
             $religion = $request->religion;
             $search = $request->search;
@@ -3189,7 +3079,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($religion, function ($query) use ($religion) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                         $q->where('religion', 'like', "%{$religion}%");
@@ -3212,7 +3101,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                             $q->where('religion', 'like', "%{$religion}%");
@@ -3235,7 +3123,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('division_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                                 $q->where('religion', 'like', "%{$religion}%");
@@ -3258,7 +3145,6 @@ class EmployeeReportController extends Controller
                                         AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                             ->where('division_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->when($religion, function ($query) use ($religion) {
                                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                                     $q->where('religion', 'like', "%{$religion}%");
@@ -3285,7 +3171,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                             $q->where('religion', 'like', "%{$religion}%");
@@ -3308,7 +3193,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('division_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                                 $q->where('religion', 'like', "%{$religion}%");
@@ -3333,7 +3217,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($religion, function ($query) use ($religion) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                         $q->where('religion', 'like', "%{$religion}%");
@@ -3356,7 +3239,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                             $q->where('religion', 'like', "%{$religion}%");
@@ -3379,7 +3261,6 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                         ->where('division_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                                 $q->where('religion', 'like', "%{$religion}%");
@@ -3404,7 +3285,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($religion, function ($query) use ($religion) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                         $q->where('religion', 'like', "%{$religion}%");
@@ -3427,7 +3307,6 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                     ->where('division_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                             $q->where('religion', 'like', "%{$religion}%");
@@ -3451,7 +3330,6 @@ class EmployeeReportController extends Controller
                             AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->when($religion, function ($query) use ($religion) {
                                     $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
                                         $q->where('religion', 'like', "%{$religion}%");
@@ -3503,7 +3381,7 @@ class EmployeeReportController extends Controller
                     'has_more_pages' => $paginated_employees->hasMorePages(),
                 ],
                 'count' => COUNT($paginated_employees),
-                'data' =>  EmployeesDetailsReportByReligion::collection($data),
+                'data' => EmployeesDetailsReportByReligion::collection($data),
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -3550,7 +3428,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
 
@@ -3562,7 +3439,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
 
@@ -3574,7 +3450,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->get()
                                 );
 
@@ -3586,7 +3461,6 @@ class EmployeeReportController extends Controller
                                         }])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
-
                                             ->get()
                                     );
                                 }
@@ -3602,7 +3476,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
 
@@ -3614,7 +3487,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->get()
                                 );
                             }
@@ -3628,7 +3500,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
 
@@ -3640,7 +3511,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
 
@@ -3652,7 +3522,6 @@ class EmployeeReportController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->get()
                                 );
                             }
@@ -3666,7 +3535,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
 
@@ -3678,7 +3546,6 @@ class EmployeeReportController extends Controller
                                 }])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
-
                                     ->get()
                             );
                         }
@@ -3691,7 +3558,6 @@ class EmployeeReportController extends Controller
                             }])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
-
                                 ->get()
                         );
                         break;
@@ -4056,8 +3922,8 @@ class EmployeeReportController extends Controller
                 $total_years_with_zcmc = floor($total_with_zcmc / 12);
 
                 // Total years in zcmc as JO / current (id JO)
-                $total_jo_months =  $total_job_order_service_months + $total_job_order_current_service_months;
-                $total_jo_years =   floor($total_jo_months / 12);
+                $total_jo_months = $total_job_order_service_months + $total_job_order_current_service_months;
+                $total_jo_years = floor($total_jo_months / 12);
 
                 // Prepare data for output
                 $data[] = [
@@ -4077,7 +3943,6 @@ class EmployeeReportController extends Controller
             }
 
             // Now $data array contains the aggregated data for each personal
-
 
 
             // $display[] = array_filter($data, function ($row) {
@@ -4117,7 +3982,7 @@ class EmployeeReportController extends Controller
             $regular = $employees->filter(function ($row) {
                 return $row->employment_type_id !== 4 && $row->employment_type_id !== 5;
             });
-            $temporary =  $employees->filter(function ($row) {
+            $temporary = $employees->filter(function ($row) {
                 return $row->employment_type_id === 4;
             });
             $job_order = $employees->filter(function ($row) {
@@ -4125,7 +3990,7 @@ class EmployeeReportController extends Controller
             });
 
             return response()->json([
-                'data' =>  EmployeesDetailsReport::collection($employees),
+                'data' => EmployeesDetailsReport::collection($employees),
                 'count' => [
                     'regular' => COUNT($regular),
                     'permanent' => COUNT($temporary),
@@ -4162,7 +4027,7 @@ class EmployeeReportController extends Controller
                 $regular = $employees->filter(function ($row) {
                     return $row->employment_type_id !== 4 && $row->employment_type_id !== 5;
                 });
-                $temporary =  $employees->filter(function ($row) {
+                $temporary = $employees->filter(function ($row) {
                     return $row->employment_type_id === 4;
                 });
                 $job_order = $employees->filter(function ($row) {
@@ -4179,7 +4044,7 @@ class EmployeeReportController extends Controller
                 $regular = $employees->filter(function ($row) {
                     return $row->employment_type_id !== 4 && $row->employment_type_id !== 5;
                 });
-                $temporary =  $employees->filter(function ($row) {
+                $temporary = $employees->filter(function ($row) {
                     return $row->employment_type_id === 4;
                 });
                 $job_order = $employees->filter(function ($row) {
@@ -4197,7 +4062,7 @@ class EmployeeReportController extends Controller
                 $regular = $employees->filter(function ($row) {
                     return $row->employment_type_id !== 4 && $row->employment_type_id !== 5;
                 });
-                $temporary =  $employees->filter(function ($row) {
+                $temporary = $employees->filter(function ($row) {
                     return $row->employment_type_id === 4;
                 });
                 $job_order = $employees->filter(function ($row) {

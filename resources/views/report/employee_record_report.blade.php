@@ -98,7 +98,7 @@
 @endphp
 
 <div style="text-align:center;">
-    {{-- <h3>{{ $report_name }}</h3> --}}
+     <h3>{{ $report_name }}</h3>
     <p style="font-size: 14px">as of {{ $formattedDate }}</p>
 </div>
 
