@@ -23,10 +23,14 @@ class AttendanceReportController extends Controller
 {
     private string $CONTROLLER_NAME = "Attendance Reports";
 
-    /*
-     *
-     * START OF BASE QUERY FUNCTIONS
-     *
+    /**
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $employment_type
+     * @param $designation_id
+     * @return Builder
      */
     private function baseQueryByPeriod($month_of, $year_of, $first_half, $second_half, $employment_type, $designation_id): Builder
     {
@@ -102,6 +106,17 @@ class AttendanceReportController extends Controller
             );
     }
 
+    /**
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $area_id
+     * @param $area_under
+     * @param $employment_type
+     * @param $designation_id
+     * @return Builder
+     */
     private function baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -217,6 +232,17 @@ class AttendanceReportController extends Controller
             );
     }
 
+    /**
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $area_id
+     * @param $area_under
+     * @param $employment_type
+     * @param $designation_id
+     * @return Builder
+     */
     private function baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -321,6 +347,17 @@ class AttendanceReportController extends Controller
             );
     }
 
+    /**
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $area_id
+     * @param $area_under
+     * @param $employment_type
+     * @param $designation_id
+     * @return Builder
+     */
     private function baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -423,6 +460,17 @@ class AttendanceReportController extends Controller
             );
     }
 
+    /**
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $area_id
+     * @param $area_under
+     * @param $employment_type
+     * @param $designation_id
+     * @return Builder
+     */
     private function baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -500,13 +548,19 @@ class AttendanceReportController extends Controller
             );
     }
 
-    /*
-     *
-     * END OF BASE QUERY FUNCTIONS
-     *
+    /**
+     * @param $base_query
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $sort_order
+     * @param $limit
+     * @param $absent_leave_without_pay
+     * @param $absent_without_official_leave
+     * @return mixed
      */
-
-    private function generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave)
+    private function generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
             ->addSelect(
@@ -576,7 +630,19 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    private function generateTardinessByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave)
+    /**
+     * @param $base_query
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $sort_order
+     * @param $limit
+     * @param $absent_leave_without_pay
+     * @param $absent_without_official_leave
+     * @return mixed
+     */
+    private function generateTardinessByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
             ->addSelect(
@@ -647,7 +713,19 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    private function generateUndertimeByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave)
+    /**
+     * @param $base_query
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $sort_order
+     * @param $limit
+     * @param $absent_leave_without_pay
+     * @param $absent_without_official_leave
+     * @return mixed
+     */
+    private function generateUndertimeByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
             ->addSelect(
@@ -743,7 +821,19 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    private function generatePerfectByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave)
+    /**
+     * @param $base_query
+     * @param $month_of
+     * @param $year_of
+     * @param $first_half
+     * @param $second_half
+     * @param $sort_order
+     * @param $limit
+     * @param $absent_leave_without_pay
+     * @param $absent_without_official_leave
+     * @return mixed
+     */
+    private function generatePerfectByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
             ->addSelect(
@@ -910,12 +1000,6 @@ class AttendanceReportController extends Controller
             );
         }
     }
-
-    /*
-     *
-     *
-     *
-     */
 
 
 }
