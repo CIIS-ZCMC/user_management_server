@@ -1283,7 +1283,7 @@ class Helpers
             return [
                 'name' => $employee['name'],
                 'area' => $employee['area']['details']['name'] ?? '',
-                ' ' => $employee[$report_type] ?? ''
+                'report_type' => $employee[$report_type] ?? ''
             ];
         }, $data); // No 'data' key, so process the array directly
 

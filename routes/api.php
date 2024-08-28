@@ -2443,7 +2443,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // Filter Employees by Civil Status
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-civil-status-filter', 'EmployeeReportController@filterEmployeesByCivilStatus');
+            Route::get('employee-by-civil-status-filter', 'EmployeeReportController@filterEmployeesByCivilStatus');
         });
         // Filter Employees by Job Status
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {

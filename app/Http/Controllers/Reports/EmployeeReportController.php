@@ -460,12 +460,12 @@ class EmployeeReportController extends Controller
         try {
             $employees = collect();
             $report_name = 'Employee Civil Status Report';
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-            $civil_status = $request->civil_status;
-            $search = $request->search;
-            $columns = json_decode($request->columns, true);
-            $isPrint = $request->isPrint;
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $civil_status = $request->query('civil_status');
+            $columns = json_decode($request->query('columns'), true);
+            $search = $request->query('search');
+            $isPrint = $request->query('isPrint');
 
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
