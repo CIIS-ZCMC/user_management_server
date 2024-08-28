@@ -50,7 +50,7 @@ class EmployeeReportController extends Controller
             $blood_type = $request->query('blood_type');
             $columns = json_decode($request->query('columns'), true);
             $search = $request->query('search');
-            $isPrint = $request->query('isPrint');
+            $isPrint = (bool) $request->query('isPrint');
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -465,7 +465,7 @@ class EmployeeReportController extends Controller
             $civil_status = $request->query('civil_status');
             $columns = json_decode($request->query('columns'), true);
             $search = $request->query('search');
-            $isPrint = $request->query('isPrint');
+            $isPrint = (bool) $request->query('isPrint');
 
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
