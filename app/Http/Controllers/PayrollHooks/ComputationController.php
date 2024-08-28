@@ -5,14 +5,22 @@ namespace App\Http\Controllers\PayrollHooks;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\SalaryGrade;
+use App\Methods\Helpers;
+use App\Models\EmployeeProfile;
+use App\Models\LeaveType;
+use App\Http\Controllers\PayrollHooks\GenerateReportController;
 class ComputationController extends Controller
 {
-
+    protected $helper;
     protected $Working_Days;
     protected $Working_Hours;
+
+
      public function __construct() {
         $this->Working_Days = 22;
         $this->Working_Hours = 8;
+        $this->helper = new Helpers();
+
     }
 
     public function BasicSalary($sg, $step,$schedcount)
@@ -115,24 +123,19 @@ class ComputationController extends Controller
 
     }
 
-    public function OutofPayroll($netsalary,$init,$days_In_Month){
+    public function OutofPayroll($overallnetSalary){
         $limit = 5000;
         $halfLimit = $limit / 2;
 
-        if (($init >= 1 && $days_In_Month <= 15) || ($init >= 16 && $days_In_Month >=31)) {
-            if ($netsalary < $halfLimit) {
-                // OUT OF PAYROLL
-                return true;
-            }
-        } elseif ($init >= 1 && $init <= 31) {
-            if ($netsalary < $limit) {
-                return true;
-            }
+        if ($overallnetSalary < $limit){
+            return true;
         }
 
         return false;
 
     }
+
+
 
 
 }
