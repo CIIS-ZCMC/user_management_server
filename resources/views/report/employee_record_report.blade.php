@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+          integrity="sha384-T3c6oIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
     <style>
 
@@ -71,6 +71,25 @@
         th {
             background-color: #e4e4e4;
         }
+
+        /* Footer */
+        @page {
+            margin: 100px 50px;
+        }
+
+        footer {
+            position: fixed;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .page-number:before {
+            content: "Page " counter(page);
+        }
     </style>
 </head>
 <body>
@@ -92,6 +111,7 @@
 
 <!-- Horizontal Divider -->
 <div class="divider"></div>
+
 @php
     use Carbon\Carbon;
 
@@ -132,5 +152,10 @@
         </tr>
     @endforeach
 </table>
+
+<!-- Footer -->
+<footer>
+    <div class="page-number"></div>
+</footer>
 </body>
 </html>

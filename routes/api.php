@@ -2460,7 +2460,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees by Sex
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-sex', 'EmployeeReportController@filterEmployeesBySex');
+            Route::get('employee-by-sex', 'EmployeeReportController@filterEmployeesBySex');
         });
         // Filter Employees by PWD
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
