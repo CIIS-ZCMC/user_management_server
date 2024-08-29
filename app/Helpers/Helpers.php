@@ -1266,7 +1266,7 @@ class Helpers
         }
     }
 
-    public static function generatePdf($employees, $columns, $report_type, $report_name)
+    public static function generatePdf($employees, $columns, $report_name, $orientation)
     {
         $options = new Options();
         $options->set('isPhpEnabled', false);
@@ -1278,26 +1278,38 @@ class Helpers
         // Convert the Laravel resource collection to an array with the request object
         $data = $employees->toArray(request());
 
-        // Transform the data to extract the necessary fields
-        $employees = array_map(function($employee) use ($report_type) {
-            return [
-                'name' => $employee['name'],
-                'area' => $employee['area']['details']['name'] ?? '',
-                'report_type' => $employee[$report_type] ?? ''
-            ];
-        }, $data); // No 'data' key, so process the array directly
+        // Transform the data based on the columns
+        $employees = array_map(function($employee) use ($columns) {
+            $transformed = [];
+            foreach ($columns as $column) {
+                $field = $column['field'];
+                // Handle nested fields like 'area.details.name'
+                $value = $employee;
+                // Handle the "area" field specifically to extract the name of the assignment
+                if ($field == 'area') {
+                    $value = $employee['area']['details']['name'] ?? 'N/A';
+                } else {
+                    // Handle nested fields like 'area.details.name'
+                    foreach (explode('.', $field) as $key) {
+                        $value = $value[$key] ?? 'N/A';
+                    }
+                }
+                $transformed[$field] = $value;
+            }
+            return $transformed;
+        }, $data);
+
 
         // Generate the HTML from the view
         $html = view('report.employee_record_report', [
             'columns' => $columns,
             'rows' => $employees,
-            'type' => $report_type,
             'report_name' => $report_name
         ])->render();
 
         // Load HTML into Dompdf and render it
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('Legal', 'portrait');
+        $dompdf->setPaper('Legal', $orientation);
         $dompdf->render();
 
         // Stream the generated PDF back to the user
