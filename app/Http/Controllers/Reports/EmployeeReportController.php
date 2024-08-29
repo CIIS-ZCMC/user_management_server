@@ -866,7 +866,7 @@ class EmployeeReportController extends Controller
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
             $employment_type_id = $request->query('employment_type_id');
-            $columns = json_decode($request->query('columns'), true);
+            $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
             $isPrint = (bool) $request->query('isPrint');
 
@@ -1190,7 +1190,6 @@ class EmployeeReportController extends Controller
                 }
             }
 
-
             // Separate employees into categories based on their employment types
             $permanent = $employees->filter(function ($row) {
                 return in_array($row->employeeProfile->employmentType->id, [1, 2]);
@@ -1256,10 +1255,10 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($paginated_employees),
                 'data' => EmployeesDetailsReport::collection($data),
                 'message' => 'List of employees retrieved'
-            ], Response::HTTP_OK);
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
