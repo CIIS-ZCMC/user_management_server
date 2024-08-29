@@ -1286,9 +1286,13 @@ class Helpers
                 // Handle nested fields like 'area.details.name'
                 $value = $employee;
                 // Handle the "area" field specifically to extract the name of the assignment
-                if ($field == 'area') {
+                if ($field === 'area') {
                     $value = $employee['area']['details']['name'] ?? 'N/A';
-                } else {
+                }
+                else if ($field === 'designation') {
+                    $value = $employee['designation']['name'] ?? 'N/A';
+                }
+                else {
                     // Handle nested fields like 'area.details.name'
                     foreach (explode('.', $field) as $key) {
                         $value = $value[$key] ?? 'N/A';
