@@ -50,7 +50,7 @@ class EmployeeReportController extends Controller
             $blood_type = $request->query('blood_type');
             $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
-            $isPrint = (bool) $request->query('isPrint');
+            $isPrint = (bool)$request->query('isPrint');
 
             // count number of columns
             $column_count = count($columns);
@@ -471,7 +471,7 @@ class EmployeeReportController extends Controller
             $civil_status = $request->query('civil_status');
             $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
-            $isPrint = (bool) $request->query('isPrint');
+            $isPrint = (bool)$request->query('isPrint');
 
             // count number of columns
             $column_count = count($columns);
@@ -866,9 +866,9 @@ class EmployeeReportController extends Controller
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
             $employment_type_id = $request->query('employment_type_id');
-            $columns = json_decode($request->query('columns'), true);
+            $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
-            $isPrint = (bool) $request->query('isPrint');
+            $isPrint = (bool)$request->query('isPrint');
 
             // count number of columns
             $column_count = count($columns);
@@ -1190,7 +1190,6 @@ class EmployeeReportController extends Controller
                 }
             }
 
-
             // Separate employees into categories based on their employment types
             $permanent = $employees->filter(function ($row) {
                 return in_array($row->employeeProfile->employmentType->id, [1, 2]);
@@ -1256,10 +1255,10 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($paginated_employees),
                 'data' => EmployeesDetailsReport::collection($data),
                 'message' => 'List of employees retrieved'
-            ], Response::HTTP_OK);
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1290,131 +1289,265 @@ class EmployeeReportController extends Controller
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
             }
 
-            // Fetch employees based on sector and area_id
-            switch ($sector) {
-                case 'division':
-                    // Similar logic as before with search filter applied
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
-                            ->where('division_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->get()
-                    );
-
-                    $departments = Department::where('division_id', $area_id)->get();
-                    foreach ($departments as $department) {
+            if (!$sector && !$area_id) {
+                $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                    $query->whereNull('deactivated_at');
+                }])
+                    ->where('employee_profile_id', '<>', 1)
+                    ->when($search, function ($query) use ($search) {
+                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                            if (!empty($search)) {
+                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                            }
+                        });
+                    })
+                    ->get();
+            } else {
+                // Fetch employees based on sector and area_id
+                switch ($sector) {
+                    case 'division':
+                        // Similar logic as before with search filter applied
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
-                                ->where('department_id', $department->id)
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
                                 ->get()
                         );
 
-                        $sections = Section::where('department_id', $department->id)->get();
+                        $departments = Department::where('division_id', $area_id)->get();
+                        foreach ($departments as $department) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('department_id', $department->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $sections = Section::where('department_id', $department->id)->get();
+                            foreach ($sections as $section) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('section_id', $section->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
+                                        ->get()
+                                );
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $employees = $employees->merge(
+                                        AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }])
+                                            ->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)
+                                            ->when($search, function ($query) use ($search) {
+                                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                    if (!empty($search)) {
+                                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                    }
+                                                });
+                                            })
+                                            ->get()
+                                    );
+                                }
+                            }
+                        }
+
+                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
                                     ->get()
                             );
 
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile'])
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
                                         ->get()
                                 );
                             }
                         }
-                    }
+                        break;
 
-                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
-                    foreach ($sections as $section) {
+                    case 'department':
+                        // Similar logic as before with search filter applied
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
-                                ->where('section_id', $section->id)
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
                                 ->get()
                         );
 
-                        $units = Unit::where('section_id', $section->id)->get();
+                        $sections = Section::where('department_id', $area_id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'section':
+                        // Similar logic as before with search filter applied
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('section_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
                                     ->get()
                             );
                         }
-                    }
-                    break;
+                        break;
 
-                case 'department':
-                    // Similar logic as before with search filter applied
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
-                            ->where('department_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->get()
-                    );
-
-                    $sections = Section::where('department_id', $area_id)->get();
-                    foreach ($sections as $section) {
+                    case 'unit':
+                        // Similar logic as before with search filter applied
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
-                                ->where('section_id', $section->id)
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
                                 ->get()
                         );
-
-                        $units = Unit::where('section_id', $section->id)->get();
-                        foreach ($units as $unit) {
-                            $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile'])
-                                    ->where('unit_id', $unit->id)
-                                    ->where('employee_profile_id', '<>', 1)
-                                    ->get()
-                            );
-                        }
-                    }
-                    break;
-
-                case 'section':
-                    // Similar logic as before with search filter applied
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
-                            ->where('section_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->get()
-                    );
-
-                    $units = Unit::where('section_id', $area_id)->get();
-                    foreach ($units as $unit) {
-                        $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile'])
-                                ->where('unit_id', $unit->id)
-                                ->where('employee_profile_id', '<>', 1)
-                                ->get()
-                        );
-                    }
-                    break;
-
-                case 'unit':
-                    // Similar logic as before with search filter applied
-                    $employees = $employees->merge(
-                        AssignArea::with(['employeeProfile'])
-                            ->where('unit_id', $area_id)
-                            ->where('employee_profile_id', '<>', 1)
-                            ->get()
-                    );
-                    break;
-                default:
-                    $employees = AssignArea::with(['employeeProfile'])
-                        ->where('employee_profile_id', '<>', 1)
-                        ->get();
+                        break;
+                    default:
+                        return response()->json(['message' => 'Invalid input. Please input a valid sector'], 400);
+                }
             }
 
             // Apply search filter if provided
@@ -1486,11 +1619,18 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-            $barangay = $request->barangay;
-            $search = $request->search;
-            $page = $request->page ?: 1;
+            $report_name = 'Employees Address Report';
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $barangay = $request->query('barangay');
+            $columns = json_decode($request->query('columns'), true) ?? [];
+            $search = $request->query('search');
+            $isPrint = (bool)$request->query('isPrint');
+
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -1809,7 +1949,6 @@ class EmployeeReportController extends Controller
                 }
             }
 
-
             // After all merge operations
             $employees = $employees->unique('employee_profile_id');
             // Sort employees by first name
@@ -1827,8 +1966,13 @@ class EmployeeReportController extends Controller
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
 
-            // TRansform and paginate employee data
-            $data = $paginated_employees;
+            // Transform and paginate employee data
+            $data = EmployeesDetailsReportByAddress::collection($paginated_employees);
+            $print_employees = EmployeesDetailsReportByAddress::collection($employees);
+
+            if ($isPrint) {
+                return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
+            }
 
             return response()->json([
                 'pagination' => [
@@ -1838,8 +1982,8 @@ class EmployeeReportController extends Controller
                     'last_page' => $paginated_employees->lastPage(),
                     'has_more_pages' => $paginated_employees->hasMorePages(),
                 ],
-                'count' => COUNT($paginated_employees),
-                'data' => EmployeesDetailsReportByAddress::collection($data),
+                'count' => $paginated_employees->count(),
+                'data' => $data,
                 'message' => 'List of employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
