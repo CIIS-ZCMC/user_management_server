@@ -48,7 +48,7 @@ class EmployeeReportController extends Controller
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
             $blood_type = $request->query('blood_type');
-            $columns = json_decode($request->query('columns'), true)  ?? [];
+            $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
             $isPrint = (bool) $request->query('isPrint');
 
@@ -862,12 +862,18 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-            $employment_type_id = $request->employment_type_id;
-            $search = $request->search;
-            $page = $request->page ?: 1;
+            $report_name = 'Employees Job Status Report';
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $employment_type_id = $request->query('employment_type_id');
+            $columns = json_decode($request->query('columns'), true);
+            $search = $request->query('search');
+            $isPrint = (bool) $request->query('isPrint');
 
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -1225,6 +1231,11 @@ class EmployeeReportController extends Controller
 
             // Transform and paginate employee data
             $data = EmployeesDetailsReport::collection($paginated_employees);
+            $print_employees = EmployeesDetailsReport::collection($employees);
+
+            if ($isPrint) {
+                return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
+            }
 
             return response()->json([
                 'pagination' => [
