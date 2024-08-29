@@ -446,8 +446,8 @@ class EmployeeReportController extends Controller
                 'message' => 'List of employee blood types retrieved'
             ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeeByBloodType', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
