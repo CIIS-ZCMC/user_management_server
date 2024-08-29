@@ -30,7 +30,7 @@
             text-align: center;
         }
 
-        .header-text h6 {
+        .header-text h5 {
             margin: 0;
         }
 
@@ -46,14 +46,14 @@
         .divider {
             width: 80%;
             border-top: 1px solid rgb(212, 212, 212);
-            margin: 30px 10%;
+            margin: 25px 10%;
         }
 
         /* Table */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
             font-size: 14px;
         }
 
@@ -77,7 +77,7 @@
         </div>
         <div class="header-item text-container header-text">
             <span>Republic of the Philippines</span>
-            <h6>ZAMBOANGA CITY MEDICAL CENTER</h6>
+            <h5>ZAMBOANGA CITY MEDICAL CENTER</h5>
             <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
         </div>
         <div class="header-item logo-container">
@@ -97,8 +97,8 @@
     $formattedDate = $now->format('F j, Y');
 @endphp
 
-<div style="text-align:center;">
-     <h3>{{ $report_name }}</h3>
+<div style="text-align:center; ">
+     <h3 style="margin: 0">{{ $report_name }}</h3>
     <p style="font-size: 14px">as of {{ $formattedDate }}</p>
 </div>
 

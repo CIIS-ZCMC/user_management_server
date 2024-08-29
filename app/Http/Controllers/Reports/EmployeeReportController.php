@@ -48,7 +48,7 @@ class EmployeeReportController extends Controller
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
             $blood_type = $request->query('blood_type');
-            $columns = json_decode($request->query('columns'), true);
+            $columns = json_decode($request->query('columns'), true)  ?? [];
             $search = $request->query('search');
             $isPrint = (bool) $request->query('isPrint');
 
@@ -469,7 +469,7 @@ class EmployeeReportController extends Controller
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
             $civil_status = $request->query('civil_status');
-            $columns = json_decode($request->query('columns'), true);
+            $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
             $isPrint = (bool) $request->query('isPrint');
 
