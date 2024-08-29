@@ -113,17 +113,18 @@
 
     @foreach ($rows as $row)
         <tr>
-            <td>
-                {{ $row['name'] ?? 'N/A' }}
-            </td>
-
-            <td>
-                {{ $row['area'] ?? 'N/A' }}
-            </td>
-
-            <td>
-                {{ $row['report_type'] ?? 'N/A' }}
-            </td>
+            @foreach ($columns as $column)
+                <td>
+                    @php
+                        $value = $row[$column['field']] ?? 'N/A';
+                        // Convert array values to JSON string for display
+                        if (is_array($value)) {
+                            $value = json_encode($value);
+                        }
+                    @endphp
+                    {{ $value }}
+                </td>
+            @endforeach
         </tr>
     @endforeach
 </table>

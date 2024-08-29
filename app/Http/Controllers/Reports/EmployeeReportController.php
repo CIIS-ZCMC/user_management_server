@@ -52,6 +52,11 @@ class EmployeeReportController extends Controller
             $search = $request->query('search');
             $isPrint = (bool) $request->query('isPrint');
 
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
+
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
             }
@@ -423,8 +428,9 @@ class EmployeeReportController extends Controller
             $data = EmployeesDetailsReport::collection($paginated_employees);
             $print_employees = EmployeesDetailsReport::collection($employees);
 
+
             if ($isPrint) {
-                return Helpers::generatePdf($print_employees, $columns, 'blood_type', $report_name);
+                return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
             }
 
             return response()->json([
@@ -467,6 +473,10 @@ class EmployeeReportController extends Controller
             $search = $request->query('search');
             $isPrint = (bool) $request->query('isPrint');
 
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -817,7 +827,7 @@ class EmployeeReportController extends Controller
             $print_employees = EmployeesDetailsReport::collection($employees);
 
             if ($isPrint) {
-                return Helpers::generatePdf($print_employees, $columns, 'civil_status', $report_name);
+                return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
             }
 
             return response()->json([
@@ -848,7 +858,7 @@ class EmployeeReportController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function filterEmployeesByJobStatus(Request $request)
+    public function filterEmployeesByJobStatus(Request $request): JsonResponse
     {
         try {
             $employees = collect();
@@ -1213,7 +1223,7 @@ class EmployeeReportController extends Controller
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
 
-            // TRansform and paginate employee data
+            // Transform and paginate employee data
             $data = EmployeesDetailsReport::collection($paginated_employees);
 
             return response()->json([
@@ -2367,7 +2377,7 @@ class EmployeeReportController extends Controller
     }
 
 
-    public function filterEmployeesByPWD(Request $requzest)
+    public function filterEmployeesByPWD(Request $request)
     {
         try {
             $employees = collect();
