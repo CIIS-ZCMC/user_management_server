@@ -2456,7 +2456,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees by Address
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-address', 'EmployeeReportController@filterEmployeesByAddress');
+            Route::get('employee-by-address', 'EmployeeReportController@filterEmployeesByAddress');
         });
         // Filter Employees by Sex
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
