@@ -26,19 +26,16 @@ class EmployeesDetailsReportByAddress extends JsonResource
         $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
         $employment_status = $employment_type->name;
 
-        $data = [
+        return [
             'id' => $this->id,
             'employee_id' => $employee_profile->employee_id,
             'name' => $name,
             'blood_type' => $personal_information->blood_type,
             'civil_status' => $personal_information->civil_status,
-            'addresses' => $personal_information->addresses,
+            'address' => $personal_information->addresses[0]->address,
             'area' => $area_details,
             'designation' => $designation,
             'employment_status' => $employment_status,
         ];
-
-
-        return $data;
     }
 }
