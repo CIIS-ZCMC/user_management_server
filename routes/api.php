@@ -2448,7 +2448,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees per Position
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-per-position-filter', 'EmployeeReportController@filterEmployeesPerPosition');
+            Route::get('employee-per-position-filter', 'EmployeeReportController@filterEmployeesPerPosition');
         });
         // Filter Employees by Service Length
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {

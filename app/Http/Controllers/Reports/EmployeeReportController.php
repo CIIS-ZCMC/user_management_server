@@ -1274,15 +1274,19 @@ class EmployeeReportController extends Controller
     public function filterEmployeesPerPosition(Request $request)
     {
         try {
-            // Retrieve parameters from the request
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-            $search = $request->search;
-            $page = $request->input('page', 1);  // Default to page 1 if not provided
+            $employees = collect();
+            $report_name = 'Employee Per Position Report';
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $columns = json_decode($request->query('columns'), true) ?? [];
+            $search = $request->query('search');
+            $isPrint = (bool)$request->query('isPrint');
             $perPage = $request->input('per_page', 10);  // Default to 10 items per page if not provided
 
-            // Initialize an empty collection
-            $employees = collect();
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -1594,6 +1598,14 @@ class EmployeeReportController extends Controller
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
 
+            // Transform and paginate employee data
+            $data = DesignationReportResource::collection($paginatedDesignations);
+            $print_data = DesignationReportResource::collection($uniqueDesignations);
+
+            if ($isPrint) {
+                return Helpers::generatePdf($print_data, $columns, $report_name, $orientation);
+            }
+
             return response()->json([
                 'count' => [
                     'per_designation' => $designationCounts,
@@ -1607,10 +1619,10 @@ class EmployeeReportController extends Controller
                     'has_more_pages' => $paginatedDesignations->hasMorePages(),
                 ],
                 'message' => 'List of employees retrieved'
-            ], Response::HTTP_OK);
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeesPerPosition', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
