@@ -2472,7 +2472,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees by Religion
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-religion', 'EmployeeReportController@filterEmployeesByReligion');
+            Route::get('employee-by-religion', 'EmployeeReportController@filterEmployeesByReligion');
         });
 
 

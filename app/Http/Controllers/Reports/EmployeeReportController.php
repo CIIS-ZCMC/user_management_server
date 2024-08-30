@@ -47,7 +47,7 @@ class EmployeeReportController extends Controller
             $report_name = 'Employee Blood Type Report';
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
-            $blood_type = $request->query('blood_type');
+            $blood_type = $request->query('blood_type'); // Input with + sign %2B, - sign %2D | Example: B+ => params: B%2B
             $columns = json_decode($request->query('columns'), true) ?? [];
             $search = $request->query('search');
             $isPrint = (bool)$request->query('isPrint');
@@ -427,7 +427,6 @@ class EmployeeReportController extends Controller
             // Transform and paginate employee data
             $data = EmployeesDetailsReport::collection($paginated_employees);
             $print_employees = EmployeesDetailsReport::collection($employees);
-
 
             if ($isPrint) {
                 return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
@@ -2613,7 +2612,7 @@ class EmployeeReportController extends Controller
 
             // Transform and paginate employee data
             $data = EmployeesDetailsReportBySex::collection($paginated_employees);
-            $print_employees= EmployeesDetailsReportBySex::collection($employees);
+            $print_employees = EmployeesDetailsReportBySex::collection($employees);
 
             if ($isPrint) {
                 return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
@@ -3324,15 +3323,22 @@ class EmployeeReportController extends Controller
         }
     }
 
-    public function filterEmployeesByReligion(Request $request)
+    public function filterEmployeesByReligion(Request $request): JsonResponse
     {
         try {
             $employees = collect();
-            $sector = $request->sector;
-            $area_id = $request->area_id;
-            $religion = $request->religion;
-            $search = $request->search;
-            $page = $request->page ?: 1;
+            $report_name = 'Employee by Religion Report';
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $religion = $request->query('religion');
+            $columns = json_decode($request->query('columns'), true) ?? [];
+            $search = $request->query('search');
+            $isPrint = (bool)$request->query('isPrint');
+
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -3353,7 +3359,9 @@ class EmployeeReportController extends Controller
                 switch ($sector) {
                     case 'division':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($religion, function ($query) use ($religion) {
@@ -3375,7 +3383,9 @@ class EmployeeReportController extends Controller
                         $departments = Department::where('division_id', $area_id)->get();
                         foreach ($departments as $department) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
                                     ->where('division_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
@@ -3397,7 +3407,9 @@ class EmployeeReportController extends Controller
                             $sections = Section::where('department_id', $department->id)->get();
                             foreach ($sections as $section) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
                                         ->where('division_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
@@ -3419,7 +3431,9 @@ class EmployeeReportController extends Controller
                                 $units = Unit::where('section_id', $section->id)->get();
                                 foreach ($units as $unit) {
                                     $employees = $employees->merge(
-                                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                        AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }])
                                             ->where('division_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($religion, function ($query) use ($religion) {
@@ -3445,7 +3459,9 @@ class EmployeeReportController extends Controller
                         $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
                                     ->where('division_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
@@ -3467,7 +3483,9 @@ class EmployeeReportController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
                                         ->where('division_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
@@ -3491,7 +3509,9 @@ class EmployeeReportController extends Controller
 
                     case 'department':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($religion, function ($query) use ($religion) {
@@ -3513,7 +3533,9 @@ class EmployeeReportController extends Controller
                         $sections = Section::where('department_id', $area_id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
                                     ->where('division_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
@@ -3535,7 +3557,9 @@ class EmployeeReportController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
                                         ->where('division_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
@@ -3559,7 +3583,9 @@ class EmployeeReportController extends Controller
 
                     case 'section':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($religion, function ($query) use ($religion) {
@@ -3581,7 +3607,9 @@ class EmployeeReportController extends Controller
                         $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
                                     ->where('division_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
@@ -3604,7 +3632,9 @@ class EmployeeReportController extends Controller
 
                     case 'unit':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($religion, function ($query) use ($religion) {
@@ -3646,8 +3676,13 @@ class EmployeeReportController extends Controller
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
 
-            // TRansform and paginate employee data
-            $data = $paginated_employees;
+            // Transform and paginate employee data
+            $data = EmployeesDetailsReportByReligion::collection($paginated_employees);
+            $print_employees = EmployeesDetailsReportByReligion::collection($employees);
+
+            if ($isPrint) {
+                return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
+            }
 
             return response()->json([
                 'pagination' => [
@@ -3660,10 +3695,10 @@ class EmployeeReportController extends Controller
                 'count' => COUNT($paginated_employees),
                 'data' => EmployeesDetailsReportByReligion::collection($data),
                 'message' => 'List of employees retrieved'
-            ], Response::HTTP_OK);
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeeByBloodType', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
