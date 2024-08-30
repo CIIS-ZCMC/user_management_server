@@ -16,6 +16,7 @@ use App\Http\Controllers\DTR\DeviceLogsController;
 use App\Http\Controllers\DTR\DTRcontroller;
 use Carbon\Carbon;
 use App\Models\InActiveEmployee;
+use App\Helpers\Helpers as help;
 
 
 class GenerateReportController extends Controller
@@ -175,6 +176,12 @@ class GenerateReportController extends Controller
         }
         return  $this->GenerateDataReport($request);
     }
+    public function divideintoTwo($number) {
+        $firstHalf = floor($number / 2);
+
+        $secondHalf = $number - $firstHalf;
+        return [help::customRound($firstHalf), help::customRound($secondHalf)];
+    }
 
 
 
@@ -186,17 +193,17 @@ class GenerateReportController extends Controller
         $year_of = $request->year_of;
 
 
-        // $employeeIds = DB::table('daily_time_records')
-        //     ->whereYear('dtr_date', $year_of)
-        //     ->whereMonth('dtr_date', $month_of)
-        //     ->pluck('biometric_id');//employee_id
-        // $profiles = EmployeeProfile::whereIn('biometric_id',[36,37,38])
-        //         ->limit(5)
-        //     ->get();
+        $employeeIds = DB::table('daily_time_records')
+            ->whereYear('dtr_date', $year_of)
+            ->whereMonth('dtr_date', $month_of)
+            ->pluck('biometric_id');//employee_id
+        $profiles = EmployeeProfile::whereIn('biometric_id',$employeeIds)
+                ->limit(7)
+            ->get();
 
 
 
-        $profiles = EmployeeProfile::all();
+        // $profiles = EmployeeProfile::all();
 
         $data = [];
 
@@ -209,16 +216,11 @@ class GenerateReportController extends Controller
         $second_half = $request->second_half;
         $init = 1;
         $count = [];
-
-
         foreach ($profiles as $row) {
             $Employee = $row;
-
-
            if (!$Employee->assignedArea){
             continue;
            }
-
 
            if ($Employee->employmentType->name == "Job Order") {
             if($first_half){
@@ -231,7 +233,25 @@ class GenerateReportController extends Controller
                 $init = 1;
                 $days_In_Month = $daysTotalMonth;
             }
+            if($first_half  || $second_half){
+                if ($Employee->employmentType->name == "Job Order") {
+                   // echo "Job Order \n";
+                $data[] = $this->retrieveData($Employee,$row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
+                }
+            }else {
+                if($Employee->employmentType->name != "Job Order"){
+                    $data[] = $this->retrieveData($Employee,$row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
+                }
+            }
+      }
 
+
+                return $data;
+            }
+
+
+            public function retrieveData($Employee,$row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request){
+             $nightDifferentials = [];
             $biometric_id = $row->biometric_id;
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -260,11 +280,6 @@ class GenerateReportController extends Controller
                 $wBreak = $Schedule['break_Time_Req'];
                 $nightDifferentials[] = $this->getNightDifferentialHours($val->first_in ,$val->first_out,$biometric_id,[],$DaySchedule);
             }
-
-
-
-
-
 
             if ($Employee) {
 
@@ -484,8 +499,8 @@ class GenerateReportController extends Controller
                     }
             })->toArray());
 
-
-                $data[] = [
+            list($firstHalf, $secondHalf) = $this->divideintoTwo($OverAllnetSalary);
+                return [
                     'Biometric_id' => $biometric_id,
                     'Payroll' => $init . " - " . $days_In_Month,
                     'From' => $init,
@@ -509,29 +524,30 @@ class GenerateReportController extends Controller
                     'schedule' => count($filtered_scheds),
                     'GrandBasicSalary' => $basicSalary['GrandTotal'],
                     'Rates' => $Rates,
-                    'GrossSalary' => Round($Rates['Daily'] * count($filtered_scheds)),
+                    'GrossSalary' => $Rates['Daily'] *  $presentCount,
                     'TimeDeductions' => [
                         'AbsentRate' => $absentRate,
                         'UndertimeRate' => $undertimeRate,
                     ],
                     'NetSalary' => $NetSalary,
-                    'EmploymentType'=> $Employee->employmentType,
-                    // 'Employee' =>[
-                    //     'employee_id'=>$Employee->employee_id,
-                    //     'Information'=> $Employee->personalInformation,
-                    //     'Designation'=>$Employee->findDesignation(),
-                    //     'Hired'=>$Employee->date_hired,
-                    //     'EmploymentType'=> $Employee->employmentType,
-                    //     'Excluded'=> InActiveEmployee::where('employee_id',$Employee->employee_id)->first(),
-                    //     'leaveApplications'=>$leaveApplication,
-                    //     'employeeLeaveCredits'=>$Employee->employeeLeaveCredits
+                    'OverallNetSalary'=>$OverAllnetSalary,
 
-                    // ],
-                    // 'Assigned_area'=>$Employee->assignedArea->findDetails(),
-                    // 'SalaryData' =>[
-                    //     'step'=>$Employee->assignedArea->salary_grade_step,
-                    //     'salaryGroup'=>$Employee->assignedArea->salaryGrade,
-                    // ],
+                    'Employee' =>[
+                        'employee_id'=>$Employee->employee_id,
+                        'Information'=> $Employee->personalInformation,
+                        'Designation'=>$Employee->findDesignation(),
+                        'Hired'=>$Employee->date_hired,
+                        'EmploymentType'=> $Employee->employmentType,
+                        'Excluded'=> InActiveEmployee::where('employee_id',$Employee->employee_id)->first(),
+                        'leaveApplications'=>$leaveApplication,
+                        'employeeLeaveCredits'=>$Employee->employeeLeaveCredits
+
+                    ],
+                    'Assigned_area'=>$Employee->assignedArea->findDetails(),
+                    'SalaryData' =>[
+                        'step'=>$Employee->assignedArea->salary_grade_step,
+                        'salaryGroup'=>$Employee->assignedArea->salaryGrade,
+                    ],
 
 
                     // 'Attendance'=>$attd,
@@ -546,13 +562,9 @@ class GenerateReportController extends Controller
 
 
 
-                 }
-                }
+         }
 
-
-                return $data;
             }
-
             public function TOTALNETSALARY($request,$biometric_id)
             {
                 ini_set('max_execution_time', 86400); // 24 hours compiling time
