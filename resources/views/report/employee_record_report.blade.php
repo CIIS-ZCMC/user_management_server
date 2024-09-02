@@ -135,22 +135,31 @@
         @endforeach
     </tr>
 
-    @foreach ($rows as $row)
+    @if(!$rows)
         <tr>
-            @foreach ($columns as $column)
-                <td>
-                    @php
-                        $value = $row[$column['field']] ?? 'N/A';
-                        // Convert array values to JSON string for display
-                        if (is_array($value)) {
-                            $value = json_encode($value);
-                        }
-                    @endphp
-                    {{ $value }}
-                </td>
-            @endforeach
+            <td colspan="{{ count($columns) }}" style="text-align: center;">
+                No records found
+            </td>
         </tr>
-    @endforeach
+    @else
+        @foreach ($rows as $row)
+            <tr>
+                @foreach ($columns as $column)
+                    <td>
+                        @php
+                            $value = $row[$column['field']] ?? 'N/A';
+                            // Convert array values to JSON string for display
+                            if (is_array($value)) {
+                                $value = json_encode($value);
+                            }
+                        @endphp
+                        {{ $value }}
+                    </td>
+                @endforeach
+            </tr>
+        @endforeach
+    @endif
+
 </table>
 
 <!-- Footer -->
