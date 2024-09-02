@@ -5,10 +5,10 @@
           integrity="sha384-T3c6oIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
     <style>
-
         * {
             font-family: Arial, Helvetica, sans-serif
         }
+
         header {
             width: 90%;
             text-align: center;
@@ -122,12 +122,13 @@
 @endphp
 
 <div style="text-align:center; ">
-     <h3 style="margin: 0">{{ $report_name }}</h3>
+    <h3 style="margin: 0">{{ $report_name }}</h3>
     <p style="font-size: 14px">as of {{ $formattedDate }}</p>
 </div>
 
 <table cellspacing="0" cellpadding="0">
     <tr>
+        <th>#</th> <!-- Row number column -->
         @foreach ($columns as $column)
             <th>
                 {{ $column['headerName'] }}
@@ -137,13 +138,14 @@
 
     @if(!$rows)
         <tr>
-            <td colspan="{{ count($columns) }}" style="text-align: center;">
+            <td colspan="{{ count($columns) + 1 }}" style="text-align: center;"> <!-- Adjust colspan for the number column -->
                 No records found
             </td>
         </tr>
     @else
         @foreach ($rows as $row)
             <tr>
+                <td>{{ $loop->iteration }}</td> <!-- Display the row number -->
                 @foreach ($columns as $column)
                     <td>
                         @php
