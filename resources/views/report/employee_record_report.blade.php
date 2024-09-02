@@ -136,32 +136,42 @@
         @endforeach
     </tr>
 
+    @if(!$rows)
+        <tr>
+            <td colspan="{{ count($columns) }}" style="text-align: center;">
+                No records found
+            </td>
+        </tr>
+    @else
 
     @php
         $counter = 1; // Initialize counter
     @endphp
 
-    @foreach ($rows as $row)
-        <tr>
-            <td>{{ $counter }}</td>
+        @foreach ($rows as $row)
+            <tr>
+                <th>#</th>
+                @foreach ($columns as $column)
+                    <td>
+                        @php
+                            $value = $row[$column['field']] ?? 'N/A';
+                            // Convert array values to JSON string for display
+                            if (is_array($value)) {
+                                $value = json_encode($value);
+                            }
+                        @endphp
+                        {{ $value }}
+                    </td>
+                @endforeach
+            </tr>
 
-            @foreach ($columns as $column)
-                <td>
-                    @php
-                        $value = $row[$column['field']] ?? 'N/A';
-                        // Convert array values to JSON string for display
-                        if (is_array($value)) {
-                            $value = json_encode($value);
-                        }
-                    @endphp
-                    {{ $value }}
-                </td>
-            @endforeach
-        </tr>
-        @php
-            $counter++; // Increment the counter
-        @endphp
-    @endforeach
+            @php
+                $counter++; // Increment the counter
+            @endphp
+        @endforeach
+    @endif
+
+>>>>>>> f48bb81422632a587a41e9efca7d96d720a0c710
 </table>
 
 <!-- Footer -->
