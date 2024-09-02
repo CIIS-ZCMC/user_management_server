@@ -3937,7 +3937,7 @@ class EmployeeReportController extends Controller
     {
         try {
             $employees = collect();
-            $report_name = 'Employee By PWD Report';
+            $report_name = 'Employee By Service Length Report';
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
             $columns = json_decode($request->query('columns'), true) ?? [];
