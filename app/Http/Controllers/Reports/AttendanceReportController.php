@@ -1581,7 +1581,7 @@ class AttendanceReportController extends Controller
      * @param mixed $absent_without_official_leave
      * @return JsonResponse
      */
-    private function getEmployeesByPeriod(mixed $report_type, Builder $base_query, int $month_of, int $year_of, bool $first_half, bool $second_half, mixed $sort_order, mixed $limit, mixed $absent_leave_without_pay, mixed $absent_without_official_leave): JsonResponse
+    private function getEmployeesByPeriod(mixed $report_type, Builder $base_query, int $month_of, int $year_of, bool $first_half, bool $second_half, mixed $sort_order, mixed $limit, mixed $absent_leave_without_pay, mixed $absent_without_official_leave)
     {
         return match ($report_type) {
             'absences' => $this->generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave),
@@ -1606,20 +1606,20 @@ class AttendanceReportController extends Controller
     public function reportByPeriod(Request $request): JsonResponse
     {
         try {
-            $area_id = $request->area_id;
-            $sector = $request->sector;
-            $area_under = strtolower($request->area_under);
-            $month_of = (int)$request->month_of;
-            $year_of = (int)$request->year_of;
-            $employment_type = $request->employment_type_id;
-            $designation_id = $request->designation_id;
-            $absent_leave_without_pay = $request->absent_leave_without_pay;
-            $absent_without_official_leave = $request->absent_without_official_leave;
-            $first_half = (bool)$request->first_half;
-            $second_half = (bool)$request->second_half;
-            $limit = $request->limit;
-            $sort_order = $request->sort_order;
-            $report_type = $request->report_type;
+            $area_id = $request->query('area_id');
+            $sector = $request->query('sector');
+            $area_under = strtolower($request->query('area_under'));
+            $month_of = (int)$request->query('month_of');
+            $year_of = (int)$request->query('year_of');
+            $employment_type = $request->query('employment_type');
+            $designation_id = $request->query('designation_id');
+            $absent_leave_without_pay = $request->query('absent_leave_without_pay');
+            $absent_without_official_leave = $request->query('absent_without_official_leave');
+            $first_half = (bool)$request->query('first_half');
+            $second_half = (bool)$request->query('second_half');
+            $limit = $request->query('limit');
+            $sort_order = $request->query('sort_order');
+            $report_type = $request->query('report_type');
 
             if ($sector && !$area_id) {
                 return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
@@ -1688,18 +1688,18 @@ class AttendanceReportController extends Controller
     public function reportByDateRange(Request $request): JsonResponse
     {
         try {
-            $area_id = $request->area_id;
-            $sector = $request->sector;
-            $area_under = strtolower($request->area_under);
-            $start_date = $request->start_date;
-            $end_date = $request->end_date;
-            $employment_type = $request->employment_type_id;
-            $designation_id = $request->designation_id;
-            $absent_leave_without_pay = $request->absent_leave_without_pay;
-            $absent_without_official_leave = $request->absent_without_official_leave;
-            $limit = $request->limit;
-            $sort_order = $request->sort_order;
-            $report_type = $request->report_type;
+            $area_id = $request->query('area_id');
+            $sector = $request->query('sector');
+            $area_under = strtolower($request->query('area_under'));
+            $start_date = $request->query('start_date');
+            $end_date = $request->query('end_date');
+            $employment_type = $request->query('employment_type');
+            $designation_id = $request->query('designation_id');
+            $absent_leave_without_pay = $request->query('absent_leave_without_pay');
+            $absent_without_official_leave = $request->query('absent_without_official_leave');
+            $limit = $request->query('limit');
+            $sort_order = $request->query('sort_order');
+            $report_type = $request->query('report_type');
 
             if ($sector && !$area_id) {
                 return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
