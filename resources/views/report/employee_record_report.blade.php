@@ -128,6 +128,7 @@
 
 <table cellspacing="0" cellpadding="0">
     <tr>
+        <th>#</th>
         @foreach ($columns as $column)
             <th>
                 {{ $column['headerName'] }}
@@ -135,8 +136,15 @@
         @endforeach
     </tr>
 
+
+    @php
+        $counter = 1; // Initialize counter
+    @endphp
+
     @foreach ($rows as $row)
         <tr>
+            <td>{{ $counter }}</td>
+
             @foreach ($columns as $column)
                 <td>
                     @php
@@ -150,6 +158,9 @@
                 </td>
             @endforeach
         </tr>
+        @php
+            $counter++; // Increment the counter
+        @endphp
     @endforeach
 </table>
 
