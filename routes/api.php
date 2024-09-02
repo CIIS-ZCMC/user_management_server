@@ -2452,7 +2452,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees by Service Length
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
+            Route::get('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
         });
         // Filter Employees by Address
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -2468,7 +2468,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
         // Filter Employees by Solo Parent
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-solo-parent', 'EmployeeReportController@filterEmployeesBySoloParent');
+            Route::get('employee-by-solo-parent', 'EmployeeReportController@filterEmployeesBySoloParent');
         });
         // Filter Employees by Religion
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
