@@ -1271,7 +1271,7 @@ class EmployeeReportController extends Controller
      * @return JsonResponse
      */
 
-    public function filterEmployeesPerPosition(Request $request)
+    public function filterEmployeesPerPosition(Request $request): JsonResponse
     {
         try {
             $employees = collect();
@@ -2655,22 +2655,37 @@ class EmployeeReportController extends Controller
     }
 
 
-    public function filterEmployeesByPWD(Request $request)
+    public function filterEmployeesByPWD(Request $request): JsonResponse
     {
         try {
             $employees = collect();
-            $sector = $request->sector;
-            $area_id = $request->area_id;;
-            $search = $request->search;
-            $page = $request->page ?: 1;
+            $report_name = 'Employee By PWD Report';
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $columns = json_decode($request->query('columns'), true) ?? [];
+            $search = $request->query('search');
+            $isPrint = (bool)$request->query('isPrint');
+            $perPage = $request->input('per_page', 10);  // Default to 10 items per page if not provided
             $pwd = 13;
+
+            // count number of columns
+            $column_count = count($columns);
+            // print page orientation
+            $orientation = $column_count <= 3 ? 'portrait' : 'landscape';
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
             }
 
             if (!$sector && !$area_id) {
-                $employees = AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
+                $employees = AssignArea::with(
+                    [
+                        'employeeProfile' => function ($query) {
+                            $query->whereNull('deactivated_at');
+                        },
+                        'employeeProfile.personalInformation',
+                        'employeeProfile.personalInformation.legalInformation'
+                    ])
                     ->where('employee_profile_id', '<>', 1)
                     ->when($pwd, function ($query) use ($pwd) {
                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
@@ -2682,7 +2697,15 @@ class EmployeeReportController extends Controller
                 switch ($sector) {
                     case 'division':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(
+                                    [
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        },
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.personalInformation.legalInformation'
+                                    ]
+                                )
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($pwd, function ($query) use ($pwd) {
@@ -2704,7 +2727,15 @@ class EmployeeReportController extends Controller
                         $departments = Department::where('division_id', $area_id)->get();
                         foreach ($departments as $department) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(
+                                    [
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        },
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.personalInformation.legalInformation'
+                                    ]
+                                )
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($pwd, function ($query) use ($pwd) {
@@ -2726,7 +2757,15 @@ class EmployeeReportController extends Controller
                             $sections = Section::where('department_id', $department->id)->get();
                             foreach ($sections as $section) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    AssignArea::with(
+                                        [
+                                            'employeeProfile' => function ($query) {
+                                                $query->whereNull('deactivated_at');
+                                            },
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile.personalInformation.legalInformation'
+                                        ]
+                                    )
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($pwd, function ($query) use ($pwd) {
@@ -2748,7 +2787,15 @@ class EmployeeReportController extends Controller
                                 $units = Unit::where('section_id', $section->id)->get();
                                 foreach ($units as $unit) {
                                     $employees = $employees->merge(
-                                        AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                        AssignArea::with(
+                                            [
+                                                'employeeProfile' => function ($query) {
+                                                    $query->whereNull('deactivated_at');
+                                                },
+                                                'employeeProfile.personalInformation',
+                                                'employeeProfile.personalInformation.legalInformation'
+                                            ]
+                                        )
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($pwd, function ($query) use ($pwd) {
@@ -2774,7 +2821,15 @@ class EmployeeReportController extends Controller
                         $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(
+                                    [
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        },
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.personalInformation.legalInformation'
+                                    ]
+                                )
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($pwd, function ($query) use ($pwd) {
@@ -2796,7 +2851,15 @@ class EmployeeReportController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    AssignArea::with(
+                                        [
+                                            'employeeProfile' => function ($query) {
+                                                $query->whereNull('deactivated_at');
+                                            },
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile.personalInformation.legalInformation'
+                                        ]
+                                    )
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($pwd, function ($query) use ($pwd) {
@@ -2820,7 +2883,15 @@ class EmployeeReportController extends Controller
 
                     case 'department':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                            AssignArea::with(
+                                [
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    },
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.personalInformation.legalInformation'
+                                ]
+                            )
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($pwd, function ($query) use ($pwd) {
@@ -2842,7 +2913,15 @@ class EmployeeReportController extends Controller
                         $sections = Section::where('department_id', $area_id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(
+                                    [
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        },
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.personalInformation.legalInformation'
+                                    ]
+                                )
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($pwd, function ($query) use ($pwd) {
@@ -2864,7 +2943,15 @@ class EmployeeReportController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                    AssignArea::with(
+                                        [
+                                            'employeeProfile' => function ($query) {
+                                                $query->whereNull('deactivated_at');
+                                            },
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile.personalInformation.legalInformation'
+                                        ]
+                                    )
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($pwd, function ($query) use ($pwd) {
@@ -2888,7 +2975,15 @@ class EmployeeReportController extends Controller
 
                     case 'section':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                            AssignArea::with(
+                                [
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    },
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.personalInformation.legalInformation'
+                                ]
+                            )
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($pwd, function ($query) use ($pwd) {
@@ -2910,7 +3005,15 @@ class EmployeeReportController extends Controller
                         $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation'])
+                                AssignArea::with(
+                                    [
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        },
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile.personalInformation.legalInformation'
+                                    ]
+                                )
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($pwd, function ($query) use ($pwd) {
@@ -2933,7 +3036,15 @@ class EmployeeReportController extends Controller
 
                     case 'unit':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile', 'employeeProfile.personalInformation', 'employeeProfile.personalInformation.legalInformation'])
+                            AssignArea::with(
+                                [
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    },
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.personalInformation.legalInformation'
+                                ]
+                            )
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($pwd, function ($query) use ($pwd) {
@@ -2974,8 +3085,13 @@ class EmployeeReportController extends Controller
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
 
-            // TRansform and paginate employee data
-            $data = $paginated_employees;
+            // Transform and paginate employee data
+            $data = EmployeesDetailsReport::collection($paginated_employees);
+            $print_employees = EmployeesDetailsReport::collection($employees);
+
+            if ($isPrint) {
+                return Helpers::generatePdf($print_employees, $columns, $report_name, $orientation);
+            }
 
             return response()->json([
                 'pagination' => [
@@ -2986,12 +3102,12 @@ class EmployeeReportController extends Controller
                     'has_more_pages' => $paginated_employees->hasMorePages(),
                 ],
                 'count' => COUNT($paginated_employees),
-                'data' => EmployeesDetailsReport::collection($data),
+                'data' => $data,
                 'message' => 'List of employees retrieved'
-            ], Response::HTTP_OK);
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployyeByBloodType', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'filterEmployeeByPWD', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -3963,7 +4079,7 @@ class EmployeeReportController extends Controller
     }
 
     // Helper function to calculate service length
-    private function calculateServiceLength($employee)
+    private function calculateServiceLength($employee): array
     {
         $total_months = 0;
         $total_zcmc = 0;
