@@ -936,6 +936,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-profile-all-records', 'EmployeeProfileController@indexEmployeeRecords');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employee-profile-all-dropdown', 'EmployeeProfileController@indexDropdown');
         });
 
@@ -2527,14 +2531,21 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('attendance-report-by-period', 'AttendanceReportController@reportByPeriod');
         });
+
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('attendance-report-by-daterange', 'AttendanceReportController@reportByDateRange');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('attendance-report-summary', 'AttendanceReportController@reportSummary');
         });
 
         // TEST ROUTE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
+
+
 
         // PRINTABLES
         Route::post('download-employee-report', 'PrintableReportController@generatePrintableReport');
