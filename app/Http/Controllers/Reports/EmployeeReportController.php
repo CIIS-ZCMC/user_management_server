@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DesignationReportResource;
-use App\Http\Resources\EmployeesAddressReport;
+
 use App\Http\Resources\EmployeesDetailsReport;
 use App\Http\Resources\EmployeesDetailsReportByAddress;
 use App\Http\Resources\EmployeesDetailsReportByReligion;
@@ -29,7 +29,7 @@ use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class EmployeeReportController extends Controller
 {
-    private $CONTROLLER_NAME = 'Employee Reports';
+    private string $CONTROLLER_NAME = 'Employee Reports';
 
     /**
      * Filter employees by their blood type.
@@ -1610,7 +1610,7 @@ class EmployeeReportController extends Controller
                 'count' => [
                     'per_designation' => $designationCounts,
                 ],
-                'data' => DesignationReportResource::collection($paginatedDesignations),
+                'data' => $data,
                 'pagination' => [
                     'current_page' => $paginatedDesignations->currentPage(),
                     'per_page' => $paginatedDesignations->perPage(),
@@ -3933,7 +3933,7 @@ class EmployeeReportController extends Controller
         }
     }
 
-    public function filterEmployeesByServiceLength(Request $request) : JsonResponse
+    public function filterEmployeesByServiceLength(Request $request): ?JsonResponse
     {
         try {
             $employees = collect();
@@ -3949,6 +3949,7 @@ class EmployeeReportController extends Controller
             if (!is_array($service_length)) {
                 $service_length = explode(',', $service_length); // Converts comma-separated string to array
             }
+
             $service_length = array_map('intval', $service_length); // Convert all values to integers
 
             // count number of columns
