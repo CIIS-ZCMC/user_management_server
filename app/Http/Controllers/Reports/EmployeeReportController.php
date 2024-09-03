@@ -1600,7 +1600,7 @@ class EmployeeReportController extends Controller
 
             // Transform and paginate employee data
             $data = DesignationReportResource::collection($paginatedDesignations);
-            $print_data = DesignationReportResource::collection($uniqueDesignations);
+            $print_data = DesignationReportResource::collection($uniqueDesignationsCollection);
 
             if ($isPrint) {
                 return Helpers::generatePdf($print_data, $columns, $report_name, $orientation);
