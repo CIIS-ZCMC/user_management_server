@@ -1289,6 +1289,10 @@ class Helpers
                 if ($field === 'area') {
                     $value = $employee['area']['details']['name'] ?? 'N/A';
                 }
+                else if ($field === 'designation') {
+                    $designationName = $employee['designation']['name'] ?? 'N/A';
+                    $value = $designationName;
+                }
                 else if ($field === 'salaryGradeAndStep') {
                     // Combine salary grade and step
                     $salaryGrade = $employee['salary_grade']['salary_grade_number'] ?? 'N/A';
