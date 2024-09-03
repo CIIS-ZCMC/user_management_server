@@ -24,6 +24,7 @@ use App\Models\RoleModulePermission;
 use App\Models\ModulePermission;
 use App\Models\SystemRole;
 use App\Models\System;
+use Illuminate\Support\Facades\DB;
 
 class SystemRoleController extends Controller
 {
@@ -292,6 +293,7 @@ class SystemRoleController extends Controller
         try {
             $success_data = [];
 
+            DB::beginTransaction();
             $system = System::find($id);
 
             if (!$system) {
@@ -299,7 +301,7 @@ class SystemRoleController extends Controller
             }
 
             foreach ($request->roles as $role_value) {
-                $role = Role::find($role_value['role_id']);
+                $role = Role::where('name', $role_value['role_name'])->first();
 
                 if (!$role) continue;
 
@@ -330,12 +332,14 @@ class SystemRoleController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in creating system role, attaching permissions ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
 
             return response()->json([
                 'data' => $success_data,
                 "message" => 'System roles and access rights registered successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

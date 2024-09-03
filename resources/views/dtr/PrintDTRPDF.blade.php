@@ -34,7 +34,7 @@
 
 <body>
     <div class="Dtrview">
-        @include('dtr.DtrFormat', ['schedule' => $schedule])
+        @include('dtr.DtrFormat')
     </div>
 </body>
 

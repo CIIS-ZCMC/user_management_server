@@ -22,6 +22,7 @@ class PersonalInformation extends Model
         'date_of_birth',
         'place_of_birth',
         'civil_status',
+        'religion',
         'citizenship',
         'country',
         'height',
@@ -61,7 +62,6 @@ class PersonalInformation extends Model
         }
 
         return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name;
-
     }
 
     public function name()

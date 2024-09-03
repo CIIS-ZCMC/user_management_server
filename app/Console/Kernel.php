@@ -28,10 +28,17 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:backup-d-t-r')->everyThirtyMinutes();
         $schedule->command('app:scheduler-task')->monthly();
         $schedule->command('app:regenerate-d-t-r')->everyThirtyMinutes();
+        $schedule->command('app:schedule-status-task')->daily();
+
+
+        $schedule->command('app:delete-device-logs')->monthly();
 
         // $schedule->command('app:c-t-o-expiration')->when(function () {
         //     return now()->month == 12 && now()->day == 25;
         // })->daily();
+
+        //This feature has been tested.
+        $schedule->command('backup:database')->dailyAt('05:00');
 
         $schedule->command('app:task-scheduler')->dailyAt('5:00');
 
@@ -62,7 +69,6 @@ class Kernel extends ConsoleKernel
 
         // $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
         // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->runInBackground();
-
     }
 
     /**

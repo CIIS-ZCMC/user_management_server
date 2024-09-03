@@ -64,7 +64,7 @@ class PlantillaController extends Controller
              */
             if($employee_type_id === null && $designation_id === null){
 
-                $plantillas = PlantillaNumber::where('is_dissolve', false)->get();
+                $plantillas = PlantillaNumber::where('is_dissolve', false)->where('plantilla_numbers.employee_profile_id', null)->get();
 
                 return response()->json([
                     'data' => PlantillaNumberAllResource::collection($plantillas),
@@ -77,7 +77,7 @@ class PlantillaController extends Controller
              */
             if($employee_type_id !== null && $designation_id === null){
 
-                $plantillas = PlantillaNumber::where('employment_type_id', $employee_type_id)
+                $plantillas = PlantillaNumber::where('employment_type_id', $employee_type_id)->where('employee_profile_id', null)
                     ->where('is_dissolve', false)->get();
 
                 return response()->json([
@@ -94,6 +94,7 @@ class PlantillaController extends Controller
                 $plantillas = PlantillaNumber::select('plantilla_numbers.*')
                     ->join('plantillas as p', 'p.id', 'plantilla_numbers.plantilla_id')
                     ->where('p.designation_id', $designation_id)
+                    ->where('plantilla_numbers.employee_profile_id', null)
                     ->where('plantilla_numbers.is_dissolve', false)->get();
 
                 return response()->json([
@@ -110,6 +111,7 @@ class PlantillaController extends Controller
                     ->join('plantillas as p', 'p.id', 'plantilla_numbers.plantilla_id')
                     ->where('p.designation_id', $designation_id)
                     ->where('plantilla_numbers.employment_type_id', $employee_type_id)
+                    ->where('plantilla_numbers.employee_profile_id', null)
                     ->where('plantilla_numbers.is_dissolve', false)->get();
 
             return response()->json([

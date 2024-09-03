@@ -33,15 +33,13 @@ class EmployeeScheduleController extends Controller
     {
         try {
             $user = $request->user;
-            $month = $request->month;   // Desired month (1 to 12)
-            $year = $request->year;     // Desired year
+            $month = $request->month;
+            $year = $request->year;
             $assigned_area = $user->assignedArea->findDetails();
 
             // Get page and per_page parameters from the request
             $page = $request->input('page', 1);
             $perPage = $request->input('per_page', 10);
-
-            $this->updateAutomaticScheduleStatus();
 
             $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
 
@@ -245,7 +243,6 @@ class EmployeeScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
-            // $data = EmployeeSchedule::where('employee_profile_id', $id)->get();
             $data = EmployeeSchedule::where('employee_profile_id', $id)
                 ->with(['schedule'])
                 ->get();
@@ -364,7 +361,6 @@ class EmployeeScheduleController extends Controller
         }
     }
 
-
     /**
      * Generate Employee Schedule (Specific Month).
      */
@@ -459,16 +455,5 @@ class EmployeeScheduleController extends Controller
         }
     }
 
-    private function updateAutomaticScheduleStatus()
-    {
-        $date_now = Carbon::now();
-        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
 
-        if (!$data->isEmpty()) { // Check if the collection is not empty
-            foreach ($data as $schedule) {
-                $schedule->status = false;
-                $schedule->save(); // or $schedule->update(['status' => false]);
-            }
-        }
-    }
 }

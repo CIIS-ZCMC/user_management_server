@@ -913,13 +913,13 @@ class LeaveApplicationController extends Controller
                     if ($employee_profile->id === $leave_application->hrmo_officer) {
                         if ($leave_application->hrmo_officer === $leave_application->recommending_officer) {
                             $status = 'for approving approval';
-                            $log_status = 'Approved by HRMO';
+                            $log_status = 'Approved by Recommending Officer';
                             $the_same_approver_id = 'Approved by Recommending Officer';
                             $leave_application->update(['status' => $status]);
 
                             //FOR NOTIFICATION
                             $next_approving = $leave_application->approving_officer;
-                            $message = 'HRMO';
+                            $message = 'Recommending Officer';
                             $hrmo_flag = true;
                         } else {
                             $status = 'for recommending approval';
@@ -940,7 +940,7 @@ class LeaveApplicationController extends Controller
                     if ($employee_profile->id === $leave_application->recommending_officer) {
                         if ($leave_application->recommending_officer === $leave_application->approving_officer) {
                             $status = 'approved';
-                            $log_status = 'Approved by Recommending Officer';
+                            $log_status = 'Approved by Approving Officer';
                             $the_same_approver_id = 'Approved by Approving Officer';
                             $leave_application->update(['status' => $status]);
 
