@@ -3693,7 +3693,7 @@ class EmployeeReportController extends Controller
                                 AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                                     $query->whereNull('deactivated_at');
                                 }])
-                                    ->where('division_id', $section->id)
+                                    ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($religion, function ($query) use ($religion) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
@@ -3717,7 +3717,7 @@ class EmployeeReportController extends Controller
                                     AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                                         $query->whereNull('deactivated_at');
                                     }])
-                                        ->where('division_id', $unit->id)
+                                        ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($religion, function ($query) use ($religion) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($religion) {
