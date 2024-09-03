@@ -92,6 +92,7 @@ use App\Models\LeaveApplication;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 
 class EmployeeProfileController extends Controller
@@ -2190,7 +2191,34 @@ class EmployeeProfileController extends Controller
      * @param \Illuminate\Http\Request $request The incoming HTTP request.
      * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles and pagination metadata.
      */
-    public function index(Request $request)
+
+    public function index(Request $request) {
+        try {
+            // $cacheExpiration = Carbon::now()->addDay();
+
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+            //     return EmployeeProfile::all();
+            // });
+            $employee_profiles = EmployeeProfile::all();
+
+
+            // Return a JSON response with the paginated employee profiles and pagination metadata
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles->items()), // Current page items
+                'current_page' => $employee_profiles->currentPage(), // Current page number
+                'last_page' => $employee_profiles->lastPage(), // Total number of pages
+                'per_page' => $employee_profiles->perPage(), // Number of items per page
+                'total' => $employee_profiles->total(), // Total number of items
+                'message' => 'List of employees retrieved.' // Success message
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            // Log any exceptions and return an error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function indexEmployeeRecords(Request $request)
     {
         try {
             // Fetch the search term and page number from the request
@@ -2223,15 +2251,13 @@ class EmployeeProfileController extends Controller
                 'per_page' => $employee_profiles->perPage(), // Number of items per page
                 'total' => $employee_profiles->total(), // Total number of items
                 'message' => 'List of employees retrieved.' // Success message
-            ], Response::HTTP_OK);
+            ], ResponseAlias::HTTP_OK);
         } catch (\Throwable $th) {
             // Log any exceptions and return an error response
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
 
     public function getUserListMentions(Request $request)
     {
