@@ -886,7 +886,6 @@ class Helpers
 
         if (($startDayOfWeek == 6 || $startDayOfWeek == 7) && ($endDayOfWeek == 6 || $endDayOfWeek == 7)) {
             // If both start and end dates are weekends, check if there are schedules on weekends
-            $currentDate = $currentDate; // Set the initial current date to start
 
             while ($currentDate <= $end) {
                 $dayOfWeek = date('N', strtotime($currentDate)); // 'N' gives 1 (for Monday) through 7 (for Sunday)
@@ -927,18 +926,12 @@ class Helpers
 
             $isHolidayByMonthDay = Holiday::where('month_day', $dateFormatted)->get();
 
-            $isHolidayExists = false;
-            foreach ($isHolidayByMonthDay as $holiday) {
-                if ($holiday->isspecial == 1) {
-                    $isHolidayExists = Holiday::where('effectiveDate', $currentDate)->exists();
-                } else {
-                    $isHolidayExists = Holiday::where('month_day', $dateFormatted)->exists();
-                }
-
-                if ($isHolidayExists) {
-                    break;
-                }
-            }
+            $isHolidayExists = Holiday::where('month_day', $dateFormatted)
+            ->where(function ($query) use ($currentDate) {
+                $query->where('isspecial', 1)
+                    ->orWhere('effectiveDate', $currentDate);
+            })
+            ->exists();
 
             if ($isHolidayExists) {
                 // If it's a holiday, skip the check and continue to the next day
@@ -954,19 +947,17 @@ class Helpers
                 ->exists();
 
             // If schedule is missing for any day that is not a weekend or holiday, return false
-            if (!$hasSchedule) {
-                $dayOfWeek = date('N', strtotime($currentDate));
-                if ($dayOfWeek == 6 || $dayOfWeek == 7) {
-                    // If it's Saturday (6) or Sunday (7), skip the check and continue to the next day
-                    $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
-                    continue;
-                } else {
-                    return false;
-                }
+             // If schedule is missing for any day that is not a weekend or holiday, return false
+        if (!$hasSchedule) {
+            $dayOfWeek = date('N', strtotime($currentDate));
+            if ($dayOfWeek != 6 && $dayOfWeek != 7) {
+                return ['status' => false];
             }
-
+        } else {
             // Increment the counter if there is a schedule and it's not a holiday
             $totalWithSchedules++;
+        }
+
 
             // Move to the next day
             $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
