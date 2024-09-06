@@ -347,6 +347,32 @@ class TimeAdjustmentController extends Controller
                 // Store the time adjustment for this date
                 $data = TimeAdjustment::create($adjustmentData);
 
+                $dtr = DailyTimeRecords::where([
+                    ['biometric_id', '=', $employee->biometric_id],
+                    ['dtr_date', '=', $data->date], // Assuming $data->date is already in 'Y-m-d' format
+                ])->first();
+
+                if ($dtr === null) {
+                    // Create new DTR
+                    $dtr = DailyTimeRecords::create([
+                        'biometric_id' => $employee->biometric_id,
+                        'dtr_date' => $data->date,
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
+                        'is_time_adjustment' => 1
+                    ]);
+                } else {
+                    // Update existing DTR
+                    $dtr->update([
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
+                        'is_time_adjustment' => 1
+                    ]);
+                }
 
                 // Add the created adjustment to the array
                 $createdAdjustments[] = $data;
