@@ -1943,14 +1943,13 @@ class AttendanceReportController extends Controller
 
         // Return the summarized report
         return [
-//            'total_employees' => $report_query->count(),
-//            'total_scheduled_days' => $report_query->sum('scheduled_days'),
-//            'total_days_present' => $report_query->sum('days_present'),
-//            'total_days_absent' => $report_query->sum('days_absent'),
-//            'total_leave_applications' => $report_query->sum('total_leave_applications'),
-//            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
-//            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
-//            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_days_with_tardiness' => $report_query->sum('days_with_tardiness'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
         ];
     }
 
@@ -1968,14 +1967,14 @@ class AttendanceReportController extends Controller
 
         // Return the summarized report
         return [
-//            'total_employees' => $report_query->count(),
-//            'total_scheduled_days' => $report_query->sum('scheduled_days'),
-//            'total_days_present' => $report_query->sum('days_present'),
-//            'total_days_absent' => $report_query->sum('days_absent'),
-//            'total_leave_applications' => $report_query->sum('total_leave_applications'),
-//            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
-//            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
-//            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_days_with_early_out' => $report_query->sum('total_days_with_early_out'),
+            'total_early_out_minutes' => $report_query->sum('total_early_out_minutes'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
         ];
     }
 
@@ -1983,6 +1982,8 @@ class AttendanceReportController extends Controller
     {
         return match ($report_type) {
             'absences' => $this->getSectorAbsencesByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            'tardiness' => $this->getSectorTardinessByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            'undertime' => $this->getSectorUndertimeByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
         };
     }
@@ -2332,10 +2333,43 @@ class AttendanceReportController extends Controller
                 ]
             ],
             'tardiness' => [
-                // Define tardiness-specific columns here
+                [
+                    "field" => "days_with_tardiness",
+                    "flex" => 1,
+                     "headerName" => "Days With Tardiness"
+                ],
+                [
+                    "field" => "total_leave_applications",
+                    "flex" => 1,
+                    "headerName" => "Leave Applications"
+                ],
+                [
+                    "field" => "total_official_time_applications",
+                    "flex" => 1,
+                    "headerName" => "Official Time Applications"
+                ]
             ],
             'undertime' => [
-                // Define undertime-specific columns here
+                [
+                    "field" => "total_days_with_early_out",
+                    "flex" => 1,
+                    "headerName" => "Total Days with Early Out"
+                ],
+                [
+                    "field" => "total_early_out_minutes",
+                    "flex" => 1,
+                    "headerName" => "Total Early Out Minutes"
+                ],
+                [
+                    "field" => "total_leave_applications",
+                    "flex" => 1,
+                    "headerName" => "Leave Applications"
+                ],
+                [
+                    "field" => "total_official_time_applications",
+                    "flex" => 1,
+                    "headerName" => "Official Time Applications"
+                ]
             ],
             'perfect' => [
                 // Define perfect attendance-specific columns here
