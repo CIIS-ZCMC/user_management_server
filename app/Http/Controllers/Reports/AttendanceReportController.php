@@ -1903,6 +1903,49 @@ class AttendanceReportController extends Controller
         };
     }
 
+
+    public function getUnitAbsencesSummaryReport($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
+
+        // Generate absences by period using the base query
+        $report_query = $this->generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_days_present' => $report_query->sum('days_present'),
+            'total_days_absent' => $report_query->sum('days_absent'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
+    private function getSummaryReport(mixed $report_type, string $sector, int $month_of, int $year_of, bool $first_half, bool $second_half, int $area_id, string $area_under, $employment_type, $designation_id, mixed $sort_order, mixed $limit): JsonResponse|array|\Illuminate\Support\Collection
+    {
+        $data = collect();
+        switch ($sector) {
+            case 'division':
+                break;
+            case 'department':
+                break;
+            case 'section':
+                break;
+            case 'unit':
+                $data = match ($report_type) {
+                    'absences' => $this->getUnitAbsencesSummaryReport($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+                    default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
+                };
+                break;
+        }
+
+        return $data;
+    }
+
     public function reportByPeriod(Request $request): JsonResponse
     {
         try {
@@ -1920,6 +1963,30 @@ class AttendanceReportController extends Controller
             $limit = $request->query('limit');
             $sort_order = $request->query('sort_order');
             $report_type = $request->query('report_type');
+            $filters = [
+                "area_id" => $area_id,
+                "sector" => $sector,
+                "area_under" => $area_under,
+                "month_of" => $month_of,
+                "year_of" => $year_of,
+                "employment_type" => $employment_type,
+                "designation_id" => $designation_id,
+                "absent_leave_without_pay" => $absent_leave_without_pay,
+                "absent_without_official_leave" => $absent_without_official_leave,
+                "first_half" => $first_half,
+                "second_half" => $second_half,
+                "limit" => $limit,
+                "sort_order" => $sort_order,
+                "report_type" => $report_type,
+            ];
+
+            // variable declaration for report generation
+            $summary = collect();
+            $report_name = 'Employee Attendance Report';
+            $is_print = $request->query('is_print');
+            $columns = $this->getReportColumns($report_type);
+
+            $orientation = 'landscape';
 
             if ($sector && !$area_id) {
                 return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
@@ -1959,14 +2026,20 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     default:
                         return response()->json(['message' => 'Invalid sector provided'], 400);
                 }
             }
 
+            if ($is_print) {
+                return Helpers::generateAttendancePdf($employees, $columns, $report_name, $orientation, $summary, $filters);
+            }
+
             return response()->json(
                 [
+                    'report_summary' => $summary,
                     'count' => count($employees),
                     'data' => $employees,
                     'message' => 'Data successfully retrieved',
@@ -2160,6 +2233,72 @@ class AttendanceReportController extends Controller
                 'message' => $th->getMessage()
             ], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private function getCommonColumns(): array
+    {
+        return [
+            [
+                "field" => "employee_name",
+                "headerName" => "Employee Name",
+                "flex" => 1.2
+            ],
+            [
+                "field" => "employee_area_name",
+                "flex" => 1,
+                "headerName" => "Area of Assignment"
+            ],
+            [
+                "field" => "employee_designation_name",
+                "flex" => 1,
+                "headerName" => "Designation"
+            ],
+            [
+                "field" => "scheduled_days",
+                "flex" => 1,
+                "headerName" => "Scheduled Days"
+            ]
+        ];
+    }
+
+    private function getReportColumns($report_type): array
+    {
+        $common_columns = $this->getCommonColumns();
+        $report_specific_columns = [
+            'absences' => [
+                [
+                    "field" => "days_present",
+                    "flex" => 1,
+                    "headerName" => "Days Present"
+                ],
+                [
+                    "field" => "days_absent",
+                    "flex" => 1,
+                    "headerName" => "Days Absent"
+                ],
+                [
+                    "field" => "total_leave_applications",
+                    "flex" => 1,
+                    "headerName" => "Leave Applications"
+                ],
+                [
+                    "field" => "total_official_time_applications",
+                    "flex" => 1,
+                    "headerName" => "Official Time Applications"
+                ]
+            ],
+            'tardiness' => [
+                // Define tardiness-specific columns here
+            ],
+            'undertime' => [
+                // Define undertime-specific columns here
+            ],
+            'perfect' => [
+                // Define perfect attendance-specific columns here
+            ]
+        ];
+
+        return array_merge($common_columns, $report_specific_columns[$report_type] ?? []);
     }
 
 }

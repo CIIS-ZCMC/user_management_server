@@ -1330,4 +1330,55 @@ class Helpers
         return $dompdf->stream($report_name . '.pdf');
     }
 
+    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
+    {
+        $options = new Options();
+        $options->set('isPhpEnabled', false);
+        $options->set('isHtml5ParserEnabled', false);
+        $options->set('isRemoteEnabled', false);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+
+        // Convert the employee attendance data into an array
+        $data = $employees->toArray(request());
+
+        // Transform the data based on the columns, handle stdClass object
+        $attendanceData = array_map(function($employee) use ($columns) {
+            $transformed = [];
+            foreach ($columns as $column) {
+                $field = $column['field'];
+                $value = $employee->$field ?? 'N/A';
+
+                // Apply any special formatting if necessary
+                if ($field === 'total_early_out_minutes') {
+                    $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
+                } else if ($field === 'total_days_with_early_out') {
+                    $value = $employee->total_days_with_early_out . ' days';
+                }
+
+                $transformed[$field] = $value;
+            }
+            return $transformed;
+        }, $data);
+
+        // Generate the HTML from a view, include summary data
+        $html = view('report.attendance_report', [
+            'total_employees'  => count($attendanceData),
+            'columns' => $columns,
+            'rows' => $attendanceData,
+            'report_name' => $report_name,
+            'report_summary' => $report_summary,
+            'filters' => $filters,
+        ])->render();
+
+        // Load HTML into Dompdf and render it
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('Legal', $orientation);
+        $dompdf->render();
+
+        // Stream the generated PDF back to the user
+        return $dompdf->stream($report_name . '.pdf');
+    }
+
+
 }
