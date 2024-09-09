@@ -1904,11 +1904,15 @@ class AttendanceReportController extends Controller
     }
 
 
-    public function getUnitAbsencesSummaryReport($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    public function getSectorAbsencesByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
     {
         // Base query to fetch employees and their details
-        $base_query = $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
-
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id)
+        };
         // Generate absences by period using the base query
         $report_query = $this->generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, true, true);
 
@@ -1925,25 +1929,62 @@ class AttendanceReportController extends Controller
         ];
     }
 
+    public function getSectorTardinessByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateTardinessByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+//            'total_employees' => $report_query->count(),
+//            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+//            'total_days_present' => $report_query->sum('days_present'),
+//            'total_days_absent' => $report_query->sum('days_absent'),
+//            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+//            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+//            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+//            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
+    public function getSectorUndertimeByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateUndertimeByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+//            'total_employees' => $report_query->count(),
+//            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+//            'total_days_present' => $report_query->sum('days_present'),
+//            'total_days_absent' => $report_query->sum('days_absent'),
+//            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+//            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+//            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+//            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
     private function getSummaryReport(mixed $report_type, string $sector, int $month_of, int $year_of, bool $first_half, bool $second_half, int $area_id, string $area_under, $employment_type, $designation_id, mixed $sort_order, mixed $limit): JsonResponse|array|\Illuminate\Support\Collection
     {
-        $data = collect();
-        switch ($sector) {
-            case 'division':
-                break;
-            case 'department':
-                break;
-            case 'section':
-                break;
-            case 'unit':
-                $data = match ($report_type) {
-                    'absences' => $this->getUnitAbsencesSummaryReport($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
-                    default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
-                };
-                break;
-        }
-
-        return $data;
+        return match ($report_type) {
+            'absences' => $this->getSectorAbsencesByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
+        };
     }
 
     public function reportByPeriod(Request $request): JsonResponse
@@ -2005,6 +2046,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'department':
                         if (!$area_under) {
@@ -2012,6 +2054,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'section':
                         if (!$area_under) {
@@ -2019,6 +2062,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'unit':
                         if (!$area_under) {

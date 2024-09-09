@@ -132,9 +132,9 @@
 {{--</div>--}}
 
 <!-- Display filters -->
-@if(isset($filters))
+{{--@if(isset($filters))--}}
 
-@endif
+{{--@endif--}}
 
 <!-- Display the report summary -->
 @if(isset($report_summary))
