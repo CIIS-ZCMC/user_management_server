@@ -1334,6 +1334,12 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
+            // Scheduled Days
+                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN MONTH(sch.date) = ' . $month_of . '
+                                    AND YEAR(sch.date) = ' . $year_of . '
+                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
+                                    THEN sch.date END) as scheduled_days'),
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
                                     AND YEAR(dtr.dtr_date) = ' . $year_of . '
@@ -1599,47 +1605,47 @@ class AttendanceReportController extends Controller
 
                 // Total Days with Early Out
                 DB::raw('COUNT(DISTINCT CASE
-                                            WHEN (
-                                                MONTH(dtr.dtr_date) = ' . $month_of . '
-                                                AND YEAR(dtr.dtr_date) = ' . $year_of . '
-                                                AND dtr.dtr_date <= CURDATE()
-                                                ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
-                                                AND (
-                                                    (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
-                                                    (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
-                                                )
-                                            ) THEN dtr.dtr_date
-                                            END) as total_days_with_early_out'),
-
-                // Total Early Out Minutes
-                DB::raw("
-                                            ROUND(
-                                                    IF(
-                                                        MONTH(dtr.dtr_date) = $month_of
-                                                        AND YEAR(dtr.dtr_date) = $year_of
-                                                        AND dtr.dtr_date < CURDATE()
-                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
-                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
-                                                        HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
-                                                        MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
-                                                        SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
-                                                        0
-                                                    )
-                                                    +
-                                                    IF(
-                                                        MONTH(dtr.dtr_date) = $month_of
-                                                        AND YEAR(dtr.dtr_date) = $year_of
-                                                        AND dtr.dtr_date < CURDATE()
-                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
-                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
-                                                        HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
-                                                        MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
-                                                        SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
-                                                        0
-                                                    ),
-                                                    2
-                                                ) AS total_early_out_minutes
-                                            "),
+                                    WHEN (
+                                        MONTH(dtr.dtr_date) = ' . $month_of . '
+                                        AND YEAR(dtr.dtr_date) = ' . $year_of . '
+                                        AND dtr.dtr_date <= CURDATE()
+                                        ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
+                                        AND (
+                                            (dtr.first_out IS NOT NULL AND dtr.first_out < ts.first_out) OR
+                                            (dtr.second_out IS NOT NULL AND dtr.second_out < ts.second_out)
+                                        )
+                                    ) THEN dtr.dtr_date
+                                    END) as total_days_with_early_out'),
+//
+//                // Total Early Out Minutes
+//                DB::raw("
+//                                            ROUND(
+//                                                    IF(
+//                                                        MONTH(dtr.dtr_date) = $month_of
+//                                                        AND YEAR(dtr.dtr_date) = $year_of
+//                                                        AND dtr.dtr_date < CURDATE()
+//                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+//                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+//                                                        HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+//                                                        MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
+//                                                        SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+//                                                        0
+//                                                    )
+//                                                    +
+//                                                    IF(
+//                                                        MONTH(dtr.dtr_date) = $month_of
+//                                                        AND YEAR(dtr.dtr_date) = $year_of
+//                                                        AND dtr.dtr_date < CURDATE()
+//                                                        " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
+//                                                        AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+//                                                        HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
+//                                                        MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
+//                                                        SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
+//                                                        0
+//                                                    ),
+//                                                    2
+//                                                ) AS total_early_out_minutes
+//                                            "),
                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
                 DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
             )
@@ -1663,9 +1669,8 @@ class AttendanceReportController extends Controller
                                                                             AND ota.id IS NOT NULL -- No Official Time application
                                                                             THEN sch.date END) as absent_without_official_leave"));
             })
-            ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
-            ->havingRaw('total_early_out_minutes > 0')
-            ->havingRaw('SUM(total_early_out_minutes) > 0')
+            ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
+            ->havingRaw('total_days_with_early_out > 0')
             ->when($sort_order, function ($query, $sort_order) {
                 if ($sort_order === 'asc') {
                     return $query->orderByRaw('total_days_with_early_out ASC');
