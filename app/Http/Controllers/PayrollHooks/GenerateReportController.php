@@ -203,7 +203,7 @@ class GenerateReportController extends Controller
 
 
 
-        // $profiles = EmployeeProfile::all();
+       // $profiles = EmployeeProfile::all();
 
         $data = [];
 
@@ -478,7 +478,6 @@ class GenerateReportController extends Controller
 
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds_forsal));
 
-
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
                 $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], count($filtered_scheds));
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
@@ -486,6 +485,7 @@ class GenerateReportController extends Controller
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
                 $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
+
 
               //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
 

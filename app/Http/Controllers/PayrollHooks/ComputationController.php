@@ -64,7 +64,7 @@ class ComputationController extends Controller
         $schedcount = 1;
       }
     return [
-        'Total'=> floor(( $schedcount * $salaryGrade / $schedcount) * 100) / 100,
+        'Total'=> floor(( $this->Working_Days * $salaryGrade / $this->Working_Days) * 100) / 100,
         'GrandTotal'=> $salaryGrade,
     ];
     }
@@ -75,7 +75,7 @@ class ComputationController extends Controller
             $DaysCount = 1;
         }
 
-        return round(($present_Days * $salary) / $DaysCount,2); // Contstant value. Required number of days
+        return round(($present_Days * $salary) / $this->Working_Days,2); // Contstant value. Required number of days
 
     }
 
@@ -89,7 +89,7 @@ class ComputationController extends Controller
             ];
         }
 
-            $per_day = $basic_Salary / $schedCount;
+            $per_day = $basic_Salary / $this->Working_Days;
             $per_hour = $per_day / $this->Working_Hours;
             $per_minutes = $per_hour / 60;
             $per_week = $per_day * 5;
