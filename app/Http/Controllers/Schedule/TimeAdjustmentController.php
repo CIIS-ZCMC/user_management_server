@@ -260,14 +260,17 @@ class TimeAdjustmentController extends Controller
     {
         try {
             // Fetch all employees from the database
-            $fetch_employees = EmployeeProfile::all();
+            $fetch_employees = EmployeeProfile::join('personal_informations', 'employee_profiles.personal_information_id', '=', 'personal_informations.id')
+                ->select('employee_profiles.*') // Select fields from the EmployeeProfile table
+                ->orderBy('personal_informations.last_name')
+                ->get();
 
             // Process fetched employees
             $data = [];
             foreach ($fetch_employees as $employee) {
                 $data[] = [
                     'id' => $employee->id,
-                    'name' => $employee->name(),
+                    'name' => $employee->lastNameTofirstName(),
                 ];
             }
 
@@ -286,9 +289,13 @@ class TimeAdjustmentController extends Controller
             $cleanData = [];
             $createdAdjustments = []; // Array to store all created adjustments
 
-
             foreach ($request->all() as $key => $value) {
                 if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -322,34 +329,37 @@ class TimeAdjustmentController extends Controller
                 return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
-            // Convert the date range to Carbon instances
-            $dateFrom = Carbon::parse($cleanData['date_from']);
-            $dateTo = Carbon::parse($cleanData['date_to']);
+            foreach ($request->time_records as $date => $record) {
+                if (is_null($record['first_in']) && is_null($record['first_out'])) {
+                    continue;
+                }
 
-            // Loop through each date between date_from and date_to
-            for ($date = $dateFrom; $date->lte($dateTo); $date->addDay()) {
                 // Check if a request already exists for this date
-                $find = TimeAdjustment::where('date', $date->format('Y-m-d'))
+                $find = TimeAdjustment::where('date', $date)
                     ->where('employee_profile_id', $cleanData['employee_profile_id'])
                     ->whereNot('status', 'declined')
                     ->first();
 
                 if ($find !== null) {
-                    return response()->json(['message' => 'You already have a request on date: ' . $date->format('Y-m-d')], Response::HTTP_FORBIDDEN);
+                    return response()->json(['message' => 'You already have a request on date: ' . $date], Response::HTTP_FORBIDDEN);
                 }
 
                 // Prepare data for this specific date
                 $adjustmentData = $cleanData;
-                $adjustmentData['date'] = $date->format('Y-m-d');
+                $adjustmentData['date'] = $date;
                 $adjustmentData['employee_profile_id'] = $employee->id;
                 $adjustmentData['approving_officer'] = $approving_officer;
+                $adjustmentData['first_in'] = $record['first_in'];
+                $adjustmentData['first_out'] = $record['first_out'];
+                $adjustmentData['second_in'] = $record['second_in'];
+                $adjustmentData['second_out'] = $record['second_out'];
 
                 // Store the time adjustment for this date
                 $data = TimeAdjustment::create($adjustmentData);
 
                 $dtr = DailyTimeRecords::where([
                     ['biometric_id', '=', $employee->biometric_id],
-                    ['dtr_date', '=', $data->date], // Assuming $data->date is already in 'Y-m-d' format
+                    ['dtr_date', '=', $data->date],
                 ])->first();
 
                 if ($dtr === null) {
@@ -378,7 +388,7 @@ class TimeAdjustmentController extends Controller
                 $createdAdjustments[] = $data;
 
                 // Log system actions
-                Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $date->format('Y-m-d') . '.');
+                Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $date . '.');
                 Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'request');
             }
 
@@ -388,9 +398,9 @@ class TimeAdjustmentController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'request', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $th;
+            // Helpers::errorLog($this->CONTROLLER_NAME, 'request', $th->getMessage());
+            // return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
