@@ -2194,15 +2194,18 @@ class EmployeeProfileController extends Controller
 
     public function index(Request $request) {
         try {
-             $cacheExpiration = Carbon::now()->addDay();
+            $cacheExpiration = Carbon::now()->addDay();
 
-             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                 return EmployeeProfile::all();
-             });
-//            $employee_profiles = EmployeeProfile::all();
+            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+                // Modify the query to exclude deactivated employees and employee profile ID 1
+                return EmployeeProfile::whereNull('deactivated_at')
+                    ->where('id', '!=', 1)
+                    ->get();
+            });
 
             // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
+                'count' => $employee_profiles->count(),
                 'data' => EmployeeProfileResource::collection($employee_profiles), // Current page items
                 'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
@@ -2212,6 +2215,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     public function indexEmployeeRecords(Request $request)
     {
