@@ -2201,14 +2201,9 @@ class EmployeeProfileController extends Controller
             // });
             $employee_profiles = EmployeeProfile::all();
 
-
             // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles->items()), // Current page items
-                'current_page' => $employee_profiles->currentPage(), // Current page number
-                'last_page' => $employee_profiles->lastPage(), // Total number of pages
-                'per_page' => $employee_profiles->perPage(), // Number of items per page
-                'total' => $employee_profiles->total(), // Total number of items
+                'data' => EmployeeProfileResource::collection($employee_profiles), // Current page items
                 'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
