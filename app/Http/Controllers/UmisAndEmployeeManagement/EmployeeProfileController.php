@@ -2194,12 +2194,12 @@ class EmployeeProfileController extends Controller
 
     public function index(Request $request) {
         try {
-            // $cacheExpiration = Carbon::now()->addDay();
+             $cacheExpiration = Carbon::now()->addDay();
 
-            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-            //     return EmployeeProfile::all();
-            // });
-            $employee_profiles = EmployeeProfile::all();
+             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+                 return EmployeeProfile::all();
+             });
+//            $employee_profiles = EmployeeProfile::all();
 
             // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
