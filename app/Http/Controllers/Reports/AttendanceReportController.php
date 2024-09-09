@@ -21,17 +21,74 @@ use Symfony\Component\HttpFoundation\Response as ResponseAlias;
  */
 class AttendanceReportController extends Controller
 {
-    private $CONTROLLER_NAME = "Attendance Reports";
+    private string $CONTROLLER_NAME = "Employee Attendance Reports";
 
-    /**
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $employment_type
-     * @param $designation_id
-     * @return Builder
-     */
+    private function baseQuery($employment_type, $designation_id): Builder
+    {
+        return DB::table('assigned_areas as a')
+            ->when($designation_id, function ($query, $designation_id) {
+                return $query->where('a.designation_id', $designation_id);
+            })
+            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+            ->when($employment_type, function ($query, $employment_type) {
+                return $query->where('ep.employment_type_id', $employment_type);
+            })
+            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+            ->leftJoin('designations as des', 'a.designation_id', '=', 'des.id')
+            ->leftJoin('employment_types as et', 'ep.employment_type_id', '=', 'et.id')
+            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+            ->leftJoin('daily_time_records as dtr', function ($join) {
+                $join->on('b.biometric_id', '=', 'dtr.biometric_id');
+            })
+            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+            ->leftJoin('cto_applications as cto', function ($join) {
+                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                    ->where('cto.status', '=', 'approved')
+                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+            })
+            ->leftJoin('official_business_applications as oba', function ($join) {
+                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                    ->where('oba.status', '=', 'approved')
+                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+            })
+            ->leftJoin('leave_applications as la', function ($join) {
+                $join->on('ep.id', '=', 'la.employee_profile_id')
+                    ->where('la.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+            })
+            ->leftJoin('official_time_applications as ota', function ($join) {
+                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                    ->where('ota.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+            })
+            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+            ->whereNull('ep.deactivated_at')
+            ->where('ep.personal_information_id', '<>', 1)
+            ->select(
+                'ep.id',
+                'ep.employee_id',
+                'ep.biometric_id',
+                'des.name as employee_designation_name',
+                'des.code as employee_designation_code',
+                'et.name as employment_type_name',
+                DB::raw("CONCAT(
+                        pi.first_name, ' ',
+                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                        pi.last_name,
+                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                    ) as employee_name"),
+                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
+                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code')
+            );
+    }
+
     private function baseQueryByPeriod($month_of, $year_of, $first_half, $second_half, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -106,7 +163,8 @@ class AttendanceReportController extends Controller
             );
     }
 
-    private function baseQueryByDateRange($start_date, $end_date, $employment_type, $designation_id): Builder {
+    private function baseQueryByDateRange($start_date, $end_date, $employment_type, $designation_id): Builder
+    {
         return DB::table('assigned_areas as a')
             ->when($designation_id, function ($query, $designation_id) {
                 return $query->where('a.designation_id', $designation_id);
@@ -172,17 +230,113 @@ class AttendanceReportController extends Controller
             );
     }
 
-    /**
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $area_id
-     * @param $area_under
-     * @param $employment_type
-     * @param $designation_id
-     * @return Builder
-     */
+    private function baseQueryDivision($area_id, $area_under, $employment_type, $designation_id): Builder
+    {
+        return DB::table('assigned_areas as a')
+            ->when($designation_id, function ($query, $designation_id) {
+                return $query->where('a.designation_id', $designation_id);
+            })
+            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+            ->when($employment_type, function ($query, $employment_type) {
+                return $query->where('ep.employment_type_id', $employment_type);
+            })
+            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+            ->leftJoin('designations as des', 'a.designation_id', '=', 'des.id')
+            ->leftJoin('employment_types as et', 'ep.employment_type_id', '=', 'et.id')
+            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+            ->leftJoin('daily_time_records as dtr', function ($join) {
+                $join->on('b.biometric_id', '=', 'dtr.biometric_id');
+            })
+            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+            ->leftJoin('cto_applications as cto', function ($join) {
+                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                    ->where('cto.status', '=', 'approved')
+                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+            })
+            ->leftJoin('official_business_applications as oba', function ($join) {
+                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                    ->where('oba.status', '=', 'approved')
+                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+            })
+            ->leftJoin('leave_applications as la', function ($join) {
+                $join->on('ep.id', '=', 'la.employee_profile_id')
+                    ->where('la.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+            })
+            ->leftJoin('official_time_applications as ota', function ($join) {
+                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                    ->where('ota.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+            })
+            ->where(function ($query) use ($area_id, $area_under) {
+                switch ($area_under) {
+                    case 'all':
+                        $query->where('a.division_id', $area_id)
+                            ->orWhereIn('a.department_id', function ($query) use ($area_id) {
+                                $query->select('id')
+                                    ->from('departments')
+                                    ->where('division_id', $area_id);
+                            })
+                            ->orWhereIn('a.section_id', function ($query) use ($area_id) {
+                                $query->select('id')
+                                    ->from('sections')
+                                    ->where('division_id', $area_id)
+                                    ->orWhereIn('department_id', function ($query) use ($area_id) {
+                                        $query->select('id')
+                                            ->from('departments')
+                                            ->where('division_id', $area_id);
+                                    });
+                            })
+                            ->orWhereIn('a.unit_id', function ($query) use ($area_id) {
+                                $query->select('id')
+                                    ->from('units')
+                                    ->whereIn('section_id', function ($query) use ($area_id) {
+                                        $query->select('id')
+                                            ->from('sections')
+                                            ->where('division_id', $area_id)
+                                            ->orWhereIn('department_id', function ($query) use ($area_id) {
+                                                $query->select('id')
+                                                    ->from('departments')
+                                                    ->where('division_id', $area_id);
+                                            });
+                                    });
+                            });
+                        break;
+                    case 'under':
+                        $query->where('a.division_id', $area_id);
+                        break;
+                    default:
+                        $query->whereRaw('1 = 0'); // Ensures no results are returned for unknown `area_under` values
+                }
+            })
+            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+            ->whereNull('ep.deactivated_at')
+            ->where('ep.personal_information_id', '<>', 1)
+            ->select(
+                'ep.id',
+                'ep.employee_id',
+                'ep.biometric_id',
+                'des.name as employee_designation_name',
+                'des.code as employee_designation_code',
+                'et.name as employment_type_name',
+                DB::raw("CONCAT(
+                        pi.first_name, ' ',
+                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                        pi.last_name,
+                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                    ) as employee_name"),
+                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
+                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code')
+            );
+    }
+
     private function baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -298,7 +452,8 @@ class AttendanceReportController extends Controller
             );
     }
 
-    private function baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id) {
+    private function baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+    {
         return DB::table('assigned_areas as a')
             ->when($designation_id, function ($query, $designation_id) {
                 return $query->where('a.designation_id', $designation_id);
@@ -405,17 +560,102 @@ class AttendanceReportController extends Controller
             );
     }
 
-    /**
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $area_id
-     * @param $area_under
-     * @param $employment_type
-     * @param $designation_id
-     * @return Builder
-     */
+    private function baseQueryDepartment($area_id, $area_under, $employment_type, $designation_id): Builder
+    {
+        return DB::table('assigned_areas as a')
+            ->when($designation_id, function ($query, $designation_id) {
+                return $query->where('a.designation_id', $designation_id);
+            })
+            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+            ->when($employment_type, function ($query, $employment_type) {
+                return $query->where('ep.employment_type_id', $employment_type);
+            })
+            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+            ->leftJoin('designations as des', 'a.designation_id', '=', 'des.id')
+            ->leftJoin('employment_types as et', 'ep.employment_type_id', '=', 'et.id')
+            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+            ->leftJoin('daily_time_records as dtr', function ($join) {
+                $join->on('b.biometric_id', '=', 'dtr.biometric_id');
+            })
+            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+            ->leftJoin('cto_applications as cto', function ($join) {
+                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                    ->where('cto.status', '=', 'approved')
+                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+            })
+            ->leftJoin('official_business_applications as oba', function ($join) {
+                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                    ->where('oba.status', '=', 'approved')
+                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+            })
+            ->leftJoin('leave_applications as la', function ($join) {
+                $join->on('ep.id', '=', 'la.employee_profile_id')
+                    ->where('la.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+            })
+            ->leftJoin('official_time_applications as ota', function ($join) {
+                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                    ->where('ota.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+            })
+            ->where(function ($query) use ($area_id, $area_under) {
+                switch ($area_under) {
+                    case 'all':
+                        $query->where('a.department_id', $area_id)
+                            ->orWhereIn('a.section_id', function ($query) use ($area_id) {
+                                $query->select('id')->from('sections')->where('department_id', $area_id);
+                            })->orWhereIn('a.unit_id', function ($query) use ($area_id) {
+                                $query->select('id')
+                                    ->from('units')
+                                    ->whereIn('section_id', function ($query) use ($area_id) {
+                                        $query->select('id')
+                                            ->from('sections')
+                                            ->where('department_id', $area_id)
+                                            ->orWhereIn('department_id', function ($query) use ($area_id) {
+                                                $query->select('id')
+                                                    ->from('departments')
+                                                    ->where('department_id', $area_id);
+                                            });
+                                    });
+                            });
+                        break;
+                    case 'under':
+                        $query->where(function ($query) use ($area_id) {
+                            $query->where('a.division_id', $area_id);
+                        });
+                        break;
+                    default:
+                        $query->whereRaw('1 = 0'); // Ensures no results are returned for unknown `area_under` values
+                }
+            })
+            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+            ->whereNull('ep.deactivated_at')
+            ->where('ep.personal_information_id', '<>', 1)
+            ->select(
+                'ep.id',
+                'ep.employee_id',
+                'ep.biometric_id',
+                'des.name as employee_designation_name',
+                'des.code as employee_designation_code',
+                'et.name as employment_type_name',
+                DB::raw("CONCAT(
+                        pi.first_name, ' ',
+                        IF(pi.middle_name IS NOT NULL AND pi.middle_name != '', CONCAT(SUBSTRING(pi.middle_name, 1, 1), '. '), ''),
+                        pi.last_name,
+                        IF(pi.name_extension IS NOT NULL AND pi.name_extension != '', CONCAT(' ', pi.name_extension), ' '),
+                        IF(pi.name_title IS NOT NULL AND pi.name_title != '', CONCAT(', ', pi.name_title), ' ')
+                    ) as employee_name"),
+                DB::raw('COALESCE(u.name, s.name, dept.name, d.name) as employee_area_name'),
+                DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code')
+            );
+    }
+
     private function baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -520,7 +760,8 @@ class AttendanceReportController extends Controller
             );
     }
 
-    private function baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id) {
+    private function baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+    {
         return DB::table('assigned_areas as a')
             ->when($designation_id, function ($query, $designation_id) {
                 return $query->where('a.designation_id', $designation_id);
@@ -616,17 +857,83 @@ class AttendanceReportController extends Controller
             );
     }
 
-    /**
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $area_id
-     * @param $area_under
-     * @param $employment_type
-     * @param $designation_id
-     * @return Builder
-     */
+    private function baseQuerySection($area_id, $area_under, $employment_type, $designation_id): Builder
+    {
+        return DB::table('assigned_areas as a')
+            ->when($designation_id, function ($query, $designation_id) {
+                return $query->where('a.designation_id', $designation_id);
+            })
+            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+            ->when($employment_type, function ($query, $employment_type) {
+                return $query->where('ep.employment_type_id', $employment_type);
+            })
+            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+            ->leftJoin('designations as des', 'a.designation_id', '=', 'des.id')
+            ->leftJoin('employment_types as et', 'ep.employment_type_id', '=', 'et.id')
+            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+            ->leftJoin('daily_time_records as dtr', function ($join) {
+                $join->on('b.biometric_id', '=', 'dtr.biometric_id');
+            })
+            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+            ->leftJoin('cto_applications as cto', function ($join) {
+                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                    ->where('cto.status', '=', 'approved')
+                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+            })
+            ->leftJoin('official_business_applications as oba', function ($join) {
+                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                    ->where('oba.status', '=', 'approved')
+                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+            })
+            ->leftJoin('leave_applications as la', function ($join) {
+                $join->on('ep.id', '=', 'la.employee_profile_id')
+                    ->where('la.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+            })
+            ->leftJoin('official_time_applications as ota', function ($join) {
+                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                    ->where('ota.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+            })
+            ->where(function ($query) use ($area_id, $area_under) {
+                switch ($area_under) {
+                    case 'all':
+                        $query->where('a.section_id', $area_id)
+                            ->orWhereIn('unit_id', function ($query) use ($area_id) {
+                                $query->select('id')
+                                    ->from('units')
+                                    ->whereIn('section_id', function ($query) use ($area_id) {
+                                        $query->select('id')
+                                            ->from('sections')
+                                            ->where('section_id', $area_id)
+                                            ->orWhereIn('section_id', function ($query) use ($area_id) {
+                                                $query->select('id')
+                                                    ->from('sections')
+                                                    ->where('section_id', $area_id);
+                                            });
+                                    });
+                            });
+                        break;
+                    case 'under':
+                        $query->where(function ($query) use ($area_id) {
+                            $query->where('a.section_id', $area_id);
+                        });
+                        break;
+                    default:
+                        $query->whereRaw('1 = 0'); // Ensures no results are returned for unknown `area_under` values
+                }
+            })
+            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+            ->whereNull('ep.deactivated_at')
+            ->where('ep.personal_information_id', '<>', 1);
+    }
+
     private function baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -729,7 +1036,8 @@ class AttendanceReportController extends Controller
             );
     }
 
-    private function baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id) {
+    private function baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+    {
         return DB::table('assigned_areas as a')
             ->when($designation_id, function ($query, $designation_id) {
                 return $query->where('a.designation_id', $designation_id);
@@ -822,17 +1130,59 @@ class AttendanceReportController extends Controller
                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code')
             );
     }
-    /**
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $area_id
-     * @param $area_under
-     * @param $employment_type
-     * @param $designation_id
-     * @return Builder
-     */
+
+    private function baseQueryUnit($area_id, $employment_type, $designation_id): Builder
+    {
+        return DB::table('assigned_areas as a')
+            ->when($designation_id, function ($query, $designation_id) {
+                return $query->where('a.designation_id', $designation_id);
+            })
+            ->leftJoin('employee_profiles as ep', 'a.employee_profile_id', '=', 'ep.id')
+            ->when($employment_type, function ($query, $employment_type) {
+                return $query->where('ep.employment_type_id', $employment_type);
+            })
+            ->leftJoin('personal_informations as pi', 'ep.personal_information_id', '=', 'pi.id')
+            ->leftJoin('designations as des', 'a.designation_id', '=', 'des.id')
+            ->leftJoin('employment_types as et', 'ep.employment_type_id', '=', 'et.id')
+            ->leftJoin('divisions as d', 'a.division_id', '=', 'd.id')
+            ->leftJoin('departments as dept', 'a.department_id', '=', 'dept.id')
+            ->leftJoin('sections as s', 'a.section_id', '=', 's.id')
+            ->leftJoin('units as u', 'a.unit_id', '=', 'u.id')
+            ->leftJoin('biometrics as b', 'ep.biometric_id', '=', 'b.biometric_id')
+            ->leftJoin('daily_time_records as dtr', function ($join) {
+                $join->on('b.biometric_id', '=', 'dtr.biometric_id');
+            })
+            ->leftJoin('employee_profile_schedule as eps', 'ep.id', '=', 'eps.employee_profile_id')
+            ->leftJoin('schedules as sch', 'eps.schedule_id', '=', 'sch.id')
+            ->leftJoin('time_shifts as ts', 'sch.time_shift_id', '=', 'ts.id')
+            ->leftJoin('cto_applications as cto', function ($join) {
+                $join->on('ep.id', '=', 'cto.employee_profile_id')
+                    ->where('cto.status', '=', 'approved')
+                    ->whereRaw('DATE(cto.date) = DATE(sch.date)');
+            })
+            ->leftJoin('official_business_applications as oba', function ($join) {
+                $join->on('ep.id', '=', 'oba.employee_profile_id')
+                    ->where('oba.status', '=', 'approved')
+                    ->whereBetween('sch.date', [DB::raw('oba.date_from'), DB::raw('oba.date_to')]);
+            })
+            ->leftJoin('leave_applications as la', function ($join) {
+                $join->on('ep.id', '=', 'la.employee_profile_id')
+                    ->where('la.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('DATE(la.date_from)'), DB::raw('DATE(la.date_to)')]);
+            })
+            ->leftJoin('official_time_applications as ota', function ($join) {
+                $join->on('ep.id', '=', 'ota.employee_profile_id')
+                    ->where('ota.status', '=', 'approved')
+                    ->whereBetween(DB::raw('sch.date'), [DB::raw('ota.date_from'), DB::raw('ota.date_to')]);
+            })
+            ->where(function ($query) use ($area_id) {
+                $query->where('a.unit_id', $area_id);
+            })
+            ->whereNotNull('ep.biometric_id') // Ensure the employee has biometric data
+            ->whereNull('ep.deactivated_at')
+            ->where('ep.personal_information_id', '<>', 1);
+    }
+
     private function baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -910,7 +1260,8 @@ class AttendanceReportController extends Controller
             );
     }
 
-    private function baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id) {
+    private function baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+    {
         return DB::table('assigned_areas as a')
             ->when($designation_id, function ($query, $designation_id) {
                 return $query->where('a.designation_id', $designation_id);
@@ -978,18 +1329,7 @@ class AttendanceReportController extends Controller
                 DB::raw('COALESCE(u.code, s.code, dept.code, d.code) as employee_area_code')
             );
     }
-    /**
-     * @param $base_query
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $sort_order
-     * @param $limit
-     * @param $absent_leave_without_pay
-     * @param $absent_without_official_leave
-     * @return mixed
-     */
+
     private function generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1059,10 +1399,12 @@ class AttendanceReportController extends Controller
             })
             ->get();
     }
-    private function generateAbsencesByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed {
+
+    private function generateAbsencesByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
+    {
         return $base_query
             ->addSelect(
-                // Scheduled Days
+            // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
@@ -1119,18 +1461,6 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    /**
-     * @param $base_query
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $sort_order
-     * @param $limit
-     * @param $absent_leave_without_pay
-     * @param $absent_without_official_leave
-     * @return mixed
-     */
     private function generateTardinessByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1256,18 +1586,6 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    /**
-     * @param $base_query
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $sort_order
-     * @param $limit
-     * @param $absent_leave_without_pay
-     * @param $absent_without_official_leave
-     * @return mixed
-     */
     private function generateUndertimeByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1346,7 +1664,7 @@ class AttendanceReportController extends Controller
                                                                             THEN sch.date END) as absent_without_official_leave"));
             })
             ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
-            ->havingRaw('total_days_with_early_out > 0')
+            ->havingRaw('total_early_out_minutes > 0')
             ->havingRaw('SUM(total_early_out_minutes) > 0')
             ->when($sort_order, function ($query, $sort_order) {
                 if ($sort_order === 'asc') {
@@ -1447,18 +1765,7 @@ class AttendanceReportController extends Controller
             })
             ->get();
     }
-    /**
-     * @param $base_query
-     * @param $month_of
-     * @param $year_of
-     * @param $first_half
-     * @param $second_half
-     * @param $sort_order
-     * @param $limit
-     * @param $absent_leave_without_pay
-     * @param $absent_without_official_leave
-     * @return mixed
-     */
+
     private function generatePerfectByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1568,19 +1875,6 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    /**
-     * @param mixed $report_type
-     * @param Builder $base_query
-     * @param int $month_of
-     * @param int $year_of
-     * @param bool $first_half
-     * @param bool $second_half
-     * @param mixed $sort_order
-     * @param mixed $limit
-     * @param mixed $absent_leave_without_pay
-     * @param mixed $absent_without_official_leave
-     * @return JsonResponse
-     */
     private function getEmployeesByPeriod(mixed $report_type, Builder $base_query, int $month_of, int $year_of, bool $first_half, bool $second_half, mixed $sort_order, mixed $limit, mixed $absent_leave_without_pay, mixed $absent_without_official_leave)
     {
         return match ($report_type) {
@@ -1699,6 +1993,7 @@ class AttendanceReportController extends Controller
             $absent_without_official_leave = $request->query('absent_without_official_leave');
             $limit = $request->query('limit');
             $sort_order = $request->query('sort_order');
+            $sort_order = $request->query('sort_order');
             $report_type = $request->query('report_type');
 
             if ($sector && !$area_id) {
@@ -1721,21 +2016,21 @@ class AttendanceReportController extends Controller
                         if (!$area_under) {
                             return response()->json(['message' => 'Area under is required when Department is provided'], 400);
                         }
-                          $base_query = $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                        $base_query = $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
                         break;
                     case 'section':
                         if (!$area_under) {
                             return response()->json(['message' => 'Area under is required when Section is provided'], 400);
                         }
-                          $base_query = $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                        $base_query = $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
                         break;
                     case 'unit':
                         if (!$area_under) {
                             return response()->json(['message' => 'Area under is required when Unit is provided'], 400);
                         }
-                          $base_query = $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                        $base_query = $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
                         break;
                     default:
@@ -1761,5 +2056,104 @@ class AttendanceReportController extends Controller
         }
     }
 
+    public function reportSummary(Request $request): JsonResponse
+    {
+        try {
+            $employment_type = $request->query('employment_type');
+            $designation_id = $request->query('designation_id');
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $area_under = strtolower($request->query('area_under'));
+
+            if ($sector && !$area_id) {
+                return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
+            }
+
+            if (!$sector) {
+                return response()->json(['message' => 'Sector cannot be empty. Please provide a valid input'], 400);
+            }
+
+            switch ($sector) {
+                case 'division':
+                    if (!$area_under) {
+                        return response()->json(['message' => 'Area under is required when Division is provided'], 400);
+                    }
+                    $base_query = $this->baseQueryDivision($area_id, $area_under, $employment_type, $designation_id);
+
+                    $results = $base_query->select(
+                        DB::raw('COUNT(DISTINCT ep.id) as total_employees'),
+                        DB::raw('SUM(CASE WHEN dtr.id IS NULL THEN 1 ELSE 0 END) as total_absences'),
+                        DB::raw('SUM(CASE WHEN (dtr.first_out < ts.first_out OR dtr.second_out < ts.second_out) THEN 1 ELSE 0 END) as total_undertime'),
+                        DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                        DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+                    )->first();
+                    break;
+                case 'department':
+                    if (!$area_under) {
+                        return response()->json(['message' => 'Area under is required when Division is provided'], 400);
+                    }
+                    $base_query = $this->baseQueryDepartment($area_id, $area_under, $employment_type, $designation_id);
+
+                    $results = $base_query->select(
+                        DB::raw('COUNT(DISTINCT ep.id) as total_employees'),
+                        DB::raw('SUM(CASE WHEN dtr.id IS NULL THEN 1 ELSE 0 END) as total_absences'),
+                        DB::raw('SUM(CASE WHEN dtr.first_in > ADDTIME(ts.first_in, "0:01:00") THEN 1 ELSE 0 END) as total_tardiness'),
+                        DB::raw('SUM(CASE WHEN (dtr.first_out < ts.first_out OR dtr.second_out < ts.second_out) THEN 1 ELSE 0 END) as total_undertime'),
+                        DB::raw('SUM(CASE WHEN la.id IS NOT NULL THEN 1 ELSE 0 END) as total_leave_applications'),
+                        DB::raw('SUM(CASE WHEN cto.id IS NOT NULL THEN 1 ELSE 0 END) as total_cto_applications'),
+                        DB::raw('SUM(CASE WHEN ota.id IS NOT NULL THEN 1 ELSE 0 END) as total_official_time_applications'),
+                        DB::raw('SUM(CASE WHEN oba.id IS NOT NULL THEN 1 ELSE 0 END) as total_official_business_applications')
+                    )->first();
+                    break;
+                case 'section':
+                    if (!$area_under) {
+                        return response()->json(['message' => 'Area under is required when Division is provided'], 400);
+                    }
+                    $base_query = $this->baseQuerySection($area_id, $area_under, $employment_type, $designation_id);
+
+                    $results = $base_query->select(
+                        DB::raw('COUNT(DISTINCT ep.id) as total_employees'),
+                        DB::raw('SUM(CASE WHEN dtr.id IS NULL THEN 1 ELSE 0 END) as total_absences'),
+                        DB::raw('SUM(CASE WHEN dtr.first_in > ADDTIME(ts.first_in, "0:01:00") THEN 1 ELSE 0 END) as total_tardiness'),
+                        DB::raw('SUM(dtr.undertime_minutes) as total_undertime'),
+                        DB::raw('SUM(CASE WHEN la.id IS NOT NULL THEN 1 ELSE 0 END) as total_leave_applications'),
+                        DB::raw('SUM(CASE WHEN cto.id IS NOT NULL THEN 1 ELSE 0 END) as total_cto_applications'),
+                        DB::raw('SUM(CASE WHEN ota.id IS NOT NULL THEN 1 ELSE 0 END) as total_official_time_applications'),
+                        DB::raw('SUM(CASE WHEN oba.id IS NOT NULL THEN 1 ELSE 0 END) as total_official_business_applications')
+                    )->first();
+                    break;
+                case 'unit':
+                    if (!$area_under) {
+                        return response()->json(['message' => 'Area under is required when Division is provided'], 400);
+                    }
+                    $base_query = $this->baseQueryUnit($area_id, $area_under, $employment_type, $designation_id);
+
+                    $results = $base_query->select(
+                        DB::raw('COUNT(DISTINCT ep.id) as total_employees'),
+                        DB::raw('SUM(CASE WHEN dtr.id IS NULL THEN 1 ELSE 0 END) as total_absences'),
+                        DB::raw('SUM(CASE WHEN dtr.first_in > ADDTIME(ts.first_in, "0:01:00") THEN 1 ELSE 0 END) as total_tardiness'),
+                        DB::raw('SUM(dtr.undertime_minutes) as total_undertime'),
+                        DB::raw('SUM(CASE WHEN la.id IS NOT NULL THEN 1 ELSE 0 END) as total_leave_applications'),
+                        DB::raw('SUM(CASE WHEN cto.id IS NOT NULL THEN 1 ELSE 0 END) as total_cto_applications'),
+                        DB::raw('SUM(CASE WHEN ota.id IS NOT NULL THEN 1 ELSE 0 END) as total_official_time_applications'),
+                        DB::raw('SUM(CASE WHEN oba.id IS NOT NULL THEN 1 ELSE 0 END) as total_official_business_applications')
+                    )->first();
+                    break;
+                default:
+                    return response()->json(['message' => 'Invalid sector provided'], 400);
+            }
+
+            return response()->json([
+                'data' => $results,
+                'message' => 'Summary successfully generated'
+            ], ResponseAlias::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'summaryDisplay', $th->getMessage());
+            return response()->json([
+                'message' => $th->getMessage()
+            ], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }
