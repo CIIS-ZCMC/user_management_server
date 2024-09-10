@@ -316,6 +316,7 @@ class TimeAdjustmentController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            // Continue with your existing logic
             $user = $request->user;
             $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
 
@@ -329,37 +330,46 @@ class TimeAdjustmentController extends Controller
                 return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
-            foreach ($request->time_records as $date => $record) {
-                if (is_null($record['first_in']) && is_null($record['first_out'])) {
+            // Decode the time_records JSON string into an array
+            if (isset($request->time_records)) {
+                $cleanData['time_records'] = json_decode($request->time_records, true);
+            } else {
+                return response()->json(['message' => 'Time records are missing'], Response::HTTP_BAD_REQUEST);
+            }
+
+            foreach ($cleanData['time_records'] as $record) {
+                if (empty($record['first_in']) && empty($record['first_out'])) {
                     continue;
                 }
 
                 // Check if a request already exists for this date
-                $find = TimeAdjustment::where('date', $date)
+                $find = TimeAdjustment::where('date', $record['date'])
                     ->where('employee_profile_id', $cleanData['employee_profile_id'])
                     ->whereNot('status', 'declined')
                     ->first();
 
                 if ($find !== null) {
-                    return response()->json(['message' => 'You already have a request on date: ' . $date], Response::HTTP_FORBIDDEN);
+                    return response()->json(['message' => 'You already have a request on date: ' . $record['date']], Response::HTTP_FORBIDDEN);
                 }
 
                 // Prepare data for this specific date
                 $adjustmentData = $cleanData;
-                $adjustmentData['date'] = $date;
                 $adjustmentData['employee_profile_id'] = $employee->id;
                 $adjustmentData['approving_officer'] = $approving_officer;
+                $adjustmentData['date'] = $record['date'];
                 $adjustmentData['first_in'] = $record['first_in'];
                 $adjustmentData['first_out'] = $record['first_out'];
                 $adjustmentData['second_in'] = $record['second_in'];
                 $adjustmentData['second_out'] = $record['second_out'];
+                $adjustmentData['status'] = $cleanData['status'];
+
 
                 // Store the time adjustment for this date
                 $data = TimeAdjustment::create($adjustmentData);
 
                 $dtr = DailyTimeRecords::where([
                     ['biometric_id', '=', $employee->biometric_id],
-                    ['dtr_date', '=', $data->date],
+                    ['dtr_date', '=', $adjustmentData['date']],
                 ])->first();
 
                 if ($dtr === null) {
@@ -388,12 +398,13 @@ class TimeAdjustmentController extends Controller
                 $createdAdjustments[] = $data;
 
                 // Log system actions
-                Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $date . '.');
+                Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $record['date'] . '.');
                 Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'request');
             }
 
             return response()->json([
-                'data' => TimeAdjustmentResource::collection($createdAdjustments),
+                'data' => TimeAdjustmentResource::collection(TimeAdjustment::all()),
+                // 'data' => TimeAdjustmentResource::collection($createdAdjustments),
                 'message' => 'Time adjustments successfully created for the date range.'
             ], Response::HTTP_OK);
 
