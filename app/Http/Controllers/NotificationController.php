@@ -165,4 +165,23 @@ class NotificationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function seenAllNotification(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+
+            UserNotifications::where('employee_profile_id', $employee_profile->id)->update(['seen' => 1]);
+        
+            $notification = UserNotifications::where('employee_profile_id', $employee_profile->id)->get();
+
+            return response()->json([
+                'data' => NotificationResource::collection($notification), 
+                'message' => 'Notifications retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'seenAllNotification', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

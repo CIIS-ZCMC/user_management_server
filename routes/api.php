@@ -43,6 +43,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 
 Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
     Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+    Route::post('getUserInformations', 'SessionController@getUserInfo');
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
@@ -61,12 +62,17 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 
 Route::middleware('auth.cookie')->group(function () {
 
+
     Route::namespace('App\Http\Controllers')->group(function () {
 
         Route::get('announcements/{id}', 'AnnouncementsController@show');
         Route::get('announcements', 'AnnouncementsController@showAnnouncement');
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('notifications', 'NotificationController@getNotificationsById');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications/seen-all', 'NotificationController@seenAllNotification');
         });
 
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
@@ -2210,6 +2216,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
         });
 
+
         /**
          * Schedule Module
          */
@@ -2265,6 +2272,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('remove-employee-schedule', 'EmployeeScheduleController@remove');
         });
 
+
         /**
          * Exchange Schedule Module
          */
@@ -2304,6 +2312,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('exchange-duty-employee', 'ScheduleController@employeeList');
         });
 
+
         /**
          * Pull Out Module
          */
@@ -2338,6 +2347,7 @@ Route::middleware('auth.cookie')->group(function () {
         // Route::middleware(['auth.permission:UMIS-POM view'])->group(function () {
         //     Route::get('pull-out-section-employee', 'PullOutController@sectionEmployees');
         // });
+
 
         /**
          * On Call Schedule Module
@@ -2381,6 +2391,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('time-adjustment/{id}', 'TimeAdjustmentController@destroy');
         });
 
+
         /**
          * Holiday Module
          */
@@ -2401,6 +2412,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::get('holidays', 'HolidayController@calendar');
+
 
         /**
          * MonthlyWorkHours Module

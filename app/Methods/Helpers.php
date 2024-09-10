@@ -578,7 +578,7 @@ class Helpers
             }
             $noHalfEntry = 0;
             $noHalfEntryfirst  = 0;
-
+            $isonhalfPm = 0;
             $f1_entry = $validate->first_in;
             $f2_entry = $validate->first_out;
             $f3_entry =  $validate->second_in;
@@ -795,8 +795,9 @@ class Helpers
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
 
         if ($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry) {
-            $first_Sched_firstin = $time_stamps_req['first_entry'];
-            $first_Sched_firstout = $time_stamps_req['second_entry'];
+            if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
+            $first_Sched_firstin =  $time_stamps_req['first_entry'];
+            $first_Sched_firstout =$time_stamps_req['second_entry'];
             $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
             $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
             $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
@@ -806,7 +807,30 @@ class Helpers
             $totalHalfSEcsfirst = $s2_Time_stamp_ - $s1_Time_stamp_;
 
             $noHalfEntryfirst =  $totalHalfSEcsfirst / 60;
+            }
+
+
         }
+
+
+        if (!$f1_entry && !$f2_entry && $f3_entry && $f4_entry) {
+            if(isset($value->biometric_id) && count($this->getBreakSchedule($value->biometric_id,$time_stamps_req))>=1){
+                if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
+                $first_Sched_firstin = $time_stamps_req['first_entry'];
+                $first_Sched_firstout = $time_stamps_req['second_entry'];
+                $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
+                $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
+                $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
+                $s1_Time_stamp_ = strtotime($s_1);
+                $s2_Time_stamp_ = strtotime($s_2);
+                $differenceInSeconds = $s2_Time_stamp_ - $s1_Time_stamp_;
+
+                $isonhalfPm = $differenceInSeconds / 60;
+                }
+            }
+        }
+
+
         $attr = [
             'total_WH_words' => $total_WH_words,
             'required_WH' => $required_WH,
@@ -814,8 +838,8 @@ class Helpers
             'total_WH_minutes' => $total_WH_minutes,
             'over_all_minutes_Rendered' => $over_all_minutes_Rendered,
             'Registered_minutes' => $Registered_minutes,
-            'underTime_inWords' =>  $this->toWordsMinutes($underTime_Minutes +  ($noHalfEntry + $noHalfEntryfirst))['InWords'],
-            'underTime_Minutes' => $underTime_Minutes +  ($noHalfEntry + $noHalfEntryfirst),
+            'underTime_inWords' =>  $this->toWordsMinutes($underTime_Minutes +  ($noHalfEntry + $noHalfEntryfirst + $isonhalfPm))['InWords'],
+            'underTime_Minutes' => $underTime_Minutes +  ($noHalfEntry + $noHalfEntryfirst + $isonhalfPm),
             'overTime_inWords' => $overTime_inWords,
             'overTime_Minutes' => $overTime_Minutes
         ];

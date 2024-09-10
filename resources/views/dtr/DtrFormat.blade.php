@@ -1,10 +1,10 @@
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Onest:wght@200&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap') body {
+    /* @import url('https://fonts.googleapis.com/css2?family=Onest:wght@200&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap') body {
         display: flex;
         justify-content: center;
         font-family: "Roboto Condensed", sans-serif;
         user-select: none;
-    }
+    } */
 
     #po {
         width: 100%;
@@ -121,6 +121,10 @@
                 style="background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);border-left: 1px solid rgb(184, 184, 184)">
                 Schedule
             </th>
+         <th
+            style="width:80px !important;background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);">
+              Night Shift Hours
+          </th>
             <th style="background-color: whitesmoke">
                 Remarks
             </th>
@@ -131,19 +135,20 @@
             @php
                 $isExcept = false;
             @endphp
+
             @for ($i = 1; $i <= $daysInMonth; $i++)
                 @php
-                    $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
-                        return date('d', strtotime($res['first_in'])) == $i &&
-                            date('d', strtotime($res['first_out'])) == $i + 1;
-                    });
+                    // $checkIn = array_filter($dtrRecords->toArray(), function ($res) use ($i) {
+                    //     return date('d', strtotime($res->first_in)) == $i &&
+                    //         date('d', strtotime($res->first_out)) == $i + 1;
+                    // });
 
-                    $val = 0;
-                    $outdd = array_map(function ($res) {
-                        return [
-                            'first_out' => $res['first_out'],
-                        ];
-                    }, $checkIn);
+                    // $val = 0;
+                    // $outdd = array_map(function ($res) {
+                    //     return [
+                    //         'first_out' => $res['first_out'],
+                    //     ];
+                    // }, $checkIn);
 
                     //Check LeaveApplication
                     $filteredleaveDates = [];
@@ -226,50 +231,8 @@
                     }
                     $leavemessage = '';
                     foreach ($ourdata as $key => $value) {
-                        switch ($value['leavetype']) {
-                            case 'Vacation Leave':
-                                $leavemessage = 'VL';
-                                break;
-                            case 'Sick Leave':
-                                $leavemessage = 'SL';
-                                break;
-                            case 'Special Privilege Leave':
-                                $leavemessage = 'SPL';
-                                break;
-                            case 'Mandatory/Forced Leave':
-                                $leavemessage = 'FL';
-                                break;
-                            case 'Solo Parent Leave':
-                                $leavemessage = 'SoloParent';
-                                break;
-                            case 'Maternity Leave':
-                                $leavemessage = 'ML';
-                                break;
-                            case 'Allocation of Maternity Leave (Paternity leave)':
-                                $leavemessage = 'PL';
-                                break;
-                            case 'Paternity leave (Regular Paternity leave)':
-                                $leavemessage = 'RPL';
-                                break;
-                            case 'Study Leave':
-                                $leavemessage = 'Study';
-                                break;
-                            case 'Adoption Leave':
-                                $leavemessage = 'AL';
-                                break;
-                            case '10-Day VAWC Leave':
-                                $leavemessage = '10d VAWC';
-                                break;
-                            case 'Rehabilitation Leave':
-                                $leavemessage = 'RL';
-                                break;
-                            case 'Special Leave Benefits for Women':
-                                $leavemessage = 'SLB';
-                                break;
-                            case 'Special Emergency (Calamity) Leave':
-                                $leavemessage = 'SEL';
-                                break;
-                        }
+                        $leavemessage = $value['leavetype'];
+
                     }
 
                     $officialTime = 'Official Time';
@@ -292,29 +255,11 @@
                         </span>
                     </td>
 
-                    @include('dtr.TableDtrDate', ['schedule' => $schedule])
-                    {{-- @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
-
-                @if ($rowspan > 1)
-                    @php
-                        $isExcept = true;
-                    @endphp
-
-                 @include('dtr.TableDtrDateSpan',['schedule'=>$schedule])
-                @else
-                    @if ($isExcept == true)
-
-                        @php
-                            $isExcept = false;
-                        @endphp
-                    @else
-                      @include('dtr.TableDtrDate',['schedule'=>$schedule])
-                    @endif
-                @endif --}}
-
+                    @include('dtr.TableDtrDate')
+{{--
                     @if (count($checkIn) >= 1)
                         @php $val = $i; @endphp
-                    @endif
+                    @endif --}}
 
                 </tr>
             @endfor

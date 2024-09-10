@@ -294,6 +294,7 @@ class ScheduleController extends Controller
             $year = $date->year;
             $month = $date->month;
 
+            $search = $request->name;
             $area_id = $request->area_id;
             $area_sector = strtolower($request->area_sector);
             $employment_type_id = $request->employment_type;
@@ -326,6 +327,19 @@ class ScheduleController extends Controller
             if ($area_id !== '0') {
                 $query->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
                     $query->where($area_sector . '_id', $area_id);
+                });
+            }
+
+            if (!empty($search)) {
+                $terms = explode(' ', $search);
+                $query->whereHas('personalInformation', function ($q2) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q2->where(function ($q) use ($term) {
+                            $q->where('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%")
+                                ->orWhere('name_extension', 'like', "%{$term}%");
+                        });
+                    }
                 });
             }
 

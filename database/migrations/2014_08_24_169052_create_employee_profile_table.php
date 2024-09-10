@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('employee_id')->nullable();
             $table->string('profile_url')->nullable();
             $table->date('date_hired')->nullable();
+            $table->text('user_form_link')->nullable();
             $table->text('password_encrypted')->nullable();
             $table->datetime('password_created_at')->nullable();
             $table->datetime('password_expiration_at')->nullable();
