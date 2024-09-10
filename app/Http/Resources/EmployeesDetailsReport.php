@@ -27,7 +27,7 @@ class EmployeesDetailsReport extends JsonResource
         $employment_status = $employment_type->name;
 
         $data = [
-            'id' => $this->id,
+            'id' => $employee_profile->id,
             'employee_id' => $employee_profile->employee_id,
             'name' => $name,
             'blood_type' => $personal_information->blood_type,
@@ -53,6 +53,9 @@ class EmployeesDetailsReport extends JsonResource
                 'total_months_zcmc_as_jo' => $this->service_length['total_months_zcmc_as_jo'],
                 'total_years_zcmc_as_jo' => $this->service_length['total_years_zcmc_as_jo'],
                 'total_remaining_months_zcmc_as_jo' => $this->service_length['total_remaining_months_zcmc_as_jo'],
+                'total_months_outside_zcmc' => $this->service_length['total_months_outside_zcmc'], // New field
+                'total_years_outside_zcmc' => $this->service_length['total_years_outside_zcmc'],   // New field
+                'total_remaining_months_outside_zcmc' => $this->service_length['total_remaining_months_outside_zcmc'], // New field
             ]);
         }
 

@@ -466,10 +466,10 @@ class PlantillaController extends Controller
     public function areasForPlantillaAssign(Request $request)
     {
         try {
-            $divisions = Division::all();
-            $departments = Department::all();
-            $sections = Section::all();
-            $units = Unit::all();
+            $divisions = Division::orderBy('name', 'asc')->get();
+            $departments = Department::orderBy('name', 'asc')->get();
+            $sections = Section::orderBy('name', 'asc')->get();
+            $units = Unit::orderBy('name', 'asc')->get();
 
             $all_areas = [];
 
