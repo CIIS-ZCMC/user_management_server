@@ -1254,4 +1254,9 @@ class Helpers
             return "HTTP request failed with status: $status";
         }
     }
+
+    public static function customRound($numericValue) {
+        return (double) number_format($numericValue, 2, '.', '');
+    }
+
 }

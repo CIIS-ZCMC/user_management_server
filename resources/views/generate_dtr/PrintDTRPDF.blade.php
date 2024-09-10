@@ -83,6 +83,7 @@
 
 
     <table id="tbleformat">
+
         @if (isset($data))
             @foreach ($data as $key => $item)
                 @php
@@ -117,11 +118,14 @@
                     $obApp = $item['obApp'];
                     $otApp = $item['otApp'];
                     $ctoApp = $item['ctoApp'];
+
+
                 @endphp
                 <tr>
 
 
                     <td style="border-right: 1px solid black;">
+
                         @include('generate_dtr.dtrformat', [
                             'schedule' => $employeeSched,
                             'Incharge' => $incharge,
@@ -146,6 +150,7 @@
         @else
             <tr>
                 <td style="border-right: 1px solid black;">
+
                     @include('generate_dtr.dtrformat')
                 </td>
                 <td>
