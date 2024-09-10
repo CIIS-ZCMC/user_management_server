@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Reports;
 
+use Faker\Extension\Helper;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\Helpers;
@@ -89,6 +91,11 @@ class AttendanceReportController extends Controller
             );
     }
 
+    /*
+     *
+     * START OF BASE QUERY FUNCTIONS
+     *
+     */
     private function baseQueryByPeriod($month_of, $year_of, $first_half, $second_half, $employment_type, $designation_id): Builder
     {
         return DB::table('assigned_areas as a')
@@ -1330,6 +1337,17 @@ class AttendanceReportController extends Controller
             );
     }
 
+    /*
+     *
+     * END OF BASE QUERY FUNCTIONS
+     *
+     */
+
+    /*
+     *
+     * START OF CALCULATION REPORT QUERY FUNCTIONS
+     *
+     */
     private function generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1406,67 +1424,6 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    private function generateAbsencesByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
-    {
-        return $base_query
-            ->addSelect(
-            // Scheduled Days
-                DB::raw('COUNT(DISTINCT CASE
-                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
-                                    THEN sch.date END) as scheduled_days'),
-
-                // Days Absent
-                DB::raw("GREATEST(
-                                    COUNT(DISTINCT CASE
-                                        WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                        AND sch.date <= CURDATE() -- Ensure counting only up to the current date
-                                        AND la.id IS NULL
-                                        AND cto.id IS NULL
-                                        AND oba.id IS NULL
-                                        AND ota.id IS NULL
-                                        THEN sch.date END)
-                                    - COUNT(DISTINCT CASE
-                                        WHEN dtr.dtr_date BETWEEN '$start_date' AND '$end_date'
-                                        AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
-                                        THEN dtr.dtr_date END), 0) as days_absent"),
-
-                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-            )
-            // Apply conditions based on variables
-            ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
-                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                    AND la.id IS NULL  -- No approved leave application
-                                    THEN sch.date END) as absent_leave_without_pay"));
-            })
-            ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
-                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                    AND la.id IS NULL  -- No approved leave application
-                                    AND cto.id IS NULL -- No CTO application
-                                    AND oba.id IS NULL -- No Official Business application
-                                    AND ota.id IS NULL -- No Official Time application
-                                    THEN sch.date END) as absent_without_official_leave"));
-            })
-            ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-            ->havingRaw('days_absent > 0')
-            ->when($sort_order, function ($query, $sort_order) {
-                if ($sort_order === 'asc') {
-                    return $query->orderByRaw('days_absent ASC');
-                } elseif ($sort_order === 'desc') {
-                    return $query->orderByRaw('days_absent DESC');
-                } else {
-                    return response()->json(['message' => 'Invalid sort order'], 400);
-                }
-            })
-            ->orderBy('employee_area_name')->orderBy('ep.id')
-            ->when($limit, function ($query, $limit) {
-                return $query->limit($limit);
-            })
-            ->get();
-    }
-
     private function generateTardinessByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1482,11 +1439,13 @@ class AttendanceReportController extends Controller
                 DB::raw("COUNT(DISTINCT CASE
                                                     WHEN (MONTH(dtr.dtr_date) = $month_of
                                                         AND YEAR(dtr.dtr_date) = $year_of
+                                                        AND dtr.dtr_date <= CURDATE()
                                                         " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . ")
-                                                    AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
-                                                        OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
+                                                    AND (dtr.first_in IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.first_in, '%H:%i:%s'), '%H:%i:%s') > ADDTIME(ts.first_in, '0:01:00')
+                                                        OR (dtr.second_in IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.second_in, '%H:%i:%s'), '%H:%i:%s')> ADDTIME(ts.second_in, '0:01:00')))
                                                     THEN dtr.dtr_date
                                                 END) as days_with_tardiness"),
+
                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
                 DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
             )
@@ -1538,60 +1497,6 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
-    private function generateTardinessByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
-    {
-        return $base_query
-            ->addSelect(
-            // Scheduled Days
-                DB::raw('COUNT(DISTINCT CASE
-                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
-                                    THEN sch.date END) as scheduled_days'),
-
-                // Days with Tardiness
-                DB::raw("COUNT(DISTINCT CASE
-                                        WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date')
-                                        AND (dtr.first_in > ADDTIME(ts.first_in, '0:01:00')
-                                            OR (dtr.second_in IS NOT NULL AND dtr.second_in > ADDTIME(ts.second_in, '0:01:00')))
-                                        THEN dtr.dtr_date
-                                    END) as days_with_tardiness"),
-
-                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-            )
-            // Apply conditions based on variables
-            ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
-                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                    AND la.id IS NULL  -- No approved leave application
-                                    THEN sch.date END) as absent_leave_without_pay"));
-            })
-            ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
-                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                    AND la.id IS NULL  -- No approved leave application
-                                    AND cto.id IS NULL -- No CTO application
-                                    AND oba.id IS NULL -- No Official Business application
-                                    AND ota.id IS NULL -- No Official Time application
-                                    THEN sch.date END) as absent_without_official_leave"));
-            })
-            ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-            ->havingRaw('days_with_tardiness > 0')
-            ->when($sort_order, function ($query, $sort_order) {
-                if ($sort_order === 'asc') {
-                    return $query->orderByRaw('days_with_tardiness ASC');
-                } elseif ($sort_order === 'desc') {
-                    return $query->orderByRaw('days_with_tardiness DESC');
-                } else {
-                    return response()->json(['message' => 'Invalid sort order'], 400);
-                }
-            })
-            ->orderBy('employee_area_name')->orderBy('ep.id')
-            ->when($limit, function ($query, $limit) {
-                return $query->limit($limit);
-            })
-            ->get();
-    }
-
     private function generateUndertimeByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1620,33 +1525,18 @@ class AttendanceReportController extends Controller
                         ) THEN dtr.dtr_date
                         END) as total_days_with_early_out'),
 
+                DB::raw("CAST(FLOOR(SUM(
+                                   DISTINCT IF(STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                               TIMESTAMPDIFF(SECOND,
+                                                             STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'),
+                                                             ts.first_out), 0)
+                                   +
+                                   IF(STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                      TIMESTAMPDIFF(SECOND,
+                                                    STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'),
+                                                    ts.second_out), 0)
+                               ) / 60) AS UNSIGNED) AS total_early_out_minutes"),
 
-                DB::raw("SUM(ROUND(
-                                        IF(
-                                            MONTH(dtr.dtr_date) = $month_of
-                                            AND YEAR(dtr.dtr_date) = $year_of
-                                            AND dtr.dtr_date < CURDATE()
-                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
-                                            AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
-                                            HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
-                                            MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
-                                            SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
-                                            0
-                                        )
-                                        +
-                                        IF(
-                                            MONTH(dtr.dtr_date) = $month_of
-                                            AND YEAR(dtr.dtr_date) = $year_of
-                                            AND dtr.dtr_date < CURDATE()
-                                            " . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . "
-                                            AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
-                                            HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
-                                            MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
-                                            SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
-                                            0
-                                        ),
-                                        2
-                                    )) AS total_early_out_minutes"),
                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
                 DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
             )
@@ -1672,90 +1562,6 @@ class AttendanceReportController extends Controller
             })
             ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
             ->havingRaw('total_days_with_early_out > 0')
-            ->when($sort_order, function ($query, $sort_order) {
-                if ($sort_order === 'asc') {
-                    return $query->orderByRaw('total_days_with_early_out ASC');
-                } elseif ($sort_order === 'desc') {
-                    return $query->orderByRaw('total_days_with_early_out DESC');
-                } else {
-                    return response()->json(['message' => 'Invalid sort order'], 400);
-                }
-            })
-            ->orderBy('employee_area_name')->orderBy('ep.id')
-            ->when($limit, function ($query, $limit) {
-                return $query->limit($limit);
-            })
-            ->get();
-    }
-
-    private function generateUndertimeByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
-    {
-        return $base_query
-            ->addSelect(
-            // Scheduled Days
-                DB::raw('COUNT(DISTINCT CASE
-                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
-                                THEN sch.date END) as scheduled_days'),
-
-                // Total Days with Early Out
-                DB::raw('COUNT(DISTINCT CASE
-                                WHEN (
-                                    dtr.dtr_date BETWEEN ' . $start_date . ' AND ' . $end_date . '
-                                    AND dtr.dtr_date <= CURDATE()
-                                    AND (
-                                        (dtr.first_out IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, "%H:%i:%s"), "%H:%i:%s") < ts.first_out) OR
-                                        (dtr.second_out IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, "%H:%i:%s"), "%H:%i:%s") < ts.second_out)
-                                    )
-                                ) THEN dtr.dtr_date
-                                END) as total_days_with_early_out'),
-
-                // Total Early Out Minutes
-                DB::raw("
-                                ROUND(
-                                    IF(
-                                        dtr.dtr_date BETWEEN $start_date AND $end_date
-                                        AND dtr.dtr_date <= CURDATE()
-                                        AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
-                                        HOUR(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
-                                        MINUTE(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) +
-                                        SECOND(TIMEDIFF(ts.first_out, STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
-                                        0
-                                    )
-                                    +
-                                    IF(
-                                        dtr.dtr_date BETWEEN $start_date AND $end_date
-                                        AND dtr.dtr_date <= CURDATE()
-                                        AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
-                                        HOUR(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) * 60 +
-                                        MINUTE(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) +
-                                        SECOND(TIMEDIFF(ts.second_out, STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'))) / 60.0,
-                                        0
-                                    ),
-                                    2
-                                ) AS total_early_out_minutes
-                                "),
-                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
-                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
-            )
-            // Apply conditions based on variables
-            ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
-                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                AND la.id IS NOT NULL  -- No approved leave application
-                                THEN sch.date END) as absent_leave_without_pay"));
-            })
-            ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
-                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                AND la.id IS NOT NULL  -- No approved leave application
-                                AND cto.id IS NOT NULL -- No CTO application
-                                AND oba.id IS NOT NULL -- No Official Business application
-                                AND ota.id IS NOT NULL -- No Official Time application
-                                THEN sch.date END) as absent_without_official_leave"));
-            })
-            ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
-            ->havingRaw('total_days_with_early_out > 0')
-            ->havingRaw('SUM(total_early_out_minutes) > 0')
             ->when($sort_order, function ($query, $sort_order) {
                 if ($sort_order === 'asc') {
                     return $query->orderByRaw('total_days_with_early_out ASC');
@@ -1834,6 +1640,192 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
+    private function generateAbsencesByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
+    {
+        return $base_query
+            ->addSelect(
+            // Scheduled Days
+                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
+                                    THEN sch.date END) as scheduled_days'),
+
+                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN dtr.dtr_date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
+                                    THEN dtr.dtr_date END) as days_present'),
+                // Days Absent
+                DB::raw("GREATEST(
+                                    COUNT(DISTINCT CASE
+                                        WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                        AND sch.date <= CURDATE() -- Ensure counting only up to the current date
+                                        AND la.id IS NULL
+                                        AND cto.id IS NULL
+                                        AND oba.id IS NULL
+                                        AND ota.id IS NULL
+                                        THEN sch.date END)
+                                    - COUNT(DISTINCT CASE
+                                        WHEN dtr.dtr_date BETWEEN '$start_date' AND '$end_date'
+                                        AND dtr.dtr_date <= CURDATE() -- Ensure counting only up to the current date
+                                        THEN dtr.dtr_date END), 0) as days_absent"),
+
+                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+            )
+            // Apply conditions based on variables
+            ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
+                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NULL  -- No approved leave application
+                                    THEN sch.date END) as absent_leave_without_pay"));
+            })
+            ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
+                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NULL  -- No approved leave application
+                                    AND cto.id IS NULL -- No CTO application
+                                    AND oba.id IS NULL -- No Official Business application
+                                    AND ota.id IS NULL -- No Official Time application
+                                    THEN sch.date END) as absent_without_official_leave"));
+            })
+            ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
+            ->havingRaw('days_absent > 0')
+            ->when($sort_order, function ($query, $sort_order) {
+                if ($sort_order === 'asc') {
+                    return $query->orderByRaw('days_absent ASC');
+                } elseif ($sort_order === 'desc') {
+                    return $query->orderByRaw('days_absent DESC');
+                } else {
+                    return response()->json(['message' => 'Invalid sort order'], 400);
+                }
+            })
+            ->orderBy('employee_area_name')->orderBy('ep.id')
+            ->when($limit, function ($query, $limit) {
+                return $query->limit($limit);
+            })
+            ->get();
+    }
+
+    private function generateTardinessByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
+    {
+        return $base_query
+            ->addSelect(
+            // Scheduled Days
+                DB::raw('COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
+                                    THEN sch.date END) as scheduled_days'),
+
+                // Days with Tardiness
+                DB::raw("COUNT(DISTINCT CASE
+                                        WHEN (dtr.dtr_date BETWEEN '$start_date' AND '$end_date') AND dtr.dtr_date <= CURDATE()
+                                        AND (dtr.first_in IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.first_in, '%H:%i:%s'), '%H:%i:%s') > ADDTIME(ts.first_in, '0:01:00')
+                                                        OR (dtr.second_in IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.second_in, '%H:%i:%s'), '%H:%i:%s')> ADDTIME(ts.second_in, '0:01:00')))
+                                                    THEN dtr.dtr_date
+                                    END) as days_with_tardiness"),
+
+                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+            )
+            // Apply conditions based on variables
+            ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
+                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NULL  -- No approved leave application
+                                    THEN sch.date END) as absent_leave_without_pay"));
+            })
+            ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
+                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NULL  -- No approved leave application
+                                    AND cto.id IS NULL -- No CTO application
+                                    AND oba.id IS NULL -- No Official Business application
+                                    AND ota.id IS NULL -- No Official Time application
+                                    THEN sch.date END) as absent_without_official_leave"));
+            })
+            ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
+            ->havingRaw('days_with_tardiness > 0')
+            ->when($sort_order, function ($query, $sort_order) {
+                if ($sort_order === 'asc') {
+                    return $query->orderByRaw('days_with_tardiness ASC');
+                } elseif ($sort_order === 'desc') {
+                    return $query->orderByRaw('days_with_tardiness DESC');
+                } else {
+                    return response()->json(['message' => 'Invalid sort order'], 400);
+                }
+            })
+            ->orderBy('employee_area_name')->orderBy('ep.id')
+            ->when($limit, function ($query, $limit) {
+                return $query->limit($limit);
+            })
+            ->get();
+    }
+
+    private function generateUndertimeByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
+    {
+        return $base_query
+            ->addSelect(
+            // Scheduled Days
+                DB::raw('COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
+                                THEN sch.date END) as scheduled_days'),
+
+                // Total Days with Early Out
+                DB::raw("COUNT(DISTINCT CASE
+                WHEN (
+                    dtr.dtr_date BETWEEN '" . $start_date . "' AND '" . $end_date . "'
+                    AND dtr.dtr_date <= CURDATE()
+                    AND (
+                        (dtr.first_out IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out) OR
+                        (dtr.second_out IS NOT NULL AND STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out)
+                    )
+                ) THEN dtr.dtr_date
+                END) as total_days_with_early_out"),
+                DB::raw("CAST(FLOOR(SUM(
+                                   DISTINCT IF(STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s') < ts.first_out,
+                                               TIMESTAMPDIFF(SECOND,
+                                                             STR_TO_DATE(DATE_FORMAT(dtr.first_out, '%H:%i:%s'), '%H:%i:%s'),
+                                                             ts.first_out), 0)
+                                   +
+                                   IF(STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s') < ts.second_out,
+                                      TIMESTAMPDIFF(SECOND,
+                                                    STR_TO_DATE(DATE_FORMAT(dtr.second_out, '%H:%i:%s'), '%H:%i:%s'),
+                                                    ts.second_out), 0)
+                               ) / 60) AS UNSIGNED) AS total_early_out_minutes"),
+                DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
+                DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
+            )
+            // Apply conditions based on variables
+            ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
+                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                AND la.id IS NOT NULL  -- No approved leave application
+                                THEN sch.date END) as absent_leave_without_pay"));
+            })
+            ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
+                return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
+                                WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                AND la.id IS NOT NULL  -- No approved leave application
+                                AND cto.id IS NOT NULL -- No CTO application
+                                AND oba.id IS NOT NULL -- No Official Business application
+                                AND ota.id IS NOT NULL -- No Official Time application
+                                THEN sch.date END) as absent_without_official_leave"));
+            })
+            ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
+            ->havingRaw('total_days_with_early_out > 0')
+            ->when($sort_order, function ($query, $sort_order) {
+                if ($sort_order === 'asc') {
+                    return $query->orderByRaw('total_days_with_early_out ASC');
+                } elseif ($sort_order === 'desc') {
+                    return $query->orderByRaw('total_days_with_early_out DESC');
+                } else {
+                    return response()->json(['message' => 'Invalid sort order'], 400);
+                }
+            })
+            ->orderBy('employee_area_name')->orderBy('ep.id')
+            ->when($limit, function ($query, $limit) {
+                return $query->limit($limit);
+            })
+            ->get();
+    }
+
     private function generatePerfectByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave): mixed
     {
         return $base_query
@@ -1881,6 +1873,17 @@ class AttendanceReportController extends Controller
             ->get();
     }
 
+    /*
+     *
+     * END OF CALCULATION REPORT QUERY FUNCTIONS
+     *
+     */
+
+    /*
+     *
+     * START OF FETCHING EMPLOYEES DATA FUNCTIONS
+     *
+     */
     private function getEmployeesByPeriod(mixed $report_type, Builder $base_query, int $month_of, int $year_of, bool $first_half, bool $second_half, mixed $sort_order, mixed $limit, mixed $absent_leave_without_pay, mixed $absent_without_official_leave)
     {
         return match ($report_type) {
@@ -1903,7 +1906,11 @@ class AttendanceReportController extends Controller
         };
     }
 
-
+    /*
+    *
+    * END OF FETCHING EMPLOYEES DATA FUNCTIONS
+    *
+    */
     public function getSectorAbsencesByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
     {
         // Base query to fetch employees and their details
@@ -1915,6 +1922,31 @@ class AttendanceReportController extends Controller
         };
         // Generate absences by period using the base query
         $report_query = $this->generateAbsencesByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_days_present' => $report_query->sum('days_present'),
+            'total_days_absent' => $report_query->sum('days_absent'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
+    public function getSectorAbsencesByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateAbsencesByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, true, true);
 
         // Return the summarized report
         return [
@@ -1953,6 +1985,30 @@ class AttendanceReportController extends Controller
         ];
     }
 
+    public function getSectorTardinessByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateTardinessByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_days_with_tardiness' => $report_query->sum('days_with_tardiness'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
     public function getSectorUndertimeByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
     {
         // Base query to fetch employees and their details
@@ -1978,12 +2034,47 @@ class AttendanceReportController extends Controller
         ];
     }
 
-    private function getSummaryReport(mixed $report_type, string $sector, int $month_of, int $year_of, bool $first_half, bool $second_half, int $area_id, string $area_under, $employment_type, $designation_id, mixed $sort_order, mixed $limit): JsonResponse|array|\Illuminate\Support\Collection
+    public function getSectorUndertimeByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateUndertimeByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_days_with_early_out' => $report_query->sum('total_days_with_early_out'),
+            'total_early_out_minutes' => $report_query->sum('total_early_out_minutes'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
+    private function getSummaryReportByPeriod(mixed $report_type, string $sector, int $month_of, int $year_of, bool $first_half, bool $second_half, int $area_id, string $area_under, $employment_type, $designation_id, mixed $sort_order, mixed $limit): JsonResponse|array|Collection
     {
         return match ($report_type) {
             'absences' => $this->getSectorAbsencesByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             'tardiness' => $this->getSectorTardinessByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             'undertime' => $this->getSectorUndertimeByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
+        };
+    }
+
+    private function getSummaryReportByDateRange(mixed $report_type, string $sector, string $start_date, string $end_date, int $area_id, string $area_under, $employment_type, $designation_id, mixed $sort_order, mixed $limit): JsonResponse|array|Collection
+    {
+        return match ($report_type) {
+            'absences' => $this->getSectorAbsencesByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            'tardiness' => $this->getSectorTardinessByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            'undertime' => $this->getSectorUndertimeByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
         };
     }
@@ -2027,7 +2118,6 @@ class AttendanceReportController extends Controller
             $report_name = 'Employee Attendance Report';
             $is_print = $request->query('is_print');
             $columns = $this->getReportColumns($report_type);
-
             $orientation = 'landscape';
 
             if ($sector && !$area_id) {
@@ -2047,7 +2137,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
+                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'department':
                         if (!$area_under) {
@@ -2055,7 +2145,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
+                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'section':
                         if (!$area_under) {
@@ -2063,7 +2153,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
+                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'unit':
                         if (!$area_under) {
@@ -2071,7 +2161,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReport($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
+                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     default:
                         return response()->json(['message' => 'Invalid sector provided'], 400);
@@ -2117,8 +2207,29 @@ class AttendanceReportController extends Controller
             $absent_without_official_leave = $request->query('absent_without_official_leave');
             $limit = $request->query('limit');
             $sort_order = $request->query('sort_order');
-            $sort_order = $request->query('sort_order');
             $report_type = $request->query('report_type');
+
+            $filters = [
+                "area_id" => $area_id,
+                "sector" => $sector,
+                "area_under" => $area_under,
+                "start_date" => $start_date,
+                "end_date" => $end_date,
+                "employment_type" => $employment_type,
+                "designation_id" => $designation_id,
+                "absent_leave_without_pay" => $absent_leave_without_pay,
+                "absent_without_official_leave" => $absent_without_official_leave,
+                "limit" => $limit,
+                "sort_order" => $sort_order,
+                "report_type" => $report_type,
+            ];
+
+            // variable declaration for report generation
+            $summary = collect();
+            $report_name = 'Employee Attendance Report';
+            $is_print = $request->query('is_print');
+            $columns = $this->getReportColumns($report_type);
+            $orientation = 'landscape';
 
             if ($sector && !$area_id) {
                 return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
@@ -2135,6 +2246,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'department':
                         if (!$area_under) {
@@ -2142,6 +2254,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'section':
                         if (!$area_under) {
@@ -2149,6 +2262,7 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     case 'unit':
                         if (!$area_under) {
@@ -2156,11 +2270,17 @@ class AttendanceReportController extends Controller
                         }
                         $base_query = $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
                         $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
                         break;
                     default:
                         return response()->json(['message' => 'Invalid sector provided'], 400);
                 }
             }
+
+            if ($is_print) {
+                return Helpers::generateAttendancePdf($employees, $columns, $report_name, $orientation, $summary, $filters);
+            }
+
             return response()->json(
                 [
                     'count' => count($employees),
@@ -2336,7 +2456,7 @@ class AttendanceReportController extends Controller
                 [
                     "field" => "days_with_tardiness",
                     "flex" => 1,
-                     "headerName" => "Days With Tardiness"
+                    "headerName" => "Days With Tardiness"
                 ],
                 [
                     "field" => "total_leave_applications",
