@@ -4,11 +4,14 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\CivilServiceEligibilityManyRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\CivilServiceEligibilityRequest;
 use App\Http\Resources\CivilServiceEligibilityResource;
@@ -21,13 +24,6 @@ class CivilServiceEligibilityController extends Controller
     private $PLURAL_MODULE_NAME = 'civil service eligibilities';
     private $SINGULAR_MODULE_NAME = 'civil service eligibility';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-
     public function findByPersonalInformationID($id, Request $request)
     {
         try{
@@ -37,15 +33,13 @@ class CivilServiceEligibilityController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-            
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching employee '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities),
                 'message' => 'Employee civil service records retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -62,12 +56,59 @@ class CivilServiceEligibilityController extends Controller
             
             $personal_information = $employee_profile->personalInformation;
             $civil_service_eligibilities = $personal_information->civilServiceEligibility;
-            
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching employee '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function employeeUpdateEligibilities(Request $request)
+    {
+        try{
+            $personal_information = $request->user->personalInformation;
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if ( $value == "null" || $value == null) {
+                    $cleanData[$key] = null;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/eligibilities');
+                    $cleanData['attachment'] = $attachment;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $cleanData['personal_information_id'] = $personal_information->id;
+            $cleanData['is_request'] = true;
+            $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
+
+            Helpers::registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+
+             $response_data =  [
+                "id"=> $personal_information->id,
+                "name" => $personal_information->name(),
+                "assigned_area" => $personal_information->employeeProfile->assignedArea->findDetails()['details']->name,
+                'designation' => $personal_information->employeeProfile->assignedArea->designation->name,
+                "employee_id" => $personal_information->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$personal_information->employeeProfile->profile_url,
+                "type" => 'Eligibility',
+                "date_requested" => Carbon::now(),
+                "approved_at" => null,
+                "details" => new CivilServiceEligibilityResource($civil_service_eligibility)
+            ];
+
+            return response()->json([
+                'data' =>  $response_data, 
+                'message' => 'New civil service record added.',
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -88,27 +129,24 @@ class CivilServiceEligibilityController extends Controller
 
             $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new CivilServiceEligibilityResource($civil_service_eligibility), 
                 'message' => 'New civil service record added.',
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function storeMany(Request $request)
+    public function storeMany($personal_information_id, CivilServiceEligibilityManyRequest $request)
     {
         try{
             $success = [];
-            $failed = [];
 
-            $personal_information_id = strip_tags($request->personal_information_id);
-
-            foreach($request->civilserviceeligibilities as $civil_service_eligibility){
+            foreach($request->eligibilities as $civil_service_eligibility){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($civil_service_eligibility as $key => $value) {
@@ -122,30 +160,15 @@ class CivilServiceEligibilityController extends Controller
                 $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
 
                 if(!$civil_service_eligibility){
-                    $failed[] = $cleanData;
                     continue;
                 }
 
                 $success[] = $civil_service_eligibility;
             }
 
-            $this->requestLogger->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => CivilServiceEligibilityResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-
-            return response()->json([
-                'data' => CivilServiceEligibilityResource::collection($success),
-                'message' => 'New records created successfully.',
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee civil service eligibility record.", 400);
         }
     }
     
@@ -159,95 +182,176 @@ class CivilServiceEligibilityController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new CivilServiceEligibilityResource($civil_service_eligibility),
                 'message' => 'Employee civil service record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, CivilServiceEligibilityRequest $request)
+    public function update($id, CivilServiceEligibilityManyRequest $request)
     {
         try{
-            $civil_service_eligibility = CivilServiceEligibility::find($id);
+            $success = [];
 
-            if(!$civil_service_eligibility)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            foreach($request->eligibilities as $civil_service_eligibility){
+                $cleanData = [];
+                foreach ($civil_service_eligibility as $key => $value) {
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
+                    if($value === null)
+                    {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                
+                if($civil_service_eligibility->id === null || $civil_service_eligibility->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
+                    if(!$civil_service_eligibility) continue;
+                    $success[] = $civil_service_eligibility;
+                    continue;
+                }
+
+                $civil_service_eligibility_data = CivilServiceEligibility::find($civil_service_eligibility->id);
+                $civil_service_eligibility_data->update($cleanData);
+                $success[] = $civil_service_eligibility_data;
             }
 
+            return $success;
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee civil service eligibility record.", 400);
+        }
+    }
+    
+    public function updateSingleData($id, CivilServiceEligibilityManyRequest $request)
+    {
+        try{
             $cleanData = [];
 
+            $civil_service_eligibility_data = CivilServiceEligibility::find($id);
+
             foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
+                if($key === 'attachment') continue;
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $civil_service_eligibility -> update($cleanData);
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $civil_service_eligibility_data->update($cleanData);
 
             return response()->json([
-                'data' =>  new CivilServiceEligibilityResource($civil_service_eligibility),
-                'message'=> 'Employee civil service details updated.'
+                'data' => new CivilServiceEligibilityResource($civil_service_eligibility_data),
+                'message' => "Successfully update Eligibility."
+            ]);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee civil service eligibility record.", 400);
+        }
+    }
+    
+    public function updateMany(CivilServiceEligibilityManyRequest $request)
+    {
+        try{
+            $cleanData  = [];
+            $failed = [];
+            $success = [];
+
+            foreach($request->eligiblities as $eligiblity){
+                $cleanNewData = [];
+                foreach($eligiblity as $key => $fields){
+                    if($fields === null || $fields === 'null'){
+                        $cleanNewData[$key] = $fields;
+                        continue;
+                    }
+                    $cleanNewData[$key] = strip_tags($fields);
+                }
+                $cleanData[] = $cleanNewData;
+            }
+
+            foreach ($cleanData as $key => $eligibilities) {
+                $eligiblity_new = CivilServiceEligibility::find($eligibilities->id);
+
+                if(!$eligiblity_new)
+                {
+                    $failed[] = $eligibilities;
+                    continue;
+                }
+
+                $eligiblity_new->update($cleanData);
+                $success[] = $eligiblity_new;
+            }
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($cleanData) === count($failed)){
+                return response()->json([
+                    'message' => "Request to update civil service eligibility records has failed.",
+                    'failed' => $failed
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if(count($failed) > 0 && count($success) > count($failed)){
+                return response()->json([
+                    'data' => CivilServiceEligibilityResource::collection($success), 
+                    'failed' => $failed,
+                    'message' => "Successfully update some civil service eligibility record.",
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => CivilServiceEligibilityResource::collection($success),
+                'message' => 'Employee civil service eligibility data is updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $password = strip_tags($request->password);
+            // $user = $request->user;
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-            }
+            // if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            // }
 
             $civil_service_eligibility = CivilServiceEligibility::findOrFail($id);
 
             if(!$civil_service_eligibility)
             {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => 'No record found.'], Response::HTTP_FORBIDDEN);
             }
 
             $civil_service_eligibility -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
+    public function destroyByPersonalInformationID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id',$id)->get();
@@ -262,11 +366,11 @@ class CivilServiceEligibilityController extends Controller
                 $value -> delete();
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Employee civil service records deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -274,14 +378,11 @@ class CivilServiceEligibilityController extends Controller
     public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -304,11 +405,11 @@ class CivilServiceEligibilityController extends Controller
                 $value -> delete();
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Employee civil service records deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

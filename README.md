@@ -1,66 +1,105 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# User Management Information System (UMIS)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Overview
 
-## About Laravel
+The User Management Information System (UMIS) is a project developed by the IISU under the company of Zamboanga City Medical Center. Its primary goal is to deliver better HR management while establishing a central user management system for all current and future systems to be used by the company. By successfully delivering this project, it will enhance the functionality of the company and provide better service to its employees.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Branching Strategy
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+This repository follows a structured branching strategy to ensure stability in the `main` branch while allowing for thorough testing and development.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Branches
 
-## Learning Laravel
+- **main**: The production branch. Code in this branch is considered stable and ready for deployment.
+- **staging**: The pre-production branch. This branch is used for final testing before code is merged into the `main` branch. Code in this branch should be stable and as close to production-ready as possible.
+- **development** (optional): The integration branch for combining features and bug fixes before they are moved to the `staging` branch.
+- **feature/feature-name**: Branches for individual features or bug fixes. These are merged into the `development` branch (or directly into `staging` if you skip the `development` branch).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Workflow
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. **Feature Development**: Create a new branch from `development` (or `staging`) for each feature or bug fix.
+    ```sh
+    git checkout -b feature/feature-name development
+    ```
+   
+2. **Feature Completion**: Once the feature or bug fix is complete and tested locally, merge it back into the `development` branch.
+    ```sh
+    git checkout development
+    git merge feature/feature-name
+    git branch -d feature/feature-name
+    ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. **Integration Testing**: After all features and bug fixes are integrated into the `development` branch, perform integration testing.
 
-## Laravel Sponsors
+4. **Staging**: When the `development` branch is stable and all tests pass, merge it into the `staging` branch for final pre-production testing.
+    ```sh
+    git checkout staging
+    git merge development
+    ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+5. **Production Deployment**: After successful testing in the `staging` branch, merge the `staging` branch into the `main` branch for production deployment.
+    ```sh
+    git checkout main
+    git merge staging
+    ```
 
-### Premium Partners
+## Getting Started
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+To set up the Laravel API, follow these steps:
+
+### Requirements
+
+Make sure you have the following installed:
+- Laravel 8
+- PHP (minimum version 7.3)
+- Composer
+- MySQL Server
+
+### Setup Process
+
+1. **Clone the Project**: Clone the repository to your local machine.
+    ```sh
+    git clone https://github.com/yourusername/your-repo-name.git
+    cd your-repo-name
+    ```
+
+2. **Install Dependencies**: Use Composer to install the necessary packages.
+    ```sh
+    composer install
+    ```
+
+3. **Environment Configuration**: 
+    - Rename the `.env.example` file to `.env`.
+    - Update the `.env` file with your database credentials and other configuration settings.
+    ```sh
+    mv .env.example .env
+    ```
+
+4. **Generate Application Key**: Generate a new application key.
+    ```sh
+    php artisan key:generate
+    ```
+
+5. **Database Setup**: Run the migrations and seed the database.
+    ```sh
+    php artisan migrate --seed
+    ```
+
+6. **Start the Development Server**: Serve the application locally.
+    ```sh
+    php artisan serve
+    ```
+
+Your Laravel API should now be up and running.
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+In terms of the current setup, this project will only be allowed to be used by the employee IT team.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+A license will be attached here if the company plans to publish this system for ownership.
+
+## Contact
+
+For support or questions, you can contact the company via email at [ciis.zcmc@gmail.com](mailto:ciis.zcmc@gmail.com).

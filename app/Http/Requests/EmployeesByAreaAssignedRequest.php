@@ -22,7 +22,8 @@ class EmployeesByAreaAssignedRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            "id" => 'required|integer',
+            "sector" => "required|string|max:255"
         ];
     }
 }

@@ -54,8 +54,7 @@ class Section extends Model
 
     public function supervisor()
     {
-        return $this->belongsTo(EmployeeProfile::class,'supervisor_employee_profile_id');
-        return $this->belongsTo(EmployeeProfile::class,'supervisor_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'supervisor_employee_profile_id');
     }
 
     public function supervisorJobSpecification()
@@ -65,7 +64,7 @@ class Section extends Model
 
     public function oic()
     {
-        return $this->belongsTo(EmployeeProfile::class,'oic_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'oic_employee_profile_id');
     }
 
     public function supervisorTrails()
@@ -76,5 +75,10 @@ class Section extends Model
     public function oicTrails()
     {
         return $this->hasMany(OfficerInChargeTrail::class);
+    }
+
+    public function units()
+    {
+        return $this->hasMany(Unit::class);
     }
 }

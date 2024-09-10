@@ -14,16 +14,13 @@ return new class extends Migration
         Schema::create('employee_overtime_credits', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
-            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->unsignedBigInteger('overtime_application_id')->unsigned()->nullable();
-            $table->foreign('overtime_application_id')->references('id')->on('overtime_applications')->onDelete('cascade');
-            $table->unsignedBigInteger('cto_application_id')->unsigned()->nullable();
-            $table->foreign('cto_application_id')->references('id')->on('cto_applications')->onDelete('cascade')->nullable();
-            $table->string('operation');
-            $table->string('overtime_hours')->nullable();
-            $table->string('credit_value');
-            $table->string('date');
-            $table->string('time')->nullable();
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->decimal('earned_credit_by_hour', 8, 2); // Adjust precision and scale as needed
+            $table->decimal('used_credit_by_hour', 8, 2); // Example of another decimal column
+            $table->integer('max_credit_monthly');
+            $table->integer('max_credit_annual');
+            $table->DateTime('valid_until')->nullable();
+            $table->boolean('is_expired')->default(false);
             $table->timestamps();
         });
     }

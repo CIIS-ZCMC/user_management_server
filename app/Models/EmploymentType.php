@@ -26,4 +26,8 @@ class EmploymentType extends Model
     {
         return $this->hasMany(EmployeeProfile::class);
     }
+    public function monthlyWorkHours()
+    {
+        return $this->hasMany(MonthlyWorkHours::class, 'employment_type_id');
+    }
 }

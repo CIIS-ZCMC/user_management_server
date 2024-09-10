@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -31,6 +30,8 @@ return new class extends Migration
             $table->integer('overall_minutes_rendered')->nullable();
             $table->integer('total_minutes_reg')->nullable();
             $table->integer('is_biometric')->default(0)->comment('1 if pulled from Bio');
+            $table->boolean('is_time_adjustment')->default(0);
+            $table->boolean('is_generated')->default(0);
             $table->timestamps();
         });
     }

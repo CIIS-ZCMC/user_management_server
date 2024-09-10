@@ -14,15 +14,19 @@ return new class extends Migration
         Schema::create('pull_outs', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('requested_employee_id');
-            $table->foreign('requested_employee_id')->references('id')->on('employee_profiles');
-                        
-            $table->unsignedBigInteger('approve_by_employee_id');
-            $table->foreign('approve_by_employee_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
 
-            $table->date('date');
-            $table->string('reason');
-            $table->boolean('status')->default(false);
+            $table->unsignedBigInteger('requesting_officer');
+            $table->foreign('requesting_officer')->references('id')->on('employee_profiles');
+                        
+            $table->unsignedBigInteger('approving_officer');
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles');
+
+            $table->date('pull_out_date');
+            $table->date('approval_date')->nullable();
+            $table->string('status')->default('pending');
+            $table->string('reason')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

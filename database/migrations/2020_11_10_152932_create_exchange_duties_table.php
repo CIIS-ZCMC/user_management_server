@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,24 +12,27 @@ return new class extends Migration
     {
         Schema::create('exchange_duties', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('schedule_id');
-            $table->foreign('schedule_id')->references('id')->on('schedules');
+
+            $table->date('requested_date_to_swap');
+            $table->date('requested_date_to_duty');
 
             $table->unsignedBigInteger('requested_employee_id');
             $table->foreign('requested_employee_id')->references('id')->on('employee_profiles');
-            
+
             $table->unsignedBigInteger('reliever_employee_id');
             $table->foreign('reliever_employee_id')->references('id')->on('employee_profiles');
 
-            // $table->unsignedBigInteger('section_head_id');
-            // $table->foreign('section_head_id')->references('id')->on('employee_profiles');
-            // $table->boolean('supervisor_approval');
-                        
-            // $table->unsignedBigInteger('department_head_id');
-            // $table->foreign('department_head_id')->references('id')->on('employee_profiles');
-            // $table->boolean('department_head_approval');
+            $table->unsignedBigInteger('requested_schedule_id');
+            $table->foreign('requested_schedule_id')->references('id')->on('schedules');
 
-            $table->boolean('status')->default(false);
+            $table->unsignedBigInteger('reliever_schedule_id');
+            $table->foreign('reliever_schedule_id')->references('id')->on('schedules');
+
+            $table->unsignedBigInteger('approving_officer');
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles');
+
+            $table->date('approval_date')->nullable();
+            $table->string('status')->default('applied');
             $table->string('reason');
             $table->softDeletes();
             $table->timestamps();

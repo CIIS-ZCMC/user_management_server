@@ -15,12 +15,13 @@ class PullOut extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'date',
-        'reason',
-        'status',
         'employee_profile_id',
-        'requested_employee_id',
-        'approve_by_employee_id',
+        'requesting_officer',
+        'approving_officer',
+        'pull_out_date',
+        'approval_date',
+        'status',
+        'reason',
     ];
     
     protected $softDelete = true;
@@ -29,6 +30,16 @@ class PullOut extends Model
 
     public function employee()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'pull_out_employee')->withPivot('employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
+    }
+
+    public function requestedBy()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'requesting_officer');
+    }
+
+    public function approveBy()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 }

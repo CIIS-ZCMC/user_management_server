@@ -5,9 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use App\Http\Resources\ChiefDivisionTrailResource;
-use App\Http\Resources\OICDivisionTrailResource;
-
 class Division extends Model
 {
     use HasFactory;
@@ -44,6 +41,11 @@ class Division extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function sections()
+    {
+        return $this->hasMany(Section::class);
+    }
+
     public function chief()
     {
         return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
@@ -63,9 +65,14 @@ class Division extends Model
     {
         return $this->hasMany(OfficerInChargeTrail::class);
     }
-   
+
     public function divisionHead()
     {
         return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
+    }
+
+    public function units()
+    {
+        return $this->hasMany(Unit::class);
     }
 }

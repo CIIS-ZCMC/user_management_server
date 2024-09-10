@@ -2,741 +2,425 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
-use Intervention\Image\Facades\Image;
-use Carbon\Carbon;
+use App\Helpers\Helpers;
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\EmployeeSchedule;
 use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LeaveTypeRequest;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit;
-use App\Http\Resources\LeaveType as ResourcesLeaveType;
+use App\Http\Resources\LeaveTypeResource;
 use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
-use App\Models\EmployeeProfile;
 use App\Models\LeaveAttachment;
-use App\Models\LeaveCredit;
 use App\Models\LeaveTypeLog;
+use App\Models\LeaveTypeRequirement;
+use App\Models\Requirement;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use \Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
+use PHPUnit\Metadata\Api\Requirements;
+
 class LeaveTypeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+
+    public function index(Request $request)
     {
         try{
-        // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
-        $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
-        $leave_types_result = $leave_types->map(function ($leave_type) {
-            $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
-            $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
-                return [
-                    'id' => $leave_type->id,
-                    'name' => $leave_type->name,
-                    'description' => $leave_type->description,
-                    'period' => $leave_type->period,
-                    'file_date' => $leave_type->file_date,
-                    'code' => $leave_type->code,
-                    'is_active' => $leave_type->is_active,
-                    'is_special' => $leave_type->is_special,
-                    'is_country' => $leave_type->is_country,
-                    'is_illness' => $leave_type->is_illness,
-                    'is_days_recommended' => $leave_type->is_days_recommended,
-                    'leave_credit_year' => $leave_type->leave_credit_year,
-                    'date_created' => $leave_type->created_at,
-                    'logs' => $leave_type->logs->map(function ($log) {
-                        $process_name=$log->action;
-                        $action ="";
-                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                        $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+            $leave_types = LeaveType::all();
 
-                        $date=$log->date;
-                        $formatted_date=Carbon::parse($date)->format('M d,Y');
-                        return [
-                            'id' => $log->id,
-                            'leave_application_id' => $log->leave_application_id,
-                            'action_by' => "{$first_name} {$last_name}" ,
-                            'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                            'action' => $log->action,
-                            'date' => $formatted_date,
-                            'time' => $log->time,
+            return response()->json([
+                'data' => LeaveTypeResource::collection($leave_types),
+                'message' => 'Retrieve all leave types records.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
-                        ];
-                    }),
-                    'requirements' => $requirementsData->map(function ($requirement) {
-                        return [
-                            'id' => $requirement->id,
-                            'name' => $requirement->name,
-                            'logs' => $requirement->logs->map(function ($log) {
-                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
-                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                                return [
-                                    'id' => $log->id,
-                                    'action_by' => "{$first_name} {$last_name}",
-                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                    'action' => $log->action,
-                                    'date' => $log->date,
-                                    'time' => $log->time,
-                                ];
-                            }),
-                        ];
-                    }),
-                    'attachments' => $attachmentsData->map(function ($attachment) {
-                        return [
-                            'id' => $attachment->id,
-                            'name' => $attachment->file_name,
-                            'path' => $attachment->path,
-                            'size' => $attachment->size,
-                        ];
-                    }),
+    /**
+     * Retrieve list of leaveType with employee current credit status only with non-special leave.
+     * */
+    public function leaveTypeOptionWithEmployeeCreditsRecord(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $leave_types = LeaveType::all();
+
+            $result_data = [];
+
+            foreach($leave_types as $leave_type){
+                $requirements = $leave_type->requirements()->get();
+
+                if($leave_type->is_special === 1){
+                    $leave_type['total_credits'] = null;
+                    continue;
+                }
+                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                ->where('leave_type_id', $leave_type->id)
+                ->first();
+
+                $final_date = null;
+                $tomorrow = Carbon::tomorrow();
+
+
+                if($leave_type->file_after === null && $leave_type->file_before !== null){
+                    $hrmo_officer = Helpers::getHrmoOfficer();
+                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
+                        ->whereDate('s.date', '>=', $tomorrow)
+                        ->where('employee_profile_schedule.employee_profile_id', $hrmo_officer)
+                        ->limit($leave_type->file_before)->get();
+
+                    if(count($schedules) > 0){
+                        $last_schedule = $schedules->last();
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }
+                    // else {
+                    //     // If there are no schedules, set the final date to 5 days from tomorrow
+                    //     $final_date = Carbon::parse($tomorrow)->addDays(10)->format('Y-m-d');
+                    // }
+                }
+
+                if($leave_type->file_after !== null && $leave_type->code !== 'SL'){
+                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
+                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
+                        ->whereDate('s.date', '<=', Carbon::now())
+                        ->orderByDesc('s.date')->limit($leave_type->file_after)->get();
+
+                    if(count($schedules) > 0){
+                        $last_schedule = $schedules->last();
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }
+                }
+
+                $result_data[] = [
+                    'value' => $leave_type->id,
+                    'label'=> $leave_type->name,
+                    'description'=> $leave_type->description,
+                    'period'=> $leave_type->period,
+                    'file_date'=> $leave_type->file_date,
+                    'month_value'=> $leave_type->month_value,
+                    'annual_credit'=> $leave_type->annual_credit,
+                    'is_active'=> $leave_type->is_active,
+                    'is_special'=> $leave_type->is_special,
+                    'is_country'=> $leave_type->is_country,
+                    'is_illness'=> $leave_type->is_illness,
+                    'is_study'=> $leave_type->is_study,
+                    'is_days_recommended'=> $leave_type->is_days_recommended,
+                    'created_at'=> $leave_type->created_at,
+                    'updated_at'=> $leave_type->updated_at,
+                    'allowed_date' => $final_date,
+                    'total_credits'=> $leave_type->total_credits ? [
+                        'id'=> $leave_type->total_credits->id,
+                        'employee_profile_id'=> $leave_type->total_credits->employee_profile_id,
+                        'leave_type_id'=> $leave_type->total_credits->leave_type_id,
+                        'total_leave_credits'=> $leave_type->total_credits->total_leave_credits,
+                        'created_at'=> $leave_type->total_credits->created_at,
+                        'updated_at'=> $leave_type->total_credits->updated_at,
+                    ] : null,
+                    'requirements' => $requirements ?? [],
                 ];
-            });
+            }
 
-        return response()->json(['data' => $leave_types_result], Response::HTTP_OK);
+
+            return response()->json([
+                'data' => $result_data,
+                'message' => 'Retrieve all leave types records.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function select(Request $request)
+    public function employeeLeaveCredit(Request $request)
     {
         try{
-            $user=$request->user;
-            // $leaveTypes = LeaveType::with('EmployeeLeaveCredits')
-            // ->whereHas('EmployeeLeaveCredits', function ($query) use ($user) {
-            //         $query->where('employee_profile_id', $user->id);
-            //     })
-            // ->get()
-            // ->map(function ($leaveType) {
-            //     $balance = $leaveType->EmployeeLeaveCredits->isEmpty()
-            //     ? 0
-            //     : $leaveType->EmployeeLeaveCredits->sum(function ($credit) {
-            //         $operationMultiplier = ($credit->operation === 'add') ? 1 : -1;
-            //         return $operationMultiplier * (float) $credit->credit_value;
-            //     });
+            $employee_leave_credit = $request->user->leaveCredits;
 
-            //     return [
-            //                     'value' => "$leaveType->id",
-            //                     'label' => $leaveType->name,
-            //                     'balance' => $balance,
-            //                     'description' => $leaveType->description,
-            //                     'file_date' => $leaveType->file_date,
-            //                     'period' => $leaveType->period,
-            //                     'is_country' => $leaveType->is_country,
-            //                     'is_illness' => $leaveType->is_illness,
-            //                     'is_days_recommended' => $leaveType->is_days_recommended,
-            //                     'requirements' => $leaveType->requirements->map(function ($requirement) {
-            //                         return [
-            //                             'id' => $requirement->id,
-            //                             'name' => $requirement->name,
-            //                         ];
-            //                     }),
-            //                 ];
-
-            // });
-
-            $leaveTypes = LeaveType::leftJoin('employee_leave_credits', function ($join) use ($user) {
-                $join->on('leave_types.id', '=', 'employee_leave_credits.leave_type_id')
-                    ->where('employee_leave_credits.employee_profile_id', '=', $user->id);
-            })
-            ->select(
-                'leave_types.id',
-                'leave_types.name',
-                'leave_types.description',
-                'leave_types.file_date',
-                'leave_types.period',
-                'leave_types.is_country',
-                'leave_types.is_illness',
-                'leave_types.is_days_recommended',
-                DB::raw('IFNULL(SUM(CASE WHEN employee_leave_credits.operation = "add" THEN employee_leave_credits.credit_value ELSE -employee_leave_credits.credit_value END), 0) as balance')
-            )
-            ->groupBy(
-                'leave_types.id',
-                'leave_types.name',
-                'leave_types.description',
-                'leave_types.file_date',
-                'leave_types.period',
-                'leave_types.is_country',
-                'leave_types.is_illness',
-                'leave_types.is_days_recommended'
-            )
-            ->get();
-
-        // Map the result
-        $result = $leaveTypes->map(function ($leaveType) {
-            return [
-                'value' => "$leaveType->id",
-                'label' => $leaveType->name,
-                'balance' => $leaveType->balance,
-                'description' => $leaveType->description,
-                'file_date' => $leaveType->file_date,
-                'period' => $leaveType->period,
-                'is_special' => $leaveType->is_special,
-                'is_country' => $leaveType->is_country,
-                'is_illness' => $leaveType->is_illness,
-                'is_days_recommended' => $leaveType->is_days_recommended,
-                'requirements' => $leaveType->requirements->map(function ($requirement) {
-                                            return [
-                                                'id' => $requirement->id,
-                                                'name' => $requirement->name,
-                                            ];
-                                        }),
-            ];
-        });
-
-                 return response()->json(['data' => $result], Response::HTTP_OK);
-            }catch(\Throwable $th){
-
-                return response()->json(['message' => $th->getMessage()], 500);
-            }
+            return response()->json([
+                'data' => new EmployeeLeaveCredit($employee_leave_credit),
+                'message' => 'Retrieve employee leave credit'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => ''], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
-    public function store(Request $request)
+    public function store(LeaveTypeRequest $request)
     {
-
         try{
-            $user=$request->user;
-            $validatedData = $request->validate([
-                'name' => 'required|string',
-                'attachments.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-            ]);
-            $employee_id = $request->employee_id;
-            $filename="";
-            $process_name="Add";
-            $leave_type = new LeaveType();
-            $leave_type->name = ucwords($request->name);
-            $leave_type->description = $request->description;
-            $leave_type->period = $request->period;
-            $leave_type->file_date = $request->file_date;
-            $input_name = $request->name;
-            $name_codes = explode(' ', $input_name);
-            $firstLetters = '';
-            foreach ($name_codes as $name_code) {
-                $firstLetters .= strtoupper(substr($name_code, 0, 1));
+           $employee_profile = $request->user;
+
+            if(!$employee_profile){
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
-            $leave_type->code = $firstLetters;
-            $leave_type->is_active = true;
-            $leave_type->is_special = $request->input('is_special');
-            $leave_type->is_country = $request->input('is_country');
-            $leave_type->is_illness = $request->input('is_illness');
-            $leave_type->is_days_recommended = $request->input('is_days_recommended');
-            if (!empty($request->leave_credit_year))
-            {
-                $leave_type->leave_credit_year = $request->leave_credit_year;
+
+            $cleanData = [];
+
+            foreach($request->all() as $key => $value){
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if(is_bool($value)){
+                    $cleanData[$key] = $value === 1? true:false;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
             }
-            else
-            {
-                $leave_type->leave_credit_year = "";
-            }
-            $leave_type->save();
-            $attachment=$request->file('attachments');
-            $leave_type_id=$leave_type->id;
-            if($request->hasFile('attachments'))
-            {
-                foreach ($request->file('attachments') as $file) {
-                    $folderName = 'attachments';
-                    $fileName = $file->getClientOriginalName();
-                    // $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension  = $file->getClientOriginalName();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    Storage::makeDirectory('public/' . $folderName);
-                    $file->storeAs('public/' . $folderName, $uniqueFileName);
-                    $size = $file->getSize();
-                    $path = $folderName .'/'. $uniqueFileName;
-                    $leave_attachment= new LeaveAttachment();
-                    $leave_attachment->file_name= $fileName;
-                    $leave_attachment->leave_type_id = $leave_type_id;
-                    $leave_attachment->path = $path;
-                    $leave_attachment->size = $size;
-                    $leave_attachment->save();
+
+            $code = Helpers::generateCodeFromName($cleanData['name']);
+            $month_value = $cleanData['leave_credit_year'] / 12;
+
+            $cleanData['code'] = $code;
+            $cleanData['month_value'] = $month_value;
+            $cleanData['annual_credit'] = $cleanData['leave_credit_year'];
+            $cleanData['is_active'] = true;
+
+            $leave_type = LeaveType::create($cleanData);
+
+            if($request->requirements){
+                foreach($cleanData['requirements'] as $value){
+                    LeaveTypeRequirement::create([
+                        'leave_type_id' => $leave_type->id,
+                        'leave_requirement_id' => $value
+                    ]);
                 }
 
             }
-            $selectedRequirements = $request->input('requirements');
-            $leave_type->requirements()->sync($selectedRequirements);
-            $columnsString="";
-            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
-            $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
-            ->where('id',$leave_type_id)->get();
-                $leave_types_result = $leave_types->map(function ($leave_type) {
-                $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
-                $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
-                    return [
-                        'id' => $leave_type->id,
-                        'name' => $leave_type->name,
-                        'description' => $leave_type->description,
-                        'period' => $leave_type->period,
-                        'file_date' => $leave_type->file_date,
-                        'code' => $leave_type->code,
-                        'is_active' => $leave_type->is_active,
-                        'is_special' => $leave_type->is_special,
-                        'is_country' => $leave_type->is_country,
-                        'is_illness' => $leave_type->is_illness,
-                        'is_days_recommended' => $leave_type->is_days_recommended,
-                        'leave_credit_year' => $leave_type->leave_credit_year,
-                        'date_created' => $leave_type->created_at,
-                        'logs' => $leave_type->logs->map(function ($log) {
-                            $process_name=$log->action;
-                            $action ="";
-                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
 
-                            $date=$log->date;
-                            $formatted_date=Carbon::parse($date)->format('M d,Y');
-                            return [
-                                'id' => $log->id,
-                                'leave_application_id' => $log->leave_application_id,
-                                'action_by' => "{$first_name} {$last_name}" ,
-                                'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                                'action' => $log->action,
-                                'date' => $formatted_date,
-                                'time' => $log->time,
+            if ($request->attachments) {
+                foreach ($request->file('attachments') as $key => $file) {
+                    $fileName=$file->getClientOriginalName();
+                    $size = filesize($file);
+                    $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
 
-                            ];
-                        }),
-                        'requirements' => $requirementsData->map(function ($requirement) {
-                            return [
-                                'id' => $requirement->id,
-                                'name' => $requirement->name,
-                                'logs' => $requirement->logs->map(function ($log) {
-                                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
-                                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                                    return [
-                                        'id' => $log->id,
-                                        'action_by' => "{$first_name} {$last_name}",
-                                        'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                        'action' => $log->action,
-                                        'date' => $log->date,
-                                        'time' => $log->time,
-                                    ];
-                                }),
-                            ];
-                        }),
-                        'attachments' => $attachmentsData->map(function ($attachment) {
-                            return [
-                                'id' => $attachment->id,
-                                'name' => $attachment->file_name,
-                                'path' => $attachment->path,
-                                'size' => $attachment->size,
-                            ];
-                        }),
-                    ];
-                });
-            $singleArray = array_merge(...$leave_types_result);
-            return response()->json(['message' => 'Leave Type has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
+                    LeaveAttachment::create([
+                        'leave_type_id' => $leave_type->id,
+                        'file_name' => $fileName,
+                        'path' => $file_name_encrypted,
+                        'size' => $size,
+                    ]);
+                }
+            }
 
-        }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id,LeaveType $leaveType)
-    {
-
-        try{
-            $data = LeaveCredit::find($id);
-
-            return response() -> json(['data' => $data], 200);
-        }catch(\Throwable $th){
-
-            return response() -> json(['message' => $th -> getMessage()], 500);
-        }
-
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(LeaveType $leaveType)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update($id,Request $request, LeaveType $leaveType)
-    {
-        try{
-            $user=$request->user;
-            $validatedData = $request->validate([
-                'name' => 'required|string',
-                'attachments.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
+            LeaveTypeLog::create([
+                'leave_type_id' => $leave_type->id,
+                'action_by' => $employee_profile->id,
+                'action' => 'Add'
             ]);
-            $leave_type = LeaveType::findOrFail($id);
-            $originalValues = $leave_type->getOriginal();
-            $columnsString="";
-            $leave_type->name = ucwords($request->name);
-            $leave_type->description = $request->description;
-            $leave_type->period = $request->period;
-            $leave_type->file_date = $request->file_date;
-            $input_name = $request->name;
-            $name_codes = explode(' ', $input_name);
-            $firstLetters = '';
-            foreach ($name_codes as $name_code) {
-                $firstLetters .= strtoupper(substr($name_code, 0, 1));
-            }
-            $leave_type->code = $firstLetters;
-            // $leave_type->is_special = $request->input('is_special');
-            $leave_type->is_country = $request->input('is_country');
-            $leave_type->is_illness = $request->input('is_illness');
-            $leave_type->is_days_recommended = $request->input('is_days_recommended ');
 
-            if (!empty($request->leave_credit_year))
-            {
-                $leave_type->leave_credit_year = $request->leave_credit_year;
-            }
-            else
-            {
-                $leave_type->leave_credit_year = "";
-            }
-            $leave_type->update();
-            if ($leave_type->isDirty()) {
-                $changedColumns = $leave_type->getChanges();
+            return response()->json([
+                'data' => new LeaveTypeResource($leave_type),
+                'message' => 'Leave type record created successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
-                $columnsString = implode(', ', $changedColumns);
+    public function show($id, Request $request)
+    {
+        try{
+            $leave_types = LeaveType::find($id);
 
+            return response()->json([
+                'data' => new LeaveTypeResource($leave_types),
+                'message' => 'Retrieve all leave types records.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function update($id, Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+
+            if(!$employee_profile){
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
-            $process_name="Update";
-            $leave_type_id=$leave_type->id;
-                if ($request->hasFile('attachments')) {
-                    $leaveType = LeaveType::with('attachments')->findOrFail($id);
-                    foreach ($leaveType->attachments as $attachment) {
-                        $filePath = $attachment->path;
-                        Storage::delete($filePath);
-                        $attachment->delete();
+
+            $leave_type = LeaveType::find($id);
+
+            $cleanData = [];
+
+            foreach($request->all() as $key => $value){
+                if($key === 'leave_type_requirements') continue;
+
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if(is_bool($value)){
+                    $cleanData[$key] = $value?true:false;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $requirements_array = $request->requirements;
+            foreach ($requirements_array as $key => $value) {
+                if ($value === null) {
+                    $sql = LeaveTypeRequirement::where('leave_type_id', $leave_type->id)->first();
+                    if ($sql) {
+                        $sql->delete();
                     }
-                    foreach ($request->file('attachments') as $file) {
-                        $folderName = 'attachments';
-                        $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                        $extension  = $file->getClientOriginalName();
-                        $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                        Storage::makeDirectory('public/' . $folderName);
-                        $file->storeAs('public/' . $folderName, $uniqueFileName);
-                        $size = $file->getSize();
-                        $path = $folderName .'/'. $uniqueFileName;
-                        $leave_attachment= new LeaveAttachment();
-                        $leave_attachment->file_name= $fileName;
-                        $leave_attachment->leave_type_id = $leave_type_id;
-                        $leave_attachment->path = $path;
-                        $leave_attachment->size = $size;
-                        $leave_attachment->save();
+                } else if ($value) {
+                    $leave_requirements = LeaveTypeRequirement::where('id', $value)->first();
+
+                    if (!$leave_requirements) {
+                        $requirements = Requirement::where('id', $value)->first();
+                        $leave_requirements = $leave_type->requirements()->attach($requirements);
+
+                    } else {
+
+                        $sql = Requirement::where('id', $leave_requirements->leave_requirement_id)->pluck('id')->toArray();
+                        $leave_type->requirements()->sync($sql);
                     }
 
+                }
             }
-            $selectedRequirements = $request->input('requirements', []);
-            $leave_type->requirements()->sync($selectedRequirements);
-            $columnsString="";
-            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
-            $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
-            ->where('id',$leave_type_id)->get();
-                $leave_types_result = $leave_types->map(function ($leave_type) {
-                $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
-                $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
-                    return [
-                        'id' => $leave_type->id,
-                        'name' => $leave_type->name,
-                        'description' => $leave_type->description,
-                        'period' => $leave_type->period,
-                        'file_date' => $leave_type->file_date,
-                        'code' => $leave_type->code,
-                        'is_active' => $leave_type->is_active,
-                        'is_special' => $leave_type->is_special,
-                        'is_country' => $leave_type->is_country,
-                        'is_illness' => $leave_type->is_illness,
-                        'is_days_recommended' => $leave_type->is_days_recommended,
-                        'leave_credit_year' => $leave_type->leave_credit_year,
-                        'date_created' => $leave_type->created_at,
-                        'logs' => $leave_type->logs->map(function ($log) {
-                            $process_name=$log->action;
-                            $action ="";
-                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
 
-                            $date=$log->date;
-                            $formatted_date=Carbon::parse($date)->format('M d,Y');
-                            return [
-                                'id' => $log->id,
-                                'leave_application_id' => $log->leave_application_id,
-                                'action_by' => "{$first_name} {$last_name}" ,
-                                'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                                'action' => $log->action,
-                                'date' => $formatted_date,
-                                'time' => $log->time,
+            $leave_type->update($cleanData);
 
-                            ];
-                        }),
-                        'requirements' => $requirementsData->map(function ($requirement) {
-                            return [
-                                'id' => $requirement->id,
-                                'name' => $requirement->name,
-                                'logs' => $requirement->logs->map(function ($log) {
-                                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
-                                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                                    return [
-                                        'id' => $log->id,
-                                        'action_by' => "{$first_name} {$last_name}",
-                                        'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                        'action' => $log->action,
-                                        'date' => $log->date,
-                                        'time' => $log->time,
-                                    ];
-                                }),
-                            ];
-                        }),
-                        'attachments' => $attachmentsData->map(function ($attachment) {
-                            return [
-                                'id' => $attachment->id,
-                                'name' => $attachment->file_name,
-                                'path' => $attachment->path,
-                                'size' => $attachment->size,
-                            ];
-                        }),
-                    ];
-                });
-                $singleArray = array_merge(...$leave_types_result);
-            return response()->json(['message' => 'Leave Type has been sucessfully updated','data' => $singleArray ], Response::HTTP_OK);
+            /**
+             * Only if client side pass a value of update_leave_type_requirements
+             * ex.
+             * [
+             *  {
+             *      id: 1,
+             *      leave_requirement_id: 4
+             *  }
+             * ]
+             */
+            if($request->update_leave_type_requirements !== null){
+                foreach($request->leave_type_requirements as $key => $value){
+                    LeaveTypeRequirement::find($value->id)->update([
+                        'leave_type_id' => $leave_type->id,
+                        'leave_requirement_id' => $value->leave_requirement_id
+                    ]);
+                }
+            }
+
+            LeaveTypeLog::create([
+                'leave_type_id' => $leave_type->id,
+                'action_by' => $employee_profile->id,
+                'action' => 'Update'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveTypeResource($leave_type),
+                'message' => $leave_type->name.' updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(LeaveType $leaveType)
-    {
-        //
-    }
-
-    public function storeLeaveTypeLog($leave_type_id,$process_name,$changedfields,$user_id)
-    {
-
-        try {
-
-            $data = [
-                'leave_type_id' => $leave_type_id,
-                'action_by_id' => $user_id,
-                'action' => $process_name,
-                'date' => date('Y-m-d'),
-                'time' => date('H:i:s'),
-                'fields' => $changedfields
-            ];
-
-            $leave_type_log = LeaveTypeLog::create($data);
-            return $leave_type_log;
-        } catch(\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),'error'=>true]);
-        }
-    }
-
-
-    public function deactivateLeaveType(Request $request,$leave_type_id)
+    public function deactivateLeaveTypes($id, AuthPinApprovalRequest $request)
     {
         try{
-            $columnsString="";
             $user = $request->user;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-                }
-                else
-                {
-                    $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                    $deactivate_leave_type->is_active=false;
-                    $deactivate_leave_type->update();
-                    $process_name="Deactivate";
-                    $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
-                    $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
-                    ->where('id',$leave_type_id)->get();
-                        $leave_types_result = $leave_types->map(function ($leave_type) {
-                        $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
-                        $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
-                            return [
-                                'id' => $leave_type->id,
-                                'name' => $leave_type->name,
-                                'description' => $leave_type->description,
-                                'period' => $leave_type->period,
-                                'file_date' => $leave_type->file_date,
-                                'code' => $leave_type->code,
-                                'is_active' => $leave_type->is_active,
-                                'is_special' => $leave_type->is_special,
-                                'is_country' => $leave_type->is_country,
-                                'is_illness' => $leave_type->is_illness,
-                                'is_days_recommended' => $leave_type->is_days_recommended,
-                                'leave_credit_year' => $leave_type->leave_credit_year,
-                                'date_created' => $leave_type->created_at,
-                                'logs' => $leave_type->logs->map(function ($log) {
-                                    $process_name=$log->action;
-                                    $action ="";
-                                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-                                    $date=$log->date;
-                                    $formatted_date=Carbon::parse($date)->format('M d,Y');
-                                    return [
-                                        'id' => $log->id,
-                                        'leave_application_id' => $log->leave_application_id,
-                                        'action_by' => "{$first_name} {$last_name}" ,
-                                        'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                                        'action' => $log->action,
-                                        'date' => $formatted_date,
-                                        'time' => $log->time,
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
 
-                                    ];
-                                }),
-                                'requirements' => $requirementsData->map(function ($requirement) {
-                                    return [
-                                        'id' => $requirement->id,
-                                        'name' => $requirement->name,
-                                        'logs' => $requirement->logs->map(function ($log) {
-                                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
-                                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                                            return [
-                                                'id' => $log->id,
-                                                'action_by' => "{$first_name} {$last_name}",
-                                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                                'action' => $log->action,
-                                                'date' => $log->date,
-                                                'time' => $log->time,
-                                            ];
-                                        }),
-                                    ];
-                                }),
-                                'attachments' => $attachmentsData->map(function ($attachment) {
-                                    return [
-                                        'id' => $attachment->id,
-                                        'name' => $attachment->file_name,
-                                        'path' => $attachment->path,
-                                        'size' => $attachment->size,
-                                    ];
-                                }),
-                            ];
-                        });
-                    return response()->json(['message' => 'Leave Type has been sucessfully deactivated','data' => $leave_types_result ], Response::HTTP_OK);
+            $leave_type = LeaveType::find($id);
+            $leave_type->update(['is_active' => 0]);
 
-                }
-
-
+            return response()->json([
+                'data' => new LeaveTypeResource($leave_type),
+                'message' => 'Leave type record deactivated successfully.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
-    public function reactivateLeaveType(Request $request,$leave_type_id)
+    public function reactivateLeaveTypes($id, AuthPinApprovalRequest $request)
     {
         try{
-            $columnsString="";
             $user = $request->user;
-            $password=$request->password;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-            }
-            else
-            {
-                $reactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $reactivate_leave_type->is_active=true;
-                $reactivate_leave_type->update();
-                $process_name="Reactivate";
-                 $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
-                 $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
-                 ->where('id',$leave_type_id)->get();
-                     $leave_types_result = $leave_types->map(function ($leave_type) {
-                     $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
-                     $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
-                         return [
-                             'id' => $leave_type->id,
-                             'name' => $leave_type->name,
-                             'description' => $leave_type->description,
-                             'period' => $leave_type->period,
-                             'file_date' => $leave_type->file_date,
-                             'code' => $leave_type->code,
-                             'is_active' => $leave_type->is_active,
-                             'is_special' => $leave_type->is_special,
-                             'is_country' => $leave_type->is_country,
-                             'is_illness' => $leave_type->is_illness,
-                             'is_days_recommended' => $leave_type->is_days_recommended,
-                             'leave_credit_year' => $leave_type->leave_credit_year,
-                             'date_created' => $leave_type->created_at,
-                             'logs' => $leave_type->logs->map(function ($log) {
-                                 $process_name=$log->action;
-                                 $action ="";
-                                 $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                                 $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-                                 $date=$log->date;
-                                 $formatted_date=Carbon::parse($date)->format('M d,Y');
-                                 return [
-                                     'id' => $log->id,
-                                     'leave_application_id' => $log->leave_application_id,
-                                     'action_by' => "{$first_name} {$last_name}" ,
-                                     'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                                     'action' => $log->action,
-                                     'date' => $formatted_date,
-                                     'time' => $log->time,
-
-                                 ];
-                             }),
-                             'requirements' => $requirementsData->map(function ($requirement) {
-                                 return [
-                                     'id' => $requirement->id,
-                                     'name' => $requirement->name,
-                                     'logs' => $requirement->logs->map(function ($log) {
-                                         $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
-                                         $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                                         return [
-                                             'id' => $log->id,
-                                             'action_by' => "{$first_name} {$last_name}",
-                                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                             'action' => $log->action,
-                                             'date' => $log->date,
-                                             'time' => $log->time,
-                                         ];
-                                     }),
-                                 ];
-                             }),
-                             'attachments' => $attachmentsData->map(function ($attachment) {
-                                 return [
-                                     'id' => $attachment->id,
-                                     'name' => $attachment->file_name,
-                                     'path' => $attachment->path,
-                                     'size' => $attachment->size,
-                                 ];
-                             }),
-                         ];
-                     });
-                 return response()->json(['message' => 'Leave Type has been sucessfully reactivated','data' => $leave_types_result ], Response::HTTP_OK);
-
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
+            $leave_type = LeaveType::find($id);
+            $leave_type->update(['is_active' => true]);
 
+            return response()->json([
+                'data' => new LeaveTypeResource($leave_type),
+                'message' => 'Leave type record reactivated successfully.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
+    public function destroy($id, AuthPinApprovalRequest $request)
+    {
+        try{
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_type = LeaveType::find($id);
+
+            if(count($leave_type->leaveApplications) > 0){
+                return response()->json(['message' => "Other record is using this leave type deletion is prohibited."], Response::HTTP_BAD_REQUEST);
+            }
+
+            if(count($leave_type->leaveTypeCredit) > 0){
+                return response()->json(['message' => "Other record is using this leave type deletion is prohibited."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $leave_type->delete();
+
+            return response()->json([
+                'message' => 'Leave type record deleted successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

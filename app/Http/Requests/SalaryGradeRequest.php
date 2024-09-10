@@ -33,6 +33,7 @@ class SalaryGradeRequest extends FormRequest
             "eight" => 'required|numeric',
             'tranch' => 'required|string|max:2555',
             'effective_at' => 'required|date:Y-m-d',
+            'password' => 'required|string|max:255'
         ];
     }
 }

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\OtherInformationManyRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\OtherInformationRequest;
 use App\Http\Resources\OtherInformationResource;
 use App\Models\OtherInformation;
@@ -21,13 +23,6 @@ class OtherInformationController extends Controller
     private $PLURAL_MODULE_NAME = 'other informations';
     private $SINGULAR_MODULE_NAME = 'other information';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-
     public function findByPersonalInformationID($id, Request $request)
     {
         try{
@@ -38,11 +33,9 @@ class OtherInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => OtherInformationResource::collection($other_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByPersonalInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -60,14 +53,12 @@ class OtherInformationController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $other_information = $personal_information;
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => OtherInformationResource::collection($other_information),
                 'message' => 'Employee other information retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -83,26 +74,24 @@ class OtherInformationController extends Controller
 
             $other_information = OtherInformation::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new OtherInformationResource($other_information),
                 'message' => 'New employee other information registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function storeMany(Request $request)
+    public function storeMany($personal_information_id, OtherInformationManyRequest $request)
     {
         try{
             $success = [];
-            $failed = [];
-            $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->other_informations as $other){
+            foreach($request->others as $other){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($other as $key => $value) {
@@ -116,30 +105,15 @@ class OtherInformationController extends Controller
                 $other_information = OtherInformation::create($cleanData);
 
                 if(!$other){
-                    $failed[] = $cleanData;
                     continue;
                 }
 
                 $success[] = $other_information;
             }
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => OtherInformationResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-
-            return response()->json([
-                'data' => OtherInformationResource::collection($success),
-                'message' => 'New employee other information registered.'
-            ], Response::HTTP_OK);
+            
+            return $success;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee other information.", 400);
         }
     }
     
@@ -153,60 +127,119 @@ class OtherInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new OtherInformationResource($other_information),
                 'message' => 'Other information retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, OtherInformationRequest $request)
+    public function update($id, OtherInformationManyRequest $request)
     {
         try{
-            $other_information = OtherInformation::find($id);
+            $success = [];
 
-            if(!$other_information)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            foreach($request->others as $other){
+                $cleanData = [];
+                foreach ($other as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+
+                if($other->id === null || $other->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $other_information = OtherInformation::create($cleanData);
+                    if(!$other) continue;
+                    $success[] = $other_information;
+                    continue;
+                }
+
+                $other_information = OtherInformation::find($other->id);
+                $other_information->update($cleanData);
+                $success[] = $other_information;
+            }
+            
+            return $success;
+        }catch(\Throwable $th){
+            throw new \Exception("Failed to register employee other information.", 400);
+        }
+    }
+    
+    public function updateMany(OtherInformationManyRequest $request)
+    {
+        try{
+            $cleanData  = [];
+            $failed = [];
+            $success = [];
+
+            foreach($request->others as $other){
+                $cleanNewData = [];
+                foreach($other as $key => $fields){
+                    if($fields === null || $fields === 'null'){
+                        $cleanNewData[$key] = $fields;
+                        continue;
+                    }
+                    $cleanNewData[$key] = strip_tags($fields);
+                }
+                $cleanData[] = $cleanNewData;
             }
 
-            $cleanData = [];
+            foreach ($cleanData as $key => $others) {
+                $other_new = OtherInformation::find($others->id);
 
-            foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if(!$other_new)
+                {
+                    $failed[] = $others;
+                    continue;
+                }
+
+                $other_new->update($cleanData);
+                $success[] = $other_new;
             }
 
-            $other_information -> update($cleanData);
+            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            if(count($cleanData) === count($failed)){
+                return response()->json([
+                    'message' => "Request to update other information records has failed.",
+                    'failed' => $failed
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if(count($failed) > 0 && count($success) > count($failed)){
+                return response()->json([
+                    'data' => OtherInformationResource::collection($success), 
+                    'failed' => $failed,
+                    'message' => "Successfully update some other information record.",
+                ], Response::HTTP_OK);
+            }
 
             return response()->json([
-                'data' => new OtherInformationResource($other_information),
-                'message' => 'Other information record updated.'
+                'data' => OtherInformationResource::collection($success),
+                'message' => 'Employee other information data is updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $password = strip_tags($request->password);
+            // $user = $request->user;
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-            }
+            // if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            // }
 
             $other_information = OtherInformation::findOrFail($id);
 
@@ -217,26 +250,23 @@ class OtherInformationController extends Controller
 
             $other_information -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Other information record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
+    public function destroyByPersonalInformationID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $other_information = OtherInformation::where('personal_information_id', $id)->get();
@@ -248,26 +278,23 @@ class OtherInformationController extends Controller
 
             $other_information -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Other information record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
+    public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -281,11 +308,11 @@ class OtherInformationController extends Controller
             $other_information = $personal_information->otherInformation;
             $other_information -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Other information record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

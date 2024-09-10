@@ -28,6 +28,13 @@ class DailyTimeRecords extends Model
         'undertime_minutes',
         'overall_minutes_rendered',
         'total_minutes_reg',
-        'is_biometric'
+        'is_biometric',
+        'is_time_adjustment',
+        'is_generated'
     ];
+
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'biometric_id', 'biometric_id');
+    }
 }

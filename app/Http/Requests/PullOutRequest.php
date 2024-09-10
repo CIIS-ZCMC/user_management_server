@@ -22,7 +22,8 @@ class PullOutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'pull_out_date' => 'required|date',
+            'employee.*.employee_id' => 'required|integer',
         ];
     }
 }

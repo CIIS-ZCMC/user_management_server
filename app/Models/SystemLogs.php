@@ -17,7 +17,8 @@ class SystemLogs extends Model
         "status",
         "remarks",
         "ip_address",
-        "employee_profile_id"
+        "employee_profile_id",
+        "execution_time"
     ];
     
     public $timestamps = TRUE;

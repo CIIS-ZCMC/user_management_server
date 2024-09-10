@@ -15,15 +15,17 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->string('reference_number')->nullable();
             $table->string('status');
             $table->string('remarks')->nullable();
             $table->string('purpose')->nullable();
             $table->string('overtime_letter_of_request')->nullable();
-            $table->string('path')->nullable();
-            $table->string('date');
-            $table->string('time')->nullable();
+            $table->string('overtime_letter_of_request_path')->nullable();
+            $table->string('overtime_letter_of_request_size')->nullable();
             $table->string('decline_reason')->nullable();
+            $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
+            $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }

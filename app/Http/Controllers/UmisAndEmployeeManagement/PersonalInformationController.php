@@ -4,13 +4,18 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Models\Address;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Models\EmployeeProfile;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\PersonalInformationRequest;
 use App\Http\Resources\PersonalInformationResource;
@@ -22,25 +27,14 @@ class PersonalInformationController extends Controller
     private $PLURAL_MODULE_NAME = 'personal informations';
     private $SINGULAR_MODULE_NAME = 'personal information';
 
-    protected $requestLogger;
-    protected $fileValidateAndUpload;
-
-    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $fileValidateAndUpload)
-    {
-        $this->requestLogger = $requestLogger;
-        $this->fileValidateAndUpload = $fileValidateAndUpload;
-    }
-    
     public function index(Request $request)
     {
         try{
             $personal_informations = PersonalInformation::all();
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json(['data' => PersonalInformationResource::collection($personal_informations)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -53,7 +47,7 @@ class PersonalInformationController extends Controller
     public function store(PersonalInformationRequest $request)
     {
         try{
-            $is_res_per = $request->is_res_per === 1? true:false;
+            $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -61,21 +55,17 @@ class PersonalInformationController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                // if($key === 'attachment'){
-                //     $cleanData[$key] = $this->fileValidateAndUpload->check_save_file($request, 'employee/profiles');
-                //     continue;
-                // }
                 $cleanData[$key] = strip_tags($value);
             }
 
             $personal_information = PersonalInformation::create($cleanData);
 
             $residential_address = [
-                'address' => strip_tags($request->r_address),
-                'telephone' => strip_tags($request->r_telephone),
-                'zip_code' => strip_tags($request->r_zip_code),
-                'is_res_per' => $is_res_per,
-                'type' => 'residential',
+                'address' => strip_tags($request->residential_address),
+                'zip_code' => strip_tags($request->residential_zip_code),
+                'telephone_no' => strip_tags($request->residential_telephone),
+                'is_res_per' => $request->is_res_per,
+                'is_residential' => 1,
                 'personal_information_id' => $personal_information->id
             ];
 
@@ -92,28 +82,26 @@ class PersonalInformationController extends Controller
             }
 
             $permanent_address =  [
-                'address' => strip_tags($request->p_address),
-                'telephone' => strip_tags($request->p_telephone),
-                'zip_code' => strip_tags($request->p_zip_code),
-                'is_res_per' => $is_res_per,
-                'type' => 'permanent',
+                'address' => strip_tags($request->permanent_address),
+                'telephone_no' => strip_tags($request->permanent_telephone),
+                'zip_code' => strip_tags($request->permanent_zip_code),
+                'is_res_per' => 0,
+                'is_residential' => 0,
                 'personal_information_id' => $personal_information->id
             ];
 
             $permanent = Address::create($permanent_address);
 
             $data = [
+                'personal_information_id' => $personal_information->id,
                 'personal_information' => $personal_information,
                 'residential' => $residential,
                 'permanent' => $permanent
             ];
             
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json($data, Response::HTTP_OK);
+            return $personal_information;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register personal information.", 400);
         }
     }
     
@@ -127,48 +115,79 @@ class PersonalInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new PersonalInformationResource($personal_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, PersonalInformationRequest $request)
+    public function update($id, PersonalInformationUpdateRequest $request)
     {
         try{
             $personal_information = PersonalInformation::find($id);
 
+            $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
             $personal_information->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $residential_address = [
+                'res_id' => strip_tags($request->res_id),
+                'address' => strip_tags($request->r_address),
+                'zip_code' => strip_tags($request->r_zip_code),
+                'telephone_no' => strip_tags($request->r_telephone),
+                'is_res_per' => $request->is_res_per,
+                'is_residential' => 1,
+                'personal_information_id' => $personal_information->id
+            ];
             
-            return response()->json(['data' => new PersonalInformationResource($personal_information),'message' => 'Employee PDS updated.'], Response::HTTP_OK);
+            if(($residential_address['res_id'] ===  null || $residential_address['res_id'] === 'null') && $residential_address['address'] !== null){
+                Address::create($residential_address);
+            }
+
+            if(!$residential_address['is_res_per']){
+                $permanent_address =  [
+                    'address' => strip_tags($request->p_address),
+                    'telephone_no' => strip_tags($request->p_telephone),
+                    'zip_code' => strip_tags($request->p_zip_code),
+                    'is_res_per' => 0,
+                    'is_residential' => 0,
+                    'personal_information_id' => $personal_information->id
+                ];
+
+                Address::create($permanent_address);
+            }
+
+            if($residential_address['is_res_per']){
+                $per_address = Address::where('is_residential', 0)->where('personal_information_id', $personal_information->id)->first();
+                if($per_address){
+                    $per_address->delete();
+                }
+            }
+            
+            return $personal_information;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee family background.", 400);
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $personal_information = PersonalInformation::findOrFail($id);
@@ -180,12 +199,52 @@ class PersonalInformationController extends Controller
 
             $personal_information -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function generatePDS(Request $request)
+    {
+        try{
+
+            return view('pds.pdsForm');
+            // $options = new Options();
+            // $options->set('isPhpEnabled', true);
+            // $options->set('isHtml5ParserEnabled', true);
+            // $options->set('isRemoteEnabled', true);
+            // $dompdf = new Dompdf($options);
+            // $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+            // $dompdf->loadHtml(view('pds.pdsForm',  []));
+            // $dompdf->setBasePath(public_path());
+            // $dompdf->setPaper('Legal', 'portrait');
+            // $dompdf->render();
+            // $filename = 'Personal Data Sheet.pdf';
+
+            $options = new Options();
+            $options->set('isPhpEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+            $html = view('pds.pdsForm', [])->render();
+            $dompdf->loadHtml($html);
+
+            $dompdf->setPaper('Legal', 'portrait');
+            $dompdf->render();
+            $filename = 'PDS.pdf';
+
+
+            /* Downloads as PDF */
+            $dompdf->stream($filename); 
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'generatePDS', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

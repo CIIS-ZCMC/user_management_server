@@ -4,16 +4,15 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Requests\AuthPinApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Models\IdentificationNumber;
 use App\Models\EmployeeProfile;
+use Illuminate\Support\Facades\Crypt;
 
 class IdentificationNumberController extends Controller
 {
@@ -21,223 +20,195 @@ class IdentificationNumberController extends Controller
     private $PLURAL_MODULE_NAME = 'divisions';
     private $SINGULAR_MODULE_NAME = 'division';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-    
     public function findByPersonalInformationID($id, Request $request)
     {
-        try{
-            $identification = IdentificationNumber::where('personal_information_id',$id)->first();
+        try {
+            $identification = IdentificationNumber::where('personal_information_id', $id)->first();
 
-            if(!$identification)
-            {
+            if (!$identification) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new IdentificationNumberResource($identification), 'message' => 'Employee identification number retrieved.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function findByEmployeeID($id, Request $request)
     {
-        try{
+        try {
             $employee_profile = EmployeeProfile::find($id);
 
-            if(!$employee_profile)
-            {
+            if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $personal_information = $employee_profile->personalInformation;
             $identification = $personal_information->identification;
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new IdentificationNumberResource($identification), 'message' => 'Employee identification number retrieved.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    public function store(IdentificationNumberRequest $request)
+
+    public function store($personal_information_id, IdentificationNumberRequest $request)
     {
-        try{
+        try {
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'personal_information_id'){ 
+                if ($value === 'null' || $value === null || $key === 'personal_information_id') {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                try {
+                    $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                } catch (\Throwable $th) {
+                    $cleanData[$key] = $value;
+                }
             }
+            $cleanData['personal_information_id'] = $personal_information_id;
 
             $identification = IdentificationNumber::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json([
-                'data' => new IdentificationNumberResource($identification) ,
-                "message" => 'New employee identification number registred.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $identification;
+        } catch (\Throwable $th) {
+            throw new \Exception("Failed to register employee identifications number.", 400);
         }
     }
-    
+
     public function show($id, Request $request)
     {
-        try{
+        try {
             $identification = IdentificationNumber::find($id);
 
-            if(!$identification)
-            {
+            if (!$identification) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new IdentificationNumberResource($identification), 'message' => 'Identification number record retrieved.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, IdentificationNumberRequest $request)
     {
-        try{
+        try {
+            $cleanData = [];
             $identification = IdentificationNumber::find($id);
 
-            $cleanData = [];
-            
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'personal_information_id'){ 
+                if($key === 'personal_information_id') continue;
+                if ($value === 'null' || $value === null || $key === 'personal_information_id') {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                try {
+                    $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                } catch (\Throwable $th) {
+                    $cleanData[$key] = $value;
+                }
             }
 
-            $identification -> update($cleanData);
+            $identification->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['data' => new IdentificationNumberResource($identification), "message" => 'Employee Identification number updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $identification;
+        } catch (\Throwable $th) {
+            throw new \Exception("Failed to register employee identifications number.", 400);
         }
     }
-    
-    public function destroy($id, PasswordApprovalRequest $request)
+
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
-        try{
-            $password = strip_tags($request->password);
+        try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $identification = IdentificationNumber::findOrFail($id);
 
-            if(!$identification)
-            {
+            if (!$identification) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $identification -> delete();
-            
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $identification->delete();
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json(['message' => 'Employee identification number record Deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    public function destroyByPersonalInformation($id, PasswordApprovalRequest $request)
+
+    public function destroyByPersonalInformation($id, AuthPinApprovalRequest $request)
     {
-        try{
-            $password = strip_tags($request->password);
+        try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $identification = IdentificationNumber::where('personal_information_id', $id)->first();
 
-            if(!$identification)
-            {
+            if (!$identification) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $identification -> delete();
-            
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $identification->delete();
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json(['message' => 'Employee identification number record Deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
+
+    public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
     {
-        try{
-            $password = strip_tags($request->password);
+        try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
 
-            if(!$employee_profile)
-            {
+            if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $personal_information = $employee_profile->personalInformation;
             $identification = $personal_information->identification;
-            $identification -> delete();
-            
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $identification->delete();
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json(['message' => 'Employee identification number record Deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     protected function encryptData($dataToEncrypt)
     {
-        return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        return Crypt::encrypt($dataToEncrypt);
     }
 }

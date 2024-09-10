@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class UnitResource extends JsonResource
 {
@@ -41,6 +42,10 @@ class UnitResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
+                'created_at' => $this->created_at,
+                'updated_at' => $this->updated_at,
+                'head_profile_url' => config("app.server_domain") . "/photo/profiles/".  $this->head->profile_url,
+                'head_designation' => $this->head->assignedArea->designation,
                 'section' => new SectionResource($this->section),
                 'head_status' => $head_status,
                 'approving_officer' => $approving_officer,
@@ -52,8 +57,11 @@ class UnitResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
             'section' => new SectionResource($this->section),
             'head' => 'NONE',
+            'head_designation' => 'NONE',
             'head_status' => 'No Chief',
             'approving_officer' => 'NONE',
             'officer_in_charge' => 'NONE'

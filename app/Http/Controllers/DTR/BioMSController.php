@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers\DTR;
 
+use App\Helpers\Helpers;
 use Illuminate\Http\Request;
 use App\Models\Devices;
 use App\Methods\BioControl;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Response;
+use App\Models\Biometrics;
 
 class BioMSController extends Controller
 {
     protected $device;
+
+    private $CONTROLLER_NAME = "BioMSController";
 
     public function __construct()
     {
@@ -30,7 +37,7 @@ class BioMSController extends Controller
                     $status = "Online";
                 }
 
-                $data[] = [
+                $item = [
                     "id" => $row->id,
                     "device_name" => $row->device_name,
                     "ip_address" => $row->ip_address,
@@ -44,32 +51,39 @@ class BioMSController extends Controller
                     "created_at" => $row->created_at,
                     "updated_at" => $row->updated_at
                 ];
+
+                // If is_registration is 1, add the item to the beginning of the array
+                if ($row->is_registration == 1) {
+                    array_unshift($data, $item);
+                } else {
+                    $data[] = $item;
+                }
             }
             return response()->json([
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function operatingDevice()
     {
-
         try {
             $data = Devices::where('is_registration', 0)->get();
 
             return response()->json([
-                'data' => $data
+                'data' => $data ?? []
             ]);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'operatingDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function registrationDevice()
     {
-
         try {
             $data = Devices::where('is_registration', 1)->get();
 
@@ -77,7 +91,8 @@ class BioMSController extends Controller
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'registrationDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -110,7 +125,7 @@ class BioMSController extends Controller
             if (count($validation) == 0) {
                 /* **
                 * here we only allow 1 registration device
-                
+
                 */
                 if ($is_registration) {
                     $check_if_registration_exist = Devices::where('is_registration', 1)->get();
@@ -130,7 +145,8 @@ class BioMSController extends Controller
             }
             return response()->json(['message' => 'Device Already Exist']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'addDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -145,13 +161,25 @@ class BioMSController extends Controller
             }
             return response()->json(['message' => 'Connection Failed']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'testDeviceConnection', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function updateDevice(Request $request)
     {
         try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+
+
             $device_id = $request->device_id;
             $device_name = $request->device_name;
             $ip_address = $request->ip_address;
@@ -200,7 +228,8 @@ class BioMSController extends Controller
                 ]);
             return response()->json(['message' => 'Device Updated Successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateDevice', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -208,11 +237,31 @@ class BioMSController extends Controller
     public function deleteDevice(Request $request)
     {
         try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
             $device_id = $request->device_id;
             Devices::findorFail($device_id)->delete();
             return response()->json(['message' => 'Device Deleted Successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'deleteDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function fetchBiometrics(Request $request)
+    {
+        try {
+            $data = Biometrics::all();
+            return $data;
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchBiometrics', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

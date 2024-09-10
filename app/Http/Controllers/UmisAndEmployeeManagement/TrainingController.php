@@ -4,12 +4,15 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Requests\TrainingManyRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\TrainingRequest;
 use App\Http\Resources\TrainingResource;
 use App\Models\Training;
@@ -21,13 +24,6 @@ class TrainingController extends Controller
     private $PLURAL_MODULE_NAME = 'trainings';
     private $SINGULAR_MODULE_NAME = 'training';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-    
     public function findByPersonalInformationID($id, Request $request)
     {
         try{
@@ -37,15 +33,13 @@ class TrainingController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
                 'message' => 'Employee Training record retrieved'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -62,15 +56,13 @@ class TrainingController extends Controller
 
             $personal_information = $employee_profile->personalInformation;
             $training = $personal_information->training;
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
                 'message' => 'Employee Training record retrieved'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -81,7 +73,7 @@ class TrainingController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'type_is_lnd'){
+                if($value === null || $key === 'type_is_ld'){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -90,30 +82,76 @@ class TrainingController extends Controller
 
             $training = Training::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
-                'message' => 'New training record retrived.'
+                'message' => 'New Learning and Development (L&D) record added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function storeMany(Request $request)
+    public function employeeUpdateTraining(Request $request)
+    {
+        try{
+            $personal_information = $request->user->personalInformation;
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if ( $value == "null" || $value == null) {
+                    $cleanData[$key] = null;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/training');
+                    $cleanData['attachment'] = $attachment;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $cleanData['personal_information_id'] = $personal_information->id;
+            $cleanData['is_request'] = true;
+            $training = Training::create($cleanData);
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            $response_data =  [
+                "id"=> $personal_information->id,
+                "name" => $personal_information->name(),
+                "assigned_area" => $personal_information->employeeProfile->assignedArea->findDetails()['details']->name,
+                'designation' => $personal_information->employeeProfile->assignedArea->designation->name,
+                "employee_id" => $personal_information->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$personal_information->employeeProfile->profile_url,
+                "type" => 'Training',
+                "date_requested" => Carbon::now(),
+                "approved_at" => null,
+                "details" => new TrainingResource($training)
+            ];
+
+            return response()->json([
+                'data' =>   $response_data ,
+                'message' => 'New Learning and Development (L&D) record added.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function storeMany($personal_information_id, TrainingManyRequest $request)
     {
         try{
             $success = [];
-            $failed = [];
-            $personal_information_id = strip_tags($request->personal_information_id);
 
             foreach($request->trainings as $training){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($training as $key => $value) {
-                    if($value === null || $key === 'type_is_lnd'){
+                    if($value === null){
                         $cleanData[$key] = $value;
                         continue;
                     }
@@ -129,24 +167,10 @@ class TrainingController extends Controller
 
                 $success[] = $training;
             }
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => TrainingResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-
-            return response()->json([
-                'data' => TrainingResource::collection($success),
-                'message' => 'New training record retrived.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee training record.", 400);
         }
     }
     
@@ -159,60 +183,148 @@ class TrainingController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
                 'message' => 'Training record retrived.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, TrainingRequest $request)
+    public function update($id, TrainingManyRequest $request)
     {
         try{
+            $success = [];
+
+            foreach($request->trainings as $training){
+                $cleanData = [];
+                foreach ($training as $key => $value) {
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
+                    if($value === null){
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+
+                if($training->id === null || $training->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $training = Training::create($cleanData);
+                    if(!$training) continue;
+                    $success[] = $training;
+                    continue;
+                }
+                
+                $training = Training::find($training->id);
+                $training->update($cleanData);
+                $success[] = $training;
+            }
+            
+            return $success;
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee training record.", 400);
+        }
+    }
+    
+    public function updateSingleData($id, TrainingRequest $request)
+    {
+        try{
+            $cleanData = [];
             $training = Training::find($id);
 
-            $cleanData = [];
-
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'type_is_lnd'){
+                if($key === 'attachment') continue;
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $training -> update($cleanData);
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $training->update($cleanData);
             
             return response()->json([
                 'data' => new TrainingResource($training),
-                'message' => 'Training record updated.'
+                'message' => "Training successfully updated"
+            ]);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee training record.", 400);
+        }
+    }
+
+    public function updateMany(TrainingManyRequest $request)
+    {
+        try{
+            $cleanData  = [];
+            $failed = [];
+            $success = [];
+
+            foreach($request->trainings as $training){
+                $cleanNewData = [];
+                foreach($training as $key => $fields){
+                    if($fields === null || $fields === 'null'){
+                        $cleanNewData[$key] = $fields;
+                        continue;
+                    }
+                    $cleanNewData[$key] = strip_tags($fields);
+                }
+                $cleanData[] = $cleanNewData;
+            }
+
+            foreach ($cleanData as $key => $training) {
+                $training_new = Training::find($training->id);
+
+                if(!$training_new)
+                {
+                    $failed[] = $training;
+                    continue;
+                }
+
+                $training_new->update($cleanData);
+                $success[] = $training_new;
+            }
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($cleanData) === count($failed)){
+                return response()->json([
+                    'message' => "Request to update training records has failed.",
+                    'failed' => $failed
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if(count($failed) > 0 && count($success) > count($failed)){
+                return response()->json([
+                    'data' => TrainingResource::collection($success), 
+                    'failed' => $failed,
+                    'message' => "Successfully update some training record.",
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => TrainingResource::collection($success),
+                'message' => 'Employee training data is updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $password = strip_tags($request->password);
+            // $user = $request->user;
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-            }
+            // if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            // }
 
             $training = Training::findOrFail($id);
 
@@ -223,26 +335,23 @@ class TrainingController extends Controller
 
             $training -> delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Training record deleted'], Response::HTTP_OK);
+            return response()->json(['message' => 'Learning and Development (L&D) record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
+    public function destroyByPersonalInformationID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $training = Training::where('personal_information_id', $id)->get();
@@ -257,26 +366,23 @@ class TrainingController extends Controller
                 $value -> delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
+    public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -294,11 +400,11 @@ class TrainingController extends Controller
                 $value -> delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

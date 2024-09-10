@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -13,15 +14,13 @@ use App\Models\EmployeeProfile;
 class Schedule extends Model
 {
     use HasFactory, SoftDeletes;
-    
+
     protected $table = 'schedules';
 
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'month',
-        'date_start',
-        'date_end',
+        'date',
         'is_weekend',
         'status',
         'remarks',
@@ -46,5 +45,58 @@ class Schedule extends Model
     public function employee()
     {
         return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
+    }
+
+    public function employeeProfile()
+    {
+        return $this->belongsToMany(EmployeeProfile::class);
+    }
+
+    public function isOnCall()
+    {
+        return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule');
+    }
+
+    public function employeeSchedule()
+    {
+        return $this->belongsTo(EmployeeSchedule::class);
+    }
+
+    public function is24HoursSchedule()
+    {
+        $timeShift = $this->timeShift; // Assuming 'timeShift' is the relationship to your TimeShift model
+        if (!$timeShift) {
+            return false; // If no time shift is associated, return false
+        }
+
+        // Parse the time shift values
+        $firstIn = Carbon::parse($timeShift->first_in);
+        $firstOut = Carbon::parse($timeShift->first_out);
+        $secondIn = $timeShift->second_in ? Carbon::parse($timeShift->second_in) : null;
+        $secondOut = $timeShift->second_out ? Carbon::parse($timeShift->second_out) : null;
+
+        // Calculate the durations of the first segment (if second segment exists)
+        $duration1 = $firstOut->diffInMinutes($firstIn);
+        // Calculate the durations of the second segment (if exists)
+        $duration2 = ($secondIn && $secondOut) ? $secondOut->diffInMinutes($secondIn) : 0;
+
+        // Total duration should be 24 hours (1440 minutes) or more
+        return ($duration1 + $duration2) >= 1440;
+    }
+
+    public function employeeScheduleTotalHrs()
+    {
+        $employee_id = $this->employeeProfile->id;
+
+        return $employee_id; // not finish
+    }
+
+    public function monthlyWorkingHours($date)
+    {
+        $month_year = Carbon::parse($date)->format('m-Y');
+        $monthlyWorkHours = MonthlyWorkHours::where('month_year', $month_year)->first();
+
+        return $monthlyWorkHours ? $monthlyWorkHours->work_hours : 0;
+
     }
 }

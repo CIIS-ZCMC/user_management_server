@@ -17,12 +17,21 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();
             $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');;
-            $table->string('reason')->nullable();
+            $table->text('reason')->nullable();
             $table->string('credit_value');
+            $table->boolean('is_qualified')->nullable();
             $table->string('status')->nullable();
-            $table->string('date')->nullable();
-            $table->string('time')->nullable();
             $table->string('attachment')->nullable();
+            $table->string('attachment_size')->nullable();
+            $table->string('attachment_path')->nullable();
+            $table->text('remarks')->nullable();
+            $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
+            $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
+            $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('employee_oic_id')->unsigned()->nullable();
             $table->timestamps();
         });
     }

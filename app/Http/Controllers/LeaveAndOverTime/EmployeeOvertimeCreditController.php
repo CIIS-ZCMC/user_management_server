@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Models\EmployeeOvertimeCredit;
 use App\Http\Controllers\Controller;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
 use App\Models\OvertimeApplication;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class EmployeeOvertimeCreditController extends Controller
      */
     public function create()
     {
-        //
+
     }
 
     /**
@@ -34,14 +35,12 @@ class EmployeeOvertimeCreditController extends Controller
     public function store(Request $request)
     {
 
-
-        // Assume you have biometrics data for all employees
         $biometricsData = [
             [
                 'employee_profile_id' => 1,
                 'date' => '2023-12-12',
                 'from_time' => '08:00:00',
-                'to_time' => '17:00:00',
+                'to_time' => '17:30:00',
             ],
             [
                 'employee_profile_id' => 1,
@@ -64,19 +63,18 @@ class EmployeeOvertimeCreditController extends Controller
 
         ];
 
-        $currentMonth = date('m');
-        $overtimeApplications = OvertimeApplication::where('status', 'approved')->with('activities', 'directDates')->get();
 
+        $currentMonth = date('m');
+        $pastMonth = date('m', strtotime('-1 month'));
+        $overtimeApplications = OvertimeApplication::where('status', 'approved')->with('activities', 'directDates')->get();
       foreach ($overtimeApplications as $overtimeApplication) {
         if (isset($overtimeApplication->activities)) {
 
-        //    return $overtimeApplication->relationLoaded('activities');
             // Check if the overtime application is approved
-
                 foreach ($overtimeApplication->activities as $activity) {
                     foreach ($activity->dates as $date) {
                         // Check if the date is in the current month
-                        if (date('m', strtotime($date->date)) == $currentMonth) {
+                        if (date('m', strtotime($date->date)) == $pastMonth) {
                             // Iterate over employees before checking for matching biometric data
                             foreach ($date->employees as $employee) {
                                 // Check if there is biometrics data available for the current date and employee
@@ -111,18 +109,44 @@ class EmployeeOvertimeCreditController extends Controller
                                         $overlapFromTime = max($biometricFromTime, $overtimeFromTime);
                                         $overlapToTime = min($biometricToTime, $overtimeToTime);
 
-                                        $totalOvertimeHours = $overlapToTime->diffInHours($overlapFromTime);
+                                        $totalOvertimeHours = $overlapToTime->diffInMinutes($overlapFromTime);
                                         // Store the total overtime hours for each unique combination in the database
                                         $date_compare=$date->date;
                                         $total =  $this->calculateTotal($date_compare);
-                                        EmployeeOvertimeCredit::create([
-                                            'employee_profile_id' => $employee->employee_profile_id,
-                                            'date' => date('Y-m-d'),
-                                            'operation' => 'add',
-                                            'overtime_application_id' =>$overtimeApplication->id,
-                                            'credit_value' => $totalOvertimeHours * $total,
-                                            'overtime_hours' => $totalOvertimeHours * $total,
-                                        ]);
+                                        $totalOvertimeHoursFormatted = number_format($totalOvertimeHours / 60, 1);
+                                        $employeeregular = EmployeeProfile::where('id', $employee->employee_profile_id)
+                                        ->whereHas('employmentType', function ($query) {
+                                            $query->where('name', 'Permanent Full-Time')
+                                                  ->orWhere('name', 'Permanent Part-Time');
+                                        })
+                                        ->first();
+                                        if($employeeregular)
+                                        {
+                                            $currentYear = date('Y');
+                                            $nextYear = $currentYear + 1;
+                                            $validUntil = $nextYear . '-12-31';
+                                            // Check if a EmployeeOvertimeCredit record exists for the employee with the calculated valid until date
+                                            $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee->employee_profile_id)
+                                                ->where('valid_until', $validUntil)
+                                                ->first();
+
+                                            if ($existingCredit) {
+                                                // Update the existing record
+                                                $existingCredit->earned_credit_by_hour += $totalOvertimeHoursFormatted;
+                                                $existingCredit->save();
+                                            } else {
+                                                // Create a new record
+                                                EmployeeOvertimeCredit::create([
+                                                    'employee_profile_id' => $employee->employee_profile_id,
+                                                    'earned_credit_by_hour' => $totalOvertimeHoursFormatted,
+                                                    'used_credit_by_hour' => '0',
+                                                    'max_credit_monthly' => '40',
+                                                    'max_credit_annual' => '120',
+                                                    'valid_until' => $validUntil,
+                                                ]);
+                                            }
+                                        }
+
                                     }
                                 }
                             }
@@ -170,18 +194,29 @@ class EmployeeOvertimeCreditController extends Controller
                                         $overlapFromTime = max($biometricFromTime, $overtimeFromTime);
                                         $overlapToTime = min($biometricToTime, $overtimeToTime);
 
-                                        $totalOvertimeHours = $overlapToTime->diffInHours($overlapFromTime);
+                                        $totalOvertimeHours = $overlapToTime->diffInMinutes($overlapFromTime);
                                         // Store the total overtime hours for each unique combination in the database
                                         $date_compare=$date->date;
                                         $total =  $this->calculateTotal($date_compare);
-                                        EmployeeOvertimeCredit::create([
-                                            'employee_profile_id' => $employee->employee_profile_id,
-                                            'date' => date('Y-m-d'),
-                                            'operation' => 'add',
-                                            'overtime_application_id' =>$overtimeApplication->id,
-                                            'credit_value' => $totalOvertimeHours * $total,
-                                            'overtime_hours' => $totalOvertimeHours * $total,
-                                        ]);
+                                        $totalOvertimeHoursFormatted = number_format($totalOvertimeHours / 60, 1);
+                                        $employeeregular = EmployeeProfile::where('id', $employee->employee_profile_id)
+                                        ->whereHas('employmentType', function ($query) {
+                                            $query->where('name', 'Regular Full-Time')
+                                                  ->orWhere('name', 'Regular Part-Time');
+                                        })
+                                        ->first();
+
+                                        if($employeeregular)
+                                        {
+                                            EmployeeOvertimeCredit::create([
+                                                'employee_profile_id' => $employee->employee_profile_id,
+                                                'date' => date('Y-m-d'),
+                                                'operation' => 'add',
+                                                'overtime_application_id' =>$overtimeApplication->id,
+                                                'credit_value' => $totalOvertimeHoursFormatted,
+                                                'overtime_hours' => $totalOvertimeHoursFormatted,
+                                            ]);
+                                        }
                                     }
                                 }
                             }
@@ -201,7 +236,7 @@ class EmployeeOvertimeCreditController extends Controller
     {
 
             $carbonDate = Carbon::parse($date);
-            if ($carbonDate->isWeekend() || $carbonDate->isHoliday()) {
+            if ($carbonDate->isWeekend()) {
                 return 1.5;
             }
             else {
@@ -225,16 +260,51 @@ class EmployeeOvertimeCreditController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, EmployeeOvertimeCredit $employeeOvertimeCredit)
+    public function updateCredit(Request $request, EmployeeOvertimeCredit $employeeOvertimeCredit)
     {
-        //
+        $employeeId=$request->employee_id;
+        $validUntil=$request->valid_until;
+        $creditValue=$request->credit_value;
+        $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
+        ->where('valid_until', $validUntil)
+        ->first();
+        if ($existingCredit) {
+            $existingCredit->earned_credit_by_hour += $creditValue;
+            $existingCredit->save();
+        } else {
+            // Create a new record
+            EmployeeOvertimeCredit::create([
+                'employee_profile_id' => $employeeId,
+                'earned_credit_by_hour' => $creditValue,
+                'used_credit_by_hour' => '0',
+                'max_credit_monthly' => '40',
+                'max_credit_annual' => '120',
+                'valid_until' => $validUntil,
+            ]);
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(EmployeeOvertimeCredit $employeeOvertimeCredit)
     {
-        //
+        $currentDate = date('Y-m-d');
+
+        // Retrieve records where valid_until is past the current date
+        $expiredCredits = EmployeeOvertimeCredit::where('valid_until', '<', $currentDate)->get();
+
+        // Log the expired credits before deleting them
+        foreach ($expiredCredits as $expiredCredit) {
+            // Create a log entry for each expired credit
+            EmployeeOvertimeCreditLog::create([
+                'employee_profile_id' => $expiredCredit->employee_profile_id,
+                'expired_credit_by_hour' => $expiredCredit->earned_credit_by_hour,
+                'action' => 'Expired',
+            ]);
+        }
+
+        // Delete records where valid_until is past the current date
+        $deletedCount = EmployeeOvertimeCredit::where('valid_until', '<', $currentDate)->delete();
+
+
     }
 }

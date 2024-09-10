@@ -31,6 +31,34 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    'app_key' => env('APP_KEY'),
+    'server_domain' => env('SERVER_DOMAIN'),
+    'client_domain' => env('CLIENT_DOMAIN'),
+    'socket_server_domain' => env('SOCKET_SERVER_DOMAIN'),
+
+    'cookie_name' => env('COOKIE_NAME'),
+    'system_abbreviation' => env('SYSTEM_ABBREVIATION'),
+    'data_storing_key' => env('DATA_STORING_ENCRYPTION_KEY'),
+    'encrypt_decrypt_algorithm' => env('ENCRYPT_DECRYPT_ALGORITHM'),
+    'database_encryption_key' => env('DATABASE_ENCRYPTION_KEY'),
+    'salt_value' => env('SALT_VALUE'),
+    'data_key_encryption' => env('DATA_KEY_ENCRYPTION'),
+    
+    'google_api_client_id' => env('GOOGLE_API_CLIENT_ID'),
+    'google_api_client_secret' => env('GOOGLE_API_CLIENT_SECRET'),
+    'system_email_token' => env('SYSTEM_EMAIL_TOKEN'),
+    'system_email' => env('SYSTEM_EMAIL'),
+    'system_name' => env('SYSTEM_NAME'),
+    
+    'alloted_valid_time_for_firstentry' => env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY'),
+    'alloted_dtr_interval' => env('ALLOTED_DTR_INTERVAL'),
+    'required_working_hours' => env('REQUIRED_WORKING_HOURS'),
+    'firstin' => env('FIRSTIN'),
+    'firstout' => env('FIRSTOUT'),
+    'secondin' => env('SECONDIN'),
+    'secondout' => env('SECONDOUT'),
+    'max_allowed_entry_oncall' => env('MAX_ALLOWED_ENTRY_ONCALL'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode

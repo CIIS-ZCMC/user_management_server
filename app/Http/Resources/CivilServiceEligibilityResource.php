@@ -14,8 +14,8 @@ class CivilServiceEligibilityResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $license_number = $this->license_number === null?'NONE':$this->license_number;
-        $license_release_at = $this->license_release_at === null?'NONE':$this->license_release_at;
+        $license_number = $this->license_number;
+        $license_release_at = $this->license_release_at;
 
         return [
             'id'=> $this->id,
@@ -24,7 +24,10 @@ class CivilServiceEligibilityResource extends JsonResource
             'date_of_examination' => $this->date_of_examination,
             'place_of_examination' => $this->place_of_examination,
             'license_number' => $license_number,
-            'license_release_at' => $license_release_at
+            'license_release_at' => $license_release_at,
+            'attachment' =>   config('app.server_domain')."/eligibilities/".$this->attachment
+
         ];
-    }
+
+}
 }

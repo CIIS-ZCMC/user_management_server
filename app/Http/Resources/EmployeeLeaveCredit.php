@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -12,14 +13,14 @@ class EmployeeLeaveCredit extends JsonResource
     {
         return [
             "id"=> $this->id,
-            'employee_profile' => $this->employee_profile ? new EmployeeProfile( $this->EmployeeProfile) : null,
-            'leave_application' => $this->leave_application ? new LeaveApplication( $this->leave_application) : null,
-            'leave_type' => $this->leave_type ? new LeaveType( $this->leave_type) : null,
-            'operation' => $this->operation,
-            'undertime_total' => $this->undertime_total,
-            'working_hours_total' => $this->working_hours_total,
-            'credit_value' => $this->credit_value,
-            'date' => $this->date,
+            'employee_profile_id' => $this->employee_profile_id,
+            'name' => $this->employeeProfile->personalInformation->name(),
+            'leave_type' => $this->leaveType,
+            'total_leave_credits' => (float)$this->total_leave_credits,
+            'used_leave_credits' => (float)$this->used_leave_credits,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'logs' => $this->logs ? EmployeeLeaveCreditLogResource::collection($this->logs) : null,
         ];
     }
 }

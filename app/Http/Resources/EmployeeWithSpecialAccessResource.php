@@ -22,7 +22,7 @@ class EmployeeWithSpecialAccessResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'name' => $this->personalInformation->name(),
+            'name' => $this->personalInformation->nameWithSurnameFirst(),
             'job_position' => $designation->name,
             'area' => $area['details']->name,
             'system_role' => PositionSystemRoleOnlyResource::collection($position_system_roles),

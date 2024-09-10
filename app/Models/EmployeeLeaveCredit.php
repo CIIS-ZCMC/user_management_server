@@ -8,19 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class EmployeeLeaveCredit extends Model
 {
     use HasFactory;
-    protected $table = 'employee_leave_credits';
 
+    protected $table = 'employee_leave_credits';
+    protected $casts = [
+        'total_leave_credits' => 'float',
+    ];
     public $fillable = [
         'employee_profile_id',
-        'leave_application_id',
         'leave_type_id',
-        'operation',
-        'under_time_total',
-        'working_hours_total',
-        'credit_value',
-        'true_credit_value',
-        'date',
+        'total_leave_credits',
+        'used_leave_credits'
     ];
+
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
@@ -31,5 +30,14 @@ class EmployeeLeaveCredit extends Model
         return $this->belongsTo(LeaveType::class);
     }
 
+    public function logs()
+    {
+        return $this->hasMany(EmployeeLeaveCreditLogs::class);
+    }
+
+    public function salaryGrade()
+    {
+        return $this->belongsTo(SalaryGrade::class);
+    }
 
 }

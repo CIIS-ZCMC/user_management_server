@@ -13,13 +13,16 @@ class MoneApplicationLog extends Model
         'monetization_application_id',
         'action_by_id',
         'action',
-        'status',
-        'date',
-        
-       
-    ];
-    public function montization_application(){
-        return $this->belongsTo(MonetizationApplication::class);
 
+
+    ];
+    public function leaveApplications()
+    {
+        return $this->belongsTo(LeaveApplication::class, 'leave_application_id');
+    }
+
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
     }
 }

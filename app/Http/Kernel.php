@@ -40,8 +40,8 @@ class Kernel extends HttpKernel
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class
         ],
     ];
 
@@ -66,5 +66,6 @@ class Kernel extends HttpKernel
         'auth.cookie' => \App\Http\Middleware\AuthenticateWithCookie::class,
         'auth.permission' => \App\Http\Middleware\Authorization::class,
         'csp.token' => \App\Http\Middleware\CSPAttachment::class,
+        'request.timing' => \App\Http\Middleware\RequestTimingMiddleware::class,
     ];
 }

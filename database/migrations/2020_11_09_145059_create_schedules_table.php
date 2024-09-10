@@ -20,9 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('holiday_id')->nullable();
             $table->foreign('holiday_id')->references('id')->on('holidays');
 
-            $table->string('month');
-            $table->date('date_start');
-            $table->date('date_end');
+            $table->date('date');
             $table->boolean('is_weekend');
             $table->boolean('status')->default(true);
             $table->text('remarks')->nullable();

@@ -12,14 +12,26 @@ class EmployeeOvertimeCredit extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'overtime_application_id',
-        'operation',
-        'overtime_hours',
-        'credit_value',
-        'date',
+        'earned_credit_by_hour',
+        'used_credit_by_hour',
+        'max_credit_monthly',
+        'max_credit_annual',
+        'valid_until',
+        'is_expired'
     ];
+    protected $casts = [
+        'earned_credit_by_hour' => 'float', // Cast the attribute to a float
+
+    ];
+
     public function employeeProfile()
-{
-    return $this->belongsTo(EmployeeProfile::class);
-}
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
+    }
+
+
+    public function logs()
+    {
+        return $this->hasMany(EmployeeOvertimeCreditLog::class, 'employee_ot_credit_id');
+    }
 }

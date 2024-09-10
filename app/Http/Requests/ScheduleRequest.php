@@ -22,7 +22,9 @@ class ScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'employee.*' => 'required|array',
+            'selected_date.*' => 'required|array',
+            'time_shift_id.*' => 'required|array',
         ];
     }
 }

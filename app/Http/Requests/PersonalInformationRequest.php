@@ -22,8 +22,7 @@ class PersonalInformationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
-            'first_name' => 'required|string|max:255',  
+            'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'name_extension' => 'nullable|string|max:255',
@@ -33,19 +32,18 @@ class PersonalInformationRequest extends FormRequest
             'date_of_birth' => 'required|date:Y-m-d',
             'place_of_birth' => 'required|string|max:255',
             'civil_status' => 'required|string|max:255',
-            'date_of_marriage' => 'nullable|date:Y-m-d',
             'citizenship' => 'required|string|max:255',
-            'height' => 'required|integer',
-            'weight' => 'required|integer',
+            'country' => 'nullable|string|max:255',
+            'height' => 'nullable|numeric',
+            'weight' => 'nullable|numeric',
             'blood_type' => 'nullable|string|max:255',
-            'date_hired' => 'required|date:Y-m-d',
-            'r_address' => 'required|string|max:255',
-            'r_telephone' => 'nullable|string|max:255',
-            'r_zip_code' => 'required|string|max:255',
+            'residential_address' => 'required|string|max:255',
+            'residential_telephone' => 'nullable|string|max:255',
+            'residential_zip_code' => 'nullable|string|max:255',
             'is_res_per' => 'nullable|integer',
-            'p_address' => 'nullable|string|max:255',
-            'p_telephone' => 'nullable|string|max:255',
-            'p_zip_code' => 'required|string|max:255',
+            'permanent_address' => 'nullable|string|max:255',
+            'permanent_telephone' => 'nullable|string|max:255',
+            'permanent_zip_code' => 'nullable|string|max:255',
         ];
     }
 }

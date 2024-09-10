@@ -15,12 +15,22 @@ class RequirementLog extends JsonResource
      */
     public function toArray($request)
     {
+        $employee = [
+            'name'=> $this->employee->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->employee->assignedArea->designation->name,
+                'code' => $this->employee->assignedArea->designation->code,
+            ],
+            'area' => $this->employee->assignedArea->findDetails()['details']->name,
+        ];
+
         return [
-            'id' => $this->id,
-            // 'leave_requirement_id' => $this->name,
-            'action' => $this->action,
-            'action_by' => $this->actioned_by ? new EmployeeProfile( $this->action_by) : null,
-           
+            'id'                    => $this->id,
+            'action'                => $this->action,
+            'action_by'             => $employee,
+            'created_at'            => (string) $this->created_at,
+            'updated_at'            => (string) $this->updated_at,
         ];
     }
 }

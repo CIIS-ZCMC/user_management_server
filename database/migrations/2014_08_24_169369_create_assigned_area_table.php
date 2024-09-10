@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('assigned_areas', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('salary_grade_id')->nullable();
+            $table->foreign('salary_grade_id')->references('id')->on('salary_grades');
             $table->integer('salary_grade_step')->default(1);
             $table->unsignedBigInteger('employee_profile_id')->nullable();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
@@ -31,6 +33,7 @@ return new class extends Migration
             $table->unsignedBigInteger('plantilla_number_id')->nullable();
             $table->foreign('plantilla_number_id')->references('id')->on('plantilla_numbers');
             $table->datetime('effective_at');
+            $table->datetime('end_date')->nullable();
             $table->timestamps();
         });
     }

@@ -2,24 +2,18 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\EmployeeScheduleResource;
+use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
-use App\Models\Schedule;
-use App\Models\EmployeeProfile;
 
 use App\Http\Resources\ExchangeDutyResource;
 use App\Http\Requests\ExchangeDutyRequest;
-use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
+use App\Models\TimeShift;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-
-use Carbon\Carbon;
-use DateTime;
+use Illuminate\Support\Carbon;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -31,53 +25,62 @@ class ExchangeDutyController extends Controller
     private $PLURAL_MODULE_NAME = 'exchange duties';
     private $SINGULAR_MODULE_NAME = 'exchange duty';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-    
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            return response()->json(['data' => ExchangeDutyResource::collection(ExchangeDuty::all())], Response::HTTP_OK);
+            $user = $request->user;
+
+            if ($user->employee_id === "1918091351") {
+                $model = ExchangeDuty::all();
+            } else {
+                $model = ExchangeDuty::where('requested_employee_id', $user->id)
+                    ->Orwhere('approving_officer', $user->id)
+                    ->where('deleted_at', null)
+                    ->get();
+            }
+
+            return response()->json([
+                'data' => ExchangeDutyResource::collection($model),
+                // 'time_shift' => TimeShiftResource::collection(TimeShift::all())
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function create(Request $request) {
+    public function create(Request $request)
+    {
         try {
-            //code...
+
+            $user = $request->user;
+            $model = ExchangeDuty::where('requested_employee_id', $user->id)->get();
+            return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
-            //throw $th;
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(ExchangeDutyRequest $request)
     {
         try {
-            $cleanData = [];
+            $user = $request->user;
+            $assigned_area = $user->assignedArea->findDetails();
 
+            $cleanData = [];
             foreach ($request->all() as $key => $value) {
                 if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_array($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -90,71 +93,66 @@ class ExchangeDutyController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $schedule = Schedule::where('id', $cleanData['schedule_id'])->first();
+            $data = null;
+            $requester = $cleanData['requested_employee_id'];    // requester id on payload
+            $reliever = $cleanData['reliever_employee_id'];      // reliever id on payload
+            $date_swap = $cleanData['requested_date_to_swap'];       // date schedule of requester want to swap
+            $date_duty = $cleanData['requested_date_to_duty'];       // date of requester want to duty
 
-            if ($schedule) {
-                $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
+            $requester_schedule = EmployeeSchedule::where('employee_profile_id', $requester)
+                ->whereHas('schedule', function ($query) use ($date_swap) {
+                    $query->where('date', $date_swap);
+                })->first();
 
-                if ($reliever) {
-                    $query = DB::table('employee_profile_schedule')->where([
-                        ['employee_profile_id', '=', $reliever->id],
-                        ['schedule_id', '=', $schedule->id],
-                    ])->first();
-
-                    if ($query) {
-                        $data = ExchangeDuty::create($cleanData);
-
-                        $variable = $cleanData['approve_by'];
-                        foreach ($variable as $key => $value) {
-                            $approve_by = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
-
-                            if (!$approve_by) {
-                                $msg = 'No Employee Found (Approve By)';
-
-                            } else { 
-
-                                $data->approval()->attach($approve_by);
-                                $msg = 'New exchange duty requested.';
-                            }
-                        }
-                    }
-                    
-                } else {
-                    return response()->json(['message' => 'No employee found.'], Response::HTTP_NOT_FOUND);
-                }
-            } else {
-                return response()->json(['message' => 'No schedule found.'], Response::HTTP_NOT_FOUND);
+            if (!$requester_schedule) {
+                return response()->json(['message' => 'Employee requester has no schedule on ' . $date_swap . '.'], Response::HTTP_NOT_FOUND);
             }
-           
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating.'.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
+
+            $reliever_schedule = EmployeeSchedule::where('employee_profile_id', $reliever)
+                ->whereHas('schedule', function ($query) use ($date_duty) {
+                    $query->where('date', $date_duty);
+                })->first();
+
+            if (!$reliever_schedule) {
+                return response()->json(['message' => 'Employee reliever has no schedule on ' . $date_duty . '.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
+
+            $cleanData['approving_officer'] = $approve_by['approve_by'];
+
+            $data = ExchangeDuty::create($cleanData);
+
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' => new ExchangeDutyResource($data),
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied'),
+                'message' => 'Requested Swap Schedule.'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
+    public function edit(Request $request)
     {
         try {
-            $data = new ExchangeDutyResource(ExchangeDuty::findOrFail($id));
+            $user = $request->user;
 
-            if(!$data)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
+            $model = ExchangeDuty::where('reliever_employee_id', $user->id)
+                ->where('deleted_at', null)
+                ->get();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json([
+                'data' => ExchangeDutyResource::collection($model),
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -162,46 +160,62 @@ class ExchangeDutyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update($id, Request $request)
     {
         try {
+            $user = $request->user;
+
             $data = ExchangeDuty::findOrFail($id);
 
-            if(!$data) {
+            if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $cleanData = [];
+            $cleanData['pin'] = strip_tags($request->password);
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
-            $data->update($cleanData);
+            switch ($data->status) {
+                case 'applied':
+                    $data->update(['status' => $request->approval_status]);
+                    break;
 
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.'.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $approve_by ,'message' => 'Success'], Response::HTTP_OK);
+                case 'for head approval':
+                    // Find the schedule of the requester
+                    $requester = EmployeeSchedule::where('employee_profile_id', $data->requested_employee_id)
+                        ->whereHas('schedule', function ($query) use ($data) {
+                            $query->where('date', $data->requested_date_to_swap);
+                        })->first();
+
+                    // Find the schedule of the reliever
+                    $reliever = EmployeeSchedule::where('employee_profile_id', $data->reliever_employee_id)
+                        ->whereHas('schedule', function ($query) use ($data) {
+                            $query->where('date', $data->requested_date_to_duty);
+                        })->first();
+
+                    // Update the requester's schedule with the reliever's employee profile ID
+                    $requester->update(['employee_profile_id' => $data->reliever_employee_id]);  // Swap requester schedule to reliever
+
+                    // Update the reliever's schedule with the requester's employee profile ID
+                    $reliever->update(['employee_profile_id' => $data->requested_employee_id]); // swap reliever schedule to requester
+
+                    $data->update(['status' => $request->approval_status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
+                    break;
+            }
+
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' => new ExchangeDutyResource($data),
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, $request->approval_status),
+                'message' => 'Approved Complete.'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-                        
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -210,7 +224,7 @@ class ExchangeDutyController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-          try {
+        try {
             $data = ExchangeDuty::withTrashed()->findOrFail($id);
 
             if (!$data) {
@@ -222,67 +236,77 @@ class ExchangeDutyController extends Controller
             } else {
                 $data->delete();
             }
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in delete.'.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete.' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' => $data,
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $request->user->id, 'Destroy'),
+                'msg' => 'Request successfully deleted.'
+            ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    /**
-     * Update Approval of Request
-     */
-    public function approve(Request $request, $id) {
+    public function findMySchedule(Request $request)
+    {
         try {
-            $cleanData = [];
+            $user = $request->user->id;
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $data = EmployeeSchedule::where('employee_profile_id', $user)
+                ->whereHas('schedule', function ($query) use ($request) {
+                    $query->where('date', $request->date_selected);
+                })->get();
 
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-                
-                if (is_bool($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
-            }
-            
-            $data = DB::table('exchange_duty_approval')->where([
-                ['exchange_duty_id',    '=', $id],
-                ['employee_profile_id', '=', $cleanData['user']],
-            ])->first();
-
-            if(!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            if ($data->isEmpty()) {
+                return response()->json(['message' => "Please select a date with schedule."], Response::HTTP_OK);
             }
 
-            $query = DB::table('exchange_duty_approval')->where('id', $data->id)->update([
-                'approval_status' => $cleanData['approval_status']
-            ]);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in approve '.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $query, 'message' => 'Success'], Response::HTTP_OK);
-
+            return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'approve', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findSchedule', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function findRelieverSchedule(Request $request)
+    {
+        try {
+
+            $user = $request->user->id;
+            $reliever_id = $request->reliever_id;
+            $date_to_swap = $request->date_to_swap;
+            $date_to_duty = $request->date_to_duty;
+
+            if ($date_to_swap !== $date_to_duty) {
+                $user_schedule = EmployeeSchedule::where('employee_profile_id', $user)
+                    ->whereHas('schedule', function ($query) use ($request) {
+                        $query->where('date', $request->date_to_duty);
+                    })->get();
+
+                if ($user_schedule->isNotEmpty()) {
+                    return response()->json(['message' => "Your already have schedule on date:" . $request->date_to_duty], Response::HTTP_OK);
+                }
+            }
+
+            $data = EmployeeSchedule::where('employee_profile_id', $reliever_id)
+                ->whereHas('schedule', function ($query) use ($request) {
+                    $query->where('date', $request->date_to_duty);
+                })->get();
+
+            if ($data->isEmpty()) {
+                return response()->json(['message' => "Reliever has no schedule on date: " . $request->date_to_duty, $data], Response::HTTP_OK);
+            }
+
+            return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findSchedule', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

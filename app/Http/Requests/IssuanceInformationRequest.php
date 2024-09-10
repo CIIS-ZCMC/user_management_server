@@ -22,12 +22,11 @@ class IssuanceInformationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'license_no' => 'nullable|string|max:255',
-            'govt_issued_id' => 'nullable|integer',
-            'ctct_issued_date' => 'nullable|date:Y-m-d',
-            'ctc_issued_at' => 'nullable|string|max:255',
-            'person_administrative_oath' => 'nullable|string|max:255',
-            'employee_profile_id' => 'required|integer',
+            'license_no' => 'required|string|max:255',
+            'govt_issued_id' => 'required|string',
+            'ctc_issued_date' => 'required|date:Y-m-d',
+            'ctc_issued_at' => 'required|string|max:255',
+            'person_administrative_oath' => 'required|string|max:255',
         ];
     }
 }

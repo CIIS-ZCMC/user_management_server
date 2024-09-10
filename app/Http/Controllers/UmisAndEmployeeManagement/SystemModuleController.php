@@ -4,11 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\ModulePermissionResource;
 use App\Http\Resources\SystemModuleResource;
@@ -24,26 +25,17 @@ class SystemModuleController extends Controller
     private $PLURAL_MODULE_NAME = 'system modules';
     private $SINGULAR_MODULE_NAME = 'system module';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-
     public function index(Request $request)
     {
         try{
             $system_modules = SystemModule::all();
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in system module fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => SystemModuleResource::collection($system_modules),
                 'message' => 'System module list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -53,14 +45,12 @@ class SystemModuleController extends Controller
         try{
             $system_modules = SystemModule::where('system_id', $id)->get();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in system module fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => SystemModuleResource::collection($system_modules),
                 'message' => 'System module list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'systemModulesByID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'systemModulesByID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -82,16 +72,21 @@ class SystemModuleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  System::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
+            }
             $system_module = SystemModule::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $system_module['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $system_module['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
                 'message' => 'System module created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -160,7 +155,7 @@ class SystemModuleController extends Controller
 
                     $failed[] = $fail_registration;
                 }catch(\Throwable $th){
-                    $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
+                    Helpers::errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
 
                     $fail_registration = [
                         'permission_id' => $value,
@@ -173,27 +168,27 @@ class SystemModuleController extends Controller
 
             if(count($failed) === count($permissions))
             {
-                $this->requestLogger->registerSystemLogs($request, $id, false, 'Failed in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
+                Helpers::registerSystemLogs($request, $id, false, 'Failed in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
 
                 return response()->json(['message' => "Failed to register all permissions for this module id ".$id." ."], Response::HTTP_OK);
             }
 
             if(count($failed) > 0)
             {
-                $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
+                Helpers::registerSystemLogs($request, $id, true, 'Success in creating module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
 
                 return response()->json(['data' => ModulePermissionResource::collection($new_module_permission) , 'failed'  => $failed, 'message' => "Some permission did not register."], Response::HTTP_OK);
             }
 
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => ModulePermissionResource::collection($new_module_permission),
                 'message' => 'New permission added to system module.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -208,14 +203,12 @@ class SystemModuleController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
                 'message' => 'System module record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -223,14 +216,11 @@ class SystemModuleController extends Controller
     public function update($id, SystemModuleRequest $request)
     {
         try{ 
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $system_module = SystemModule::find($id);
@@ -248,29 +238,26 @@ class SystemModuleController extends Controller
 
             $system_module->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
                 'message' => 'System Module updated successfully'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $system_module = SystemModule::findOrFail($id);
@@ -283,32 +270,29 @@ class SystemModuleController extends Controller
             $module_permissions = $system_module->modulePermissions;
 
             if(count($module_permissions)>0){    
-                $this->requestLogger->registerSystemLogs($request, $id, true, 'Failed in deleting cause this data in use with by other record '.$this->SINGULAR_MODULE_NAME.'.');
+                Helpers::registerSystemLogs($request, $id, true, 'Failed in deleting cause this data in use with by other record '.$this->SINGULAR_MODULE_NAME.'.');
                 return response()->json(['message' => "There are data using this system module, can't, delete this record."], Response::HTTP_OK); 
             }
 
             $system_module->delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'System module deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyAllPermission($id, PasswordApprovalRequest $request)
+    public function destroyAllPermission($id, Request $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $system_module = SystemModule::findOrFail($id);
@@ -326,11 +310,11 @@ class SystemModuleController extends Controller
 
             $system_module->delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'System module and its permission deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
