@@ -469,6 +469,9 @@
 
                     $ourdata = [];
 
+
+
+
                     foreach ($leaveapp as $row) {
                         $dates_Interval = [];
                         $from = strtotime($row['from']);
@@ -495,7 +498,7 @@
                     $leavemessage = '';
                     foreach ($ourdata as $key => $value) {
                         $leavemessage = $value['leavetype'];
-                        
+
                         // }
                     }
 
@@ -514,7 +517,7 @@
                     @include('generate_dtr.TableDtrDate')
 
 
-                  
+
 
                     {{-- @if (count($checkIn) >= 1)
                         @php $val = $i; @endphp

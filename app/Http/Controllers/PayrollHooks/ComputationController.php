@@ -89,10 +89,10 @@ class ComputationController extends Controller
             ];
         }
 
-            $per_day = $basic_Salary / $this->Working_Days;
-            $per_hour = $per_day / $this->Working_Hours;
-            $per_minutes = $per_hour / 60;
-            $per_week = $per_day * 5;
+           $per_day = round($basic_Salary / $this->Working_Days,2);
+            $per_hour = round($per_day / $this->Working_Hours,2);
+            $per_minutes = round($per_hour / 60,2);
+            $per_week = round($per_day * 5,2);
 
             return [
                 'Weekly' => floor($per_week * 100) / 100,
@@ -112,9 +112,9 @@ class ComputationController extends Controller
         return round($Rates['Daily'] * $Number_Absences,2) ;
     }
 
-    public function NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$grosssalary){
+    public function NetSalaryFromTimeDeduction($Rates,$totalworkedminutes,$undertimeRate,$absentRate,$grosssalary){
         $deduction = $undertimeRate ;
-        $grossSal = $Rates['Daily'] * $presentCount ;
+        $grossSal = $Rates['Minutes'] * $totalworkedminutes ;
         $net =  floor(round( $grossSal - $deduction,2) * 100) /100;
 
 

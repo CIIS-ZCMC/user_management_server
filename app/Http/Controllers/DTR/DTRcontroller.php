@@ -1007,6 +1007,8 @@ public function RecomputeHours($biometric_id,$month_of,$year_of,$dtr_date){
                     'date' => date('Y-m-d', strtotime($rows['date'])),
                     'purpose' => $rows['purpose'],
                     'remarks' => $rows['remarks'],
+                    'is_am'=>$rows['is_am'],
+                    'is_pm'=>$rows['is_pm']
                 ];
             }
             }
@@ -1070,6 +1072,7 @@ public function RecomputeHours($biometric_id,$month_of,$year_of,$dtr_date){
                             'undertime' => $ut,
                         ]);
             }
+
 
 
 

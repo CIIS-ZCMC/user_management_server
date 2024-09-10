@@ -197,13 +197,15 @@ class GenerateReportController extends Controller
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');//employee_id
-        $profiles = EmployeeProfile::whereIn('biometric_id',$employeeIds)
-                ->limit(7)
-            ->get();
+        // $profiles = EmployeeProfile::whereIn('biometric_id',$employeeIds)
+        //         ->limit(7)
+        //     ->get();
 
 
 
-       // $profiles = EmployeeProfile::all();
+        $profiles = EmployeeProfile::where("biometric_id",493)->get();
+
+
 
         $data = [];
 
@@ -398,7 +400,7 @@ class GenerateReportController extends Controller
                             ];
                             $total_Month_WorkingMinutes += 480;
                         }
-                    } else if ($ob_Count ||  $ot_Count) {
+                    } else if ($ob_Count ||  $ot_Count  || $cto_Count) {
                         // echo $i."-ob or ot Paid \n";
                         $obot[] = [
                             'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
@@ -455,6 +457,8 @@ class GenerateReportController extends Controller
                 $presentCount = count(array_filter($attd, function ($d) {
                     return $d['total_working_minutes'] !== 0;
                 }));
+
+
                 $Number_Absences = count($absences) - count($lwop);
                 $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
@@ -484,7 +488,7 @@ class GenerateReportController extends Controller
 
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
+                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $total_Month_WorkingMinutes, $undertimeRate, $absentRate, $basicSalary['Total']);
 
 
               //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
@@ -524,7 +528,7 @@ class GenerateReportController extends Controller
                     'schedule' => count($filtered_scheds),
                     'GrandBasicSalary' => $basicSalary['GrandTotal'],
                     'Rates' => $Rates,
-                    'GrossSalary' => $Rates['Daily'] *  $presentCount,
+                    'GrossSalary' => $Rates['Minutes'] *  $total_Month_WorkingMinutes,
                     'TimeDeductions' => [
                         'AbsentRate' => $absentRate,
                         'UndertimeRate' => $undertimeRate,
@@ -738,7 +742,7 @@ class GenerateReportController extends Controller
                                     ];
                                     $total_Month_WorkingMinutes += 480;
                                 }
-                            } else if ($ob_Count ||  $ot_Count) {
+                            } else if ($ob_Count ||  $ot_Count || $cto_Count) {
                                 // echo $i."-ob or ot Paid \n";
                                 $obot[] = [
                                     'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
@@ -822,7 +826,7 @@ class GenerateReportController extends Controller
 
                         $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                         $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-                        $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $presentCount, $undertimeRate, $absentRate, $basicSalary['Total']);
+                        $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $total_Month_WorkingMinutes, $undertimeRate, $absentRate, $basicSalary['Total']);
 
 
                         return $NetSalary;
