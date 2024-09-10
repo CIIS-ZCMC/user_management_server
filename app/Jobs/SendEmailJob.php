@@ -22,6 +22,8 @@ class SendEmailJob implements ShouldQueue
      */
     public function __construct($email_type, $email, $name, $data)
     {
+    {
+
         $subject = null;
         $body = null;
 

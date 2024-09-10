@@ -880,7 +880,7 @@ class EmployeeProfileController extends Controller
         $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
-        $profile_url = $employee_profile->profile_url === null ? null : config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url;
+        $profile_url = $employee_profile->profile_url === null  ? null  : config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url;
 
 
         $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
@@ -1013,7 +1013,7 @@ class EmployeeProfileController extends Controller
                 'personal_information' => $personal_information_data,
                 'contact' => $personal_information->contact === null ? null : new ContactResource($personal_information->contact),
                 'address' => $address,
-                'family_background' => $personal_information->familyBackground === null ? null : new FamilyBackGroundResource($personal_information->familyBackground),
+                'family_background' => $personal_information->family_background === null? null: new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
                 'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;
@@ -2127,6 +2127,7 @@ class EmployeeProfileController extends Controller
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            dd($th);
             Helpers::errorLog($this->CONTROLLER_NAME, 'employeesDTRList', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -3349,6 +3350,7 @@ class EmployeeProfileController extends Controller
 
             foreach ($personal_information_json as $key => $value) {
                 if (Str::contains($key, "_value")) continue;
+                if (Str::contains($key, "_value")) continue;
                 $personal_information_data[$key] = $value;
             }
 
@@ -3410,6 +3412,7 @@ class EmployeeProfileController extends Controller
              * Identification module
              */
             if ($request->identification !== null) {
+            if ($request->identification !== null) {
                 $identification_request = new IdentificationNumberRequest();
                 $identification_json = json_decode($request->identification);
                 $identification_data = [];
@@ -3426,6 +3429,7 @@ class EmployeeProfileController extends Controller
             /**
              * Work experience module
              */
+            if ($request->work_experiences !== null) {
             if ($request->work_experiences !== null) {
                 $work_experience_request = new WorkExperienceRequest();
                 $work_experience_json = json_decode($request->work_experiences);
@@ -3444,6 +3448,7 @@ class EmployeeProfileController extends Controller
              * Voluntary work module
              */
             if ($request->voluntary_work !== null) {
+            if ($request->voluntary_work !== null) {
                 $voluntary_work_request = new VoluntaryWorkRequest();
                 $voluntary_work_json = json_decode($request->voluntary_work);
                 $voluntary_work_data = [];
@@ -3460,6 +3465,7 @@ class EmployeeProfileController extends Controller
             /**
              * Other module
              */
+            if ($request->others !== null) {
             if ($request->others !== null) {
                 $other_request = new OtherInformationManyRequest();
                 $other_json = json_decode($request->others);
@@ -3478,6 +3484,7 @@ class EmployeeProfileController extends Controller
              * Legal information module
              */
             if ($request->legal_information !== null) {
+            if ($request->legal_information !== null) {
                 $legal_info_request = new LegalInformationManyRequest();
                 $legal_info_json = json_decode($request->legal_information);
                 $legal_info_data = [];
@@ -3494,6 +3501,7 @@ class EmployeeProfileController extends Controller
             /**
              * Training module
              */
+            if ($request->trainings !== null) {
             if ($request->trainings !== null) {
                 $training_request = new TrainingManyRequest();
                 $training_json = json_decode($request->trainings);
@@ -3512,6 +3520,7 @@ class EmployeeProfileController extends Controller
              * Reference module
              */
             if ($request->reference !== null) {
+            if ($request->reference !== null) {
                 $referrence_request = new ReferenceManyRequest();
                 $referrence_json = json_decode($request->reference);
                 $referrence_data = [];
@@ -3528,6 +3537,7 @@ class EmployeeProfileController extends Controller
             /**
              * Eligibilities module
              */
+            if ($request->eligibilities !== null) {
             if ($request->eligibilities !== null) {
                 $eligibilities_request = new CivilServiceEligibilityManyRequest();
                 $eligibilities_json = json_decode($request->eligibilities);
@@ -3620,6 +3630,8 @@ class EmployeeProfileController extends Controller
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
+
+                $key = strtolower($request->sector) . '_id';
 
                 $key = strtolower($request->sector) . '_id';
                 $cleanData['plantilla_number_id'] = $plantilla_number_id;

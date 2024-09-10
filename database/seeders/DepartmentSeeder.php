@@ -16,7 +16,7 @@ class DepartmentSeeder extends Seeder
      */
     public function run(): void
     {
-        
+
 
         /**
          * Hospital Operations and Patient Support Service
@@ -27,49 +27,49 @@ class DepartmentSeeder extends Seeder
         Department::create([
             'name' => 'Clinical Nursing Wards',
             'code' => 'NSO-CLINIC',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Out-Patient Department',
             'code' => 'NSO-OPD',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Operating Room Complex',
             'code' => 'NSO-OR',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Emergency Room and Critical Care',
             'code' => 'NSO-ER',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Hemodialysis and Peritoneal Dialysis',
             'code' => 'NSO-HPD',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Delivery Room',
             'code' => 'NSO-DR',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Central Supply and Sterilization',
             'code' => 'NSO-CSS',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
-        
+
         Department::create([
             'name' => 'Special Care Areas',
             'code' => 'NSO-SCA',
-            'division_id' => $hopps -> id
+            'division_id' => $hopps->id
         ]);
     }
 }

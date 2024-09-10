@@ -25,13 +25,14 @@ class DatabaseSeeder extends Seeder
         $this->call([PositionSystemRoleSeeder::class]);
         $this->call([EmploymentTypeSeeder::class]);
         $this->call([DivisionSeeder::class]);
-        $this->call([DepartmentSeeder::class]);
-        $this->call([SectionSeeder::class]);
-        $this->call([UnitSeeder::class]);
+        // $this->call([DepartmentSeeder::class]);
+        // $this->call([SectionSeeder::class]);
+        // $this->call([UnitSeeder::class]);
         $this->call([LeaveTypeRequirementSeeder::class]);
         $this->call([LeaveTypeSeeder::class]);
         $this->call([PersonalInformationSeeder::class]);
         $this->call([SpecialAccessRoleSeeder::class]);
         $this->call([TimeShiftSeeder::class]);
+        $this->call([DocumentNumberSeeder::class]);
     }
 }

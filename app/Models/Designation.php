@@ -12,6 +12,7 @@ class Designation extends Model
     protected $table = 'designations';
 
     public $fillable = [
+        'id',
         'name',
         'code',
         'probation',

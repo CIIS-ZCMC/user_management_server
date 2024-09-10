@@ -12,6 +12,7 @@ class Plantilla extends Model
     protected $table = 'plantillas';
 
     public $fillable = [
+        'id',
         'slot',
         'total_used_plantilla_no',
         'effective_at',
@@ -24,7 +25,7 @@ class Plantilla extends Model
     {
         return $this->hasMany(PlantillaNumber::class);
     }
-    
+
     public function requirement()
     {
         return $this->hasOne(PlantillaRequirement::class);
@@ -34,12 +35,12 @@ class Plantilla extends Model
     {
         return $this->belongsTo(Designation::class);
     }
-    
+
     public function assignedAreas()
     {
         return $this->hasMany(AssignArea::class);
     }
-    
+
     public function assignedAreaTrails()
     {
         return $this->hasMany(AssignAreaTrail::class);
