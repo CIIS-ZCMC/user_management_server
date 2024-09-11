@@ -6,7 +6,10 @@
 
     <style>
         * {
-            font-family: Arial, Helvetica, sans-serif
+            font-family: Arial, Helvetica, sans-serif;
+            box-sizing: border-box;
+            padding: 0;
+            margin: 10px;
         }
 
         header {
@@ -139,17 +142,7 @@
 <!-- Display the report summary -->
 @if(isset($report_summary))
     <h2>Report Summary</h2>
-    <ul>
-        <li>Total Employees: {{ $report_summary['total_employees'] ?? null }}</li>
-        <li>Total Scheduled Days: {{ $report_summary['total_scheduled_days'] ?? null }}</li>
-        <li>Total Days Present: {{ $report_summary['total_days_present'] ?? null }}</li>
-        <li>Total Days Absent: {{ $report_summary['total_days_absent']  ?? null}}</li>
-        <li>Total Leave Applications: {{ $report_summary['total_leave_applications'] ?? null }}</li>
-        <li>Total Official Time Applications: {{ $report_summary['total_official_time_applications'] ?? null }}</li>
-        <li>Total Absent Leave Without Pay: {{ $report_summary['total_absent_leave_without_pay'] ?? null }}</li>
-        <li>Total Absent Without Official
-            Leave: {{ $report_summary['total_absent_without_official_leave'] ?? null }}</li>
-    </ul>
+    <h1>EY</h1>
 @endif
 
 
