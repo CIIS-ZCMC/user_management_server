@@ -197,13 +197,13 @@ class GenerateReportController extends Controller
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
             ->pluck('biometric_id');//employee_id
-        // $profiles = EmployeeProfile::whereIn('biometric_id',$employeeIds)
-        //         ->limit(7)
-        //     ->get();
+        $profiles = EmployeeProfile::whereIn('biometric_id',$employeeIds)
+                ->limit(7)
+            ->get();
 
 
 
-        $profiles = EmployeeProfile::where("biometric_id",493)->get();
+        // $profiles = EmployeeProfile::where("biometric_id",493)->get();
 
 
 
@@ -482,15 +482,19 @@ class GenerateReportController extends Controller
 
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds_forsal));
 
+
+
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
                 $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], count($filtered_scheds));
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
 
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
+
+
                 $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $total_Month_WorkingMinutes, $undertimeRate, $absentRate, $basicSalary['Total']);
 
-
+                return $Rates;
               //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
 
               $OverAllnetSalary = $this->TOTALNETSALARY($request,$biometric_id);
