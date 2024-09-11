@@ -24,21 +24,25 @@ class LeaveApplicationsImport implements ToModel
             return null;
         }
 
-        try {
-            // Parse the dates with explicit timezone if needed
-            $dateFrom = Carbon::createFromFormat('Y-m-d H:i:s', $row[2], 'Asia/Manila');
-            $dateTo = Carbon::createFromFormat('Y-m-d H:i:s', $row[3], 'Asia/Manila');
-        } catch (\Exception $e) {
-            // Handle parsing errors (log or handle as needed)
-            $dateFrom = null; // or set a default value
-            $dateTo = null;   // or set a default value
+        $dateFrom = $row[2];
+        if (strlen($dateFrom) === 10) {
+            $dateFrom .= ' 00:00:00'; // Append time if only date is present
         }
+
+        $dateTo = $row[3];
+        if (strlen($dateTo) === 10) {
+            $dateTo .= ' 00:00:00'; // Append time if only date is present
+        }
+
+        // Parse dates using Carbon
+        $dateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $dateFrom, 'Asia/Manila');
+        $dateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $dateTo, 'Asia/Manila');
 
         return new LeaveApplication([
             'leave_type_id'          => (int)$row[0],
             'employee_profile_id'    => (int)$row[1],
-            'date_from'              => $dateFrom,
-            'date_to'                => $dateTo,
+            'date_from'              => $dateFromCarbon,
+            'date_to'                => $dateToCarbon,
             'country'                => $row[4],
             'city'                   => $row[5],
             'is_outpatient'          => (int)$row[6],
