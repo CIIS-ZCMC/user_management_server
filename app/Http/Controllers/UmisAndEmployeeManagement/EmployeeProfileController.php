@@ -2193,7 +2193,8 @@ class EmployeeProfileController extends Controller
      * @return JsonResponse The JSON response containing the employee profiles and pagination metadata.
      */
 
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         try {
             $cacheExpiration = Carbon::now()->addDay();
 
@@ -2224,8 +2225,11 @@ class EmployeeProfileController extends Controller
             $employees = collect();
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
-
+            $designation_id = $request->query('designation_id');
+            $employment_type = $request->query('employment_type_id');
             $search = $request->query('search');
+            $per_page = 10;
+            $current_page = $request->query('page', 1); // Get the page from request, default is 1
 
             if ((!$sector && $area_id) || ($sector && !$area_id)) {
                 return response()->json(['message' => 'Invalid sector or area id input'], 400);
@@ -2242,6 +2246,12 @@ class EmployeeProfileController extends Controller
                                 $q->where('first_name', 'LIKE', '%' . $search . '%')
                                     ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                             }
+                        });
+                    })->when($designation_id, function ($query) use ($designation_id) {
+                        $query->where('designation_id', $designation_id);
+                    })->when($employment_type, function ($query) use ($employment_type) {
+                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                            $q->where('employment_type_id', $employment_type);
                         });
                     })
                     ->get();
@@ -2260,6 +2270,12 @@ class EmployeeProfileController extends Controller
                                             $q->where('first_name', 'LIKE', '%' . $search . '%')
                                                 ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                         }
+                                    });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
                                     });
                                 })
                                 ->get()
@@ -2280,6 +2296,12 @@ class EmployeeProfileController extends Controller
                                                     ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                             }
                                         });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
                                     })
                                     ->get()
                             );
@@ -2299,6 +2321,12 @@ class EmployeeProfileController extends Controller
                                                         ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                                 }
                                             });
+                                        })->when($designation_id, function ($query) use ($designation_id) {
+                                            $query->where('designation_id', $designation_id);
+                                        })->when($employment_type, function ($query) use ($employment_type) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
                                         })
                                         ->get()
                                 );
@@ -2317,6 +2345,12 @@ class EmployeeProfileController extends Controller
                                                         $q->where('first_name', 'LIKE', '%' . $search . '%')
                                                             ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                                     }
+                                                });
+                                            })->when($designation_id, function ($query) use ($designation_id) {
+                                                $query->where('designation_id', $designation_id);
+                                            })->when($employment_type, function ($query) use ($employment_type) {
+                                                $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                    $q->where('employment_type_id', $employment_type);
                                                 });
                                             })
                                             ->get()
@@ -2341,6 +2375,12 @@ class EmployeeProfileController extends Controller
                                                     ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                             }
                                         });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
                                     })
                                     ->get()
                             );
@@ -2360,6 +2400,12 @@ class EmployeeProfileController extends Controller
                                                     $q->where('first_name', 'LIKE', '%' . $search . '%')
                                                         ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                                 }
+                                            });
+                                        })->when($designation_id, function ($query) use ($designation_id) {
+                                            $query->where('designation_id', $designation_id);
+                                        })->when($employment_type, function ($query) use ($employment_type) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
                                             });
                                         })
                                         ->get()
@@ -2382,6 +2428,12 @@ class EmployeeProfileController extends Controller
                                                 ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                         }
                                     });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
                                 })
                                 ->get()
                         );
@@ -2394,12 +2446,18 @@ class EmployeeProfileController extends Controller
                                 }])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
-                                   ->when($search, function ($query) use ($search) {
+                                    ->when($search, function ($query) use ($search) {
                                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
                                             if (!empty($search)) {
                                                 $q->where('first_name', 'LIKE', '%' . $search . '%')
                                                     ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                             }
+                                        });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
                                         });
                                     })
                                     ->get()
@@ -2420,6 +2478,12 @@ class EmployeeProfileController extends Controller
                                                     $q->where('first_name', 'LIKE', '%' . $search . '%')
                                                         ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                                 }
+                                            });
+                                        })->when($designation_id, function ($query) use ($designation_id) {
+                                            $query->where('designation_id', $designation_id);
+                                        })->when($employment_type, function ($query) use ($employment_type) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
                                             });
                                         })
                                         ->get()
@@ -2442,6 +2506,12 @@ class EmployeeProfileController extends Controller
                                                 ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                         }
                                     });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
                                 })
                                 ->get()
                         );
@@ -2460,6 +2530,12 @@ class EmployeeProfileController extends Controller
                                                 $q->where('first_name', 'LIKE', '%' . $search . '%')
                                                     ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                             }
+                                        });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
                                         });
                                     })
                                     ->get()
@@ -2481,6 +2557,12 @@ class EmployeeProfileController extends Controller
                                                 ->orWhere('last_name', 'LIKE', '%' . $search . '%');
                                         }
                                     });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
                                 })
                                 ->get()
                         );
@@ -2497,12 +2579,10 @@ class EmployeeProfileController extends Controller
                 return $employee->employeeProfile->personalInformation->first_name;
             });
 
-            // Paginate the results
-            $current_page = LengthAwarePaginator::resolveCurrentPage();
             $paginated_employees = new LengthAwarePaginator(
                 $employees->forPage($current_page, 10),
                 $employees->count(),
-                10,
+                $per_page,
                 $current_page,
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
