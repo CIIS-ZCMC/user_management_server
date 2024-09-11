@@ -2221,7 +2221,6 @@ class EmployeeReportController extends Controller
                                         ->whereHas('employeeProfile.personalInformation', function ($query) {
                                             $query->where('sex', 'Female');
                                         })->count();
-
                                 }
                             }
                         }
@@ -2314,7 +2313,6 @@ class EmployeeReportController extends Controller
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Female');
                                     })->count();
-
                             }
                         }
 
@@ -2449,7 +2447,6 @@ class EmployeeReportController extends Controller
                                     ->whereHas('employeeProfile.personalInformation', function ($query) {
                                         $query->where('sex', 'Female');
                                     })->count();
-
                             }
                         }
                         break;
@@ -2532,7 +2529,6 @@ class EmployeeReportController extends Controller
                                 ->whereHas('employeeProfile.personalInformation', function ($query) {
                                     $query->where('sex', 'Female');
                                 })->count();
-
                         }
                         break;
 
@@ -2655,7 +2651,7 @@ class EmployeeReportController extends Controller
     }
 
 
-    public function filterEmployeesByPWD(Request $request) : JsonResponse
+    public function filterEmployeesByPWD(Request $request): JsonResponse
     {
         try {
             $employees = collect();
@@ -2685,7 +2681,8 @@ class EmployeeReportController extends Controller
                         },
                         'employeeProfile.personalInformation',
                         'employeeProfile.personalInformation.legalInformation'
-                    ])
+                    ]
+                )
                     ->where('employee_profile_id', '<>', 1)
                     ->when($pwd, function ($query) use ($pwd) {
                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($pwd) {
@@ -2697,15 +2694,15 @@ class EmployeeReportController extends Controller
                 switch ($sector) {
                     case 'division':
                         $employees = $employees->merge(
-                                AssignArea::with(
-                                    [
-                                        'employeeProfile' => function ($query) {
-                                            $query->whereNull('deactivated_at');
-                                        },
-                                        'employeeProfile.personalInformation',
-                                        'employeeProfile.personalInformation.legalInformation'
-                                    ]
-                                )
+                            AssignArea::with(
+                                [
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    },
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile.personalInformation.legalInformation'
+                                ]
+                            )
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($pwd, function ($query) use ($pwd) {
@@ -3111,7 +3108,7 @@ class EmployeeReportController extends Controller
         }
     }
 
-    public function filterEmployeesBySoloParent(Request $request) : JsonResponse
+    public function filterEmployeesBySoloParent(Request $request): JsonResponse
     {
         try {
             $employees = collect();
@@ -3133,14 +3130,15 @@ class EmployeeReportController extends Controller
             }
 
             if (!$sector && !$area_id) {
-                $employees =AssignArea::with(
+                $employees = AssignArea::with(
                     [
                         'employeeProfile' => function ($query) {
                             $query->whereNull('deactivated_at');
                         },
                         'employeeProfile.personalInformation',
                         'employeeProfile.personalInformation.legalInformation'
-                    ])
+                    ]
+                )
                     ->where('employee_profile_id', '<>', 1)
                     ->when($solo_parent, function ($query) use ($solo_parent) {
                         $query->whereHas('employeeProfile.personalInformation.legalInformation', function ($q) use ($solo_parent) {
@@ -3159,7 +3157,8 @@ class EmployeeReportController extends Controller
                                     },
                                     'employeeProfile.personalInformation',
                                     'employeeProfile.personalInformation.legalInformation'
-                                ])
+                                ]
+                            )
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3188,7 +3187,8 @@ class EmployeeReportController extends Controller
                                         },
                                         'employeeProfile.personalInformation',
                                         'employeeProfile.personalInformation.legalInformation'
-                                    ])
+                                    ]
+                                )
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3217,7 +3217,8 @@ class EmployeeReportController extends Controller
                                             },
                                             'employeeProfile.personalInformation',
                                             'employeeProfile.personalInformation.legalInformation'
-                                        ])
+                                        ]
+                                    )
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3246,7 +3247,8 @@ class EmployeeReportController extends Controller
                                                 },
                                                 'employeeProfile.personalInformation',
                                                 'employeeProfile.personalInformation.legalInformation'
-                                            ])
+                                            ]
+                                        )
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3279,7 +3281,8 @@ class EmployeeReportController extends Controller
                                         },
                                         'employeeProfile.personalInformation',
                                         'employeeProfile.personalInformation.legalInformation'
-                                    ])
+                                    ]
+                                )
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3308,7 +3311,8 @@ class EmployeeReportController extends Controller
                                             },
                                             'employeeProfile.personalInformation',
                                             'employeeProfile.personalInformation.legalInformation'
-                                        ])
+                                        ]
+                                    )
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3339,7 +3343,8 @@ class EmployeeReportController extends Controller
                                     },
                                     'employeeProfile.personalInformation',
                                     'employeeProfile.personalInformation.legalInformation'
-                                ])
+                                ]
+                            )
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3368,7 +3373,8 @@ class EmployeeReportController extends Controller
                                         },
                                         'employeeProfile.personalInformation',
                                         'employeeProfile.personalInformation.legalInformation'
-                                    ])
+                                    ]
+                                )
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3397,7 +3403,8 @@ class EmployeeReportController extends Controller
                                             },
                                             'employeeProfile.personalInformation',
                                             'employeeProfile.personalInformation.legalInformation'
-                                        ])
+                                        ]
+                                    )
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3428,7 +3435,8 @@ class EmployeeReportController extends Controller
                                     },
                                     'employeeProfile.personalInformation',
                                     'employeeProfile.personalInformation.legalInformation'
-                                ])
+                                ]
+                            )
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3457,7 +3465,8 @@ class EmployeeReportController extends Controller
                                         },
                                         'employeeProfile.personalInformation',
                                         'employeeProfile.personalInformation.legalInformation'
-                                    ])
+                                    ]
+                                )
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($solo_parent, function ($query) use ($solo_parent) {
@@ -3487,7 +3496,8 @@ class EmployeeReportController extends Controller
                                     },
                                     'employeeProfile.personalInformation',
                                     'employeeProfile.personalInformation.legalInformation'
-                                ])
+                                ]
+                            )
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($solo_parent, function ($query) use ($solo_parent) {
