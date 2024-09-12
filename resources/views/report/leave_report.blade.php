@@ -134,16 +134,76 @@
     </div>
 
     <!-- Display the report summary if available -->
-    @if (isset($report_summary) && count($report_summary) > 0)
-        <div>
-            <h4>Report Summary</h4>
-            <ul>
-                @foreach ($report_summary as $summary)
-                    <li>{{ $summary }}</li>
+    <h3>Report Summary</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Summary Item</th>
+                <th>Count</th>
+                <th>Summary Item</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total Applications</td>
+                <td>{{ $report_summary['total_applications'] ?? '0' }}</td>
+                <td>Total With Pay</td>
+                <td>{{ $report_summary['total_with_pay'] ?? '0' }}</td>
+            </tr>
+            <tr>
+                <td>Total Without Pay</td>
+                <td>{{ $report_summary['total_without_pay'] ?? '0' }}</td>
+                <td>Total Applied</td>
+                <td>{{ $report_summary['total_applied'] ?? '0' }}</td>
+            </tr>
+            <tr>
+                <td>Total Approved</td>
+                <td>{{ $report_summary['total_approved'] ?? '0' }}</td>
+                <td>Total Received</td>
+                <td>{{ $report_summary['total_received'] ?? '0' }}</td>
+            </tr>
+            <tr>
+                <td>Total Cancelled</td>
+                <td>{{ $report_summary['total_cancelled'] ?? '0' }}</td>
+                <td></td>
+                <td></td>
+                <!-- Add more summary fields if needed -->
+            </tr>
+        </tbody>
+    </table>
+
+
+    <h4>Leave Type Breakdown</h4>
+    @if (!empty($report_summary['leave_type_counts']))
+        <table>
+            <thead>
+                <tr>
+                    <th>Leave Type</th>
+                    <th>Code</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($report_summary['leave_type_counts'] as $leaveType)
+                    @if ($leaveType['count'] > 0)
+                        <!-- Only show leave types with count greater than 0 -->
+                        <tr>
+                            <td>{{ $leaveType['name'] }}</td>
+                            <td>{{ $leaveType['code'] }}</td>
+                            <td>{{ $leaveType['count'] }}</td>
+                        </tr>
+                    @endif
                 @endforeach
-            </ul>
-        </div>
+            </tbody>
+        </table>
+    @else
+        <p>No leave types available.</p>
     @endif
+
+
+    <hr style="margin: 10px 0px 10px 0px">
 
     <!-- Table with data -->
     <table>

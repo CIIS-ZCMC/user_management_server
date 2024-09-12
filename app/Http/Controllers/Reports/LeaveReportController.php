@@ -337,6 +337,50 @@ class LeaveReportController extends Controller
     }
 
 
+    private function generateLeaveReportSummary($results)
+    {
+        $summary = [
+            'total_applications' => 0,
+            'total_with_pay' => 0,
+            'total_without_pay' => 0,
+            'total_cancelled' => 0,
+            'total_approved' => 0,
+            'total_received' => 0,
+            'total_applied' => 0,
+            'leave_type_counts' => []
+        ];
+
+        // Loop through each result and aggregate the counts
+        foreach ($results as $result) {
+            $summary['total_applications'] += $result['leave_count'];
+            $summary['total_with_pay'] += $result['leave_count_with_pay'];
+            $summary['total_without_pay'] += $result['leave_count_without_pay'];
+            $summary['total_cancelled'] += $result['leave_count_cancelled'];
+            $summary['total_approved'] += $result['leave_count_approved'];
+            $summary['total_received'] += $result['leave_count_received'];
+            $summary['total_applied'] += $result['leave_count_applied'];
+
+            // Loop through the leave types and aggregate the counts per leave type
+            foreach ($result['leave_types'] as $leave_type) {
+                $leave_type_id = $leave_type['id'];
+                if (!isset($summary['leave_type_counts'][$leave_type_id])) {
+                    $summary['leave_type_counts'][$leave_type_id] = [
+                        'id' => $leave_type_id,
+                        'name' => $leave_type['name'],
+                        'code' => $leave_type['code'],
+                        'count' => 0
+                    ];
+                }
+                $summary['leave_type_counts'][$leave_type_id]['count'] += $leave_type['count'];
+            }
+        }
+
+        // Optionally sort leave types by ID
+        ksort($summary['leave_type_counts']);
+
+        return $summary;
+    }
+
     /**
      * Filter leave reports based on provided criteria.
      *
@@ -400,11 +444,15 @@ class LeaveReportController extends Controller
                     );
             }
 
+
+            $summary = $this->generateLeaveReportSummary($results);
+            // return $summary;
             if ($is_print) {
                 return Helpers::generateLeavePdf($results, $columns, $report_name, $orientation, $summary, $filters);
             }
 
             return response()->json([
+                'summary' => $summary,
                 'count' => count($results),
                 'data' => $results,
                 'message' => 'Successfully retrieved data.'
