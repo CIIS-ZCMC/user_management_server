@@ -1279,7 +1279,7 @@ class Helpers
         $data = $employees->toArray(request());
 
         // Transform the data based on the columns
-        $employees = array_map(function($employee) use ($columns) {
+        $employees = array_map(function ($employee) use ($columns) {
             $transformed = [];
             foreach ($columns as $column) {
                 $field = $column['field'];
@@ -1288,21 +1288,17 @@ class Helpers
                 // Handle the "area" field specifically to extract the name of the assignment
                 if ($field === 'area') {
                     $value = $employee['area']['details']['name'] ?? 'N/A';
-                }
-                else if ($field === 'designation') {
+                } else if ($field === 'designation') {
                     $designationName = $employee['designation']['name'] ?? 'N/A';
                     $value = $designationName;
-                }
-                else if ($field === 'salaryGradeAndStep') {
+                } else if ($field === 'salaryGradeAndStep') {
                     // Combine salary grade and step
                     $salaryGrade = $employee['salary_grade']['salary_grade_number'] ?? 'N/A';
                     $value = "SG-" . $salaryGrade;
-                }
-                else if ($field === 'amount') {
+                } else if ($field === 'amount') {
                     // Get the salary amount for step 1
                     $value = $employee['salary_grade']['one'] ?? 'N/A';
-                }
-                else {
+                } else {
                     // Handle nested fields like 'area.details.name'
                     foreach (explode('.', $field) as $key) {
                         $value = $value[$key] ?? 'N/A';
@@ -1343,7 +1339,7 @@ class Helpers
         $data = $employees->toArray(request());
 
         // Transform the data based on the columns, handle stdClass object
-        $attendanceData = array_map(function($employee) use ($columns) {
+        $attendanceData = array_map(function ($employee) use ($columns) {
             $transformed = [];
             foreach ($columns as $column) {
                 $field = $column['field'];
@@ -1380,5 +1376,73 @@ class Helpers
         return $dompdf->stream($report_name . '.pdf');
     }
 
+    public static function generateLeavePdf($results, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
+    {
+        $options = new Options();
+        $options->set('isPhpEnabled', false);
+        $options->set('isHtml5ParserEnabled', false);
+        $options->set('isRemoteEnabled', false);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
 
+        // Map the known leave types to their corresponding columns
+        $leaveTypeMappings = [
+            'VL' => 'vl', // Vacation Leave
+            'SL' => 'sl', // Sick Leave
+            'SPL' => 'spl', // Special Privilege Leave
+            'FL' => 'fl'  // Mandatory/Forced Leave
+        ];
+
+        $leaveData = array_map(function ($result) use ($columns, $leaveTypeMappings) {
+            $transformed = [];
+            $leaveCounts = [
+                'vl' => 0,
+                'sl' => 0,
+                'spl' => 0,
+                'fl' => 0
+            ];
+
+            foreach ($columns as $column) {
+                $field = $column['field'];
+                // Check if this field corresponds to a specific leave type
+                if (array_key_exists($field, $leaveCounts) && isset($result['leave_types']) && is_array($result['leave_types'])) {
+                    foreach ($result['leave_types'] as $leaveType) {
+                        if (isset($leaveTypeMappings[$leaveType['code']]) && $leaveTypeMappings[$leaveType['code']] == $field) {
+                            $leaveCounts[$field] += $leaveType['count'];
+                        }
+                    }
+                    $value = $leaveCounts[$field];
+                } else if ($field === 'leave_types' && isset($result['leave_types']) && is_array($result['leave_types'])) {
+                    // Filter and format other leave types
+                    $otherLeaveTypes = array_filter($result['leave_types'], function ($leaveType) use ($leaveTypeMappings) {
+                        return $leaveType['count'] > 0 && !in_array($leaveType['code'], array_keys($leaveTypeMappings));
+                    });
+                    $value = implode(', ', array_map(function ($leaveType) {
+                        return $leaveType['name'] . ': ' . $leaveType['count'];
+                    }, $otherLeaveTypes));
+                } else {
+                    // For other fields, handle normally
+                    $value = $result[$field] ?? 'N/A';
+                }
+                $transformed[$field] = $value;
+            }
+            return $transformed;
+        }, $results);  // Directly use $results as it's already an array
+
+        $html = view('report.leave_report', [
+            'total_data' => count($leaveData),
+            'columns' => $columns,
+            'rows' => $leaveData,
+            'report_name' => $report_name,
+            'report_summary' => $report_summary,
+            'filters' => $filters,
+        ])->render();
+
+        // Load the HTML and stream the PDF
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('Legal', $orientation); // Add paper orientation here if needed
+        $dompdf->render();
+
+        return $dompdf->stream($report_name . '.pdf');
+    }
 }
