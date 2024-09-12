@@ -2524,7 +2524,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // LEAVE REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
+            Route::get('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
         // ATTENDANCE REPORTS
