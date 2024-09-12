@@ -89,18 +89,24 @@ class ComputationController extends Controller
             ];
         }
 
-           $per_day = round($basic_Salary / $this->Working_Days,2);
-            $per_hour = round($per_day / $this->Working_Hours,2);
-            $per_minutes = round($per_hour / 60,2);
-            $per_week = round($per_day * 5,2);
+        $per_day = $basic_Salary / $this->Working_Days;
 
-            return [
-                'Weekly' => floor($per_week * 100) / 100,
-                'Daily' => floor($per_day * 100) / 100,
-                'Hourly' => floor($per_hour * 100) / 100,
-                'Minutes' => floor($per_minutes * 100) / 100,
-            ];
+        // Calculate the per-hour rate
+        $per_hour = $per_day / $this->Working_Hours;
 
+        // Calculate the per-minute rate
+        $per_minute = $per_hour / 60;
+
+        // Calculate the per-week rate (assuming 5 workdays in a week)
+        $per_week = $per_day * 5;
+
+        // Return rates, rounded to 3 decimal places
+        return [
+            'Weekly'  => round($per_week, 2),
+            'Daily'   => round($per_day, 2),
+            'Hourly'  => round($per_hour, 2),
+            'Minutes' => round($per_minute, 2),
+        ];
 
     }
 
