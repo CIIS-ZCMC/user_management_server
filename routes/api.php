@@ -2545,9 +2545,29 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
 
+        // LOGIN ACTIVITIES REPORT
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('failed-login-attempts-report', 'LoginActivitiesReport@getFailedLoginAttempts');
+        });
 
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('successful-logins-report', 'LoginActivitiesReport@getSuccessfulLogins');
+        });
 
-        // PRINTABLES
-        Route::post('download-employee-report', 'PrintableReportController@generatePrintableReport');
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('login-frequency-report', 'LoginActivitiesReport@getLoginFrequency');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('login-success-failure-ratio-report', 'LoginActivitiesReport@getLoginSuccessFailureRatio');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('login-source-analysis-report', 'LoginActivitiesReport@getLoginSourceAnalysis');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::post('login-audit-report', 'LoginActivitiesReport@getAuditReport');
+        });
     });
 });
