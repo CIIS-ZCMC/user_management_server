@@ -2547,27 +2547,19 @@ Route::middleware('auth.cookie')->group(function () {
 
         // LOGIN ACTIVITIES REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('failed-login-attempts-report', 'LoginActivitiesReport@getFailedLoginAttempts');
+            Route::get('login-activities-report', 'LoginActivitiesReport@generateLoginActivitiesReport');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('successful-logins-report', 'LoginActivitiesReport@getSuccessfulLogins');
+            Route::get('login-frequency-report', 'LoginActivitiesReport@generateLoginFrequencyReport');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('login-frequency-report', 'LoginActivitiesReport@getLoginFrequency');
+            Route::get('login-failed-attempts-report', 'LoginActivitiesReport@generateFailedLoginAttemptsReport');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('login-success-failure-ratio-report', 'LoginActivitiesReport@getLoginSuccessFailureRatio');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('login-source-analysis-report', 'LoginActivitiesReport@getLoginSourceAnalysis');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('login-audit-report', 'LoginActivitiesReport@getAuditReport');
+            Route::get('login-device-browser-report', 'LoginActivitiesReport@generateDeviceBrowserLoginReport');
         });
     });
 });

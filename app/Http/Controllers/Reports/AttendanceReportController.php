@@ -1352,7 +1352,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN MONTH(sch.date) = ' . $month_of . '
                                     AND YEAR(sch.date) = ' . $year_of . '
@@ -1428,7 +1428,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN MONTH(sch.date) = ' . $month_of . '
                                     AND YEAR(sch.date) = ' . $year_of . '
@@ -1501,7 +1501,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN MONTH(sch.date) = ' . $month_of . '
                                     AND YEAR(sch.date) = ' . $year_of . '
@@ -1582,7 +1582,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN MONTH(sch.date) = ' . $month_of . '
                                     AND YEAR(sch.date) = ' . $year_of . '
@@ -1644,7 +1644,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
@@ -1708,7 +1708,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
@@ -1762,7 +1762,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                 WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                 THEN sch.date END) as scheduled_days'),
@@ -1830,7 +1830,7 @@ class AttendanceReportController extends Controller
     {
         return $base_query
             ->addSelect(
-            // Scheduled Days
+                // Scheduled Days
                 DB::raw('COUNT(DISTINCT CASE
                                     WHEN sch.date BETWEEN "' . $start_date . '" AND "' . $end_date . '"
                                     THEN sch.date END) as scheduled_days'),
@@ -2391,7 +2391,6 @@ class AttendanceReportController extends Controller
                 'data' => $results,
                 'message' => 'Summary successfully generated'
             ], ResponseAlias::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'summaryDisplay', $th->getMessage());
             return response()->json([
@@ -2498,5 +2497,4 @@ class AttendanceReportController extends Controller
 
         return array_merge($common_columns, $report_specific_columns[$report_type] ?? []);
     }
-
 }

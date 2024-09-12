@@ -2155,11 +2155,12 @@ class EmployeeProfileController extends Controller
             // Apply search filter if a search term is provided
             if ($search = $request->input('search')) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('employee_profiles.first_name', 'like', "%{$search}%")
-                        ->orWhere('employee_profiles.last_name', 'like', "%{$search}%")
-                        ->orWhereHas('personalInformation', function ($query) use ($search) {
-                            $query->where('personal_informations.email', 'like', "%{$search}%");
-                        });
+                    $query->whereHas('personalInformation', function ($q) use ($search) {
+                        if (!empty($search)) {
+                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                        }
+                    });
                 });
             }
 
