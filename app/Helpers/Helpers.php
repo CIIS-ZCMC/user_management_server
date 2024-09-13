@@ -1258,6 +1258,11 @@ class Helpers
         }
     }
 
+    public static function customRound($numericValue) {
+        return (double) number_format($numericValue, 2, '.', '');
+    }
+
+
     public static function generatePdf($employees, $columns, $report_name, $orientation)
     {
         $options = new Options();

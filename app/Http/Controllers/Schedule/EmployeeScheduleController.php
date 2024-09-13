@@ -13,7 +13,9 @@ use App\Helpers\Helpers;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\MonthlyWorkHours;
+use App\Models\PersonalInformation;
 use App\Models\Schedule;
+use App\Models\TimeShift;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
 
@@ -430,6 +432,114 @@ class EmployeeScheduleController extends Controller
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function upload(Request $request)
+    {
+        try {
+            // Validate the file
+            $request->validate([
+                'csv_file' => 'required|mimes:csv,txt|max:2048',
+            ]);
+
+            // Check if the file is valid
+            if ($request->file('csv_file')->isValid()) {
+                $file = $request->file('csv_file');
+                $filePath = $file->storeAs('csv', time() . '.' . $file->getClientOriginalExtension());
+
+                // Read and process the CSV file
+                $csvData = array_map('str_getcsv', file(storage_path('app/' . $filePath)));
+                $header = array_shift($csvData);
+
+                foreach ($csvData as $row) {
+                    $employee_id = $row[0];
+                    // $lastname = $row[0];
+                    $firstname = $row[1];
+                    $month = $row[2];
+                    $year = $row[3];
+
+                    // Find the employee profile
+                    // $employee = EmployeeProfile::with('personalInformation')->whereHas('personalInformation', function ($query) use ($lastname, $firstname) {
+                    //     $query->where('last_name', $lastname)
+                    //         ->where('first_name', $firstname);
+                    // })->first();
+
+                    $employee = EmployeeProfile::where('employee_id', $employee_id)->first();
+
+                    if (!$employee) {
+                        // Handle the case where employee is not found (optional)
+                        continue;
+                    }
+
+                    // Loop through each day of the month
+                    for ($i = 4; $i < count($row); $i++) {
+                        $shift = $row[$i];
+                        switch ($shift) {
+                            case '8':
+                                $time_shift = TimeShift::where('first_in', '08:00:00')->where('first_out', '16:00:00')->first()->id;
+                                break;
+                            case '6':
+                                $time_shift = TimeShift::where('first_in', '06:00:00')->where('first_out', '14:00:00')->first()->id;
+                                break;
+                            case '2':
+                                $time_shift = TimeShift::where('first_in', '14:00:00')->where('first_out', '22:00:00')->first()->id;
+                                break;
+                            case '10':
+                                $time_shift = TimeShift::where('first_in', '22:00:00')->where('first_out', '06:00:00')->first()->id;
+                                break;
+                            case 'H':
+                                $time_shift = null;
+                                break;
+                            case '✓':
+                                $time_shift = null;
+                                break;
+                            default:
+                                $time_shift = TimeShift::where('first_in', '08:00:00')->where('second_out', '17:00:00')->first()->id;
+                                break;
+                        }
+
+                        if ($time_shift !== null) {
+                            $month_parse = Carbon::parse("first day of $month $year")->format('m');
+                            $day = $i - 3; // Because the first 4 columns are Lastname, Firstname, Month, Year
+                            $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
+
+                            $isweekend = (Carbon::parse($date))->isWeekend();
+
+                            // Create or get the schedule
+                            $schedule = Schedule::firstOrCreate(
+                                [
+                                    'date' => $date,
+                                    'time_shift_id' => $time_shift,
+                                    'is_weekend' => $isweekend ? 1 : 0
+                                ],
+                                [
+                                    'date' => $date,
+                                    'time_shift_id' => $time_shift,
+                                    'is_weekend' => $isweekend ? 1 : 0
+                                ],
+                            );
+
+                            // Create or update employee schedule
+                            EmployeeSchedule::updateOrCreate(
+                                [
+                                    'employee_profile_id' => $employee->id,
+                                    'schedule_id' => $schedule->id,
+                                ],
+                                [
+                                    'employee_profile_id' => $employee->id,
+                                    'schedule_id' => $schedule->id,
+                                ]
+                            );
+                        }
+                    }
+                }
+
+                return response()->json(['message' => 'CSV data imported successfully!'], Response::HTTP_OK);
+            }
+            return response()->json(['message' => 'Invalid file uploaded.'], Response::HTTP_NOT_ACCEPTABLE);
+        } catch (\Throwable $th) {
+            throw $th;
         }
     }
 

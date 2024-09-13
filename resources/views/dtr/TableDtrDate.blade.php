@@ -59,18 +59,108 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
 @else
 
 @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-<td class="time " colspan="4" id="entry{{ $i }}1">
 
+@if($cto_Count )
+
+
+@if($ctoApplication[0]['is_am'])
+<td class="time " colspan="2" id="entry{{ $i }}1">
+    <span class="">{{ $ctoMessage }}</span>  ( 4 Hours )
+</td>
+<td class="time " id="entry{{ $i }}3">
+    @if (count($dtr) && $dtr[0]->second_in)
+            @if (date('a', strtotime($dtr[0]->second_in)) == "pm")
+            {{date('h:i a',strtotime($dtr[0]->second_in))}}
+            @endif
+
+    @else
+  <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
+@endif
+
+</td>
+<td class="time " id="entry{{ $i }}4">
+    @if (count($dtr) && $dtr[0]->second_out)
+                @if (date('a', strtotime($dtr[0]->second_out)) == "pm")
+                {{date('h:i a',strtotime($dtr[0]->second_out))}}
+                @endif
+
+    @else
+  <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
+
+
+
+
+
+  @endif
+
+</td>
+
+@elseif($ctoApplication[0]['is_pm'])
+<td class="time " style="padding: 2px" id="entry{{ $i }}1">
+
+    <!--FIRST IN -->
+    @if (count($dtr) && $dtr[0]->first_in)
+                @if (date('a', strtotime($dtr[0]->first_in)) == "am")
+                {{date('h:i a',strtotime($dtr[0]->first_in))}}
+                @else
+
+                @if (count($yesdtr) == 0)
+
+             <span style="font-size:8px;color:rgb(190, 184, 184)">NO ENTRY</span>
+                @endif
+
+                @endif
+        @else
+       <span style="font-size:8px;color:rgb(190, 184, 184)">NO ENTRY</span>
+    @endif
+
+</td>
+<td class="time " id="entry{{ $i }}2">
+    @if (count($dtr) && $dtr[0]->first_out)
+                @if (date('a', strtotime($dtr[0]->first_out)) == "am" || date('a', strtotime($dtr[0]->first_out)) == "pm")
+                {{date('h:i a',strtotime($dtr[0]->first_out))}}
+                @endif
+    @else
+
+    @if (count($yesdtr))
+        @php
+           if (date('H',strtotime($yesdtr[0]->first_in)) >= 18 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
+            if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
+                    echo date('h:i a', strtotime($yesdtr[0]->first_out));
+            }
+        }
+        @endphp
+    @else
+
+ <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
+    @endif
+
+@endif
+
+</td>
+<td class="time " colspan="2" id="entry{{ $i }}1">
+    <span class="">{{ $ctoMessage }}</span> ( 4 Hours )
+</td>
+
+@else
+<td class="time " colspan="4" id="entry{{ $i }}1">
+    <span class="">{{ $ctoMessage }}</span>
+</td>
+@endif
+
+@else
+<td class="time " colspan="4" id="entry{{ $i }}1">
     @if ($leave_Count)
     <span class="" style="font-weight: normal">{{ $leavemessage }}</span>
 @elseif ($ot_Count)
     <span class="">{{ $officialTime }}</span>
 @elseif ($ob_Count)
     <span class="">{{ $officialBusinessMessage }}</span>
-@elseif ($cto_Count)
-    <span class="">{{ $ctoMessage }}</span>
 @endif
 </td>
+@endif
+
+
 @else
 
 
@@ -90,9 +180,9 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
         return $row->dtr_date == $yesterDate ;
             }));
 
-       
+
         if(count($yesdtr)>=1){
-         
+
                 if (date('H',strtotime($yesdtr[0]->first_in)) >= 18 && date('H',strtotime($yesdtr[0]->first_in) <= 23) || date('H') == 0) {
                     if($curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) && date('a', strtotime($yesdtr[0]->first_out)) == "am") {
                             echo date('h:i a', strtotime($yesdtr[0]->first_out));
@@ -100,9 +190,9 @@ $empSched = $Schedule->filter(function ($sched) use ($year, $month, $i) {
                 }
         }
 
-       
+
         @endphp
-    
+
     </td>
     <td class="time " id="entry{{ $i }}3">
 
@@ -165,10 +255,10 @@ return $row->dtr_date == $yesterDate ;
                 @else
 
                 @if (count($yesdtr) == 0)
-                          
+
              <span style="font-size:8px;color:rgb(190, 184, 184)">NO ENTRY</span>
                 @endif
-          
+
                 @endif
         @else
        <span style="font-size:8px;color:rgb(190, 184, 184)">NO ENTRY</span>
@@ -178,7 +268,7 @@ return $row->dtr_date == $yesterDate ;
 <td class="time " id="entry{{ $i }}2">
     @if (count($dtr) && $dtr[0]->first_out)
                 @if (date('a', strtotime($dtr[0]->first_out)) == "am" || date('a', strtotime($dtr[0]->first_out)) == "pm")
-                {{date('h:i a',strtotime($dtr[0]->first_out))}} 
+                {{date('h:i a',strtotime($dtr[0]->first_out))}}
                 @endif
     @else
 
@@ -189,8 +279,8 @@ return $row->dtr_date == $yesterDate ;
                     echo date('h:i a', strtotime($yesdtr[0]->first_out));
             }
         }
-        @endphp           
-    @else 
+        @endphp
+    @else
 
  <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
     @endif
@@ -273,8 +363,8 @@ return $row->dtr_date == $yesterDate ;
                   if(count($dtr)){
             $firstIn =$dtr[0]->first_in ?? null;
             $firstOut = $dtr[0]->first_out ?? null;
-    
-                    
+
+
             $currDate = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
             if($firstIn && $firstOut){
 
@@ -289,11 +379,11 @@ return $row->dtr_date == $yesterDate ;
 
                 $controller = new \App\Http\Controllers\PayrollHooks\GenerateReportController();
                 $nightDifferentialHours = $controller->getNightDifferentialHours($firstIn ,$firstOut,$biometric_id,[],$Schedule['daySchedule']);
-               
-        
+
+
             echo $nightDifferentialHours['total_hours'];
             }
-    
+
             }  //code...
         } catch (\Throwable $th) {
             //throw $th;

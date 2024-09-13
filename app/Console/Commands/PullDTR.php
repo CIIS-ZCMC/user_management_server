@@ -42,40 +42,47 @@ class PullDTR extends Command
     public function handle()
     {
         $this->dtrController->fetchDTRFromDevice();
-     
+
 
 
         $logFilePath = storage_path('logs/daily_time_record.log');
-        
+
         /**
          * Whenever log file reaches 5 MB, it will clear the log file.
          */
 
         //9am - 11am - 3pm - 7:30pm - 9pm - 12am - 3am - 5:30am vice versa
         $DeletionList = [
-            '09:00',
-            '11:00',
-            '15:00',
-            '19:30',
-            '21:00',
+            // '09:00',
+            // '11:00',
+            // '15:00',
+            // '19:30',
+            // '21:00',
             '00:00',
-            '03:00',
-            '05:30'
+            // '03:00',
+            // '05:30'
         ];
-        
-       
+
+
         $datenow = date("H:i");
         $GenerateMin = date("i");
-        if (in_array($datenow,$DeletionList)){
-            //Pull first before clearing devices.
-                if($this->dtrController->fetchDTRFromDevice()){
-                     $this->dtrController->deleteDeviceLogs();
-                     Log::channel("custom-dtr-log")->info('DEVICE SUCCESSFULLY CLEARED @ '.$datenow);
-                  }
-       
+        // if (in_array($datenow,$DeletionList)){
+        //     //Pull first before clearing devices.
+        //         if($this->dtrController->fetchDTRFromDevice()){
+        //              $this->dtrController->deleteDeviceLogs();
+        //              Log::channel("custom-dtr-log")->info('DEVICE SUCCESSFULLY CLEARED @ '.$datenow);
+        //           }
+
+        // }
+
+        if($datenow === "00:00"){
+            if($this->dtrController->fetchDTRFromDevice()){
+                $this->dtrController->deleteDeviceLogs();
+                Log::channel("custom-dtr-log")->info('DEVICE SUCCESSFULLY CLEARED @ '.$datenow);
+             }
         }
-     
-      
+
+
 
 
         if (file_exists($logFilePath)) {

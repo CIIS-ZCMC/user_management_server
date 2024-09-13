@@ -5,14 +5,22 @@ namespace App\Http\Controllers\PayrollHooks;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\SalaryGrade;
+use App\Methods\Helpers;
+use App\Models\EmployeeProfile;
+use App\Models\LeaveType;
+use App\Http\Controllers\PayrollHooks\GenerateReportController;
 class ComputationController extends Controller
 {
-
+    protected $helper;
     protected $Working_Days;
     protected $Working_Hours;
+
+
      public function __construct() {
         $this->Working_Days = 22;
         $this->Working_Hours = 8;
+        $this->helper = new Helpers();
+
     }
 
     public function BasicSalary($sg, $step,$schedcount)
@@ -56,7 +64,7 @@ class ComputationController extends Controller
         $schedcount = 1;
       }
     return [
-        'Total'=> floor(( $schedcount * $salaryGrade / $schedcount) * 100) / 100,
+        'Total'=> floor(( $this->Working_Days * $salaryGrade / $this->Working_Days) * 100) / 100,
         'GrandTotal'=> $salaryGrade,
     ];
     }
@@ -67,7 +75,7 @@ class ComputationController extends Controller
             $DaysCount = 1;
         }
 
-        return round(($present_Days * $salary) / $DaysCount,2); // Contstant value. Required number of days
+        return round(($present_Days * $salary) / $this->Working_Days,2); // Contstant value. Required number of days
 
     }
 
@@ -81,18 +89,24 @@ class ComputationController extends Controller
             ];
         }
 
-            $per_day = $basic_Salary / $schedCount;
-            $per_hour = $per_day / $this->Working_Hours;
-            $per_minutes = $per_hour / 60;
-            $per_week = $per_day * 5;
+        $per_day = $basic_Salary / $this->Working_Days;
 
-            return [
-                'Weekly' => floor($per_week * 100) / 100,
-                'Daily' => floor($per_day * 100) / 100,
-                'Hourly' => floor($per_hour * 100) / 100,
-                'Minutes' => floor($per_minutes * 100) / 100,
-            ];
+        // Calculate the per-hour rate
+        $per_hour = $per_day / $this->Working_Hours;
 
+        // Calculate the per-minute rate
+        $per_minute = $per_hour / 60;
+
+        // Calculate the per-week rate (assuming 5 workdays in a week)
+        $per_week = $per_day * 5;
+
+        // Return rates, rounded to 3 decimal places
+        return [
+            'Weekly'  => round($per_week, 2),
+            'Daily'   => round($per_day, 2),
+            'Hourly'  => round($per_hour, 2),
+            'Minutes' => round($per_minute, 2),
+        ];
 
     }
 
@@ -104,9 +118,9 @@ class ComputationController extends Controller
         return round($Rates['Daily'] * $Number_Absences,2) ;
     }
 
-    public function NetSalaryFromTimeDeduction($Rates,$presentCount,$undertimeRate,$absentRate,$grosssalary){
+    public function NetSalaryFromTimeDeduction($Rates,$totalworkedminutes,$undertimeRate,$absentRate,$grosssalary){
         $deduction = $undertimeRate ;
-        $grossSal = $Rates['Daily'] * $presentCount ;
+        $grossSal = $Rates['Minutes'] * $totalworkedminutes ;
         $net =  floor(round( $grossSal - $deduction,2) * 100) /100;
 
 
@@ -115,24 +129,19 @@ class ComputationController extends Controller
 
     }
 
-    public function OutofPayroll($netsalary,$init,$days_In_Month){
+    public function OutofPayroll($overallnetSalary){
         $limit = 5000;
         $halfLimit = $limit / 2;
 
-        if (($init >= 1 && $days_In_Month <= 15) || ($init >= 16 && $days_In_Month >=31)) {
-            if ($netsalary < $halfLimit) {
-                // OUT OF PAYROLL
-                return true;
-            }
-        } elseif ($init >= 1 && $init <= 31) {
-            if ($netsalary < $limit) {
-                return true;
-            }
+        if ($overallnetSalary < $limit){
+            return true;
         }
 
         return false;
 
     }
+
+
 
 
 }
