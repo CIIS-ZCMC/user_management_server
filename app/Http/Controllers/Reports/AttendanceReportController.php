@@ -2079,9 +2079,10 @@ class AttendanceReportController extends Controller
         };
     }
 
-    public function reportByPeriod(Request $request): JsonResponse
+    public function reportByPeriod(Request $request):? JsonResponse
     {
         try {
+            // Extract the parameters from the request
             $area_id = $request->query('area_id');
             $sector = $request->query('sector');
             $area_under = strtolower($request->query('area_under'));
@@ -2096,102 +2097,91 @@ class AttendanceReportController extends Controller
             $limit = $request->query('limit');
             $sort_order = $request->query('sort_order');
             $report_type = $request->query('report_type');
-            $filters = [
-                "area_id" => $area_id,
-                "sector" => $sector,
-                "area_under" => $area_under,
-                "month_of" => $month_of,
-                "year_of" => $year_of,
-                "employment_type" => $employment_type,
-                "designation_id" => $designation_id,
-                "absent_leave_without_pay" => $absent_leave_without_pay,
-                "absent_without_official_leave" => $absent_without_official_leave,
-                "first_half" => $first_half,
-                "second_half" => $second_half,
-                "limit" => $limit,
-                "sort_order" => $sort_order,
-                "report_type" => $report_type,
-            ];
-
-            // variable declaration for report generation
-            $summary = collect();
-            $report_name = 'Employee Attendance Report';
             $is_print = $request->query('is_print');
-            $columns = $this->getReportColumns($report_type);
-            $orientation = 'landscape';
 
-            if ($sector && !$area_id) {
-                return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
-            }
+            // Generate a unique cache key based on the filters
+            $cacheKey = "attendance_report_" . md5(json_encode($request->all()));
 
-            if (!$sector && !$area_id) {
-                // Get base query by period
-                $base_query = $this->baseQueryByPeriod($month_of, $year_of, $first_half, $second_half, $employment_type, $designation_id);
-                $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-            } else {
-                // Get base query division by period
-                switch ($sector) {
-                    case 'division':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Division is provided'], 400);
-                        }
-                        $base_query = $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    case 'department':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Department is provided'], 400);
-                        }
-                        $base_query = $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    case 'section':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Section is provided'], 400);
-                        }
-                        $base_query = $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    case 'unit':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Unit is provided'], 400);
-                        }
-                        $base_query = $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    default:
-                        return response()->json(['message' => 'Invalid sector provided'], 400);
+            // Check if cached data exists
+            $reportData = Cache::remember($cacheKey, 60 * 60, function () use (
+                $sector, $area_id, $area_under, $month_of, $year_of, $employment_type,
+                $designation_id, $first_half, $second_half, $sort_order, $limit,
+                $report_type, $absent_leave_without_pay, $absent_without_official_leave
+            ) {
+                if ($sector && !$area_id) {
+                    return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
                 }
-            }
 
+                if (!$sector && !$area_id) {
+                    // Get base query by period
+                    $base_query = $this->baseQueryByPeriod($month_of, $year_of, $first_half, $second_half, $employment_type, $designation_id);
+                    $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                    return ['employees' => $employees, 'summary' => collect()];
+                } else {
+                    switch ($sector) {
+                        case 'division':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Division is provided'], 400);
+                            }
+                            $base_query = $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        case 'department':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Department is provided'], 400);
+                            }
+                            $base_query = $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        case 'section':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Section is provided'], 400);
+                            }
+                            $base_query = $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        case 'unit':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Unit is provided'], 400);
+                            }
+                            $base_query = $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        default:
+                            return response()->json(['message' => 'Invalid sector provided'], 400);
+                    }
+
+                    $employees = $this->getEmployeesByPeriod($report_type, $base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                    $summary = $this->getSummaryReportByPeriod($report_type, $sector, $month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
+
+                    return ['employees' => $employees, 'summary' => $summary];
+                }
+            });
+
+            // Extract employees and summary from the cached data
+            $employees = $reportData['employees'];
+            $summary = $reportData['summary'];
+
+            // Check if the user wants to print the report
             if ($is_print) {
-                return Helpers::generateAttendancePdf($employees, $columns, $report_name, $orientation, $summary, $filters);
+                $columns = $this->getReportColumns($report_type);
+                $report_name = 'Employee Attendance Report';
+                $orientation = 'landscape';
+                return Helpers::generateAttendancePdf($employees, $columns, $report_name, $orientation, $summary, $request->all());
             }
 
-            return response()->json(
-                [
-                    'report_summary' => $summary,
-                    'count' => count($employees),
-                    'data' => $employees,
-                    'message' => 'Data successfully retrieved',
-                ],
-                ResponseAlias::HTTP_OK
-            );
+            return response()->json([
+                'report_summary' => $summary,
+                'count' => count($employees),
+                'data' => $employees,
+                'message' => 'Data successfully retrieved',
+            ], ResponseAlias::HTTP_OK);
+
         } catch (\Throwable $th) {
             // Log the error and return an internal server error response
             Helpers::errorLog($this->CONTROLLER_NAME, 'filterAttendanceReport', $th->getMessage());
-            return response()->json(
-                [
-                    'message' => $th->getMessage()
-                ],
-                ResponseAlias::HTTP_INTERNAL_SERVER_ERROR
-            );
+            return response()->json([
+                'message' => $th->getMessage()
+            ], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     public function reportByDateRange(Request $request): JsonResponse
     {

@@ -31,6 +31,7 @@ use DateInterval;
 use DatePeriod;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -1326,55 +1327,80 @@ class Helpers
         return $dompdf->stream($report_name . '.pdf');
     }
 
-    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
+    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = []): ?JsonResponse
     {
-        $options = new Options();
-        $options->set('isPhpEnabled', false);
-        $options->set('isHtml5ParserEnabled', false);
-        $options->set('isRemoteEnabled', false);
-        $dompdf = new Dompdf($options);
-        $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+        try {
+            // Increase memory limit and execution time
+            ini_set('memory_limit', '512M');
+            ini_set('max_execution_time', 300); // Increase execution time
 
-        // Convert the employee attendance data into an array
-        $data = $employees->toArray(request());
+            // Set options for Dompdf
+            $options = new Options();
+            $options->set('isPhpEnabled', false);
+            $options->set('isHtml5ParserEnabled', false);
+            $options->set('isRemoteEnabled', false);
+            $dompdf = new Dompdf($options);
 
-        // Transform the data based on the columns, handle stdClass object
-        $attendanceData = array_map(function ($employee) use ($columns) {
-            $transformed = [];
-            foreach ($columns as $column) {
-                $field = $column['field'];
-                $value = $employee->$field ?? 'N/A';
+            // Set file storage base path for assets
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
 
-                // Apply any special formatting if necessary
-                if ($field === 'total_early_out_minutes') {
-                    $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
-                } else if ($field === 'total_days_with_early_out') {
-                    $value = $employee->total_days_with_early_out . ' days';
+            // Initialize an empty array to hold attendance data
+            $attendanceData = [];
+
+            // Use chunking to process large employee datasets efficiently
+            $employees->each(function ($employee) use ($columns, &$attendanceData) {
+                $transformed = [];
+
+                // Transform each employee's data based on the columns
+                foreach ($columns as $column) {
+                    $field = $column['field'];
+                    $value = $employee->$field ?? 'N/A'; // Handle missing fields
+
+                    // Apply any special formatting if necessary
+                    if ($field === 'total_early_out_minutes') {
+                        $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
+                    } else if ($field === 'total_days_with_early_out') {
+                        $value = $employee->total_days_with_early_out . ' days';
+                    }
+
+                    $transformed[$field] = $value;
                 }
 
-                $transformed[$field] = $value;
-            }
-            return $transformed;
-        }, $data);
+                // Add the transformed employee data to the attendance data array
+                $attendanceData[] = $transformed;
+            });
 
-        // Generate the HTML from a view, include summary data
-        $html = view('report.attendance_report', [
-            'total_employees'  => count($attendanceData),
-            'columns' => $columns,
-            'rows' => $attendanceData,
-            'report_name' => $report_name,
-            'report_summary' => $report_summary,
-            'filters' => $filters,
-        ])->render();
+            // Generate the HTML from a view, include summary and filter data
+            $html = view('report.attendance_report', [
+                'total_employees'  => count($attendanceData),
+                'columns' => $columns,
+                'rows' => $attendanceData,
+                'report_name' => $report_name,
+                'report_summary' => $report_summary,
+                'filters' => $filters,
+            ])->render();
 
-        // Load HTML into Dompdf and render it
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('Legal', $orientation);
-        $dompdf->render();
 
-        // Stream the generated PDF back to the user
-        return $dompdf->stream($report_name . '.pdf');
+            // Load the generated HTML into Dompdf
+            $dompdf->loadHtml($html);
+
+            // Set the paper size and orientation (e.g., 'Legal', 'landscape')
+            $dompdf->setPaper('Legal', $orientation);
+
+            // Render the PDF
+            $dompdf->render();
+
+            // Stream the generated PDF back to the user
+            return $dompdf->stream($report_name . '.pdf');
+
+        } catch (\Exception $e) {
+            // Return a response indicating an error
+            return response()->json([
+                'message' => 'Failed to generate report. Please try again later.'
+            ], 500);
+        }
     }
+
 
     public static function generateLeavePdf($results, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
     {
