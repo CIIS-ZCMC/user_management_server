@@ -31,6 +31,7 @@ use DateInterval;
 use DatePeriod;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -1270,7 +1271,7 @@ class Helpers
         $data = $employees->toArray(request());
 
         // Transform the data based on the columns
-        $employees = array_map(function($employee) use ($columns) {
+        $employees = array_map(function ($employee) use ($columns) {
             $transformed = [];
             foreach ($columns as $column) {
                 $field = $column['field'];
@@ -1279,21 +1280,17 @@ class Helpers
                 // Handle the "area" field specifically to extract the name of the assignment
                 if ($field === 'area') {
                     $value = $employee['area']['details']['name'] ?? 'N/A';
-                }
-                else if ($field === 'designation') {
+                } else if ($field === 'designation') {
                     $designationName = $employee['designation']['name'] ?? 'N/A';
                     $value = $designationName;
-                }
-                else if ($field === 'salaryGradeAndStep') {
+                } else if ($field === 'salaryGradeAndStep') {
                     // Combine salary grade and step
                     $salaryGrade = $employee['salary_grade']['salary_grade_number'] ?? 'N/A';
                     $value = "SG-" . $salaryGrade;
-                }
-                else if ($field === 'amount') {
+                } else if ($field === 'amount') {
                     // Get the salary amount for step 1
                     $value = $employee['salary_grade']['one'] ?? 'N/A';
-                }
-                else {
+                } else {
                     // Handle nested fields like 'area.details.name'
                     foreach (explode('.', $field) as $key) {
                         $value = $value[$key] ?? 'N/A';
@@ -1321,7 +1318,82 @@ class Helpers
         return $dompdf->stream($report_name . '.pdf');
     }
 
-    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
+    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = []): ?JsonResponse
+    {
+        try {
+            // Increase memory limit and execution time
+            ini_set('memory_limit', '512M');
+            ini_set('max_execution_time', 300); // Increase execution time
+
+            // Set options for Dompdf
+            $options = new Options();
+            $options->set('isPhpEnabled', false);
+            $options->set('isHtml5ParserEnabled', false);
+            $options->set('isRemoteEnabled', false);
+            $dompdf = new Dompdf($options);
+
+            // Set file storage base path for assets
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+
+            // Initialize an empty array to hold attendance data
+            $attendanceData = [];
+
+            // Use chunking to process large employee datasets efficiently
+            $employees->each(function ($employee) use ($columns, &$attendanceData) {
+                $transformed = [];
+
+                // Transform each employee's data based on the columns
+                foreach ($columns as $column) {
+                    $field = $column['field'];
+                    $value = $employee->$field ?? 'N/A'; // Handle missing fields
+
+                    // Apply any special formatting if necessary
+                    if ($field === 'total_early_out_minutes') {
+                        $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
+                    } else if ($field === 'total_days_with_early_out') {
+                        $value = $employee->total_days_with_early_out . ' days';
+                    }
+
+                    $transformed[$field] = $value;
+                }
+
+                // Add the transformed employee data to the attendance data array
+                $attendanceData[] = $transformed;
+            });
+
+            // Generate the HTML from a view, include summary and filter data
+            $html = view('report.attendance_report', [
+                'total_employees'  => count($attendanceData),
+                'columns' => $columns,
+                'rows' => $attendanceData,
+                'report_name' => $report_name,
+                'report_summary' => $report_summary,
+                'filters' => $filters,
+            ])->render();
+
+
+            // Load the generated HTML into Dompdf
+            $dompdf->loadHtml($html);
+
+            // Set the paper size and orientation (e.g., 'Legal', 'landscape')
+            $dompdf->setPaper('Legal', $orientation);
+
+            // Render the PDF
+            $dompdf->render();
+
+            // Stream the generated PDF back to the user
+            return $dompdf->stream($report_name . '.pdf');
+
+        } catch (\Exception $e) {
+            // Return a response indicating an error
+            return response()->json([
+                'message' => 'Failed to generate report. Please try again later.'
+            ], 500);
+        }
+    }
+
+
+    public static function generateLeavePdf($results, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
     {
         $options = new Options();
         $options->set('isPhpEnabled', false);
@@ -1330,46 +1402,64 @@ class Helpers
         $dompdf = new Dompdf($options);
         $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
 
-        // Convert the employee attendance data into an array
-        $data = $employees->toArray(request());
+        // Map the known leave types to their corresponding columns
+        $leaveTypeMappings = [
+            'VL' => 'vl', // Vacation Leave
+            'SL' => 'sl', // Sick Leave
+            'SPL' => 'spl', // Special Privilege Leave
+            'FL' => 'fl'  // Mandatory/Forced Leave
+        ];
 
-        // Transform the data based on the columns, handle stdClass object
-        $attendanceData = array_map(function($employee) use ($columns) {
+        $leaveData = array_map(function ($result) use ($columns, $leaveTypeMappings) {
             $transformed = [];
+            $leaveCounts = [
+                'vl' => 0,
+                'sl' => 0,
+                'spl' => 0,
+                'fl' => 0
+            ];
+
             foreach ($columns as $column) {
                 $field = $column['field'];
-                $value = $employee->$field ?? 'N/A';
-
-                // Apply any special formatting if necessary
-                if ($field === 'total_early_out_minutes') {
-                    $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
-                } else if ($field === 'total_days_with_early_out') {
-                    $value = $employee->total_days_with_early_out . ' days';
+                // Check if this field corresponds to a specific leave type
+                if (array_key_exists($field, $leaveCounts) && isset($result['leave_types']) && is_array($result['leave_types'])) {
+                    foreach ($result['leave_types'] as $leaveType) {
+                        if (isset($leaveTypeMappings[$leaveType['code']]) && $leaveTypeMappings[$leaveType['code']] == $field) {
+                            $leaveCounts[$field] += $leaveType['count'];
+                        }
+                    }
+                    $value = $leaveCounts[$field];
+                } else if ($field === 'leave_types' && isset($result['leave_types']) && is_array($result['leave_types'])) {
+                    // Filter and format other leave types
+                    $otherLeaveTypes = array_filter($result['leave_types'], function ($leaveType) use ($leaveTypeMappings) {
+                        return $leaveType['count'] > 0 && !in_array($leaveType['code'], array_keys($leaveTypeMappings));
+                    });
+                    $value = implode(', ', array_map(function ($leaveType) {
+                        return $leaveType['name'] . ': ' . $leaveType['count'];
+                    }, $otherLeaveTypes));
+                } else {
+                    // For other fields, handle normally
+                    $value = $result[$field] ?? 'N/A';
                 }
-
                 $transformed[$field] = $value;
             }
             return $transformed;
-        }, $data);
+        }, $results);  // Directly use $results as it's already an array
 
-        // Generate the HTML from a view, include summary data
-        $html = view('report.attendance_report', [
-            'total_employees'  => count($attendanceData),
+        $html = view('report.leave_report', [
+            'total_data' => count($leaveData),
             'columns' => $columns,
-            'rows' => $attendanceData,
+            'rows' => $leaveData,
             'report_name' => $report_name,
             'report_summary' => $report_summary,
             'filters' => $filters,
         ])->render();
 
-        // Load HTML into Dompdf and render it
+        // Load the HTML and stream the PDF
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('Legal', $orientation);
+        $dompdf->setPaper('A4', $orientation); // Add paper orientation here if needed
         $dompdf->render();
 
-        // Stream the generated PDF back to the user
         return $dompdf->stream($report_name . '.pdf');
     }
-
-
 }

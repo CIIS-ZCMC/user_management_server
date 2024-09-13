@@ -454,7 +454,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
-            FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
+            // FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -2155,11 +2155,12 @@ class EmployeeProfileController extends Controller
             // Apply search filter if a search term is provided
             if ($search = $request->input('search')) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('employee_profiles.first_name', 'like', "%{$search}%")
-                        ->orWhere('employee_profiles.last_name', 'like', "%{$search}%")
-                        ->orWhereHas('personalInformation', function ($query) use ($search) {
-                            $query->where('personal_informations.email', 'like', "%{$search}%");
-                        });
+                    $query->whereHas('personalInformation', function ($q) use ($search) {
+                        if (!empty($search)) {
+                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                        }
+                    });
                 });
             }
 

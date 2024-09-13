@@ -2536,7 +2536,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // LEAVE REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
+            Route::get('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
         // ATTENDANCE REPORTS
@@ -2557,9 +2557,21 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
         });
 
+        // LOGIN ACTIVITIES REPORT
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-activities-report', 'LoginActivitiesReport@generateLoginActivitiesReport');
+        });
 
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-frequency-report', 'LoginActivitiesReport@generateLoginFrequencyReport');
+        });
 
-        // PRINTABLES
-        Route::post('download-employee-report', 'PrintableReportController@generatePrintableReport');
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-failed-attempts-report', 'LoginActivitiesReport@generateFailedLoginAttemptsReport');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-device-browser-report', 'LoginActivitiesReport@generateDeviceBrowserLoginReport');
+        });
     });
 });
