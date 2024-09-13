@@ -255,4 +255,163 @@ class TimeAdjustmentController extends Controller
 
         }
     }
+
+    public function employees(Request $request)
+    {
+        try {
+            // Fetch all employees from the database
+            $fetch_employees = EmployeeProfile::join('personal_informations', 'employee_profiles.personal_information_id', '=', 'personal_informations.id')
+                ->select('employee_profiles.*') // Select fields from the EmployeeProfile table
+                ->orderBy('personal_informations.last_name')
+                ->get();
+
+            // Process fetched employees
+            $data = [];
+            foreach ($fetch_employees as $employee) {
+                $data[] = [
+                    'id' => $employee->id,
+                    'name' => $employee->lastNameTofirstName(),
+                ];
+            }
+
+            return response()->json(['data' => $data], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeList', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    //Store new TA by clicking request time adjustment used by HRMO 
+    public function request(Request $request)
+    {
+        try {
+
+            $cleanData = [];
+            $createdAdjustments = []; // Array to store all created adjustments
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if ($key === 'attachment') {
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/time_adjustment');
+                    if (is_string($attachment)) {
+                        $cleanData['attachment'] = $request->attachment === null || $request->attachment === 'null' ? null : $attachment;
+                    }
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            // Continue with your existing logic
+            $user = $request->user;
+            $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+
+            $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
+
+            if ($employee->biometric_id === null) {
+                return response()->json(['message' => 'Biometric ID is not yet registered'], Response::HTTP_NOT_FOUND);
+            }
+
+            if ($approving_officer === null) {
+                return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+
+            // Decode the time_records JSON string into an array
+            if (isset($request->time_records)) {
+                $cleanData['time_records'] = json_decode($request->time_records, true);
+            } else {
+                return response()->json(['message' => 'Time records are missing'], Response::HTTP_BAD_REQUEST);
+            }
+
+            foreach ($cleanData['time_records'] as $record) {
+                if (empty($record['first_in']) && empty($record['first_out'])) {
+                    continue;
+                }
+
+                // Check if a request already exists for this date
+                $find = TimeAdjustment::where('date', $record['date'])
+                    ->where('employee_profile_id', $cleanData['employee_profile_id'])
+                    ->whereNot('status', 'declined')
+                    ->first();
+
+                if ($find !== null) {
+                    return response()->json(['message' => 'You already have a request on date: ' . $record['date']], Response::HTTP_FORBIDDEN);
+                }
+
+                // Prepare data for this specific date
+                $adjustmentData = $cleanData;
+                $adjustmentData['employee_profile_id'] = $employee->id;
+                $adjustmentData['approving_officer'] = $approving_officer;
+                $adjustmentData['date'] = $record['date'];
+                $adjustmentData['first_in'] = $record['first_in'];
+                $adjustmentData['first_out'] = $record['first_out'];
+                $adjustmentData['second_in'] = $record['second_in'];
+                $adjustmentData['second_out'] = $record['second_out'];
+                $adjustmentData['status'] = $cleanData['status'];
+
+
+                // Store the time adjustment for this date
+                $data = TimeAdjustment::create($adjustmentData);
+
+                $dtr = DailyTimeRecords::where([
+                    ['biometric_id', '=', $employee->biometric_id],
+                    ['dtr_date', '=', $adjustmentData['date']],
+                ])->first();
+
+                if ($dtr === null) {
+                    // Create new DTR
+                    $dtr = DailyTimeRecords::create([
+                        'biometric_id' => $employee->biometric_id,
+                        'dtr_date' => $data->date,
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
+                        'is_time_adjustment' => 1
+                    ]);
+                } else {
+                    // Update existing DTR
+                    $dtr->update([
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
+                        'is_time_adjustment' => 1
+                    ]);
+                }
+
+                // Add the created adjustment to the array
+                $createdAdjustments[] = $data;
+
+                // Log system actions
+                Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $record['date'] . '.');
+                Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'request');
+            }
+
+            return response()->json([
+                'data' => TimeAdjustmentResource::collection(TimeAdjustment::all()),
+                // 'data' => TimeAdjustmentResource::collection($createdAdjustments),
+                'message' => 'Time adjustments successfully created for the date range.'
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'request', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

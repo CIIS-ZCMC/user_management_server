@@ -37,6 +37,9 @@ class Kernel extends ConsoleKernel
         //     return now()->month == 12 && now()->day == 25;
         // })->daily();
 
+        //This feature has been tested.
+        $schedule->command('backup:database')->dailyAt('05:00');
+
         $schedule->command('app:task-scheduler')->dailyAt('5:00');
 
         $schedule->command(ProcessExpiredOvertimeCredits::class)->yearly()->when(function () {
@@ -66,7 +69,6 @@ class Kernel extends ConsoleKernel
 
         // $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
         // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->runInBackground();
-
     }
 
     /**

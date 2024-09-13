@@ -26,6 +26,7 @@ class EmployeeProfile extends Authenticatable
         'employee_id',
         'profile_url',
         'date_hired',
+        'user_form_link',
         'password_encrypted',
         'password_created_at',
         'password_expiration_at',
@@ -159,6 +160,14 @@ class EmployeeProfile extends Authenticatable
         return $fullName;
     }
 
+    public function lastNameTofirstName()
+    {
+        $personal_information = $this->personalInformation;
+        $fullName = $personal_information['last_name'] . ', ' . $personal_information['first_name'];
+
+        return $fullName;
+    }
+
     public function employeeLeaveCredits()
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
@@ -243,7 +252,7 @@ class EmployeeProfile extends Authenticatable
     public function findDesignation()
     {
         $assign_area = $this->assignedArea;
-        $designation = !isset($assign_area->plantilla_id)? $assign_area->designation ?? "" : $assign_area->plantilla->designation ?? "";
+        $designation = !isset($assign_area->plantilla_id) ? $assign_area->designation ?? "" : $assign_area->plantilla->designation ?? "";
         return $designation;
     }
 
