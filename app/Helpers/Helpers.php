@@ -1440,7 +1440,7 @@ class Helpers
 
         // Load the HTML and stream the PDF
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('Legal', $orientation); // Add paper orientation here if needed
+        $dompdf->setPaper('A4', $orientation); // Add paper orientation here if needed
         $dompdf->render();
 
         return $dompdf->stream($report_name . '.pdf');

@@ -28,6 +28,7 @@ class InActiveEmployeeResource extends JsonResource
             'date_hired' => $this->date_hired,
             'employment_end_at' => $this->date_resigned,
             'personal_information_id' => $personal_information->id,
+            'created_at' =>  $this->created_at,
         ];
     }
 }
