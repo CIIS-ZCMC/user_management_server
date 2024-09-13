@@ -433,7 +433,6 @@ class EmployeeScheduleController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     public function upload(Request $request)

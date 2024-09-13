@@ -945,6 +945,14 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-profile-all-records', 'EmployeeProfileController@employeeRecords');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-profile-all-dropdown', 'EmployeeProfileController@indexDropdown');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employee-profile-bytypes', 'EmployeeProfileController@getEmployeeListByEmployementTypes');
         });
 
@@ -2458,28 +2466,47 @@ Route::middleware('auth.cookie')->group(function () {
      * Employee Reports
      */
     Route::namespace('App\Http\Controllers\Reports')->group(function () {
-
-        // TESTING
         // Filter Employees by Blood Type
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-blood-type-filter', 'EmployeeReportController@filterEmployeesByBloodType');
+            Route::get('employee-by-blood-type-filter', 'EmployeeReportController@filterEmployeesByBloodType');
         });
         // Filter Employees by Civil Status
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-civil-status-filter', 'EmployeeReportController@filterEmployeesByCivilStatus');
+            Route::get('employee-by-civil-status-filter', 'EmployeeReportController@filterEmployeesByCivilStatus');
         });
         // Filter Employees by Job Status
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-job-status-filter', 'EmployeeReportController@filterEmployeesByJobStatus');
+            Route::get('employee-by-job-status-filter', 'EmployeeReportController@filterEmployeesByJobStatus');
         });
         // Filter Employees per Position
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-per-position-filter', 'EmployeeReportController@filterEmployeesPerPosition');
+            Route::get('employee-per-position-filter', 'EmployeeReportController@filterEmployeesPerPosition');
         });
         // Filter Employees by Service Length
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
+            Route::get('employee-by-service-length-filter', 'EmployeeReportController@filterEmployeesByServiceLength');
         });
+        // Filter Employees by Address
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-by-address', 'EmployeeReportController@filterEmployeesByAddress');
+        });
+        // Filter Employees by Sex
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-by-sex', 'EmployeeReportController@filterEmployeesBySex');
+        });
+        // Filter Employees by PWD
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-by-pwd', 'EmployeeReportController@filterEmployeesByPWD');
+        });
+        // Filter Employees by Solo Parent
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-by-solo-parent', 'EmployeeReportController@filterEmployeesBySoloParent');
+        });
+        // Filter Employees by Religion
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employee-by-religion', 'EmployeeReportController@filterEmployeesByReligion');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('employees-blood-type', 'EmployeeReportController@allEmployeesBloodType');
@@ -2525,17 +2552,42 @@ Route::middleware('auth.cookie')->group(function () {
 
         // LEAVE REPORT
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('leave-report-filter', 'LeaveReportController@filterLeave');
+            Route::get('leave-report-filter', 'LeaveReportController@filterLeave');
         });
 
-        // ATTENDANCE TARDINESS REPORT
+        // ATTENDANCE REPORTS
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::post('attendance-report-filter', 'AttendanceReportController@filterAttendanceReport');
+            Route::get('attendance-report-by-period', 'AttendanceReportController@reportByPeriod');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('attendance-report-by-daterange', 'AttendanceReportController@reportByDateRange');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('attendance-report-summary', 'AttendanceReportController@reportSummary');
         });
 
         // TEST ROUTE
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::post('leave-application-report-filter', 'LeaveReportController@filterLeave');
+        });
+
+        // LOGIN ACTIVITIES REPORT
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-activities-report', 'LoginActivitiesReport@generateLoginActivitiesReport');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-frequency-report', 'LoginActivitiesReport@generateLoginFrequencyReport');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-failed-attempts-report', 'LoginActivitiesReport@generateFailedLoginAttemptsReport');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('login-device-browser-report', 'LoginActivitiesReport@generateDeviceBrowserLoginReport');
         });
     });
 });
