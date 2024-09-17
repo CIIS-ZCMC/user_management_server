@@ -21,17 +21,13 @@ Route::get('/initialize-storage', function () {
     // Artisan::call('storage:link');
 });
 
-<<<<<<< HEAD
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            Route::get('test', 'DashboardController@test');
-=======
+
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('test', 'DashboardController@test');
->>>>>>> UMIS-021
+
 
             Route::get('announcementslist', 'AnnouncementsController@index');
             Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
