@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,12 +18,20 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/initialize-storage', function () {
-    Artisan::call('storage:link');
+    // Artisan::call('storage:link');
 });
 
+<<<<<<< HEAD
 Route::
         namespace('App\Http\Controllers')->group(function () {
             Route::get('test', 'DashboardController@test');
+=======
+Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
+
+
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('test', 'DashboardController@test');
+>>>>>>> UMIS-021
 
             Route::get('announcementslist', 'AnnouncementsController@index');
             Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
@@ -1758,6 +1767,11 @@ Route::middleware('auth.cookie')->group(function () {
          * Monitization Posting Module
          *
          */
+
+        //imports
+        // Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+        //     Route::post('leave-application-import', 'LeaveApplicationController@import');
+        // });
 
         //reports
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
