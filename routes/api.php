@@ -2394,6 +2394,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('time-adjustment-request', 'TimeAdjustmentController@request');
         });
 
+        Route::middleware(['auth.permission:UMIS-TA update'])->group(function () {
+            Route::put('time-adjustment-update/{id}', 'TimeAdjustmentController@updateRequest');
+        });
+
         Route::middleware(['auth.permission:UMIS-TA view'])->group(function () {
             Route::get('time-adjustment-employee', 'TimeAdjustmentController@employees');
         });

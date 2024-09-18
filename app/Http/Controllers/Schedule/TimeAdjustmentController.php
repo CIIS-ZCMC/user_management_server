@@ -342,15 +342,35 @@ class TimeAdjustmentController extends Controller
                     continue;
                 }
 
-                // Check if a request already exists for this date
-                $find = TimeAdjustment::where('date', $record['date'])
-                    ->where('employee_profile_id', $cleanData['employee_profile_id'])
-                    ->whereNot('status', 'declined')
-                    ->first();
-
-                if ($find !== null) {
-                    return response()->json(['message' => 'You already have a request on date: ' . $record['date']], Response::HTTP_FORBIDDEN);
+                // Check if 'first_in' is an empty string and set to null
+                if ($record['first_in'] === "") {
+                    $record['first_in'] = null;
                 }
+
+                // Check if 'first_out' is an empty string and set to null
+                if ($record['first_out'] === "") {
+                    $record['first_out'] = null;
+                }
+
+                // Check if 'second_in' is an empty string and set to null
+                if ($record['second_in'] === "") {
+                    $record['second_in'] = null;
+                }
+
+                // Check if 'second_out' is an empty string and set to null
+                if ($record['second_out'] === "") {
+                    $record['second_out'] = null;
+                }
+
+                // Check if a request already exists for this date
+                // $find = TimeAdjustment::where('date', $record['date'])
+                //     ->where('employee_profile_id', $cleanData['employee_profile_id'])
+                //     ->whereNot('status', 'declined')
+                //     ->first();
+
+                // if ($find !== null) {
+                //     return response()->json(['message' => 'You already have a request on date: ' . $record['date']], Response::HTTP_FORBIDDEN);
+                // }
 
                 // Prepare data for this specific date
                 $adjustmentData = $cleanData;
@@ -373,6 +393,14 @@ class TimeAdjustmentController extends Controller
                 ])->first();
 
                 if ($dtr === null) {
+                    $firstInTime = Carbon::parse($data->date . " " . $data->first_in);
+                    $firstOutTime = Carbon::parse($data->date . " " . $data->first_out);
+
+                    // Check if `first_in` is greater than `first_out`, indicating a date span
+                    if ($firstInTime->gt($firstOutTime)) {
+                        $firstOutTime->addDay();
+                    }
+
                     // Create new DTR
                     $dtr = DailyTimeRecords::create([
                         'biometric_id' => $employee->biometric_id,
@@ -394,6 +422,9 @@ class TimeAdjustmentController extends Controller
                     ]);
                 }
 
+                $data->daily_time_record_id = $dtr->id;
+                $data->update();
+
                 // Add the created adjustment to the array
                 $createdAdjustments[] = $data;
 
@@ -404,13 +435,119 @@ class TimeAdjustmentController extends Controller
 
             return response()->json([
                 'data' => TimeAdjustmentResource::collection(TimeAdjustment::all()),
-                // 'data' => TimeAdjustmentResource::collection($createdAdjustments),
                 'message' => 'Time adjustments successfully created for the date range.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'request', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateRequest(Request $request, $id)
+    {
+
+        try {
+
+            $data = TimeAdjustment::find($id);
+
+            $cleanData = [];
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if ($key === 'attachment') {
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/time_adjustment');
+                    if (is_string($attachment)) {
+                        $cleanData['attachment'] = $request->attachment === null || $request->attachment === 'null' ? null : $attachment;
+                    }
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $employee = EmployeeProfile::find($data->employee_profile_id);
+
+            if ($employee->biometric_id === null) {
+                return response()->json(['message' => 'Biometric ID is not yet registered'], Response::HTTP_NOT_FOUND);
+            }
+
+
+            $daily_time_record = DailyTimeRecords::where([
+                ['biometric_id', '=', $employee->biometric_id],
+                ['dtr_date', '=', $data->date],
+            ])->first();
+
+            // Continue with your existing logic
+            $user = $request->user;
+            // Check if 'data' is an empty string and set to null
+            $record['first_in'] = $cleanData['first_in'] === "" ? null : $cleanData['first_in'];
+            $record['first_out'] = $cleanData['first_out'] === "" ? null : $cleanData['first_out'];
+            $record['second_in'] = $cleanData['second_in'] === "" ? null : $cleanData['second_in'];
+            $record['second_out'] = $cleanData['second_out'] === "" ? null : $cleanData['second_out'];
+
+            // Prepare data for this specific date
+            $adjustmentData = $cleanData;
+            $adjustmentData['first_in'] = $record['first_in'];
+            $adjustmentData['first_out'] = $record['first_out'];
+            $adjustmentData['second_in'] = $record['second_in'];
+            $adjustmentData['second_out'] = $record['second_out'];
+
+            // Update the time adjustment for this date
+            $data->daily_time_record_id = $daily_time_record->id;
+            $data->first_in = $adjustmentData['first_in'];
+            $data->first_out = $adjustmentData['first_out'];
+            $data->second_in = $adjustmentData['second_in'];
+            $data->second_out = $adjustmentData['second_out'];
+            $data->remarks = $cleanData['remarks'];
+            $data->update();
+
+            $dtr = DailyTimeRecords::find($data->daily_time_record_id);
+            if ($dtr !== null) {
+                $firstInTime = Carbon::parse($data['date'] . " " . $data->first_in);
+                $firstOutTime = Carbon::parse($data['date'] . " " . $data->first_out);
+
+                // Check if `first_in` is greater than `first_out`, indicating a date span
+                if ($firstInTime->gt($firstOutTime)) {
+                    $firstOutTime->addDay();
+                }
+
+                // Update existing DTR with correctly adjusted times
+                $dtr->update([
+                    'first_in' => $firstInTime->toDateTimeString(),
+                    'first_out' => $firstOutTime->toDateTimeString(),
+                    'second_in' => $data['date'] . " " . $data->second_in,
+                    'second_out' => $data['date'] . " " . $data->second_out,
+                    'is_time_adjustment' => 1
+                ]);
+            }
+
+            // Log system actions
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $data['date'] . '.');
+            Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'update');
+
+            return response()->json([
+                'data' => new TimeAdjustmentResource($data),
+                'message' => 'Time adjustments successfully created for the date range.'
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
