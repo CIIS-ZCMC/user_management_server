@@ -129,9 +129,13 @@ class ComputationController extends Controller
 
     }
 
-    public function OutofPayroll($overallnetSalary){
+    public function OutofPayroll($overallnetSalary,$employmentType){
         $limit = 5000;
-        $halfLimit = $limit / 2;
+        if($employmentType == "Job Order"){
+            $limit = 2500;
+        }
+       
+        
 
         if ($overallnetSalary < $limit){
             return true;

@@ -515,7 +515,7 @@ class GenerateReportController extends Controller
                     'To' => $days_In_Month,
                     'Month' => $month_of,
                     'Year' => $year_of,
-                    'Is_out' => $this->computed->OutofPayroll($OverAllnetSalary),
+                    'Is_out' => $this->computed->OutofPayroll($OverAllnetSalary,$Employee->employmentType),
                     'NightDifferentials' => array_values(array_filter($nightDifferentials, function ($row) use ($biometric_id) {
                         return isset($row['biometric_id']) && $row['biometric_id'] == $biometric_id;
                     })),
