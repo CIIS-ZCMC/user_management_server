@@ -94,6 +94,11 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(SpecialAccessRole::class);
     }
 
+    public function failedLoginTrails()
+    {
+        return $this->hasMany(FailedLoginTrail::class);
+    }
+
     public function loginTrails()
     {
         return $this->hasMany(LoginTrail::class);

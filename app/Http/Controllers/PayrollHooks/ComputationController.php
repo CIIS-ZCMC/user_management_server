@@ -104,7 +104,7 @@ class ComputationController extends Controller
         return [
             'Weekly'  => round($per_week, 2),
             'Daily'   => round($per_day, 2),
-            'Hourly'  => round($per_hour, 2),
+            'Hourly'  => round($per_hour, precision: 2),
             'Minutes' => round($per_minute, 2),
         ];
 
@@ -119,7 +119,7 @@ class ComputationController extends Controller
     }
 
     public function NetSalaryFromTimeDeduction($Rates,$totalworkedminutes,$undertimeRate,$absentRate,$grosssalary){
-        $deduction = $undertimeRate ;
+        $deduction = $undertimeRate + $absentRate;
         $grossSal = $Rates['Minutes'] * $totalworkedminutes ;
         $net =  floor(round( $grossSal - $deduction,2) * 100) /100;
 

@@ -492,7 +492,7 @@ class GenerateReportController extends Controller
 
                 $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $total_Month_WorkingMinutes, $undertimeRate, $absentRate, $basicSalary['Total']);
 
-                // return $Rates;
+
                 //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
 
                 $OverAllnetSalary = $this->TOTALNETSALARY($request, $biometric_id);

@@ -57,7 +57,6 @@
         margin-bottom: 10px;
         padding: 10px 20px 10px 20px;
         border:1px solid transparent;
-
         outline: none;
         background-color:#0283ca;
         color: rgb(255, 255, 255);
@@ -68,7 +67,6 @@
 
     #btnExport:hover {
         background-color:rgb(20, 89, 126);
-
         border: 1px solid #3468C0;
     }
 </style>
