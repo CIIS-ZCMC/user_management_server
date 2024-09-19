@@ -1336,6 +1336,8 @@ class Helpers
             $options->set('isHtml5ParserEnabled', false);
             $options->set('isRemoteEnabled', false);
             $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+
 
             // Set file storage base path for assets
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
