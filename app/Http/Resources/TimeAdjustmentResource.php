@@ -24,6 +24,7 @@ class TimeAdjustmentResource extends JsonResource
                 'code' => $this->employee->assignedArea->designation->code,
             ],
             'area' => $this->employee->assignedArea->findDetails()['details']->name,
+            'is_shifting' => $this->employee->shifting
         ];
 
         // $recommending_officer = [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\DTR\DTRcontroller;
 use App\Http\Requests\TimeAdjustmentRequest;
 use App\Http\Resources\TimeAdjustmentResource;
 use App\Models\DailyTimeRecords;
@@ -14,7 +15,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-
 
 class TimeAdjustmentController extends Controller
 {
@@ -338,28 +338,8 @@ class TimeAdjustmentController extends Controller
             }
 
             foreach ($cleanData['time_records'] as $record) {
-                if (empty($record['first_in']) && empty($record['first_out'])) {
+                if (empty($record['time_in']) && empty($record['break_out'])) {
                     continue;
-                }
-
-                // Check if 'first_in' is an empty string and set to null
-                if ($record['first_in'] === "") {
-                    $record['first_in'] = null;
-                }
-
-                // Check if 'first_out' is an empty string and set to null
-                if ($record['first_out'] === "") {
-                    $record['first_out'] = null;
-                }
-
-                // Check if 'second_in' is an empty string and set to null
-                if ($record['second_in'] === "") {
-                    $record['second_in'] = null;
-                }
-
-                // Check if 'second_out' is an empty string and set to null
-                if ($record['second_out'] === "") {
-                    $record['second_out'] = null;
                 }
 
                 // Check if a request already exists for this date
@@ -372,17 +352,23 @@ class TimeAdjustmentController extends Controller
                 //     return response()->json(['message' => 'You already have a request on date: ' . $record['date']], Response::HTTP_FORBIDDEN);
                 // }
 
+
                 // Prepare data for this specific date
                 $adjustmentData = $cleanData;
                 $adjustmentData['employee_profile_id'] = $employee->id;
                 $adjustmentData['approving_officer'] = $approving_officer;
                 $adjustmentData['date'] = $record['date'];
-                $adjustmentData['first_in'] = $record['first_in'];
-                $adjustmentData['first_out'] = $record['first_out'];
-                $adjustmentData['second_in'] = $record['second_in'];
-                $adjustmentData['second_out'] = $record['second_out'];
                 $adjustmentData['status'] = $cleanData['status'];
 
+                if ($employee->shifting === 1) {
+                    $adjustmentData['first_in'] = isset($record['time_in']) ? Carbon::parse($record['time_in'])->format('H:i:s') : null;
+                    $adjustmentData['first_out'] = isset($record['time_out']) ? Carbon::parse($record['time_out'])->format('H:i:s') : null;
+                } else {
+                    $adjustmentData['first_in'] = isset($record['time_in']) ? Carbon::parse($record['time_in'])->format('H:i:s') : null;
+                    $adjustmentData['first_out'] = isset($record['break_out']) ? Carbon::parse($record['break_out'])->format('H:i:s') : null;
+                    $adjustmentData['second_in'] = isset($record['break_in']) ? Carbon::parse($record['break_in'])->format('H:i:s') : null;
+                    $adjustmentData['second_out'] = isset($record['time_out']) ? Carbon::parse($record['time_out'])->format('H:i:s') : null;
+                }
 
                 // Store the time adjustment for this date
                 $data = TimeAdjustment::create($adjustmentData);
@@ -392,35 +378,49 @@ class TimeAdjustmentController extends Controller
                     ['dtr_date', '=', $adjustmentData['date']],
                 ])->first();
 
+                $firstInTime = Carbon::parse($data->date . " " . $data->first_in);
+                $firstOutTime = Carbon::parse($data->date . " " . $data->first_out);
+                $secondInTime = Carbon::parse($data->date . " " . $data->second_in);
+                $secondOutTime = Carbon::parse($data->date . " " . $data->second_out);
+
+                // Check if `first_in` is greater than `first_out`, indicating a date span
+                if ($firstInTime->gt($firstOutTime)) {
+                    $firstOutTime->addDay();
+                }
+
                 if ($dtr === null) {
-                    $firstInTime = Carbon::parse($data->date . " " . $data->first_in);
-                    $firstOutTime = Carbon::parse($data->date . " " . $data->first_out);
-
-                    // Check if `first_in` is greater than `first_out`, indicating a date span
-                    if ($firstInTime->gt($firstOutTime)) {
-                        $firstOutTime->addDay();
-                    }
-
                     // Create new DTR
                     $dtr = DailyTimeRecords::create([
                         'biometric_id' => $employee->biometric_id,
                         'dtr_date' => $data->date,
-                        'first_in' => $data->date . " " . $data->first_in,
-                        'first_out' => $data->date . " " . $data->first_out,
-                        'second_in' => $data->date . " " . $data->second_in,
-                        'second_out' => $data->date . " " . $data->second_out,
+                        'first_in' => $data->first_in === null ? null : $firstInTime->toDateTimeString(),
+                        'first_out' => $data->first_out === null ? null : $firstOutTime->toDateTimeString(),
+                        'second_in' => $data->second_in === null ? null : $secondInTime->toDateTimeString(),
+                        'second_out' => $data->second_out === null ? null : $secondOutTime->toDateTimeString(),
                         'is_time_adjustment' => 1
                     ]);
+
+                    // DTR_HELPER;
+
                 } else {
                     // Update existing DTR
                     $dtr->update([
-                        'first_in' => $data->date . " " . $data->first_in,
-                        'first_out' => $data->date . " " . $data->first_out,
-                        'second_in' => $data->date . " " . $data->second_in,
-                        'second_out' => $data->date . " " . $data->second_out,
-                        'is_time_adjustment' => 1
+                        'first_in' => $data->first_in === null ? null : $firstInTime->toDateTimeString(),
+                        'first_out' => $data->first_out === null ? null : $firstOutTime->toDateTimeString(),
+                        'second_in' => $data->second_in === null ? null : $secondInTime->toDateTimeString(),
+                        'second_out' => $data->second_out === null ? null : $secondOutTime->toDateTimeString(),
+                        'is_time_adjustment' => true
                     ]);
                 }
+
+                $month = Carbon::parse($dtr->dtr_date)->month;
+                $year = Carbon::parse($dtr->dtr_date)->year;
+
+                $dtrHelper = new DTRcontroller();
+                $dtrHelper->RecomputeHours($dtr->biometric_id, $month, $year, $dtr->dtr_date);
+
+                $dtr->is_time_adjustment = true;
+                $dtr->update();
 
                 $data->daily_time_record_id = $dtr->id;
                 $data->update();
@@ -492,20 +492,23 @@ class TimeAdjustmentController extends Controller
                 ['dtr_date', '=', $data->date],
             ])->first();
 
+
             // Continue with your existing logic
             $user = $request->user;
-            // Check if 'data' is an empty string and set to null
-            $record['first_in'] = $cleanData['first_in'] === "" ? null : $cleanData['first_in'];
-            $record['first_out'] = $cleanData['first_out'] === "" ? null : $cleanData['first_out'];
-            $record['second_in'] = $cleanData['second_in'] === "" ? null : $cleanData['second_in'];
-            $record['second_out'] = $cleanData['second_out'] === "" ? null : $cleanData['second_out'];
 
             // Prepare data for this specific date
             $adjustmentData = $cleanData;
-            $adjustmentData['first_in'] = $record['first_in'];
-            $adjustmentData['first_out'] = $record['first_out'];
-            $adjustmentData['second_in'] = $record['second_in'];
-            $adjustmentData['second_out'] = $record['second_out'];
+            if ($employee->shifting === 1) {
+                $adjustmentData['first_in'] = isset($cleanData['time_in']) ? Carbon::parse($cleanData['time_in'])->format('H:i:s') : null;
+                $adjustmentData['first_out'] = isset($cleanData['time_out']) ? Carbon::parse($cleanData['time_out'])->format('H:i:s') : null;
+                $adjustmentData['second_in'] = null;
+                $adjustmentData['second_out'] = null;
+            } else {
+                $adjustmentData['first_in'] = isset($cleanData['time_in']) ? Carbon::parse($cleanData['time_in'])->format('H:i:s') : null;
+                $adjustmentData['first_out'] = isset($cleanData['break_out']) ? Carbon::parse($cleanData['break_out'])->format('H:i:s') : null;
+                $adjustmentData['second_in'] = isset($cleanData['break_in']) ? Carbon::parse($cleanData['break_in'])->format('H:i:s') : null;
+                $adjustmentData['second_out'] = isset($cleanData['time_out']) ? Carbon::parse($cleanData['time_out'])->format('H:i:s') : null;
+            }
 
             // Update the time adjustment for this date
             $data->daily_time_record_id = $daily_time_record->id;
@@ -513,13 +516,15 @@ class TimeAdjustmentController extends Controller
             $data->first_out = $adjustmentData['first_out'];
             $data->second_in = $adjustmentData['second_in'];
             $data->second_out = $adjustmentData['second_out'];
-            $data->remarks = $cleanData['remarks'];
+            $data->remarks = $adjustmentData['remarks'];
             $data->update();
 
             $dtr = DailyTimeRecords::find($data->daily_time_record_id);
             if ($dtr !== null) {
                 $firstInTime = Carbon::parse($data['date'] . " " . $data->first_in);
                 $firstOutTime = Carbon::parse($data['date'] . " " . $data->first_out);
+                $secondInTime = Carbon::parse($data['date'] . " " . $data->second_in);
+                $secondOutTime = Carbon::parse($data['date'] . " " . $data->second_out);
 
                 // Check if `first_in` is greater than `first_out`, indicating a date span
                 if ($firstInTime->gt($firstOutTime)) {
@@ -528,14 +533,22 @@ class TimeAdjustmentController extends Controller
 
                 // Update existing DTR with correctly adjusted times
                 $dtr->update([
-                    'first_in' => $firstInTime->toDateTimeString(),
-                    'first_out' => $firstOutTime->toDateTimeString(),
-                    'second_in' => $data['date'] . " " . $data->second_in,
-                    'second_out' => $data['date'] . " " . $data->second_out,
-                    'is_time_adjustment' => 1
+                    'first_in' => $data->first_in === null ? null : $firstInTime->toDateTimeString(),
+                    'first_out' => $data->first_out === null ? null : $firstOutTime->toDateTimeString(),
+                    'second_in' => $data->second_in === null ? null : $secondInTime->toDateTimeString(),
+                    'second_out' => $data->second_out === null ? null : $secondOutTime->toDateTimeString(),
+                    'is_time_adjustment' => true
                 ]);
-            }
 
+                $month = Carbon::parse($dtr->dtr_date)->month;
+                $year = Carbon::parse($dtr->dtr_date)->year;
+
+                $dtrHelper = new DTRcontroller();
+                $dtrHelper->RecomputeHours($dtr->biometric_id, $month, $year, $dtr->dtr_date);
+
+                $dtr->is_time_adjustment = true;
+                $dtr->update();
+            }
             // Log system actions
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating time adjustment for ' . $data['date'] . '.');
             Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'update');
