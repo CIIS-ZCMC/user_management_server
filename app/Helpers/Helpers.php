@@ -1356,7 +1356,7 @@ class Helpers
                     if ($field === 'total_early_out_minutes') {
                         $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
                     } else if ($field === 'total_days_with_early_out') {
-                        $value = $employee->total_days_with_early_out . ' days';
+                        $value = $employee->total_days_with_early_out . ' day(s)';
                     }
 
                     $transformed[$field] = $value;

@@ -2407,11 +2407,7 @@ class AttendanceReportController extends Controller
                 "flex" => 1,
                 "headerName" => "Designation"
             ],
-            [
-                "field" => "scheduled_days",
-                "flex" => 1,
-                "headerName" => "Scheduled Days"
-            ]
+            
         ];
     }
 
@@ -2420,6 +2416,11 @@ class AttendanceReportController extends Controller
         $common_columns = $this->getCommonColumns();
         $report_specific_columns = [
             'absences' => [
+                [
+                    "field" => "scheduled_days",
+                    "flex" => 1,
+                    "headerName" => "Scheduled Days"
+                ],
                 [
                     "field" => "days_present",
                     "flex" => 1,
@@ -2443,22 +2444,32 @@ class AttendanceReportController extends Controller
             ],
             'tardiness' => [
                 [
+                    "field" => "scheduled_days",
+                    "flex" => 1,
+                    "headerName" => "Scheduled Days"
+                ],
+                [
                     "field" => "days_with_tardiness",
                     "flex" => 1,
                     "headerName" => "Days With Tardiness"
                 ],
-                [
-                    "field" => "total_leave_applications",
-                    "flex" => 1,
-                    "headerName" => "Leave Applications"
-                ],
-                [
-                    "field" => "total_official_time_applications",
-                    "flex" => 1,
-                    "headerName" => "Official Time Applications"
-                ]
+                // [
+                //     "field" => "total_leave_applications",
+                //     "flex" => 1,
+                //     "headerName" => "Leave Applications"
+                // ],
+                // [
+                //     "field" => "total_official_time_applications",
+                //     "flex" => 1,
+                //     "headerName" => "Official Time Applications"
+                // ]
             ],
             'undertime' => [
+                [
+                    "field" => "scheduled_days",
+                    "flex" => 1,
+                    "headerName" => "Scheduled Days"
+                ],
                 [
                     "field" => "total_days_with_early_out",
                     "flex" => 1,
@@ -2467,18 +2478,18 @@ class AttendanceReportController extends Controller
                 [
                     "field" => "total_early_out_minutes",
                     "flex" => 1,
-                    "headerName" => "Total Early Out Minutes"
+                    "headerName" => "Total Early Out in Minutes"
                 ],
-                [
-                    "field" => "total_leave_applications",
-                    "flex" => 1,
-                    "headerName" => "Leave Applications"
-                ],
-                [
-                    "field" => "total_official_time_applications",
-                    "flex" => 1,
-                    "headerName" => "Official Time Applications"
-                ]
+                // [
+                //     "field" => "total_leave_applications",
+                //     "flex" => 1,
+                //     "headerName" => "Leave Applications"
+                // ],
+                // [
+                //     "field" => "total_official_time_applications",
+                //     "flex" => 1,
+                //     "headerName" => "Official Time Applications"
+                // ]
             ],
             'perfect' => [
                 // Define perfect attendance-specific columns here
