@@ -42,9 +42,25 @@ use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
 use DateTime;
+use App\Imports\LeaveApplicationsImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveApplicationController extends Controller
 {
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:csv,txt',
+        ]);
+
+        Excel::import(new LeaveApplicationsImport, $request->file('file'));
+
+        return response()->json([
+            'message' => 'Import Succesfull.'
+        ], Response::HTTP_OK);
+    }
+
     public function index(Request $request)
     {
         try {
@@ -900,7 +916,7 @@ class LeaveApplicationController extends Controller
             $log_status = '';
             $the_same_approver_id = '';
             $hrmo_flag = false;
-            $approving_flag=false;
+            $approving_flag = false;
             //FOR NOTIFICATION
             $next_approving = null;
             $emp_id = $leave_application->employee_profile_id;
@@ -947,9 +963,8 @@ class LeaveApplicationController extends Controller
                             //FOR NOTIFICATION
                             // $next_approving=$leave_application->recommending_officer;
                             $message = 'Approving Officer';
-                            $approving_flag=true;
-                        }
-                        else{
+                            $approving_flag = true;
+                        } else {
                             $status = 'for approving approval';
                             $log_status = 'Approved by Recommending Officer';
                             $leave_application->update(['status' => $status]);
@@ -958,7 +973,6 @@ class LeaveApplicationController extends Controller
                             $next_approving = $leave_application->approving_officer;
                             $message = 'Recommending Officer';
                         }
-
                     } else {
                         return response()->json([
                             'message' => 'You have no access to approve this request.',
@@ -993,9 +1007,7 @@ class LeaveApplicationController extends Controller
                     'leave_application_id' => $leave_application->id,
                     'action' => $the_same_approver_id
                 ]);
-            }
-            elseif($approving_flag)
-            {
+            } elseif ($approving_flag) {
                 LeaveApplicationLog::create([
                     'action_by' => $employee_profile->id,
                     'leave_application_id' => $leave_application->id,
@@ -1006,9 +1018,7 @@ class LeaveApplicationController extends Controller
                     'leave_application_id' => $leave_application->id,
                     'action' => $the_same_approver_id
                 ]);
-
-            }
-            else {
+            } else {
                 LeaveApplicationLog::create([
                     'action_by' => $employee_profile->id,
                     'leave_application_id' => $leave_application->id,
