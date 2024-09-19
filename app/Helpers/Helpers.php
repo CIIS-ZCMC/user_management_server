@@ -1365,7 +1365,6 @@ class Helpers
                 // Add the transformed employee data to the attendance data array
                 $attendanceData[] = $transformed;
             });
-
             // Generate the HTML from a view, include summary and filter data
             $html = view('report.attendance_report', [
                 'total_employees'  => count($attendanceData),
