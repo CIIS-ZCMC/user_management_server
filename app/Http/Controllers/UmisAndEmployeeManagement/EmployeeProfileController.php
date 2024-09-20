@@ -388,7 +388,7 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool) $employee_profile->is_2fa) {
+            if ((bool)$employee_profile->is_2fa) {
                 $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
                 SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
@@ -897,7 +897,7 @@ class EmployeeProfileController extends Controller
             $months = $dateFrom->diffInMonths($dateTo);
             if ($work->company == "Zamboanga City Medical Center") {
                 $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
-                $totalZcmc  += $totalZcmcMonths;
+                $totalZcmc += $totalZcmcMonths;
             }
 
             $totalMonths += $months;
@@ -909,12 +909,12 @@ class EmployeeProfileController extends Controller
             $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
         }
 
-        $total = $currentServiceMonths +  $totalMonths;
-        $totalYears = floor($total  / 12);
+        $total = $currentServiceMonths + $totalMonths;
+        $totalYears = floor($total / 12);
 
         // Total service in ZCMC
         $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
-        $totalYearsInZcmc = floor($totalMonthsInZcmc  / 12);
+        $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
 
 
         $employee = [
@@ -996,7 +996,6 @@ class EmployeeProfileController extends Controller
         }
 
 
-
         return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
@@ -1064,7 +1063,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
             }
 
-            if ((int) $otp !== $employee_profile->otp) {
+            if ((int)$otp !== $employee_profile->otp) {
                 return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
             }
 
@@ -1414,7 +1413,6 @@ class EmployeeProfileController extends Controller
             $cleanData = ["password" => $new_password];
 
 
-
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . config('app.salt_value'), $decryptedPassword)) {
@@ -1732,28 +1730,28 @@ class EmployeeProfileController extends Controller
 
                 switch ($sector) {
                     case "division":
-                        $area_details = Division::find((int) $area);
+                        $area_details = Division::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for division with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
                     case "department":
-                        $area_details = Department::find((int) $area);
+                        $area_details = Department::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for department with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
                     case "section":
-                        $area_details = Section::find((int) $area);
+                        $area_details = Section::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for section with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
                     case "unit":
-                        $area_details = Unit::find((int) $area);
+                        $area_details = Unit::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for unit with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
@@ -1853,7 +1851,7 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool) $employee_profile->is_2fa) {
+            if ((bool)$employee_profile->is_2fa) {
                 $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
@@ -2394,7 +2392,6 @@ class EmployeeProfileController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($search, function ($query) use ($search) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
                                                 if (!empty($search)) {
@@ -2472,7 +2469,6 @@ class EmployeeProfileController extends Controller
                                     }])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
-
                                         ->when($search, function ($query) use ($search) {
                                             $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
                                                 if (!empty($search)) {
@@ -2616,14 +2612,13 @@ class EmployeeProfileController extends Controller
             $user = $request->user;
 
 
-
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
 
             $filteredUsers = $employee_profiles->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->personalInformation->fullName(),
-                    'avatar'  => config("app.server_domain") . "/photo/profiles/" . $user->profile_url,
+                    'avatar' => config("app.server_domain") . "/photo/profiles/" . $user->profile_url,
                 ];
             });
 
@@ -3640,18 +3635,18 @@ class EmployeeProfileController extends Controller
             switch ($area) {
                 case "division":
                     $division = Division::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area, 'code' => $division->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $division->name, 'sector' => $area, 'code' => $division->code];
                     $departments = Department::where('division_id', $area_id)->get();
 
                     foreach ($departments as $department) {
-                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'department', 'code' => $department->code];
+                        $areas[] = ['id' => $department->id . '-' . 'department', 'name' => $department->name, 'sector' => 'department', 'code' => $department->code];
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
-                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
+                            $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
 
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
-                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                                $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                             }
                         }
                     }
@@ -3661,13 +3656,13 @@ class EmployeeProfileController extends Controller
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                            $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                         }
                     }
                     break;
                 case "department":
                     $department = Department::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area, 'code' => $department->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $department->name, 'sector' => $area, 'code' => $department->code];
                     $sections = Section::where('department_id', $area_id)->get();
 
                     foreach ($sections as $section) {
@@ -3675,22 +3670,22 @@ class EmployeeProfileController extends Controller
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                            $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                         }
                     }
                     break;
                 case "section":
                     $section = Section::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area, 'code' => $section->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $section->name, 'sector' => $area, 'code' => $section->code];
 
                     $units = Unit::where('section_id', $area_id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                        $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                     }
                     break;
                 case "unit":
                     $unit = Unit::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $unit->name, 'sector' => $area, 'code' => $unit->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $unit->name, 'sector' => $area, 'code' => $unit->code];
                     break;
             }
 
@@ -3775,20 +3770,18 @@ class EmployeeProfileController extends Controller
             /**
              * Family background module
              */
-            if ($request->family_background !== null) {
-                $family_background_request = new FamilyBackgroundRequest();
-                $family_background_json = json_decode($request->family_background);
-                $family_background_data = [];
+            $family_background_request = new FamilyBackgroundRequest();
+            $family_background_json = json_decode($request->family_background);
+            $family_background_data = [];
 
-                foreach ($family_background_json as $key => $value) {
-                    $family_background_data[$key] = $value;
-                }
-
-                $family_background_request->merge($family_background_data);
-                $family_background_request->merge(['children' => $request->children]);
-                $family_background_controller = new FamilyBackgroundController();
-                $family_background_controller->store($personal_information->id, $family_background_request);
+            foreach ($family_background_json as $key => $value) {
+                $family_background_data[$key] = $value;
             }
+
+            $family_background_request->merge($family_background_data);
+            $family_background_request->merge(['children' => $request->children]);
+            $family_background_controller = new FamilyBackgroundController();
+            $family_background_controller->store($personal_information->id, $family_background_request);
 
             /**
              * Education module
@@ -3810,19 +3803,19 @@ class EmployeeProfileController extends Controller
             /**
              * Identification module
              */
-            if ($request->identification !== null) {
-                $identification_request = new IdentificationNumberRequest();
-                $identification_json = json_decode($request->identification);
-                $identification_data = [];
 
-                foreach ($identification_json as $key => $value) {
-                    $identification_data[$key] = $value;
-                }
+            $identification_request = new IdentificationNumberRequest();
+            $identification_json = json_decode($request->identification);
+            $identification_data = [];
 
-                $identification_request->merge($identification_data);
-                $identification_controller = new IdentificationNumberController();
-                $identification_controller->store($personal_information->id, $identification_request);
+            foreach ($identification_json as $key => $value) {
+                $identification_data[$key] = $value;
             }
+
+            $identification_request->merge($identification_data);
+            $identification_controller = new IdentificationNumberController();
+            $identification_controller->store($personal_information->id, $identification_request);
+
 
             /**
              * Work experience module
@@ -3927,7 +3920,7 @@ class EmployeeProfileController extends Controller
             }
 
             /**
-             * Eligibilities module
+             * Eligibility module
              */
             if ($request->eligibilities !== null) {
                 $eligibilities_request = new CivilServiceEligibilityManyRequest();
@@ -3942,6 +3935,8 @@ class EmployeeProfileController extends Controller
                 $eligibilities_controller = new CivilServiceEligibilityController();
                 $eligibilities_controller->storeMany($personal_information->id, $eligibilities_request);
             }
+
+
 
             $in_valid_file = false;
 
@@ -3983,9 +3978,10 @@ class EmployeeProfileController extends Controller
             } catch (\Throwable $th) {
             }
 
-            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) == 1 ? true : false;
-            $cleanData['solo_parent'] = strip_tags($request->solo_parent) == 1 ? true : false;
-            $cleanData['shifting'] = strip_tags($request->shifting) == 1 ? true : false;
+            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) == 1;
+            $cleanData['solo_parent'] = strip_tags($request->solo_parent) == 1;
+            $cleanData['shifting'] = strip_tags($request->shifting) == 1;
+            $cleanData['duty_days'] = strip_tags($request->duty_days) ?? null;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
             $cleanData['password_expiration_at'] = $twominutes;
@@ -4041,6 +4037,31 @@ class EmployeeProfileController extends Controller
                 $cleanData['designation_id'] = $designation->id;
                 $cleanData['plantilla_number_id'] = $plantilla_number->id;
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
+            }
+
+            /**
+             * Check if employee with same first name, middle name, last name, employee ID, biometric ID, or email already exists
+             */
+            $duplicate_employee = EmployeeProfile::whereHas('personalInformation', function($query) use ($personal_information_json, $cleanData) {
+                // Ensure that first_name, middle_name, and last_name exist in the decoded array
+                if (isset($personal_information_json)) {
+                    $query->where('first_name', $personal_information_json->first_name)
+                        ->where('middle_name', $personal_information_json->middle_name)
+                        ->where('last_name', $personal_information_json->last_name);
+                }
+            })
+                ->orWhere('employee_id', $cleanData['employee_id'])
+                ->orWhere('biometric_id', $cleanData['biometric_id'])
+                ->orWhereHas('personalInformation.contact', function($query) use ($contact_json) {
+                    $query->where('email_address', $contact_json->email_address);
+                })
+                ->first();
+
+            if ($duplicate_employee) {
+                return response()->json([
+                    'message' => 'An employee with the same name, employee ID, biometric ID, or email already exists.',
+                    'data' => new EmployeeProfileResource($duplicate_employee)
+                ], Response::HTTP_CONFLICT);
             }
 
             $employee_profile = EmployeeProfile::create($cleanData);
@@ -4226,7 +4247,7 @@ class EmployeeProfileController extends Controller
              * get the excess data it has, example if employee ID is 2023061152 the excess data is 52
              * then increment it with 1 to use to new employee as part of employee ID
              */
-            $last_employee_id_registered_by_date = (int) substr($list_of_employee_by_date_hired, 8);
+            $last_employee_id_registered_by_date = (int)substr($list_of_employee_by_date_hired, 8);
             $employee_id = $date_hired_in_string . $last_employee_id_registered_by_date++;
 
             /**
@@ -4315,7 +4336,7 @@ class EmployeeProfileController extends Controller
                 $months = $dateFrom->diffInMonths($dateTo);
                 if ($work->company == "Zamboanga City Medical Center") {
                     $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
-                    $totalZcmc  += $totalZcmcMonths;
+                    $totalZcmc += $totalZcmcMonths;
                 }
 
                 $totalMonths += $months;
@@ -4327,12 +4348,12 @@ class EmployeeProfileController extends Controller
                 $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
             }
 
-            $total = $currentServiceMonths +  $totalMonths;
-            $totalYears = floor($total  / 12);
+            $total = $currentServiceMonths + $totalMonths;
+            $totalYears = floor($total / 12);
 
             // Total service in ZCMC
             $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
-            $totalYearsInZcmc = floor($totalMonthsInZcmc  / 12);
+            $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
 
             $employee = [
                 'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
@@ -4350,7 +4371,8 @@ class EmployeeProfileController extends Controller
                 'zcmc_service_years' => $totalYearsInZcmc,
                 'zcmc_service_months' => $totalMonthsInZcmc - ($totalYearsInZcmc * 12),
                 'is_allowed_ta' => $employee_profile->allow_time_adjustment,
-                'shifting' => $employee_profile->shifting
+                'shifting' => $employee_profile->shifting,
+                'duty_days' => $employee_profile->duty_days ?? null
             ];
 
             $personal_information_data = [
