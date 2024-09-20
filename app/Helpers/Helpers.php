@@ -1336,6 +1336,8 @@ class Helpers
             $options->set('isHtml5ParserEnabled', false);
             $options->set('isRemoteEnabled', false);
             $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+
 
             // Set file storage base path for assets
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
@@ -1365,7 +1367,6 @@ class Helpers
                 // Add the transformed employee data to the attendance data array
                 $attendanceData[] = $transformed;
             });
-
             // Generate the HTML from a view, include summary and filter data
             $html = view('report.attendance_report', [
                 'total_employees'  => count($attendanceData),

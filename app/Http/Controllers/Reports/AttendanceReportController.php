@@ -1589,12 +1589,6 @@ class AttendanceReportController extends Controller
                                     ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(sch.date) <= 15' : 'AND DAY(sch.date) > 15')) . '
                                     THEN sch.date END) as scheduled_days'),
 
-                // Days Present
-                DB::raw('COUNT(DISTINCT CASE
-                                    WHEN MONTH(dtr.dtr_date) = ' . $month_of . '
-                                    AND YEAR(dtr.dtr_date) = ' . $year_of . '
-                                    ' . (!$first_half && !$second_half ? '' : ($first_half ? 'AND DAY(dtr.dtr_date) <= 15' : 'AND DAY(dtr.dtr_date) > 15')) . '
-                                    THEN dtr.dtr_date END) as days_present'),
                 DB::raw("(SELECT COUNT(*) FROM leave_applications la WHERE la.employee_profile_id = ep.id AND la.status = 'approved') as total_leave_applications"),
                 DB::raw("(SELECT COUNT(*) FROM official_time_applications ota WHERE ota.employee_profile_id = ep.id AND ota.status = 'approved') as total_official_time_applications")
             )
@@ -1619,16 +1613,11 @@ class AttendanceReportController extends Controller
                                                                             THEN sch.date END) as absent_without_official_leave"));
             })
             ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
-            ->havingRaw('
-                                                SUM(CASE WHEN dtr.first_in > ts.first_in OR (dtr.second_in IS NOT NULL AND dtr.second_in > ts.second_in) THEN 1 ELSE 0 END) = 0 AND
-                                                SUM(CASE WHEN dtr.undertime_minutes > 0 THEN 1 ELSE 0 END) = 0 AND
-                                                COUNT(DISTINCT sch.date) = COUNT(DISTINCT dtr.dtr_date)
-                                            ')
             ->when($sort_order, function ($query, $sort_order) {
                 if ($sort_order === 'asc') {
-                    return $query->orderByRaw('days_present ASC');
+                    return $query->orderByRaw('employee_name ASC');
                 } elseif ($sort_order === 'desc') {
-                    return $query->orderByRaw('days_present DESC');
+                    return $query->orderByRaw('employee_name DESC');
                 } else {
                     return response()->json(['message' => 'Invalid sort order'], 400);
                 }
@@ -1841,32 +1830,31 @@ class AttendanceReportController extends Controller
             // Apply conditions based on variables
             ->when($absent_leave_without_pay, function ($query) use ($start_date, $end_date) {
                 return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                AND la.id IS NOT NULL  -- No approved leave application
-                                THEN sch.date END) as absent_leave_without_pay"));
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NULL  -- No approved leave application
+                                    THEN sch.date END) as absent_leave_without_pay"));
             })
             ->when($absent_without_official_leave, function ($query) use ($start_date, $end_date) {
                 return $query->addSelect(DB::raw("COUNT(DISTINCT CASE
-                                WHEN sch.date BETWEEN '$start_date' AND '$end_date'
-                                AND la.id IS NOT NULL  -- No approved leave application
-                                AND cto.id IS NOT NULL -- No CTO application
-                                AND oba.id IS NOT NULL -- No Official Business application
-                                AND ota.id IS NOT NULL -- No Official Time application
-                                THEN sch.date END) as absent_without_official_leave"));
+                                    WHEN sch.date BETWEEN '$start_date' AND '$end_date'
+                                    AND la.id IS NULL  -- No approved leave application
+                                    AND cto.id IS NULL -- No CTO application
+                                    AND oba.id IS NULL -- No Official Business application
+                                    AND ota.id IS NULL -- No Official Time application
+                                    THEN sch.date END) as absent_without_official_leave"));
             })
-            ->groupBy('ep.id', 'ep.employee_id', 'employment_type_name', 'employee_name', 'ep.biometric_id', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code', 'total_early_out_minutes')
-            ->havingRaw('total_days_with_early_out > 0')
-            ->havingRaw('SUM(total_early_out_minutes) > 0')
+            ->groupBy('ep.id', 'ep.employee_id', 'ep.biometric_id', 'employment_type_name', 'employee_name', 'employee_designation_name', 'employee_designation_code', 'employee_area_name', 'employee_area_code')
             ->when($sort_order, function ($query, $sort_order) {
                 if ($sort_order === 'asc') {
-                    return $query->orderByRaw('total_days_with_early_out ASC');
+                    return $query->orderByRaw('employee_name ASC');
                 } elseif ($sort_order === 'desc') {
-                    return $query->orderByRaw('total_days_with_early_out DESC');
+                    return $query->orderByRaw('employee_name DESC');
                 } else {
                     return response()->json(['message' => 'Invalid sort order'], 400);
                 }
             })
-            ->orderBy('employee_area_name')->orderBy('ep.id')
+            ->orderBy('employee_area_name')
+            ->orderBy('ep.id')
             ->when($limit, function ($query, $limit) {
                 return $query->limit($limit);
             })
@@ -2034,6 +2022,29 @@ class AttendanceReportController extends Controller
         ];
     }
 
+    public function getSectorPerfectByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByPeriod($month_of, $year_of, $first_half, $second_half, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateUndertimeByPeriodQuery($base_query, $month_of, $year_of, $first_half, $second_half, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
     public function getSectorUndertimeByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
     {
         // Base query to fetch employees and their details
@@ -2059,12 +2070,36 @@ class AttendanceReportController extends Controller
         ];
     }
 
+    public function getSectorPerfectByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order = 'desc', $limit = null): array
+    {
+        // Base query to fetch employees and their details
+        $base_query = match ($sector) {
+            'division' => $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'department' => $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'section' => $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id),
+            'unit' => $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id)
+        };
+        // Generate absences by period using the base query
+        $report_query = $this->generateUndertimeByDateRangeQuery($base_query, $start_date, $end_date, $sort_order, $limit, true, true);
+
+        // Return the summarized report
+        return [
+            'total_employees' => $report_query->count(),
+            'total_scheduled_days' => $report_query->sum('scheduled_days'),
+            'total_leave_applications' => $report_query->sum('total_leave_applications'),
+            'total_official_time_applications' => $report_query->sum('total_official_time_applications'),
+            'total_absent_leave_without_pay' => $report_query->sum('absent_leave_without_pay'),
+            'total_absent_without_official_leave' => $report_query->sum('absent_without_official_leave'),
+        ];
+    }
+
     private function getSummaryReportByPeriod(mixed $report_type, string $sector, int $month_of, int $year_of, bool $first_half, bool $second_half, int $area_id, string $area_under, $employment_type, $designation_id, mixed $sort_order, mixed $limit): JsonResponse|array|Collection
     {
         return match ($report_type) {
             'absences' => $this->getSectorAbsencesByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             'tardiness' => $this->getSectorTardinessByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             'undertime' => $this->getSectorUndertimeByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            'perfect' => $this->getSectorPerfectByPeriodSummaryReport($month_of, $year_of, $first_half, $second_half, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
         };
     }
@@ -2075,6 +2110,7 @@ class AttendanceReportController extends Controller
             'absences' => $this->getSectorAbsencesByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             'tardiness' => $this->getSectorTardinessByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             'undertime' => $this->getSectorUndertimeByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
+            'perfect' => $this->getSectorPerfectByDateRangeSummaryReport($start_date, $end_date, $sector, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit),
             default => response()->json(['data' => collect(), 'message' => 'Invalid report type']),
         };
     }
@@ -2100,10 +2136,10 @@ class AttendanceReportController extends Controller
             $is_print = $request->query('is_print');
 
             // Generate a unique cache key based on the filters
-            $cacheKey = "attendance_report_" . md5(json_encode($request->all()));
+            $cacheKey = "attendance_report_by_period_" . md5(json_encode($request->all()));
 
             // Check if cached data exists
-            $reportData = Cache::remember($cacheKey, 60 * 60, function () use (
+            $report_data = Cache::remember($cacheKey, 60 * 60, function () use (
                 $sector, $area_id, $area_under, $month_of, $year_of, $employment_type,
                 $designation_id, $first_half, $second_half, $sort_order, $limit,
                 $report_type, $absent_leave_without_pay, $absent_without_official_leave
@@ -2155,8 +2191,8 @@ class AttendanceReportController extends Controller
             });
 
             // Extract employees and summary from the cached data
-            $employees = $reportData['employees'];
-            $summary = $reportData['summary'];
+            $employees = $report_data['employees'];
+            $summary = $report_data['summary'];
 
             // Check if the user wants to print the report
             if ($is_print) {
@@ -2183,7 +2219,7 @@ class AttendanceReportController extends Controller
     }
 
 
-    public function reportByDateRange(Request $request): JsonResponse
+    public function reportByDateRange(Request $request)
     {
         try {
             $area_id = $request->query('area_id');
@@ -2198,86 +2234,79 @@ class AttendanceReportController extends Controller
             $limit = $request->query('limit');
             $sort_order = $request->query('sort_order');
             $report_type = $request->query('report_type');
-
-            $filters = [
-                "area_id" => $area_id,
-                "sector" => $sector,
-                "area_under" => $area_under,
-                "start_date" => $start_date,
-                "end_date" => $end_date,
-                "employment_type" => $employment_type,
-                "designation_id" => $designation_id,
-                "absent_leave_without_pay" => $absent_leave_without_pay,
-                "absent_without_official_leave" => $absent_without_official_leave,
-                "limit" => $limit,
-                "sort_order" => $sort_order,
-                "report_type" => $report_type,
-            ];
-
-            // variable declaration for report generation
-            $summary = collect();
-            $report_name = 'Employee Attendance Report';
             $is_print = $request->query('is_print');
-            $columns = $this->getReportColumns($report_type);
-            $orientation = 'landscape';
 
-            if ($sector && !$area_id) {
-                return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
-            }
+            // Generate a unique cache key based on the filters
+            $cacheKey = "attendance_report_" . md5(json_encode($request->all()));
 
-            if (!$sector && !$area_id) {
-                $base_query = $this->baseQueryByDateRange($start_date, $end_date, $employment_type, $designation_id);
-                $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-            } else {
-                switch ($sector) {
-                    case 'division':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Division is provided'], 400);
-                        }
-                        $base_query = $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    case 'department':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Department is provided'], 400);
-                        }
-                        $base_query = $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    case 'section':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Section is provided'], 400);
-                        }
-                        $base_query = $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    case 'unit':
-                        if (!$area_under) {
-                            return response()->json(['message' => 'Area under is required when Unit is provided'], 400);
-                        }
-                        $base_query = $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
-                        $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
-                        $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
-                        break;
-                    default:
-                        return response()->json(['message' => 'Invalid sector provided'], 400);
+            $report_data = Cache::remember($cacheKey, 60 * 60, function () use (
+                    $sector, $area_id, $area_under, $start_date, $end_date, $employment_type,
+                    $designation_id, $sort_order, $limit, $report_type,
+                    $absent_leave_without_pay, $absent_without_official_leave
+            ) {
+                if ($sector && !$area_id) {
+                    return response()->json(['message' => 'Area ID is required when Sector is provided'], 400);
                 }
-            }
 
+                if (!$sector && !$area_id) {
+                    $base_query = $this->baseQueryByDateRange($start_date, $end_date, $employment_type, $designation_id);
+                    $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                    return ['employees' => $employees, 'summary' => collect()];
+                } else {
+                    switch ($sector) {
+                        case 'division':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Division is provided'], 400);
+                            }
+                            $base_query = $this->baseQueryDivisionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        case 'department':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Department is provided'], 400);
+                            }
+                            $base_query = $this->baseQueryDepartmentByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        case 'section':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Section is provided'], 400);
+                            }
+                            $base_query = $this->baseQuerySectionByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        case 'unit':
+                            if (!$area_under) {
+                                return response()->json(['message' => 'Area under is required when Unit is provided'], 400);
+                            }
+                            $base_query = $this->baseQueryUnitByDateRange($start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id);
+                            break;
+                        default:
+                            return response()->json(['message' => 'Invalid sector provided'], 400);
+                    }
+
+                    $employees = $this->getEmployeesByDateRange($report_type, $base_query, $start_date, $end_date, $sort_order, $limit, $absent_leave_without_pay, $absent_without_official_leave);
+                    $summary = $this->getSummaryReportByDateRange($report_type, $sector, $start_date, $end_date, $area_id, $area_under, $employment_type, $designation_id, $sort_order, $limit);
+
+                    return ['employees' => $employees, 'summary' => $summary];
+                }
+            });
+
+            // Extract employees and summary from the cached data
+            $employees = $report_data['employees'];
+            $summary = $report_data['summary'];
+
+            // Check if the user wants to print the report
             if ($is_print) {
-                return Helpers::generateAttendancePdf($employees, $columns, $report_name, $orientation, $summary, $filters);
+                $columns = $this->getReportColumns($report_type);
+                $report_name = 'Employee Attendance Report';
+                $orientation = 'landscape';
+                return Helpers::generateAttendanceByDateRangePdf($employees, $columns, $report_name, $orientation, $summary, $request->all());
             }
 
-            return response()->json(
-                [
+            return response()->json([
+                    'report_summary' => $summary,
                     'count' => count($employees),
                     'data' => $employees,
                     'message' => 'Data successfully retrieved',
-                ],
-                ResponseAlias::HTTP_OK
+                ], ResponseAlias::HTTP_OK
             );
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'reportByDateRange', $th->getMessage());
@@ -2407,7 +2436,7 @@ class AttendanceReportController extends Controller
                 "flex" => 1,
                 "headerName" => "Designation"
             ],
-            
+
         ];
     }
 
@@ -2493,6 +2522,11 @@ class AttendanceReportController extends Controller
             ],
             'perfect' => [
                 // Define perfect attendance-specific columns here
+                [
+                    "field" => "scheduled_days",
+                    "flex" => 1,
+                    "headerName" => "Scheduled Days"
+                ],
             ]
         ];
 
