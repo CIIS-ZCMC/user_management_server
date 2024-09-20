@@ -39,6 +39,7 @@ class EmployeeProfile extends Authenticatable
         'agency_employee_no',
         'allow_time_adjustment',
         'shifting',
+        'duty_days',
         'is_2fa',
         'solo_parent',
         'renewal',
