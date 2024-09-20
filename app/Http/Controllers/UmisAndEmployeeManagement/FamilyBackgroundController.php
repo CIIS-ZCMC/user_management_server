@@ -22,9 +22,9 @@ use App\Models\EmployeeProfile;
 
 class FamilyBackgroundController extends Controller
 {
-    private $CONTROLLER_NAME = 'Legal Information Question Controller';
-    private $PLURAL_MODULE_NAME = 'family backgrounds';
-    private $SINGULAR_MODULE_NAME = 'family background';
+    private string $CONTROLLER_NAME = 'Legal Information Question Controller';
+    private string $PLURAL_MODULE_NAME = 'family backgrounds';
+    private string $SINGULAR_MODULE_NAME = 'family background';
 
     public function findByEmployeeID($id, Request $request)
     {
@@ -172,7 +172,7 @@ class FamilyBackgroundController extends Controller
                         }
                         $child_data[$key] = strip_tags($value);
                     }
-                    
+
                     if($child->id === null || $child->id === 'null'){
                         $child_data['personal_information_id'] = $personal_info->id;
                         $child_store = Child::create($child_data);
@@ -181,19 +181,19 @@ class FamilyBackgroundController extends Controller
                         }
                         continue;
                     }
-    
+
                     $child_store = Child::find($child_data['id']);
                     $child_store->update($child_data);
-    
+
                     if (!$child_store) {
                         $failed[] = $child;
                         continue;
                     }
-    
+
                     $success[] = $child_store;
                 }
             }
-            
+
 
             return [
                 'family_background' => $family_background,

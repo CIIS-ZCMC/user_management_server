@@ -19,9 +19,9 @@ use App\Models\EmployeeProfile;
 
 class ContactController extends Controller
 {
-    private $CONTROLLER_NAME = 'Contact';
-    private $PLURAL_MODULE_NAME = 'contacts';
-    private $SINGULAR_MODULE_NAME = 'contact';
+    private string $CONTROLLER_NAME = 'Contact';
+    private string $PLURAL_MODULE_NAME = 'contacts';
+    private string $SINGULAR_MODULE_NAME = 'contact';
 
     public function findByPersonalInformationID($id, Request $request)
     {
