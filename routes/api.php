@@ -25,8 +25,9 @@ Route::get('/initialize-storage', function () {
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
-Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('test', 'DashboardController@test');
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            Route::get('test', 'DashboardController@test');
 
 
             Route::get('announcementslist', 'AnnouncementsController@index');
@@ -2410,6 +2411,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-TA request'])->group(function () {
             Route::post('time-adjustment-request', 'TimeAdjustmentController@request');
+        });
+
+        Route::middleware(['auth.permission:UMIS-TA update'])->group(function () {
+            Route::put('time-adjustment-update/{id}', 'TimeAdjustmentController@updateRequest');
         });
 
         Route::middleware(['auth.permission:UMIS-TA view'])->group(function () {
