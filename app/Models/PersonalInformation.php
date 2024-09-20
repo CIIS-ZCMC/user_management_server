@@ -57,18 +57,24 @@ class PersonalInformation extends Model
 
     public function nameWithSurnameFirst()
     {
-
+    
+        $nameExtension = $this->name_extension === NULL ? '' : $this->name_extension;
         if ($this->middle_name === NULL) {
-            return $this->last_name . ', ' . $this->first_name;
+            return $this->last_name . ', ' . $this->first_name. ','. $nameExtension;
         }
 
-        return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name;
+        return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name. ','. $nameExtension;
     }
 
     public function name()
     {
-        $nameExtension = $this->name_extension === NULL ? '' : '' . $this->name_extion . '';
-        $name = $this->last_name . $nameExtension . ', ' . $this->first_name;
+        $nameExtension = $this->name_extension === NULL ? '' : $this->name_extension;
+
+        if ($this->middle_name === NULL) {
+            return $this->last_name . ', ' . $this->first_name. ','. $nameExtension;
+        }
+
+        $name = $this->last_name . ', ' . $this->first_name.' ' . $this->middle_name. ','. $nameExtension;
 
         return $name;
     }
