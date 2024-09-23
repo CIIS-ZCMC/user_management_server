@@ -30,6 +30,7 @@ use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
+use App\Imports\CtoApplicationImport;
 use App\Jobs\SendEmailJob;
 use App\Models\Country;
 use App\Models\CtoApplication;
@@ -43,6 +44,8 @@ use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
 use DateTime;
 use App\Imports\LeaveApplicationsImport;
+use App\Imports\OfficialBusinessImport;
+use App\Imports\OfficialTimeImport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveApplicationController extends Controller
@@ -54,7 +57,7 @@ class LeaveApplicationController extends Controller
             'file' => 'required|mimes:csv,txt',
         ]);
 
-        Excel::import(new LeaveApplicationsImport, $request->file('file'));
+        Excel::import(new CtoApplicationImport(), $request->file('file'));
 
         return response()->json([
             'message' => 'Import Succesfull.'
