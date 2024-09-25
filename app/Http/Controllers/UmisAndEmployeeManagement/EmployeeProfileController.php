@@ -2752,6 +2752,8 @@ class EmployeeProfileController extends Controller
     {
         try {
             $user = $request->user;
+            $title_print = $user->assignedArea->findDetails()['details']['name'];
+
             $position = $user->position();
             if (!$position) {
                 return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
@@ -3080,7 +3082,6 @@ class EmployeeProfileController extends Controller
                             ->get();
                         break;
                 }
-
             }
 
 
@@ -3114,7 +3115,7 @@ class EmployeeProfileController extends Controller
             $data = EmployeeProfileResource::collection($employees);
 
             if ($is_print) {
-                return Helpers::generatePdf($data, $columns, 'Employee List', 'portrait');
+                return Helpers::generatePdf($data, $columns, $title_print, 'portrait');
             }
             return response()->json([
                 'count' => $employees->count(),
@@ -3132,6 +3133,8 @@ class EmployeeProfileController extends Controller
     {
         try {
             $user = $request->user;
+
+
             $position = $user->position();
             $sector = strip_tags($sector);
             $key = Str::lower($sector) . "_id";
