@@ -2763,11 +2763,6 @@ class EmployeeProfileController extends Controller
             $sector_id = $sector . "_id";
             $area_id = $request->query('area_id') ?? $user->assignedArea->findDetails()['details']['id']; // Use user's assigned area_id if not provided
 
-            $user_assigned_area = $user->assignedArea->findDetails();
-            $user_sector_id = Str::lower($user_assigned_area['sector']) . "_id";
-            $user_sector = Str::lower($user_assigned_area['sector']);
-            $user_area_id = $user_assigned_area['details']['id'];
-
             $is_print = $request->query('is_print');
             $employees = collect();
 
