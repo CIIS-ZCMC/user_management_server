@@ -2761,6 +2761,7 @@ class EmployeeProfileController extends Controller
             $search = $request->query('search');
             $sector = $request->query('sector');
             $area_id = $request->query('area_id');
+            $is_print = $request->query('is_print');
             $employees = collect();
 
             switch ($sector) {
@@ -3014,9 +3015,27 @@ class EmployeeProfileController extends Controller
                 return $employeeProfile;
             });
 
+            $columns = [
+                [
+                    "field" => "employee_id",
+                    "flex" => 1,
+                    "headerName" => "Employee ID"
+                ],
+                [
+                    "field" => "name",
+                    "flex" => 1,
+                    "headerName" => "Employee Name"
+                ],
+            ];
+
+            $data = EmployeeProfileResource::collection($employees);
+
+            if ($is_print) {
+                return Helpers::generatePdf($data, $columns, 'Employee List', 'portrait');
+            }
             return response()->json([
                 'count' => $employees->count(),
-                'data' => EmployeeProfileResource::collection($employees),
+                'data' => $data,
                 'message' => 'list of employees retrieved.'
             ]);
         } catch (\Throwable $th) {
