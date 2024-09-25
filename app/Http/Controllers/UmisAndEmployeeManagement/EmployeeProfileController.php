@@ -2760,6 +2760,7 @@ class EmployeeProfileController extends Controller
 
             $search = $request->query('search') ?? ''; // Use empty string if no search query
             $sector = $request->query('sector') ?? Str::lower($user->assignedArea->findDetails()['sector']); // Use user's assigned sector if not provided
+            $sector_id = $sector . "_id";
             $area_id = $request->query('area_id') ?? $user->assignedArea->findDetails()['details']['id']; // Use user's assigned area_id if not provided
 
             $user_assigned_area = $user->assignedArea->findDetails();
@@ -2776,7 +2777,7 @@ class EmployeeProfileController extends Controller
                         AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                             $query->whereNull('deactivated_at');
                         }])
-                            ->where('division_id', $area_id)
+                            ->where($sector_id, $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
@@ -2789,7 +2790,7 @@ class EmployeeProfileController extends Controller
                             ->get()
                     );
 
-                    $departments = Department::where('division_id', $area_id)->get();
+                    $departments = Department::where($sector_id, $area_id)->get();
                     foreach ($departments as $department) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
@@ -2850,7 +2851,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     // Get sections directly under the division (if any) that are not under any department
-                    $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                    $sections = Section::where($sector_id, $area_id)->whereNull('department_id')->get();
                     foreach ($sections as $section) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
@@ -2896,7 +2897,7 @@ class EmployeeProfileController extends Controller
                         AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                             $query->whereNull('deactivated_at');
                         }])
-                            ->where('department_id', $area_id)
+                            ->where($sector_id, $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
@@ -2909,7 +2910,7 @@ class EmployeeProfileController extends Controller
                             ->get()
                     );
 
-                    $sections = Section::where('department_id', $area_id)->get();
+                    $sections = Section::where($sector_id, $area_id)->get();
                     foreach ($sections as $section) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
@@ -2954,7 +2955,7 @@ class EmployeeProfileController extends Controller
                         AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                             $query->whereNull('deactivated_at');
                         }])
-                            ->where('section_id', $area_id)
+                            ->where($sector_id, $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
@@ -2967,7 +2968,7 @@ class EmployeeProfileController extends Controller
                             ->get()
                     );
 
-                    $units = Unit::where('section_id', $area_id)->get();
+                    $units = Unit::where($sector_id, $area_id)->get();
                     foreach ($units as $unit) {
                         $employees = $employees->merge(
                             AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
@@ -2987,13 +2988,12 @@ class EmployeeProfileController extends Controller
                         );
                     }
                     break;
-
                 case 'unit':
                     $employees = $employees->merge(
                         AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
                             $query->whereNull('deactivated_at');
                         }])
-                            ->where('unit_id', $area_id)
+                            ->where($sector_id, $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
                                 $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
