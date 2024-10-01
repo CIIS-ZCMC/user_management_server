@@ -2290,6 +2290,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('uploads', 'EmployeeScheduleController@upload');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+            Route::post('imports', 'EmployeeScheduleController@import');
+        });
+
 
         /**
          * Exchange Schedule Module

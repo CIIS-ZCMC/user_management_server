@@ -21,6 +21,7 @@ use Illuminate\Http\Response;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class EmployeeScheduleController extends Controller
 {
@@ -538,6 +539,89 @@ class EmployeeScheduleController extends Controller
                 return response()->json(['message' => 'CSV data imported successfully!'], Response::HTTP_OK);
             }
             return response()->json(['message' => 'Invalid file uploaded.'], Response::HTTP_NOT_ACCEPTABLE);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function import(Request $request)
+    {
+        try {
+            // Validate the file
+            $request->validate([
+                'csv_file' => 'required|mimes:csv,txt|max:2048',
+            ]);
+
+            // Check if the file is valid
+            if ($request->file('csv_file')->isValid()) {
+                $file = $request->file('csv_file');
+                $filePath = $file->storeAs('csv', time() . '.' . $file->getClientOriginalExtension());
+
+                try {
+                    // Read and process the CSV file
+                    $csvData = array_map('str_getcsv', file(storage_path('app/' . $filePath)));
+                    $header = array_shift($csvData);
+                } catch (\Exception $e) {
+                    return response()->json(['message' => 'Error reading CSV data'], Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
+
+                $errors = [];
+                foreach ($csvData as $row) {
+                    $personal_information_id = $row[0];
+                    $date = $row[1];
+                    $shift = $row[2];
+
+                    //Find employee
+                    $employee = EmployeeProfile::where('personal_information_id', $personal_information_id)->first();
+
+                    if (!$employee) {
+                        $errors[] = "Employee with ID {$personal_information_id} not found.";
+                        continue;
+                    }
+
+                    // Handle Dayoff case
+                    if (strtolower($shift) === 'dayoff') {
+                        // Find and delete employee schedule for this date if exists
+                        $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                            ->whereHas('schedule', function ($query) use ($date) {
+                                $query->where('date', '=', $date);
+                            })->first();
+
+                        if ($employee_schedule) {
+                            $employee_schedule->delete();
+                        }
+                        continue; // Skip to the next row since it's a Dayoff
+                    }
+
+                    // If shift is not "Dayoff", proceed to find or create schedule
+                    $schedule = Schedule::firstOrCreate(
+                        ['date' => $date, 'time_shift_id' => $shift],
+                        ['is_weekend' => Carbon::parse($date)->isWeekend() ? 1 : 0]
+                    );
+
+                    // Find if the employee already has a schedule on this date
+                    $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                        ->whereHas('schedule', function ($query) use ($date) {
+                            $query->where('date', '=', $date);
+                        })->delete();
+
+                    // Create a new employee schedule
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee->id,
+                        'schedule_id' => $schedule->id,
+                    ]);
+                }
+
+                if (!empty($errors)) {
+                    return response()->json(['message' => 'CSV import completed with some errors', 'errors' => $errors], Response::HTTP_PARTIAL_CONTENT);
+                }
+
+                return response()->json(['message' => 'CSV data imported successfully!'], Response::HTTP_OK);
+            }
+
+            return response()->json(['message' => 'Invalid file uploaded.'], Response::HTTP_NOT_ACCEPTABLE);
+        } catch (ValidationException $e) {
+            return response()->json(['message' => 'Invalid file format or size'], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Throwable $th) {
             throw $th;
         }
