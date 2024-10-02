@@ -419,7 +419,7 @@ class TimeAdjustmentController extends Controller
                 $dtrHelper = new DTRcontroller();
                 $dtrHelper->RecomputeHours($dtr->biometric_id, $month, $year, $dtr->dtr_date);
 
-                $dtr->is_time_adjustment = true;
+                $dtr->is_time_adjustment = 1;
                 $dtr->update();
 
                 $data->daily_time_record_id = $dtr->id;
@@ -546,7 +546,7 @@ class TimeAdjustmentController extends Controller
                 $dtrHelper = new DTRcontroller();
                 $dtrHelper->RecomputeHours($dtr->biometric_id, $month, $year, $dtr->dtr_date);
 
-                $dtr->is_time_adjustment = true;
+                $dtr->is_time_adjustment = 1;
                 $dtr->update();
             }
             // Log system actions

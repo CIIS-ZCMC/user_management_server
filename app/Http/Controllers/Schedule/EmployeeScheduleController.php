@@ -600,7 +600,7 @@ class EmployeeScheduleController extends Controller
                     );
 
                     // Find if the employee already has a schedule on this date
-                    $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                    $employee_schedule = EmployeeSchedule::with('schedule')->where('employee_profile_id', $employee->id)
                         ->whereHas('schedule', function ($query) use ($date) {
                             $query->where('date', '=', $date);
                         })->delete();
