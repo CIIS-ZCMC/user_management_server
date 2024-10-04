@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCertificatesTable extends Migration
+class CreateCertificateAttachmentsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,19 +13,13 @@ class CreateCertificatesTable extends Migration
      */
     public function up()
     {
-        Schema::create('certificates', function (Blueprint $table) {
+        Schema::create('certificate_attachments', function (Blueprint $table) {
             $table->id(); // bigint unsigned auto_increment
             $table->unsignedBigInteger('personal_information_id');
-            $table->string('subject_owner', 150)->nullable();
-            $table->text('file_path')->nullable();
-            $table->string('issued_by', 150)->nullable();
-            $table->string('organization_unit', 150)->nullable();
-            $table->string('country', 100)->nullable();
-            $table->dateTime('valid_from')->nullable();
-            $table->dateTime('valid_until')->nullable();
-            $table->text('public_key')->nullable();
-            $table->text('private_key')->nullable();
-            $table->text('digital_signature')->nullable();
+            $table->string('filename', 191)->nullable();
+            $table->text('file_cert_path')->nullable();
+            $table->text('file_img_cert_path')->nullable();
+            $table->unsignedBigInteger('size')->nullable();
             $table->softDeletes();
             $table->timestamps(); // created_at and updated_at columns
 
@@ -41,6 +35,6 @@ class CreateCertificatesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('certificates');
+        Schema::dropIfExists('certificate_attachments');
     }
 }
