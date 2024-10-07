@@ -90,8 +90,20 @@
             font-size: 12px;
         }
 
+        td.header-name {
+            width: 'auto'
+        }
         .page-number:before {
             content: "Page " counter(page);
+        }
+
+        /* FILTER SUMARRY */
+        .filter-summary-container {
+            margin-left: 0px;
+            /* font-size: 14px !important; */
+            /* border: 1px solid rgb(173, 173, 173); */
+            width: 100%;
+            /* text-align: right */
         }
     </style>
 </head>
@@ -125,28 +137,87 @@
 @endphp
 
 <div style="text-align:center; ">
-    <h3 style="margin: 0">{{ $report_name }}</h3>
+    <h3 style="margin: 0; text-transform: capitalize">
+        Employee {{ $filters['report_type'] }}  
+        @if ($filters['report_type'] === 'perfect')
+        Attendance
+        @endif 
+        Report
+    </h3>
+
     <p style="font-size: 14px">as of {{ $formattedDate }}</p>
 </div>
 
-{{--<div>--}}
-{{--    <span style="font-weight: bold">Total Number of Employees: </span>--}}
-{{--    <span>{{ $total_employees }}</span>--}}
-{{--</div>--}}
+    @if(isset($filters))
+      
+        {{-- <hr style="margin: 10px 0px "> --}}
+        <div class="filter-summary-container">  
+            {{-- <h2 style="margin-bottom: 15px">Filter Summary</h2> --}}
+            <p>Total Employee(s):<b>{{ COUNT($rows) ?? '0' }}</b></p>
 
-<!-- Display filters -->
-{{--@if(isset($filters))--}}
+            {{-- FOR DATE PERIOD --}}
+            @if(isset($filters['month_of']))
+                @php
+                    $date = \DateTime::createFromFormat('!m Y', sprintf('%02d %d', $filters['month_of'], $filters['year_of']));
+                @endphp
+                <p>Month and Year:<b>{{$date->format('F Y');}}</b></p>
+            @endif
 
-{{--@endif--}}
+            {{-- FOR DATE RANGE --}}
+            @if(isset($filters['start_date']))
+                @php
+                    $date = Carbon::parse($dateString)
+                @endphp
+                <p>Date range: <b>{{Carbon::parse($filters['start_date'])}} - {{ Carbon::parse($filters['end_date']) }}</b></p>
+            @endif
 
-<!-- Display the report summary -->
-@if(isset($report_summary))
-    <h2>Report Summary</h2>
-    <h1>EY</h1>
-@endif
+            @if(isset($filters['start_date']))
+                <p>Date range: <b>{{Carbon::parse($filters['start_date'])}} - {{ Carbon::parse($filters['end_date']) }}</b></p>
+            @endif
 
 
-<table>
+            {{-- AREA --}}
+            @if(isset($filters['area_name']))
+               <p>Area:<b>{{ $filters['area_name'] }}</b></p>
+            @endif
+
+            {{-- DESIGNATION --}}
+            @if(isset($filters['designation_name']))
+                <p>Designation:<b>{{ $filters['designation_name'] ?? '-' }}</b></p>
+            @endif
+
+            {{-- SCHEDULE --}}
+            @if(isset($filters['first_half']))
+                @php
+                    $firstHalf = $filters['first_half'];
+                    $secondHalf = $filters['second_half'];
+                    $monthOf = $filters['month_of'];
+                    $yearOf = $filters['year_of'];
+
+                    if ($firstHalf == 1) {
+                        $dateRange = '1-15';
+                    } else if ($secondHalf == 1) {
+                        // Calculate the last day of the month
+                        $lastDayOfMonth = \Carbon\Carbon::create($yearOf, $monthOf)->endOfMonth()->day;
+                        $dateRange = '16-' . $lastDayOfMonth;
+                    } else {
+                        $dateRange = "Whole month";
+                    } 
+                @endphp
+
+                @if(isset($firstHalf) && isset($secondHalf) )
+                <p>Range: <b>{{ $dateRange }}</b></p>
+                @endif
+
+            @endif
+
+           
+        </div>
+    @endif
+
+
+<hr style="margin: 20px 0px ">
+<table class="result-table">
     <tr>
         <th>#</th> <!-- Row number column -->
         @foreach ($columns as $column)

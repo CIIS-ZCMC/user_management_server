@@ -1336,6 +1336,8 @@ class Helpers
             $options->set('isHtml5ParserEnabled', false);
             $options->set('isRemoteEnabled', false);
             $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+
 
             // Set file storage base path for assets
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
@@ -1356,7 +1358,7 @@ class Helpers
                     if ($field === 'total_early_out_minutes') {
                         $value = number_format($employee->total_early_out_minutes, 2) . ' minutes';
                     } else if ($field === 'total_days_with_early_out') {
-                        $value = $employee->total_days_with_early_out . ' days';
+                        $value = $employee->total_days_with_early_out . ' day(s)';
                     }
 
                     $transformed[$field] = $value;
@@ -1365,7 +1367,6 @@ class Helpers
                 // Add the transformed employee data to the attendance data array
                 $attendanceData[] = $transformed;
             });
-
             // Generate the HTML from a view, include summary and filter data
             $html = view('report.attendance_report', [
                 'total_employees'  => count($attendanceData),

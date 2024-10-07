@@ -245,7 +245,7 @@ class LeaveReportController extends Controller
             ->pluck('name');
     }
 
-    private function getReportColumns($report_format)
+    private function getReportColumns($report_format): array
     {
         // Common fields shared by both report formats
         $common_fields = [
@@ -323,7 +323,7 @@ class LeaveReportController extends Controller
                     "flex" => 1.2
                 ],
                 [
-                    "field" => "area_assigned",
+                    "field" => "area_name",
                     "flex" => 1,
                     "headerName" => "Area Assigned"
                 ]
@@ -337,7 +337,7 @@ class LeaveReportController extends Controller
     }
 
 
-    private function generateLeaveReportSummary($results)
+    private function generateLeaveReportSummary($results): array
     {
         $summary = [
             'total_applications' => 0,
@@ -470,7 +470,7 @@ class LeaveReportController extends Controller
 
 
 
-    /** 
+    /**
      * Retrieve all data based on report format.
      *
      * @param string $report_format
