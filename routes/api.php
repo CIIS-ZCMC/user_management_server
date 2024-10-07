@@ -2425,6 +2425,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('time-adjustment-employee', 'TimeAdjustmentController@employees');
         });
 
+        Route::middleware(['auth.permission:UMIS-TA update'])->group(function () {
+            Route::get('time-adjustment-recompute', 'TimeAdjustmentController@recompute');
+        });
+
 
 
         /**

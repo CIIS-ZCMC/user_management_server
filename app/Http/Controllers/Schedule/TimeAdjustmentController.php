@@ -540,7 +540,7 @@ class TimeAdjustmentController extends Controller
                     'is_time_adjustment' => true
                 ]);
 
-                $month = Carbon::parse($dtr->dtr_date)->month;
+                $month = Carbon::parse(time: $dtr->dtr_date)->month;
                 $year = Carbon::parse($dtr->dtr_date)->year;
 
                 $dtrHelper = new DTRcontroller();
@@ -562,6 +562,48 @@ class TimeAdjustmentController extends Controller
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function recompute(Request $request)
+    {
+        try {
+            // $TA = TimeAdjustment::where('daily_time_record_id', null)->get();
+
+            // foreach ($TA as $data) {
+            //     $biometric_id = EmployeeProfile::where('id', $data->employee_profile_id)->value('biometric_id');
+            //     $dtr = DailyTimeRecords::where([['biometric_id', '=', $biometric_id], ['dtr_date', '=', $data->date]])->first();
+
+            //     if ($dtr) {
+            //         $data->daily_time_record_id = $dtr->id;
+            //         $data->update();
+            //     }
+            // }
+
+
+            $TA = TimeAdjustment::all();
+            foreach ($TA as $data) {
+                $dtr = DailyTimeRecords::where('id', $data->daily_time_record_id)->first();
+
+                if ($dtr) {
+                    $month = Carbon::parse($dtr->dtr_date)->month;
+                    $year = Carbon::parse($dtr->dtr_date)->year;
+
+                    $dtrHelper = new DTRcontroller();
+                    $dtrHelper->RecomputeHours($dtr->biometric_id, $month, $year, $dtr->dtr_date);
+
+                    $dtr->is_time_adjustment = 1;
+                    $dtr->update();
+                }
+            }
+
+            return response()->json([
+                'data' => TimeAdjustmentResource::collection($TA),
+                'message' => 'Time adjustments successfully created for the date range.'
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            throw $th;
         }
     }
 }
