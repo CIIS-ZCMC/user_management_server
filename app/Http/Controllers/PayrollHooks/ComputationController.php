@@ -122,8 +122,8 @@ class ComputationController extends Controller
         if ($emptype == "Job Order"){
             $deduction += $undertimeRate;
         }
-        $net =  floor(round( $GrossSalary - $deduction,2) * 100) /100;
-        return $net ;
+        $net =  floor(round( $GrossSalary,2) * 100) /100;
+        return $net - $deduction ;
 
     }
 

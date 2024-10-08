@@ -199,12 +199,12 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
 
             ->pluck('biometric_id');//employee_id
-        //$profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-      $profiles = EmployeeProfile::where('id', 2482)
+        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+      //$profiles = EmployeeProfile::where('id', 2482)
             //  ->limit(1)
 
             ->get();
-     
+
 
         // $profiles = EmployeeProfile::where("biometric_id",493)->get();
 
@@ -453,12 +453,12 @@ class GenerateReportController extends Controller
                 }
 
 
-             
+
                 $presentCount = count(array_filter($attd, function ($d) {
                     return $d['total_working_minutes'] !== 0;
                 }));
-              
-         
+
+
                $Number_Absences = count($absences) - count($lwop);
                 $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
@@ -478,28 +478,28 @@ class GenerateReportController extends Controller
                 $salaryGrade = $employeeAssignedAreas->salary_grade_id ?? 1;
                 $salaryStep = $employeeAssignedAreas->salary_grade_step ?? 1;
 
-             
+
 
               //  return $Number_Absences;
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds_forsal));
 
-               
+
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
                 $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'],$Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
-                
-            
+
+
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
 
 
                 $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary,$undertimeRate,$absentRate, $Employee->employmentType->name);
-             
+
                 //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
                // return $lwp;
-             
+
                 $OverAllnetSalary = $this->TOTALNETSALARY($request, $biometric_id);
-            
+
                 $leaveApplication = array_values($Employee->leaveApplications->filter(function ($row) use ($month_of, $year_of) {
                     if ($row->name == "Study Leave") {
                         return date('Y', strtotime($row->date_from)) === $year_of && date('m', strtotime($row->date_from)) === $month_of;
@@ -580,7 +580,7 @@ class GenerateReportController extends Controller
         $profiles = EmployeeProfile::where('biometric_id', $biometric_id)
             ->get();
 
-      
+
         $data = [];
 
         // Set the full range for a month (1 to 30)
@@ -697,7 +697,7 @@ class GenerateReportController extends Controller
                     });
                     $leave_Count = count($leaveApplication);
 
-                    
+
                     //Check obD ates
                     $filteredOBDates = [];
                     foreach ($obData as $row) {
@@ -800,11 +800,11 @@ class GenerateReportController extends Controller
                         ];
                     }
                 }
-                
+
             }
 
 
-                
+
                 $presentCount = count(array_filter($attd, function ($d) {
                     return $d['total_working_minutes'] !== 0;
                 }));
@@ -824,17 +824,17 @@ class GenerateReportController extends Controller
                 $salaryGrade = $employeeAssignedAreas->salary_grade_id ?? 1;
                 $salaryStep = $employeeAssignedAreas->salary_grade_step ?? 1;
 
-                
+
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
 
 
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
                 $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'],$Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds));
-            
+
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-               
+
                 $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $Employee->employmentType->name);
                 return $NetSalary;
 
