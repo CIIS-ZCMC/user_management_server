@@ -467,11 +467,28 @@ class Helpers
                 $mime = $finfo->file($filePath);
                 $mime = explode(';', $mime)[0];
 
-                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+                $allowedMimeTypes = [
+                    'image/jpeg',
+                    'image/png',
+                    'image/gif',
+                    'application/pdf',
+                    'application/x-pkcs12', // Common MIME type for .pfx
+                    'application/x-pkcs12; charset=binary', // Sometimes used MIME type
+                    'application/octet-stream' // Fallback MIME type
+                ];
 
                 if (!in_array($mime, $allowedMimeTypes)) {
                     return response()->json(['message' => 'Invalid file type'], Response::HTTP_BAD_REQUEST);
                 }
+
+                // Check for potential malicious content for non-PFX files
+                if ($mime !== 'application/x-pkcs12' && $mime !== 'application/x-pkcs12; charset=binary' && $mime !== 'application/octet-stream') {
+                    $fileContent = file_get_contents($filePath);
+                    if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
+                        return response()->json(['message' => 'File contains potential malicious content'], Response::HTTP_BAD_REQUEST)->original;
+                    }
+                }
+
 
                 // Check for potential malicious content
                 $fileContent = file_get_contents($filePath);

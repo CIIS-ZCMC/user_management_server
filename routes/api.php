@@ -2609,4 +2609,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('login-device-browser-report', 'LoginActivitiesReport@generateDeviceBrowserLoginReport');
         });
     });
+
+    /*
+     * Digital Signature
+     */
+    Route::namespace('App\Http\Controllers\DigitalSignature')->group(function () {
+        Route::post('cert-upload', 'DigitalSignatureController@store');
+    });
 });

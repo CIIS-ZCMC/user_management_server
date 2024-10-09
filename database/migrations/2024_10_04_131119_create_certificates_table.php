@@ -17,8 +17,8 @@ class CreateCertificateAttachmentsTable extends Migration
             $table->id(); // bigint unsigned auto_increment
             $table->unsignedBigInteger('personal_information_id');
             $table->string('filename', 191)->nullable();
-            $table->text('file_cert_path')->nullable();
-            $table->text('file_img_cert_path')->nullable();
+            $table->text('cert_file_path')->nullable();
+            $table->text('cert_img_file_path')->nullable();
             $table->unsignedBigInteger('size')->nullable();
             $table->softDeletes();
             $table->timestamps(); // created_at and updated_at columns
