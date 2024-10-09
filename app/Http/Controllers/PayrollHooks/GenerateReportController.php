@@ -197,11 +197,13 @@ class GenerateReportController extends Controller
         $employeeIds = DB::table('daily_time_records')
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
+
             ->pluck('biometric_id');//employee_id
         $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-            ->limit(7)
-            ->get();
+      //$profiles = EmployeeProfile::where('id', 2482)
+            //  ->limit(1)
 
+            ->get();
 
 
         // $profiles = EmployeeProfile::where("biometric_id",493)->get();
@@ -341,7 +343,7 @@ class GenerateReportController extends Controller
                 // echo "Name :".$Employee?->personalInformation->name()."\n Biometric_id :".$Employee->biometric_id."\n"?? "\n"."\n";
                 for ($i = $init; $i <= $days_In_Month; $i++) {
 
-                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use ($year_of, $month_of, $i, ) {
+                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use ($year_of, $month_of, $i,) {
                         $dateToCompare = date('Y-m-d', $timestamp['dateReg']);
                         $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                         return $dateToCompare === $dateToMatch;
@@ -409,45 +411,45 @@ class GenerateReportController extends Controller
 
                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                            $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
-                                return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                            }));
-                            // echo $i."-P \n";
+                        $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
+                            return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                        }));
+                        // echo $i."-P \n";
 
-                            if (isset($recordDTR[0])) {
-                                if (
-                                    ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
-                                    (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || //3-4
-                                    ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
-                                    ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
-                                ) {
-                                    $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                                    $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                                    $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                                    $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                                } else {
-                                    $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                                }
+                        if (isset($recordDTR[0])) {
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || //3-4
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
+                            ) {
+                                $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
                             } else {
-                                // Handle the case where $recordDTR[0] does not exist
-                                $invalidEntry[] = "No record found for the given day.";
+                                $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
                             }
-                        } else if (
-                            in_array($i, $AbsentDays) &&
-                            in_array($i, $empschedule) &&
-                            strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
-                        ) {
-                            //echo $i."-A  \n";
-
-                            $absences[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
                         } else {
-                            //   echo $i."-DO\n";
-                            $dayoff[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
+                            // Handle the case where $recordDTR[0] does not exist
+                            $invalidEntry[] = "No record found for the given day.";
                         }
+                    } else if (
+                        in_array($i, $AbsentDays) &&
+                        in_array($i, $empschedule) &&
+                        strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
+                    ) {
+                        //echo $i."-A  \n";
+
+                        $absences[] = [
+                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        ];
+                    } else {
+                        //   echo $i."-DO\n";
+                        $dayoff[] = [
+                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        ];
+                    }
                 }
 
 
@@ -457,7 +459,7 @@ class GenerateReportController extends Controller
                 }));
 
 
-                $Number_Absences = count($absences) - count($lwop);
+               $Number_Absences = count($absences) - count($lwop);
                 $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
                 $scheds = array_map(function ($d) {
@@ -478,26 +480,25 @@ class GenerateReportController extends Controller
 
 
 
+              //  return $Number_Absences;
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds_forsal));
 
 
-
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
-                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], count($filtered_scheds));
+                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'],$Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
+
 
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
 
 
-                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $total_Month_WorkingMinutes, $undertimeRate, $absentRate, $basicSalary['Total']);
-
+                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary,$undertimeRate,$absentRate, $Employee->employmentType->name);
 
                 //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
+               // return $lwp;
 
                 $OverAllnetSalary = $this->TOTALNETSALARY($request, $biometric_id);
-
-
 
                 $leaveApplication = array_values($Employee->leaveApplications->filter(function ($row) use ($month_of, $year_of) {
                     if ($row->name == "Study Leave") {
@@ -513,7 +514,7 @@ class GenerateReportController extends Controller
                     'To' => $days_In_Month,
                     'Month' => $month_of,
                     'Year' => $year_of,
-                    'Is_out' => $this->computed->OutofPayroll($OverAllnetSalary,$Employee->employmentType),
+                    'Is_out' => $this->computed->OutofPayroll($OverAllnetSalary, $Employee->employmentType),
                     'NightDifferentials' => array_values(array_filter($nightDifferentials, function ($row) use ($biometric_id) {
                         return isset($row['biometric_id']) && $row['biometric_id'] == $biometric_id;
                     })),
@@ -530,7 +531,7 @@ class GenerateReportController extends Controller
                     'schedule' => count($filtered_scheds),
                     'GrandBasicSalary' => $basicSalary['GrandTotal'],
                     'Rates' => $Rates,
-                    'GrossSalary' => $Rates['Minutes'] * $total_Month_WorkingMinutes,
+                    'GrossSalary' => $GrossSalary,
                     'TimeDeductions' => [
                         'AbsentRate' => $absentRate,
                         'UndertimeRate' => $undertimeRate,
@@ -565,11 +566,7 @@ class GenerateReportController extends Controller
                     //  'Dayoff'=>$dayoff
                 ];
             }
-
-
-
         }
-
     }
     public function TOTALNETSALARY($request, $biometric_id)
     {
@@ -582,6 +579,7 @@ class GenerateReportController extends Controller
 
         $profiles = EmployeeProfile::where('biometric_id', $biometric_id)
             ->get();
+
 
         $data = [];
 
@@ -679,16 +677,27 @@ class GenerateReportController extends Controller
             for ($i = $init; $i <= $days_In_Month; $i++) {
                 $filteredleaveDates = [];
                 $leaveStatus = [];
+                foreach ($leaveData as $row) {
+                    foreach ($row['dates_covered'] as $date) {
+                        $filteredleaveDates[] = [
+                            'dateReg' => strtotime($date),
+                            'status' => $row['without_pay']
+                        ];
+                    }
+                }
 
-                // echo "Name :".$Employee?->personalInformation->name()."\n Biometric_id :".$Employee->biometric_id."\n"?? "\n"."\n";
+
+
                 for ($i = $init; $i <= $days_In_Month; $i++) {
 
-                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use ($year_of, $month_of, $i, ) {
+                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use ($year_of, $month_of, $i,) {
                         $dateToCompare = date('Y-m-d', $timestamp['dateReg']);
                         $dateToMatch = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
                         return $dateToCompare === $dateToMatch;
                     });
                     $leave_Count = count($leaveApplication);
+
+
                     //Check obD ates
                     $filteredOBDates = [];
                     foreach ($obData as $row) {
@@ -751,53 +760,55 @@ class GenerateReportController extends Controller
 
                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
 
-                            $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
-                                return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
-                            }));
-                            // echo $i."-P \n";
+                        $recordDTR = array_values(array_filter($dtr->toArray(), function ($d) use ($year_of, $month_of, $i) {
+                            return $d->dtr_date == date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i));
+                        }));
+                        // echo $i."-P \n";
 
-                            if (isset($recordDTR[0])) {
-                                if (
-                                    ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
-                                    (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || //3-4
-                                    ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
-                                    ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
-                                ) {
-                                    $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                                    $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
-                                    $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
-                                    $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
-                                } else {
-                                    $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
-                                }
+                        if (isset($recordDTR[0])) {
+                            if (
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || // all entry
+                                (!$recordDTR[0]->first_in && !$recordDTR[0]->first_out && $recordDTR[0]->second_in && $recordDTR[0]->second_out) || //3-4
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && !$recordDTR[0]->second_in && !$recordDTR[0]->second_out) || // 1-2
+                                ($recordDTR[0]->first_in && $recordDTR[0]->first_out && $recordDTR[0]->second_in && !$recordDTR[0]->second_out) // 1-2-3
+                            ) {
+                                $attd[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
+                                $total_Month_WorkingMinutes += $recordDTR[0]->total_working_minutes;
+                                $total_Month_Overtime += $recordDTR[0]->overtime_minutes;
+                                $total_Month_Undertime += $recordDTR[0]->undertime_minutes;
                             } else {
-                                // Handle the case where $recordDTR[0] does not exist
-                                $invalidEntry[] = "No record found for the given day.";
+                                $invalidEntry[] = $this->Attendance($year_of, $month_of, $i, $recordDTR);
                             }
-                        } else if (
-                            in_array($i, $AbsentDays) &&
-                            in_array($i, $empschedule) &&
-                            strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
-                        ) {
-                            //echo $i."-A  \n";
-
-                            $absences[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
                         } else {
-                            //   echo $i."-DO\n";
-                            $dayoff[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
+                            // Handle the case where $recordDTR[0] does not exist
+                            $invalidEntry[] = "No record found for the given day.";
                         }
+                    } else if (
+                        in_array($i, $AbsentDays) &&
+                        in_array($i, $empschedule) &&
+                        strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
+                    ) {
+                        //echo $i."-A  \n";
+
+                        $absences[] = [
+                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        ];
+                    } else {
+                        //   echo $i."-DO\n";
+                        $dayoff[] = [
+                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                        ];
+                    }
                 }
+
+            }
 
 
 
                 $presentCount = count(array_filter($attd, function ($d) {
                     return $d['total_working_minutes'] !== 0;
                 }));
-                $Number_Absences = count($absences) - count($lwop);
+                 $Number_Absences = count($absences) - count($lwop);
                 $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
                 $scheds = array_map(function ($d) {
@@ -814,26 +825,22 @@ class GenerateReportController extends Controller
                 $salaryStep = $employeeAssignedAreas->salary_grade_step ?? 1;
 
 
-
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
 
 
                 //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
-                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], count($filtered_scheds));
+                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'],$Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds));
 
                 $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
-                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($Rates, $total_Month_WorkingMinutes, $undertimeRate, $absentRate, $basicSalary['Total']);
 
-
+                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $Employee->employmentType->name);
                 return $NetSalary;
 
-            }
+
 
         }
-
-
     }
 
 
@@ -931,7 +938,4 @@ class GenerateReportController extends Controller
 
         return $leaveData;
     }
-
-
-
 }

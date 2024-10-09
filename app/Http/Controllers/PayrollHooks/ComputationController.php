@@ -69,14 +69,12 @@ class ComputationController extends Controller
     ];
     }
 
-    public function GrossSalary($present_Days,$salary,$DaysCount){
+    public function GrossSalary($present_Days,$salary,$NumbersOfAbsences){
 
-        if(!$DaysCount){
-            $DaysCount = 1;
+        if($NumbersOfAbsences  == 0 ){
+            return round($salary,2);
         }
-
-        return round(($present_Days * $salary) / $this->Working_Days,2); // Contstant value. Required number of days
-
+         return round(($present_Days * $salary) / $this->Working_Days,2); // Contstant value. Required number of days
     }
 
     public function Rates($basic_Salary,$schedCount){
@@ -118,14 +116,14 @@ class ComputationController extends Controller
         return round($Rates['Daily'] * $Number_Absences,2) ;
     }
 
-    public function NetSalaryFromTimeDeduction($Rates,$totalworkedminutes,$undertimeRate,$absentRate,$grosssalary){
-        $deduction = $undertimeRate + $absentRate;
-        $grossSal = $Rates['Minutes'] * $totalworkedminutes ;
-        $net =  floor(round( $grossSal - $deduction,2) * 100) /100;
+    public function NetSalaryFromTimeDeduction($GrossSalary,$undertimeRate,$absentRate,$emptype){
 
-
-
-        return $net ;
+        $deduction =  $absentRate;
+        if ($emptype == "Job Order"){
+            $deduction += $undertimeRate;
+        }
+        $net =  floor(round( $GrossSalary,2) * 100) /100;
+        return $net - $deduction ;
 
     }
 
@@ -134,8 +132,8 @@ class ComputationController extends Controller
         if($employmentType == "Job Order"){
             $limit = 2500;
         }
-       
-        
+
+
 
         if ($overallnetSalary < $limit){
             return true;
