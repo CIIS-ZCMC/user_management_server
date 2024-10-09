@@ -8,7 +8,6 @@ use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeSchedule;
-use App\Models\EmploymentType;
 use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
@@ -200,11 +199,6 @@ class ScheduleController extends Controller
     {
         try {
             $user = $request->user;
-            // $position = $user->position();
-
-            // if (!$position) {
-            //     return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
-            // }
 
             $my_area = $user->assignedArea->findDetails();
             $areas = [];

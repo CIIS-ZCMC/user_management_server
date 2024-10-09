@@ -13,7 +13,6 @@ use App\Helpers\Helpers;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\MonthlyWorkHours;
-use App\Models\PersonalInformation;
 use App\Models\Schedule;
 use App\Models\TimeShift;
 use Carbon\Carbon;
@@ -455,16 +454,8 @@ class EmployeeScheduleController extends Controller
 
                 foreach ($csvData as $row) {
                     $employee_id = $row[0];
-                    // $lastname = $row[0];
-                    $firstname = $row[1];
                     $month = $row[2];
                     $year = $row[3];
-
-                    // Find the employee profile
-                    // $employee = EmployeeProfile::with('personalInformation')->whereHas('personalInformation', function ($query) use ($lastname, $firstname) {
-                    //     $query->where('last_name', $lastname)
-                    //         ->where('first_name', $firstname);
-                    // })->first();
 
                     $employee = EmployeeProfile::where('employee_id', $employee_id)->first();
 
@@ -536,7 +527,7 @@ class EmployeeScheduleController extends Controller
                     }
                 }
 
-                return response()->json(['message' => 'CSV data imported successfully!'], Response::HTTP_OK);
+                return response()->json(['message' => 'CSV data uploaded successfully!'], Response::HTTP_OK);
             }
             return response()->json(['message' => 'Invalid file uploaded.'], Response::HTTP_NOT_ACCEPTABLE);
         } catch (\Throwable $th) {
