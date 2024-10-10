@@ -137,8 +137,10 @@ class EmployeeScheduleController extends Controller
     public function store(ScheduleRequest $request)
     {
         try {
+            $user = $request->user;
 
             $cleanData = [];
+            $array = [];
 
             foreach ($request->all() as $key => $value) {
                 if (empty($value)) {
@@ -189,20 +191,11 @@ class EmployeeScheduleController extends Controller
                     $timeShiftId = $selectedDate['time_shift_id'];
 
                     foreach ($selectedDate['date'] as $date) {
-                        $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
-                            $query->where('time_shift_id', $timeShiftId)
-                                ->where('date', $date);
-                        })->exists();
-
-                        if ($existingSchedule) {
+                        if ($this->scheduleExists($employee, $timeShiftId, $date)) {
                             return response()->json(['message' => 'Duplicates of schedules are not allowed. Please check the date: ' . $date], Response::HTTP_FOUND);
                         }
 
-                        $moreThanOneSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($date) {
-                            $query->where('date', $date);
-                        })->exists();
-
-                        if ($moreThanOneSchedule) {
+                        if ($this->multipleSchedulesOnSameDay($employee, $date)) {
                             return response()->json(['message' => 'Oops! Only 1 schedule per day. Please check the date:' . $date], Response::HTTP_FOUND);
                         }
 
@@ -224,12 +217,20 @@ class EmployeeScheduleController extends Controller
                         // Attach employees to the schedule
                         $schedule->employee()->attach($employee);
                     }
+
+                    $data = EmployeeSchedule::where('employee_profile_id', $employee)
+                        ->where('schedule_id', $schedule->id)
+                        ->first();
+
+                    $array[] = $data;
+
+                    Helpers::registerSystemLogs($request, $schedule->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+                    Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'store');
                 }
             }
 
-            // Helpers::registerSystemLogs($request, $schedule['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                // 'data' => new EmployeeScheduleResource($schedule),
+                'data' => new EmployeeScheduleResource($array),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -538,6 +539,8 @@ class EmployeeScheduleController extends Controller
     public function import(Request $request)
     {
         try {
+            $user = $request->user;
+
             // Validate the file
             $request->validate([
                 'csv_file' => 'required|mimes:csv,txt|max:2048',
@@ -597,10 +600,14 @@ class EmployeeScheduleController extends Controller
                         })->delete();
 
                     // Create a new employee schedule
-                    EmployeeSchedule::create([
+                    $data = EmployeeSchedule::create([
                         'employee_profile_id' => $employee->id,
                         'schedule_id' => $schedule->id,
                     ]);
+
+                    // Log system actions
+                    Helpers::registerSystemLogs($request, $data['id'], true, 'Success in importing schedule for ' . $date . '.');
+                    Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'request');
                 }
 
                 if (!empty($errors)) {
@@ -639,5 +646,21 @@ class EmployeeScheduleController extends Controller
         }
     }
 
+    private function scheduleExists($employee, $timeShiftId, $date)
+    {
+        return EmployeeSchedule::where('employee_profile_id', $employee)
+            ->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
+                $query->where('time_shift_id', $timeShiftId)
+                    ->where('date', $date);
+            })->exists();
+    }
+
+    private function multipleSchedulesOnSameDay($employee, $date)
+    {
+        return EmployeeSchedule::where('employee_profile_id', $employee)
+            ->whereHas('schedule', function ($query) use ($date) {
+                $query->where('date', $date);
+            })->exists();
+    }
 
 }
