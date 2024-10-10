@@ -4,8 +4,14 @@ namespace App\Http\Controllers\DigitalSignature;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Models\CertificateAttachments;
+use App\Models\CertificateDetails;
+use App\Models\EmployeeProfile;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -51,6 +57,14 @@ class DigitalSignatureController extends Controller
                 return response()->json(['message' => 'Invalid authorization pin.'], Response::HTTP_UNAUTHORIZED);
             }
 
+            $existing_attachments = CertificateAttachments::where('employee_profile_id', $user->id)->first();
+
+            if ($existing_attachments) {
+                return response()->json([
+                    'message' => 'User already has certificate attachments. You may update or replace them if needed.'
+                ], Response::HTTP_CONFLICT);
+            }
+
             // Check if files are uploaded and valid
             if (!$request->hasFile('cert_file') || !$request->file('cert_file')->isValid()) {
                 return response()->json(['message' => 'cert_file is missing or invalid.'], Response::HTTP_BAD_REQUEST);
@@ -62,13 +76,14 @@ class DigitalSignatureController extends Controller
 
             // get cert password
             $cert_password = $request->cert_password;
+            $encrypted_password = Crypt::encryptString($cert_password);
+
             // Store cert_file
             $cert_file = $request->file('cert_file');
             $cert_file_name = pathinfo($cert_file->getClientOriginalName(), PATHINFO_FILENAME);
             $cert_file_extension = $cert_file->getClientOriginalExtension();
             $cert_file_size = $cert_file->getSize();
             $cert_file_name_encrypted = Helpers::checkSaveFile($cert_file, 'storage/certificates');
-//            $cert_file_path = $cert_file->storeAs('certificates', $cert_file_name_encrypted, 'public');
 
             // Store cert_img_file
             $cert_img_file = $request->file('cert_img_file');
@@ -76,32 +91,127 @@ class DigitalSignatureController extends Controller
             $cert_img_file_extension = $cert_img_file->getClientOriginalExtension();
             $cert_img_file_size = $cert_img_file->getSize();
             $cert_img_file_name_encrypted = Helpers::checkSaveFile($cert_img_file, 'storage/e_signatures');
-//            $cert_img_file_path = $cert_img_file->storeAs('e_signatures', $cert_img_file_name_encrypted, 'public');
 
             $cert_file_path = Storage::disk('public')->url("certificates/{$cert_file_name_encrypted}");
             $cert_img_file_path = Storage::disk('public')->url("e_signatures/{$cert_img_file_name_encrypted}");
 
+            $certificate_attachments = CertificateAttachments::create([
+                'employee_profile_id' => $user->id,
+                'filename' => $cert_file_name_encrypted,
+                'file_path' => $cert_file_path,
+                'file_extension' => $cert_file_extension,
+                'file_size' => $cert_file_size,
+                'img_name' => $cert_img_file_name_encrypted,
+                'img_path' => $cert_img_file_path,
+                'img_extension' => $cert_img_file_extension,
+                'img_size' => $cert_img_file_size,
+                'cert_password' => $encrypted_password,
+            ]);
+
+
+            $extracted_cert_details = $this->extractCertificateDetails($certificate_attachments->id);
+            $save_cert_details = $this->saveCertificateDetails($extracted_cert_details, $certificate_attachments->employee_profile_id, $certificate_attachments->id);
+
+            if (!$save_cert_details && !$certificate_attachments) {
+                return response()->json(['message' => 'Failed to store certificate attachments and details.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
             // Return response with file paths and metadata
             return response()->json([
-                'cert_file' => [
-                    'original_name' => $cert_file_name,
-                    'encrypted_name' => $cert_file_name_encrypted,
-                    'extension' => $cert_file_extension,
-                    'size' => $cert_file_size,
-                    'storage_path' => $cert_file_path,
-                ],
-                'cert_img_file' => [
-                    'original_name' => $cert_img_file_name,
-                    'encrypted_name' => $cert_img_file_name_encrypted,
-                    'extension' => $cert_img_file_extension,
-                    'size' => $cert_img_file_size,
-                    'storage_path' => $cert_img_file_path,
-                ],
-                'cert_password' => $cert_password,
-                'message' => 'Certificate files successfully uploaded.'
+                'message' => 'Certificate files and details saved successfully.'
             ]);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    private function saveCertificateDetails($cert_details, $employee_profile_id, $certificate_attachment_id)
+    {
+        try {
+            // Extract details from the certificate
+            $subject_owner = $cert_details['cert_info']['subject']['CN'] ?? null;
+            $issued_by = $cert_details['cert_info']['issuer']['CN'] . ', ' .
+                ($cert_details['cert_info']['issuer']['O'] ?? '') . ', ' .
+                ($cert_details['cert_info']['issuer']['C'] ?? '');
+            $organization_unit = $cert_details['cert_info']['subject']['OU'] ?? null;
+            $country = $cert_details['cert_info']['subject']['C'] ?? null;
+            $valid_from = date('Y-m-d H:i:s', $cert_details['cert_info']['validFrom_time_t']);
+            $valid_till = date('Y-m-d H:i:s', $cert_details['cert_info']['validTo_time_t']);
+
+            // Correctly access private_key and public_key from cert_details root level
+            $private_key = Crypt::encryptString($cert_details['private_key']);
+            $public_key = Crypt::encryptString($cert_details['public_key']);
+
+            // Save certificate details to the database
+            $certificate_details = CertificateDetails::create([
+                'employee_profile_id' => $employee_profile_id,
+                'certificate_attachment_id' => $certificate_attachment_id,
+                'subject_owner' => $subject_owner,
+                'issued_by' => $issued_by,
+                'organization_unit' => $organization_unit,
+                'country' => $country,
+                'valid_from' => $valid_from,
+                'valid_till' => $valid_till,
+                'public_key' => $public_key,
+                'private_key' => $private_key
+            ]);
+
+            // Check if the insertion was successful
+            if (!$certificate_details || !$certificate_details->exists) {
+                return response()->json(['message' => 'Failed to store certificate details.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            // Return success response
+            return true;
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'saveCertificateDetails', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    private function extractCertificateDetails($id): bool|JsonResponse|array
+    {
+        try {
+            // Step 1: Retrieve and validate resources
+            $certificate_attachment = CertificateAttachments::where('id', $id)->first();
+
+            if (!$certificate_attachment) {
+                return response()->json(['message' => 'Certificate attachment not found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Retrieve the cert file and password
+            $cert_file_path = storage_path('app\\public\\certificates\\' . $certificate_attachment->filename);
+            $cert_password = Crypt::decryptString($certificate_attachment->cert_password);
+            $cert_img_path = storage_path('app\\public\\e_signatures\\' . $certificate_attachment->img_name);
+
+            if (!file_exists($cert_file_path)) {
+                return response()->json(['message' => 'Certificate file not found.'], Response::HTTP_NOT_FOUND);
+            }
+            if (!file_exists($cert_img_path)) {
+                return response()->json(['message' => 'Signature image file not found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Step 2: Extract private key and certificate
+            $cert_content = file_get_contents($cert_file_path);
+            $certs = [];
+            if (!openssl_pkcs12_read($cert_content, $certs, $cert_password)) {
+                return response()->json(['message' => 'Failed to extract private key from certificate.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $private_key = $certs['pkey'];
+            $certificate = $certs['cert'];
+
+            $certificate_info = openssl_x509_parse($certs['cert']);
+
+            return [
+                'private_key' => $private_key,
+                'public_key' => $certificate,
+                'cert_info' => $certificate_info,
+            ];
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'extractCertificateDetails', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

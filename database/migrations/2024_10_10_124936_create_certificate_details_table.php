@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCertificateDetailsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class CreateCertificateDetailsTable extends Migration
     {
         Schema::create('certificate_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('personal_information_id');
-            $table->unsignedBigInteger('certificate_id'); // Foreign key to certificates table
+            $table->unsignedBigInteger('employee_profile_id');
+            $table->unsignedBigInteger('certificate_attachment_id'); // Foreign key to certificates table
             $table->string('subject_owner', 191)->nullable();
             $table->string('issued_by', 191)->nullable();
             $table->string('organization_unit', 191)->nullable();
@@ -27,8 +27,8 @@ class CreateCertificateDetailsTable extends Migration
             $table->timestamps();
 
             // Foreign key constraints
-            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
-            $table->foreign('certificate_id')->references('id')->on('certificates');
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->foreign('certificate_attachment_id')->references('id')->on('certificate_attachments');
         });
     }
 

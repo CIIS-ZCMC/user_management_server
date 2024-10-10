@@ -19,9 +19,11 @@
         "laravel/tinker": "^2.8",
         "league/csv": "9.0",
         "league/oauth2-google": "^4.0",
+        "maatwebsite/excel": "^3.1",
         "phpmailer/phpmailer": "^6.8",
+        "setasign/fpdi-tcpdf": "^2.3",
         "torann/geoip": "^3.0",
-        "maatwebsite/excel": "^3.1"
+        "ext-openssl": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
