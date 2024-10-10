@@ -38,7 +38,7 @@ class DigitalSignatureController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try {
             $user = $request->user;
@@ -108,7 +108,6 @@ class DigitalSignatureController extends Controller
                 'cert_password' => $encrypted_password,
             ]);
 
-
             $extracted_cert_details = $this->extractCertificateDetails($certificate_attachments->id);
             $save_cert_details = $this->saveCertificateDetails($extracted_cert_details, $certificate_attachments->employee_profile_id, $certificate_attachments->id);
 
@@ -125,7 +124,8 @@ class DigitalSignatureController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    private function saveCertificateDetails($cert_details, $employee_profile_id, $certificate_attachment_id)
+
+    private function saveCertificateDetails($cert_details, $employee_profile_id, $certificate_attachment_id): bool|JsonResponse
     {
         try {
             // Extract details from the certificate
