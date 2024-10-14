@@ -199,15 +199,14 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
 
             ->pluck('biometric_id');//employee_id
-        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-      //$profiles = EmployeeProfile::where('id', 2482)
-            //  ->limit(1)
+      $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+     // $profiles = EmployeeProfile::where('id', 2476)
+             // ->limit(1)
 
             ->get();
 
 
         // $profiles = EmployeeProfile::where("biometric_id",493)->get();
-
 
 
         $data = [];
@@ -221,6 +220,7 @@ class GenerateReportController extends Controller
         $second_half = $request->second_half;
         $init = 1;
         $count = [];
+   
         foreach ($profiles as $row) {
             $Employee = $row;
             if (!$Employee->assignedArea) {
@@ -238,6 +238,8 @@ class GenerateReportController extends Controller
                 $init = 1;
                 $days_In_Month = $daysTotalMonth;
             }
+
+            
             if ($first_half || $second_half) {
                 if ($Employee->employmentType->name == "Job Order") {
                     // echo "Job Order \n";
@@ -514,7 +516,7 @@ class GenerateReportController extends Controller
                     'To' => $days_In_Month,
                     'Month' => $month_of,
                     'Year' => $year_of,
-                    'Is_out' => $this->computed->OutofPayroll($OverAllnetSalary, $Employee->employmentType),
+                    'Is_out' => $this->computed->OutofPayroll($OverAllnetSalary, $Employee->employmentType, $total_Month_WorkingMinutes),
                     'NightDifferentials' => array_values(array_filter($nightDifferentials, function ($row) use ($biometric_id) {
                         return isset($row['biometric_id']) && $row['biometric_id'] == $biometric_id;
                     })),
@@ -540,6 +542,7 @@ class GenerateReportController extends Controller
                     'OverallNetSalary' => $OverAllnetSalary,
 
                     'Employee' => [
+                        'profile_id' =>$Employee->id,
                         'employee_id' => $Employee->employee_id,
                         'Information' => $Employee->personalInformation,
                         'Designation' => $Employee->findDesignation(),
