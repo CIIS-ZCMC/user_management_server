@@ -133,8 +133,13 @@ class ComputationController extends Controller
 
     }
 
-    public function OutofPayroll($overallnetSalary, $employmentType)
+    public function OutofPayroll($overallnetSalary, $employmentType, $total_Month_WorkingMinutes)
     {
+
+        if ($total_Month_WorkingMinutes <= 2640) { // 22 days * 480 / 2 / 2
+            return true;
+        }
+
         $limit = 5000;
         if ($employmentType == "Job Order") {
             $limit = 2500;
