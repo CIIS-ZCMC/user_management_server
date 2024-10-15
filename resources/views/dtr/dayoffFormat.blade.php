@@ -1,4 +1,4 @@
-@if ($generate_dtr_dayoff)
+@if (isset($dtr_dayoff))
     <td class="time " style="font-size:10px;font-weight:bold" id="entry{{ $i }}1">
         DAY OFF
 

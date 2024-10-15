@@ -1,4 +1,4 @@
-@if (isset($generate_dtr_holiday))
+@if (isset($dtr_holiday))
 
     @php
         $fout = '';
@@ -22,21 +22,24 @@
                 }
             }
         }
-
     @endphp
 
 
     @if (count($yesdtr) >= 1)
-        <td class="time " colspan="1" style="font-size:10px;font-weight:bold" id="entry{{ $i }}1">
-            <span class="">{{ $holidayMessage }}</span>
+        <td class="time " style="font-size:10px;letter-spacing:5px;color:rgb(160, 126, 16);"
+            id="entry{{ $i }}1">
+            <span class="" style="letter-spacing:  5px">{{ $holidayMessage }}</span>
             <script>
                 $(document).ready(function() {
                     $("#entry{{ $i }}1").addClass("Holiday");
+                    $("#entry{{ $i }}2").addClass("Holiday");
+                    $("#entry{{ $i }}3").addClass("Holiday");
+                    $("#entry{{ $i }}4").addClass("Holiday");
+
                 })
             </script>
         </td>
-
-        <td class="time " style="font-weight:bold" id="entry{{ $i }}2">
+        <td class="time " id="entry{{ $i }}2">
             {{ $fout }}
         </td>
         <td class="time " id="entry{{ $i }}3">
@@ -46,11 +49,14 @@
 
         </td>
     @else
-        <td class="time " colspan="4" style="font-size:10px;font-weight:bold" id="entry{{ $i }}1">
+        <td class="time " colspan="4" style="font-size:10px;letter-spacing:5px;color:rgb(160, 126, 16);"
+            id="entry{{ $i }}1">
             <span class="">{{ $holidayMessage }}</span>
             <script>
                 $(document).ready(function() {
                     $("#entry{{ $i }}1").addClass("Holiday");
+
+
                 })
             </script>
         </td>

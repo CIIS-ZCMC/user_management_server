@@ -31,6 +31,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use App\Http\Controllers\DTR\DeviceLogsController;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Recompute;
 
 class DTRcontroller extends Controller
 {
@@ -67,7 +68,7 @@ class DTRcontroller extends Controller
     public function printDtrLogs(Request $request)
     {
         $user = $request->user;
-        $biometric_id = $user->biometric_id;//$user->biometric_id;
+        $biometric_id = $user->biometric_id; //$user->biometric_id;
         $date = $request->requestDate;
         $dtr = $this->getUserDeviceLogs($biometric_id, $date);
         $emp = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -89,8 +90,6 @@ class DTRcontroller extends Controller
 
         $filename = $date . "Logs-" . $Name . ".pdf";
         $dompdf->stream($filename);
-
-
     }
     public function getBiometricLog(Request $request)
     {
@@ -119,14 +118,10 @@ class DTRcontroller extends Controller
             }
 
             return response()->json(['data' => $listemployees], Response::HTTP_OK);
-
-
-
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'getBiometricLog', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
-
     }
     public function getValidatedEntry($firstin, $secondin)
     {
@@ -202,7 +197,6 @@ class DTRcontroller extends Controller
                         'schedule' => $Schedule['daySchedule'],
                         'deviceLogs' => $deviceLogs
                     ];
-
                 }
             }
             return [
@@ -268,10 +262,7 @@ class DTRcontroller extends Controller
         return null;
     }
 
-    public function PullingLogic($device, $Employee_Attendance, $date_now, $biometric_id)
-    {
-
-    }
+    public function PullingLogic($device, $Employee_Attendance, $date_now, $biometric_id) {}
 
 
     function isNotEmptyFields($logs)
@@ -321,7 +312,6 @@ class DTRcontroller extends Controller
                 $Schedule['daySchedule'] ?? [],
                 true
             );
-
         }
     }
     public function RegenerateDTR()
@@ -398,7 +388,6 @@ class DTRcontroller extends Controller
                 $this->DeviceLog->RegenerateEntry($Entry, $biometric_id, $dtr_date, $Schedule);
 
                 $this->RecomputeHours($biometric_id, $month_of, $year_of, $dtr_date);
-
             }
         }
         Log::channel("custom-dtr-log")->info('DTR REGENERATED SUCCESSFULLY @ ' . date('H:i'));
@@ -406,7 +395,52 @@ class DTRcontroller extends Controller
             'message' => 'DTR Succesfully ReGenerated',
             'DatesCovered' => $data
         ]);
+    }
 
+    public function ReComputeDTR($biometric_id, $month, $year)
+    {
+
+        ini_set('max_execution_time', 86400);
+
+        $dvclogs = DeviceLogs::where("biometric_id", $biometric_id)
+            ->whereMonth("dtr_date", $month)
+            ->whereYear("dtr_date", $year)
+            ->get();
+
+
+        if (count($dvclogs) >= 1) {
+            foreach ($dvclogs as $value) {
+                $biometric_id = $value['biometric_id'];
+                $dtr_date = $value->dtr_date;
+                $byemp = array_values(array_filter($dvclogs->toArray(), function ($row) use ($biometric_id) {
+                    return $row['biometric_id'] == $biometric_id;
+                }));
+                $Entry = $this->DeviceLog->getEntryLineup($byemp);
+
+
+                if (count($Entry) >= 1) {
+                    $dtr = DailyTimeRecords::where('dtr_date', $dtr_date)->where('biometric_id', $biometric_id)->where('is_time_adjustment', 0);
+                    $dtr->update([
+                        'is_generated' => 0
+                    ]);
+                    if ($dtr->count() >= 2) {
+                        // DELETE DTR if no devicelogs .
+                        $recordsToDelete = $dtr->get()->slice(1);
+                        foreach ($recordsToDelete as $record) {
+                            $record->delete();
+                        }
+                    }
+                }
+                $bioEntry = [
+                    'first_entry' => $Entry[0]['date_time'] ?? $Entry[2]['date_time'],
+                    'date_time' => $Entry[0]['date_time'] ?? $Entry[2]['date_time']
+                ];
+
+                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                $this->DeviceLog->RegenerateEntry($Entry, $biometric_id, $dtr_date, $Schedule);
+                $this->RecomputeHours($biometric_id, $month, $year, $dtr_date);
+            }
+        }
     }
 
     public function fetchDTRFromDevice()
@@ -513,7 +547,6 @@ class DTRcontroller extends Controller
                                                  */
                                                 //    $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                             }
-
                                         } else {
 
                                             /**
@@ -522,7 +555,6 @@ class DTRcontroller extends Controller
                                             //  $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                         }
                                     }
-
                                 }
 
                                 //$this->helper->saveDTRRecords($check_Records, false);
@@ -600,7 +632,6 @@ class DTRcontroller extends Controller
                                              */
                                             //   $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                         }
-
                                     } else {
                                         /**
                                          * No Schedule Pulling
@@ -610,7 +641,6 @@ class DTRcontroller extends Controller
                                 }
 
                                 $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
-
                             }
 
                             ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -634,7 +664,6 @@ class DTRcontroller extends Controller
                             }
                         }
                     }
-
                 }
             }
         } catch (\Throwable $th) {
@@ -851,6 +880,7 @@ class DTRcontroller extends Controller
             $FrontDisplay = $request->frontview;
             $ishalf = 1;
 
+
             /*
             Multiple IDS for Multiple PDF generation
             */
@@ -906,7 +936,23 @@ class DTRcontroller extends Controller
             }
             $emp_name = '';
             $biometric_id = $id[0];
-
+            $recompData = Recompute::where("biometric_id", $biometric_id);
+            if (!$recompData->exists()) {
+                $this->ReComputeDTR($biometric_id, $month_of, $year_of);
+                Recompute::create([
+                    'biometric_id' => $biometric_id,
+                    'month_of' => $month_of,
+                    'datecomputed' => now()
+                ]);
+            } else {
+                if ($recompData->first()->month_of != $month_of) {
+                    $this->ReComputeDTR($biometric_id, $month_of, $year_of);
+                    $recompData->update([
+                        'month_of' => $month_of,
+                        'datecomputed' => now()
+                    ]);
+                }
+            }
             if ($this->helper->isEmployee($id[0])) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
                 $emp_name = $employee->name();
@@ -969,7 +1015,6 @@ class DTRcontroller extends Controller
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                     ];
                 }
-
             }
 
 
@@ -1106,7 +1151,6 @@ class DTRcontroller extends Controller
                     'Incharge' => $approver,
                     'undertime' => $ut,
                 ]);
-
             } else {
                 $options = new Options();
                 $options->set('isPhpEnabled', true);
@@ -1143,7 +1187,6 @@ class DTRcontroller extends Controller
                 /* Downloads as PDF */
                 $dompdf->stream($filename);
             }
-
         } catch (\Throwable $th) {
             return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
@@ -1267,7 +1310,6 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id
                 ];
             }
-
         }
 
 
@@ -1496,7 +1538,6 @@ class DTRcontroller extends Controller
                             'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                         ];
                     }
-
                 }
 
                 $ctoData = [];
@@ -2352,6 +2393,4 @@ class DTRcontroller extends Controller
     {
         return view('dtrlog');
     }
-
-
 }
