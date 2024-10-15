@@ -448,6 +448,10 @@ class DTRcontroller extends Controller
                 $this->RecomputeHours($biometric_id, $month, $year, $dtr_date);
             }
         }
+
+        return response()->json([
+            'message' => 'DTR Recomputed Successfully',
+        ]);
     }
 
     public function fetchDTRFromDevice()
@@ -886,7 +890,7 @@ class DTRcontroller extends Controller
             $view = $request->view;
             $FrontDisplay = $request->frontview;
             $ishalf = 1;
-
+            ini_set('max_execution_time', 86400);
 
             /*
             Multiple IDS for Multiple PDF generation
