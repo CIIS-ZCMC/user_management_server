@@ -555,6 +555,7 @@ class DeviceLogsController extends Controller
             $BreakTime = $Schedule['break_Time_Req'];
             $dtr = ['dtr_date' => $Entry[0]['dtr_date']];
 
+
             if (count($DaySchedule) == 0) {
                 return $this->removedDTRnoschedule($Entry[0]['dtr_date'], $Entry[0]['biometric_id']);
             }
@@ -602,7 +603,10 @@ class DeviceLogsController extends Controller
                         'dtr_date' => $dtrdate,
                         'biometric_id' => $biometric_id ?? null,
                     ];
+
+
                     $dtr =  array_merge($data, $dtr);
+
                     DailyTimeRecords::create($dtr);
                 }
             }

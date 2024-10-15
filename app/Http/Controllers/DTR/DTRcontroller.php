@@ -408,21 +408,25 @@ class DTRcontroller extends Controller
             ->get();
 
 
+        $process = [];
         if (count($dvclogs) >= 1) {
             foreach ($dvclogs as $value) {
                 $biometric_id = $value['biometric_id'];
                 $dtr_date = $value->dtr_date;
-                $byemp = array_values(array_filter($dvclogs->toArray(), function ($row) use ($biometric_id) {
-                    return $row['biometric_id'] == $biometric_id;
+
+
+                $byemp = array_values(array_filter($dvclogs->toArray(), function ($row) use ($biometric_id, $dtr_date) {
+                    return $row['biometric_id'] == $biometric_id && $row['dtr_date'] == $dtr_date;
                 }));
                 $Entry = $this->DeviceLog->getEntryLineup($byemp);
-
 
                 if (count($Entry) >= 1) {
                     $dtr = DailyTimeRecords::where('dtr_date', $dtr_date)->where('biometric_id', $biometric_id)->where('is_time_adjustment', 0);
                     $dtr->update([
                         'is_generated' => 0
                     ]);
+
+
                     if ($dtr->count() >= 2) {
                         // DELETE DTR if no devicelogs .
                         $recordsToDelete = $dtr->get()->slice(1);
@@ -431,10 +435,13 @@ class DTRcontroller extends Controller
                         }
                     }
                 }
+
+
                 $bioEntry = [
                     'first_entry' => $Entry[0]['date_time'] ?? $Entry[2]['date_time'],
                     'date_time' => $Entry[0]['date_time'] ?? $Entry[2]['date_time']
                 ];
+
 
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $this->DeviceLog->RegenerateEntry($Entry, $biometric_id, $dtr_date, $Schedule);
@@ -936,23 +943,7 @@ class DTRcontroller extends Controller
             }
             $emp_name = '';
             $biometric_id = $id[0];
-            $recompData = Recompute::where("biometric_id", $biometric_id);
-            if (!$recompData->exists()) {
-                $this->ReComputeDTR($biometric_id, $month_of, $year_of);
-                Recompute::create([
-                    'biometric_id' => $biometric_id,
-                    'month_of' => $month_of,
-                    'datecomputed' => now()
-                ]);
-            } else {
-                if ($recompData->first()->month_of != $month_of) {
-                    $this->ReComputeDTR($biometric_id, $month_of, $year_of);
-                    $recompData->update([
-                        'month_of' => $month_of,
-                        'datecomputed' => now()
-                    ]);
-                }
-            }
+
             if ($this->helper->isEmployee($id[0])) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
                 $emp_name = $employee->name();
