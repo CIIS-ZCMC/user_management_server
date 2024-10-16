@@ -200,8 +200,8 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
 
             ->pluck('biometric_id'); //employee_id
-        // $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-        $profiles = EmployeeProfile::where('id', 129)
+        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+            //  $profiles = EmployeeProfile::where('id', 129)
             // ->limit(1)
 
             ->get();
