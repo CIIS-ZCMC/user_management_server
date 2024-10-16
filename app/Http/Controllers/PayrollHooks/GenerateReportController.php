@@ -200,11 +200,12 @@ class GenerateReportController extends Controller
             ->whereMonth('dtr_date', $month_of)
 
             ->pluck('biometric_id'); //employee_id
-        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-            // $profiles = EmployeeProfile::where('id', 2476)
+        // $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+        $profiles = EmployeeProfile::where('id', 129)
             // ->limit(1)
 
             ->get();
+
 
 
         // $profiles = EmployeeProfile::where("biometric_id",493)->get();
@@ -396,7 +397,7 @@ class GenerateReportController extends Controller
                             //  echo $i."-LwoPay \n";
 
                             //LOGIC HERE
-                            $holiday = Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                            $holiday = Holiday::where("month_day", sprintf('%02d-%02d', $month_of, $i))->exists();
                             if ($holiday) {
                                 $holidayCountwPay += 1;
                             } else {
@@ -457,7 +458,7 @@ class GenerateReportController extends Controller
                             //echo $i."-A  \n";
 
                             //LOGIC HERE
-                            $holiday = Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                            $holiday = Holiday::where("month_day", sprintf('%02d-%02d', $month_of, $i))->exists();
                             if ($holiday) {
                                 $holidayCountwPay += 1;
                             } else {
@@ -762,7 +763,7 @@ class GenerateReportController extends Controller
 
                         if (array_values($leaveApplication)[0]['status']) {
                             //  echo $i."-LwoPay \n";
-                            $holiday = Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                            $holiday = Holiday::where("month_day", sprintf('%02d-%02d', $month_of, $i))->exists();
                             if ($holiday) {
                                 $holidayWPayCount += 1;
                             } else {
@@ -818,7 +819,7 @@ class GenerateReportController extends Controller
                             strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
                         ) {
                             //echo $i."-A  \n";
-                            $holiday = Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                            $holiday = Holiday::where("month_day", sprintf('%02d-%02d', $month_of, $i))->exists();
                             if ($holiday) {
                                 $holidayWPayCount += 1;
                             } {
