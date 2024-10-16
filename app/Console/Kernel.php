@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:pull-d-t-r')->everyThreeMinutes();
         $schedule->command('app:backup-d-t-r')->everyThirtyMinutes();
         $schedule->command('app:scheduler-task')->monthly();
-        $schedule->command('app:regenerate-d-t-r')->everyThirtyMinutes();
+        $schedule->command('app:regenerate-d-t-r')->everyOddHour();
         $schedule->command('app:schedule-status-task')->daily();
 
 

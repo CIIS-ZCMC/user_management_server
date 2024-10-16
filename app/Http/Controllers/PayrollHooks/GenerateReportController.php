@@ -17,6 +17,7 @@ use App\Http\Controllers\DTR\DTRcontroller;
 use Carbon\Carbon;
 use App\Models\InActiveEmployee;
 use App\Helpers\Helpers as help;
+use App\Models\Holiday;
 
 
 class GenerateReportController extends Controller
@@ -198,10 +199,10 @@ class GenerateReportController extends Controller
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
 
-            ->pluck('biometric_id');//employee_id
-      $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-     // $profiles = EmployeeProfile::where('id', 2476)
-             // ->limit(1)
+            ->pluck('biometric_id'); //employee_id
+        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+            // $profiles = EmployeeProfile::where('id', 2476)
+            // ->limit(1)
 
             ->get();
 
@@ -220,7 +221,7 @@ class GenerateReportController extends Controller
         $second_half = $request->second_half;
         $init = 1;
         $count = [];
-   
+
         foreach ($profiles as $row) {
             $Employee = $row;
             if (!$Employee->assignedArea) {
@@ -239,7 +240,7 @@ class GenerateReportController extends Controller
                 $days_In_Month = $daysTotalMonth;
             }
 
-            
+
             if ($first_half || $second_half) {
                 if ($Employee->employmentType->name == "Job Order") {
                     // echo "Job Order \n";
@@ -316,6 +317,8 @@ class GenerateReportController extends Controller
             $total_Month_Undertime = 0;
             $invalidEntry = [];
 
+            $holidayCountwPay = 0;
+
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
                     return $d->day;
@@ -391,9 +394,19 @@ class GenerateReportController extends Controller
 
                         if (array_values($leaveApplication)[0]['status']) {
                             //  echo $i."-LwoPay \n";
-                            $lwop[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
+
+                            //LOGIC HERE
+                            $holiday =  Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                            if ($holiday) {
+                                $holidayCountwPay += 1;
+                            } else {
+                                $lwop[] = [
+                                    'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                                ];
+                            }
+
+
+
                             // deduct to salary
                         } else {
                             //  echo $i."-LwPay \n";
@@ -443,9 +456,15 @@ class GenerateReportController extends Controller
                     ) {
                         //echo $i."-A  \n";
 
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
+                        //LOGIC HERE
+                        $holiday =  Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                        if ($holiday) {
+                            $holidayCountwPay += 1;
+                        } else {
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                            ];
+                        }
                     } else {
                         //   echo $i."-DO\n";
                         $dayoff[] = [
@@ -453,7 +472,7 @@ class GenerateReportController extends Controller
                         ];
                     }
                 }
-
+                //$holiday =  Holiday::where("month_day",$month_of . '-' . $i)->exists();
 
 
                 $presentCount = count(array_filter($attd, function ($d) {
@@ -461,7 +480,7 @@ class GenerateReportController extends Controller
                 }));
 
 
-               $Number_Absences = count($absences) - count($lwop);
+                $Number_Absences = count($absences) - count($lwop);
                 $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
                 $scheds = array_map(function ($d) {
@@ -482,12 +501,14 @@ class GenerateReportController extends Controller
 
 
 
-              //  return $Number_Absences;
+                //  return $Number_Absences;
                 $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds_forsal));
+                /**
+                 * Add Holiday with Pay
+                 */
+                $presentCount += $holidayCountwPay;
 
-
-                //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
-                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'],$Number_Absences);
+                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], $Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
 
 
@@ -495,10 +516,10 @@ class GenerateReportController extends Controller
                 $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
 
 
-                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary,$undertimeRate,$absentRate, $Employee->employmentType->name);
+                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $Employee->employmentType->name);
 
                 //  $data[]=InActiveEmployee::where('employee_id',$Employee->employee_id)->first();
-               // return $lwp;
+                // return $lwp;
 
                 $OverAllnetSalary = $this->TOTALNETSALARY($request, $biometric_id);
 
@@ -542,7 +563,7 @@ class GenerateReportController extends Controller
                     'OverallNetSalary' => $OverAllnetSalary,
 
                     'Employee' => [
-                        'profile_id' =>$Employee->id,
+                        'profile_id' => $Employee->id,
                         'employee_id' => $Employee->employee_id,
                         'Information' => $Employee->personalInformation,
                         'Designation' => $Employee->findDesignation(),
@@ -664,7 +685,7 @@ class GenerateReportController extends Controller
             $total_Month_Overtime = 0;
             $total_Month_Undertime = 0;
             $invalidEntry = [];
-
+            $holidayWPayCount = 0;
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
                     return $d->day;
@@ -741,9 +762,14 @@ class GenerateReportController extends Controller
 
                         if (array_values($leaveApplication)[0]['status']) {
                             //  echo $i."-LwoPay \n";
-                            $lwop[] = [
-                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                            ];
+                            $holiday =  Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                            if ($holiday) {
+                                $holidayWPayCount += 1;
+                            } else {
+                                $lwop[] = [
+                                    'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                                ];
+                            }
                             // deduct to salary
                         } else {
                             //  echo $i."-LwPay \n";
@@ -792,10 +818,14 @@ class GenerateReportController extends Controller
                         strtotime(date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i))) < strtotime(date('Y-m-d'))
                     ) {
                         //echo $i."-A  \n";
-
-                        $absences[] = [
-                            'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
-                        ];
+                        $holiday =  Holiday::where("month_day", $month_of . '-' . $i)->exists();
+                        if ($holiday) {
+                            $holidayWPayCount += 1;
+                        } {
+                            $absences[] = [
+                                'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
+                            ];
+                        }
                     } else {
                         //   echo $i."-DO\n";
                         $dayoff[] = [
@@ -803,46 +833,42 @@ class GenerateReportController extends Controller
                         ];
                     }
                 }
-
             }
 
 
 
-                $presentCount = count(array_filter($attd, function ($d) {
-                    return $d['total_working_minutes'] !== 0;
-                }));
-                 $Number_Absences = count($absences) - count($lwop);
-                $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
+            $presentCount = count(array_filter($attd, function ($d) {
+                return $d['total_working_minutes'] !== 0;
+            }));
+            $Number_Absences = count($absences) - count($lwop);
+            $schedule_ = $this->helper->Allschedule($biometric_id, $month_of, $year_of, null, null, null, null)['schedule'];
 
-                $scheds = array_map(function ($d) {
-                    return (int) date('d', strtotime($d['scheduleDate']));
-                }, $schedule_);
+            $scheds = array_map(function ($d) {
+                return (int) date('d', strtotime($d['scheduleDate']));
+            }, $schedule_);
 
-                $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($init, $days_In_Month) {
-                    return $value >= $init && $value <= $days_In_Month;
-                }));
-
-
-                $employeeAssignedAreas = $Employee->assignedAreas->first();
-                $salaryGrade = $employeeAssignedAreas->salary_grade_id ?? 1;
-                $salaryStep = $employeeAssignedAreas->salary_grade_step ?? 1;
+            $filtered_scheds = array_values(array_filter($scheds, function ($value) use ($init, $days_In_Month) {
+                return $value >= $init && $value <= $days_In_Month;
+            }));
 
 
-                $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
+            $employeeAssignedAreas = $Employee->assignedAreas->first();
+            $salaryGrade = $employeeAssignedAreas->salary_grade_id ?? 1;
+            $salaryStep = $employeeAssignedAreas->salary_grade_step ?? 1;
 
 
-                //return $presentCount * $basicSalary['GrandTotal'] / count($filtered_scheds);
-                $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'],$Number_Absences);
-                $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds));
+            $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
 
-                $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
-                $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
+            $presentCount += $holidayWPayCount;
 
-                $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $Employee->employmentType->name);
-                return $NetSalary;
+            $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], $Number_Absences);
+            $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds));
 
+            $undertimeRate = $this->computed->UndertimeRates($total_Month_Undertime, $Rates);
+            $absentRate = $this->computed->AbsentRates($Number_Absences, $Rates);
 
-
+            $NetSalary = $this->computed->NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $Employee->employmentType->name);
+            return $NetSalary;
         }
     }
 
