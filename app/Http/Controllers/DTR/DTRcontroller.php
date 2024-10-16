@@ -399,7 +399,9 @@ class DTRcontroller extends Controller
 
     public function ReComputeDTR($biometric_id, $month, $year)
     {
-
+        // return response()->json([
+        //     'message' => 'DTR Recomputed Successfully',
+        // ]);
         ini_set('max_execution_time', 86400);
 
         $dvclogs = DeviceLogs::where("biometric_id", $biometric_id)
@@ -935,14 +937,18 @@ class DTRcontroller extends Controller
 
 
             $id = json_decode($biometric_id);
+            if (!is_array($id) && $FrontDisplay) {
+                return view("dtr.notfound");
+            }
 
-            if (count($id) == 0) {
+
+            if (isset($id) && is_array($id) && count($id) == 0) {
                 return response()->json([
                     'message' => 'Failed to Generate: No Employee data found'
                 ]);
             }
 
-            if (count($id) >= 2) {
+            if (isset($id) && is_array($id) && count($id) >= 2) {
                 return $this->GenerateMultiple($id, $month_of, $year_of, $view, $ishalf);
             }
             $emp_name = '';
