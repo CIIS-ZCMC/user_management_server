@@ -190,6 +190,7 @@ class GenerateReportController extends Controller
     public function GenerateDataReport(Request $request)
     {
 
+
         ini_set('max_execution_time', 86400); //24 hours compiling time
         $month_of = $request->month_of;
         $year_of = $request->year_of;
@@ -198,15 +199,15 @@ class GenerateReportController extends Controller
         $employeeIds = DB::table('daily_time_records')
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
+            ->distinct()  // Ensures unique values
+            ->pluck('biometric_id');  // employee_id
 
-            ->pluck('biometric_id'); //employee_id
+
         $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-            //  $profiles = EmployeeProfile::where('id', 129)
+            //  $profiles = EmployeeProfile::where('id', 2502)
             // ->limit(1)
 
             ->get();
-
-
 
         // $profiles = EmployeeProfile::where("biometric_id",493)->get();
 
@@ -319,6 +320,7 @@ class GenerateReportController extends Controller
             $invalidEntry = [];
 
             $holidayCountwPay = 0;
+            $additionalDays = 0;
 
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
@@ -415,6 +417,7 @@ class GenerateReportController extends Controller
                                 'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                             ];
                             $total_Month_WorkingMinutes += 480;
+                            $additionalDays += 1;
                         }
                     } else if ($ob_Count || $ot_Count || $cto_Count) {
                         // echo $i."-ob or ot Paid \n";
@@ -423,6 +426,7 @@ class GenerateReportController extends Controller
 
                         ];
                         $total_Month_WorkingMinutes += 480;
+                        $additionalDays += 1;
                     } else
 
                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
@@ -508,6 +512,7 @@ class GenerateReportController extends Controller
                  * Add Holiday with Pay
                  */
                 $presentCount += $holidayCountwPay;
+                $presentCount +=  $additionalDays;
 
                 $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], $Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
@@ -687,6 +692,7 @@ class GenerateReportController extends Controller
             $total_Month_Undertime = 0;
             $invalidEntry = [];
             $holidayWPayCount = 0;
+            $additionalDays = 0;
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
                     return $d->day;
@@ -778,6 +784,7 @@ class GenerateReportController extends Controller
                                 'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                             ];
                             $total_Month_WorkingMinutes += 480;
+                            $additionalDays += 1;
                         }
                     } else if ($ob_Count || $ot_Count || $cto_Count) {
                         // echo $i."-ob or ot Paid \n";
@@ -786,6 +793,7 @@ class GenerateReportController extends Controller
 
                         ];
                         $total_Month_WorkingMinutes += 480;
+                        $additionalDays += 1;
                     } else
 
                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
@@ -861,6 +869,7 @@ class GenerateReportController extends Controller
             $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
 
             $presentCount += $holidayWPayCount;
+            $presentCount +=  $additionalDays;
 
             $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], $Number_Absences);
             $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds));
