@@ -49,6 +49,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 
 Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
     Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+    Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
     Route::post('getUserInformations', 'SessionController@getUserInfo');
 });
 
