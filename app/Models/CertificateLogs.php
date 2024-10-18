@@ -6,22 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CertificateDetails extends Model
+class CertificateLogs extends Model
 {
     use HasFactory;
 
-    protected $table = 'certificate_details';
+    protected $table = 'certificate_logs';
     protected $fillable = [
-        'employee_profile_id',
         'certificate_attachment_id',
-        'subject_owner',
-        'issued_by',
-        'organization_unit',
-        'country',
-        'valid_from',
-        'valid_till',
-        'public_key',
-        'private_key',
+        'employee_profile_id',
+        'action',
+        'description'
     ];
 
     public function employeeProfile(): BelongsTo {

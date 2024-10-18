@@ -2615,5 +2615,6 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace('App\Http\Controllers\DigitalSignature')->group(function () {
         Route::post('cert-upload', 'DigitalSignatureController@store');
+        Route::post('sign-dtr', 'DigitalSignatureController@signDTR');
     });
 });
