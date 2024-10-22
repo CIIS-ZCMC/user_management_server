@@ -201,7 +201,7 @@ class GenerateReportController extends Controller
 
         $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
             //  $profiles = EmployeeProfile::where('id', 2502)
-            // ->limit(1)
+
 
             ->get();
 
@@ -363,6 +363,7 @@ class GenerateReportController extends Controller
         if ($Employee && count($nightDiff) >= 1) {
 
             return [
+                'employeeProfileID' => $row->id,
                 'Biometric_id' => $biometric_id,
                 'Payroll' => $init . " - " . $days_In_Month,
                 'From' => $init,
