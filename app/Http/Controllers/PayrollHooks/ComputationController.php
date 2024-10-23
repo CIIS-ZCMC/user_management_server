@@ -9,6 +9,7 @@ use App\Methods\Helpers;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
 use App\Http\Controllers\PayrollHooks\GenerateReportController;
+
 class ComputationController extends Controller
 {
     protected $helper;
@@ -16,14 +17,14 @@ class ComputationController extends Controller
     protected $Working_Hours;
 
 
-     public function __construct() {
+    public function __construct()
+    {
         $this->Working_Days = 22;
         $this->Working_Hours = 8;
         $this->helper = new Helpers();
-
     }
 
-    public function BasicSalary($sg, $step,$schedcount)
+    public function BasicSalary($sg, $step, $schedcount)
     {
         $SG = SalaryGrade::where('salary_grade_number', $sg)->where('is_active', 1)->whereDate('effective_at', "<=", date('Y-m-d'))->first();
         $salaryGrade = 0;
@@ -59,30 +60,32 @@ class ComputationController extends Controller
                 $salaryGrade = $SG->eight;
                 break;
         }
-      //  $salaryGrade = 35097;
-      if(!$schedcount){
-        $schedcount = 1;
-      }
-    return [
-        'Total'=> floor(( $this->Working_Days * $salaryGrade / $this->Working_Days) * 100) / 100,
-        'GrandTotal'=> $salaryGrade,
-    ];
-    }
-
-    public function GrossSalary($present_Days,$salary,$NumbersOfAbsences){
-
-        if($NumbersOfAbsences  == 0 ){
-            return round($salary,2);
+        //  $salaryGrade = 35097;
+        if (!$schedcount) {
+            $schedcount = 1;
         }
-         return round(($present_Days * $salary) / $this->Working_Days,2); // Contstant value. Required number of days
+        return [
+            'Total' => floor(($this->Working_Days * $salaryGrade / $this->Working_Days) * 100) / 100,
+            'GrandTotal' => $salaryGrade,
+        ];
     }
 
-    public function Rates($basic_Salary,$schedCount){
-        if(!$schedCount){
+    public function GrossSalary($present_Days, $salary, $NumbersOfAbsences)
+    {
+
+        if ($NumbersOfAbsences  == 0) {
+            return round($salary, 2);
+        }
+        return round(($present_Days * $salary) / $this->Working_Days, 2); // Contstant value. Required number of days
+    }
+
+    public function Rates($basic_Salary, $schedCount)
+    {
+        if (!$schedCount) {
             return [
                 'Weekly' => 0,
                 'Daily' => 0,
-                'Hourly' =>0,
+                'Hourly' => 0,
                 'Minutes' => 0,
             ];
         }
@@ -105,45 +108,48 @@ class ComputationController extends Controller
             'Hourly'  => round($per_hour, precision: 2),
             'Minutes' => round($per_minute, 2),
         ];
-
     }
 
-    public function UndertimeRates($total_Month_Undertime,$Rates){
-            return $total_Month_Undertime * $Rates['Minutes'];
+    public function UndertimeRates($total_Month_Undertime, $Rates)
+    {
+        return $total_Month_Undertime * $Rates['Minutes'];
     }
 
-    public function AbsentRates($Number_Absences,$Rates){
-        return round($Rates['Daily'] * $Number_Absences,2) ;
+    public function AbsentRates($Number_Absences, $Rates)
+    {
+        return round($Rates['Daily'] * $Number_Absences, 2);
     }
 
-    public function NetSalaryFromTimeDeduction($GrossSalary,$undertimeRate,$absentRate,$emptype){
+    public function NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $emptype)
+    {
 
         $deduction =  $absentRate;
-        if ($emptype == "Job Order"){
+        if ($emptype == "Job Order") {
             $deduction += $undertimeRate;
         }
-        $net =  floor(round( $GrossSalary,2) * 100) /100;
-        return $net - $deduction ;
-
+        $net =  floor(round($GrossSalary, 2) * 100) / 100;
+        return $net - $deduction;
     }
 
-    public function OutofPayroll($overallnetSalary,$employmentType){
+    public function OutofPayroll($overallnetSalary, $employmentType, $total_Month_WorkingMinutes)
+    {
+
+
+        if ($total_Month_WorkingMinutes <= 2640) { // 22 days * 480 / 2 / 2
+            return true;
+        }
+
         $limit = 5000;
-        if($employmentType == "Job Order"){
+        if ($employmentType == "Job Order") {
             $limit = 2500;
         }
 
 
 
-        if ($overallnetSalary < $limit){
+        if ($overallnetSalary < $limit) {
             return true;
         }
 
         return false;
-
     }
-
-
-
-
 }
