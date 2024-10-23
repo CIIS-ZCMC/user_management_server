@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\PRMonitoring\PRMonitoringController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -51,6 +51,10 @@ Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
     Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
     Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
     Route::post('getUserInformations', 'SessionController@getUserInfo');
+});
+
+Route::namespace('App\Http\Controllers\PRMonitoring')->group(function () {
+    Route::post('get-employee-profile-info', 'PRMonitoringController@getEmployeeProfileInfo');
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
