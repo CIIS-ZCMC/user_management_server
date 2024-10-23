@@ -185,10 +185,82 @@ class GenerateReportController extends Controller
         return [help::customRound($firstHalf), help::customRound($secondHalf)];
     }
 
+    public function GenerateDataNightDiffReport(Request $request)
+    {
+        ini_set('max_execution_time', 86400); //24 hours compiling time
+        $month_of = $request->month_of;
+        $year_of = $request->year_of;
+
+
+        $employeeIds = DB::table('daily_time_records')
+            ->whereYear('dtr_date', $year_of)
+            ->whereMonth('dtr_date', $month_of)
+            ->distinct()  // Ensures unique values
+            ->pluck('biometric_id');  // employee_id
+
+
+        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+            //  $profiles = EmployeeProfile::where('id', 2502)
+
+
+            ->get();
+
+        $data = [];
+
+        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+        $daysTotalMonth = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+        $defaultInit = 1;
+        $nightDifferentials = [];
+        $whole_month = $request->whole_month;
+        $first_half = $request->first_half;
+        $second_half = $request->second_half;
+        $init = 1;
+        $count = [];
+
+        foreach ($profiles as $row) {
+            $Employee = $row;
+            if (!$Employee->assignedArea) {
+                continue;
+            }
+
+            if ($Employee->employmentType->name == "Job Order") {
+                if ($first_half) {
+                    $init = 1;
+                    $days_In_Month = 15;
+                } else if ($second_half) {
+                    $init = 16;
+                }
+            } else {
+                $init = 1;
+                $days_In_Month = $daysTotalMonth;
+            }
+
+
+            if ($first_half || $second_half) {
+                if ($Employee->employmentType->name == "Job Order") {
+                    // echo "Job Order \n";
+
+                    $data[] = $this->retrieveNightDiff($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
+                }
+            } else {
+                if ($Employee->employmentType->name != "Job Order") {
+
+                    $data[] = $this->retrieveNightDiff($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
+                }
+            }
+        }
+
+
+        return array_values(array_filter($data, function ($value) {
+            return !is_null($value);
+        }));
+    }
+
 
 
     public function GenerateDataReport(Request $request)
     {
+
 
         ini_set('max_execution_time', 86400); //24 hours compiling time
         $month_of = $request->month_of;
@@ -198,15 +270,15 @@ class GenerateReportController extends Controller
         $employeeIds = DB::table('daily_time_records')
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
+            ->distinct()  // Ensures unique values
+            ->pluck('biometric_id');  // employee_id
 
-            ->pluck('biometric_id'); //employee_id
-        // $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
-        $profiles = EmployeeProfile::where('id', 129)
+
+        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)
+            //  $profiles = EmployeeProfile::where('id', 2502)
             // ->limit(1)
 
             ->get();
-
-
 
         // $profiles = EmployeeProfile::where("biometric_id",493)->get();
 
@@ -257,7 +329,64 @@ class GenerateReportController extends Controller
 
         return $data;
     }
+    public function retrieveNightDiff($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request)
+    {
+        $nightDifferentials = [];
+        $biometric_id = $row->biometric_id;
+        $dtr = DB::table('daily_time_records')
+            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                $query->where('biometric_id', $biometric_id)
+                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+            })
+            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                $query->where('biometric_id', $biometric_id)
+                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+            })
+            ->get();
+        foreach ($dtr as $val) {
+            $bioEntry = [
+                'first_entry' => $val->first_in ?? $val->second_in,
+                'date_time' => $val->first_in ?? $val->second_in
+            ];
+            $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+            $DaySchedule = $Schedule['daySchedule'];
+            $nightDifferentials[] = $this->getNightDifferentialHours($val->first_in, $val->first_out, $biometric_id, [], $DaySchedule);
+        }
 
+        $nightDiff = array_values(array_filter($nightDifferentials, function ($row) use ($biometric_id) {
+            return isset($row['biometric_id']) && $row['biometric_id'] == $biometric_id;
+        }));
+
+        if ($Employee && count($nightDiff) >= 1) {
+
+            return [
+                'employeeProfileID' => $row->id,
+                'Biometric_id' => $biometric_id,
+                'Payroll' => $init . " - " . $days_In_Month,
+                'From' => $init,
+                'To' => $days_In_Month,
+                'Month' => $month_of,
+                'Year' => $year_of,
+                'NightDifferentials' => $nightDiff,
+                'Employee' => [
+                    'profile_id' => $Employee->id,
+                    'employee_id' => $Employee->employee_id,
+                    'Information' => $Employee->personalInformation,
+                    'Designation' => $Employee->findDesignation(),
+                    'EmploymentType' => $Employee->employmentType,
+                    'Excluded' => InActiveEmployee::where('employee_id', $Employee->employee_id)->first(),
+                ],
+                'Assigned_area' => $Employee->assignedArea->findDetails(),
+                'SalaryData' => [
+                    'step' => $Employee->assignedArea->salary_grade_step,
+                    'salaryGroup' => $Employee->assignedArea->salaryGrade,
+                ],
+            ];
+        }
+    }
 
     public function retrieveData($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request)
     {
@@ -319,6 +448,7 @@ class GenerateReportController extends Controller
             $invalidEntry = [];
 
             $holidayCountwPay = 0;
+            $additionalDays = 0;
 
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
@@ -415,6 +545,7 @@ class GenerateReportController extends Controller
                                 'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                             ];
                             $total_Month_WorkingMinutes += 480;
+                            $additionalDays += 1;
                         }
                     } else if ($ob_Count || $ot_Count || $cto_Count) {
                         // echo $i."-ob or ot Paid \n";
@@ -423,6 +554,7 @@ class GenerateReportController extends Controller
 
                         ];
                         $total_Month_WorkingMinutes += 480;
+                        $additionalDays += 1;
                     } else
 
                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
@@ -508,6 +640,7 @@ class GenerateReportController extends Controller
                  * Add Holiday with Pay
                  */
                 $presentCount += $holidayCountwPay;
+                $presentCount += $additionalDays;
 
                 $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], $Number_Absences);
                 $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds_forsal));
@@ -687,6 +820,7 @@ class GenerateReportController extends Controller
             $total_Month_Undertime = 0;
             $invalidEntry = [];
             $holidayWPayCount = 0;
+            $additionalDays = 0;
             $presentDays = array_map(function ($d) use ($empschedule) {
                 if (in_array($d->day, $empschedule)) {
                     return $d->day;
@@ -778,6 +912,7 @@ class GenerateReportController extends Controller
                                 'dateRecord' => date('Y-m-d', strtotime($year_of . '-' . $month_of . '-' . $i)),
                             ];
                             $total_Month_WorkingMinutes += 480;
+                            $additionalDays += 1;
                         }
                     } else if ($ob_Count || $ot_Count || $cto_Count) {
                         // echo $i."-ob or ot Paid \n";
@@ -786,6 +921,7 @@ class GenerateReportController extends Controller
 
                         ];
                         $total_Month_WorkingMinutes += 480;
+                        $additionalDays += 1;
                     } else
 
                         if (in_array($i, $presentDays) && in_array($i, $empschedule)) {
@@ -861,6 +997,7 @@ class GenerateReportController extends Controller
             $basicSalary = $this->computed->BasicSalary($salaryGrade, $salaryStep, count($filtered_scheds));
 
             $presentCount += $holidayWPayCount;
+            $presentCount += $additionalDays;
 
             $GrossSalary = $this->computed->GrossSalary($presentCount, $basicSalary['GrandTotal'], $Number_Absences);
             $Rates = $this->computed->Rates($basicSalary['GrandTotal'], count($filtered_scheds));

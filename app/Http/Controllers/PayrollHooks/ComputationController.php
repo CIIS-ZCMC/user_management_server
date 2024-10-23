@@ -9,6 +9,7 @@ use App\Methods\Helpers;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
 use App\Http\Controllers\PayrollHooks\GenerateReportController;
+
 class ComputationController extends Controller
 {
     protected $helper;
@@ -21,7 +22,6 @@ class ComputationController extends Controller
         $this->Working_Days = 22;
         $this->Working_Hours = 8;
         $this->helper = new Helpers();
-
     }
 
     public function BasicSalary($sg, $step, $schedcount)
@@ -108,7 +108,6 @@ class ComputationController extends Controller
             'Hourly' => round($per_hour, precision: 2),
             'Minutes' => round($per_minute, 2),
         ];
-
     }
 
     public function UndertimeRates($total_Month_Undertime, $Rates)
@@ -152,10 +151,5 @@ class ComputationController extends Controller
         }
 
         return false;
-
     }
-
-
-
-
 }
