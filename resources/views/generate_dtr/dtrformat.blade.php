@@ -392,19 +392,7 @@
             @endphp
             @for ($i = 1; $i <= $daysInMonth; $i++)
                 @php
-                    // $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
-                    //     return date('d', strtotime($res['first_in'])) == $i &&
-                    //         date('d', strtotime($res['first_out'])) == $i + 1;
-                    // });
 
-                    // $val = 0;
-                    // $outdd = array_map(function ($res) {
-                    //     return [
-                    //         'first_out' => $res['first_out'],
-                    //     ];
-                    // }, $checkIn);
-
-                    //Check LeaveApplication
                     $filteredleaveDates = [];
 
                     foreach ($leaveapp as $row) {
@@ -469,9 +457,6 @@
 
                     $ourdata = [];
 
-
-
-
                     foreach ($leaveapp as $row) {
                         $dates_Interval = [];
                         $from = strtotime($row['from']);
@@ -515,13 +500,6 @@
                     </td>
 
                     @include('generate_dtr.TableDtrDate')
-
-
-
-
-                    {{-- @if (count($checkIn) >= 1)
-                        @php $val = $i; @endphp
-                    @endif --}}
                 </tr>
             @endfor
         </tbody>
