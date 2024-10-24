@@ -55,6 +55,7 @@ Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
 
 Route::namespace('App\Http\Controllers\PRMonitoring')->group(function () {
     Route::post('get-employee-profile-info', 'PRMonitoringController@getEmployeeProfileInfo');
+    Route::post('get-user-authorization', 'PRMonitoringController@getUserAuthorization');
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
