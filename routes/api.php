@@ -2616,6 +2616,9 @@ Route::middleware('auth.cookie')->group(function () {
  * Authentication of server api will be done here
  * While user authorization verification will be done on requester server
  * only if the permission is intended for that server
+ * 
+ * Upon user load on the other client then the server api will request for user permission details from the umis
+ * then store the data in the database of the server api
  */
  Route::middleware(\App\Http\Middleware\AuthenticateThirdPartySystem::class)->group(function(){
     
