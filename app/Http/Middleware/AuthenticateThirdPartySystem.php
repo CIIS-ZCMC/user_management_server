@@ -21,7 +21,7 @@ class AuthenticateThirdPartySystem
     public function handle(Request $request, Closure $next)
     {
         try{
-            $api_key = $request->header('Monitoring-Api-Key');
+            $api_key = $request->header('UMIS-Api-Key');
 
             $api_key_exist = System::where("key", $api_key)->first();
 
