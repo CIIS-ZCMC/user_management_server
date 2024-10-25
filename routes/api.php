@@ -2609,3 +2609,14 @@ Route::middleware('auth.cookie')->group(function () {
         });
     });
 });
+
+/**
+ * Third party system end points
+ * 
+ * Authentication of server api will be done here
+ * While user authorization verification will be done on requester server
+ * only if the permission is intended for that server
+ */
+ Route::middleware(\App\Http\Middleware\AuthenticateThirdPartySystem::class)->group(function(){
+    
+ });
