@@ -51,7 +51,7 @@ class PRMonitoringController extends Controller
             return response()->json(
                 [
                     'message' => 'Data retrieved successfully.',
-                    'authorization_pin' => $employee_profile->authorizatoin_pin
+                    'authorization_pin' => $employee_profile->authorization_pin
                 ],
                 Response::HTTP_OK
             );
