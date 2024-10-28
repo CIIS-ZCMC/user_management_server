@@ -16,9 +16,13 @@ use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 // Attach CSP in response
 // Route::middleware('csp.token')->group(function(){});
 
+Route::get('/initialize-storage', function (Request $request) {
+    Artisan::call('storage:link');
+});
 
-Route::get('/initialize-storage', function () {
-    // Artisan::call('storage:link');
+// In case the env client domain doesn't work
+Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function(){
+    Route::get('update-system', 'SystemController@updateUMISDATA');
 });
 
 

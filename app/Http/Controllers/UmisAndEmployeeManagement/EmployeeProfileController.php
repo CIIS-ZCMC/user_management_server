@@ -29,6 +29,7 @@ use App\Models\EmploymentType;
 use App\Models\FailedLoginTrail;
 use App\Models\OfficerInChargeTrail;
 use App\Models\PlantillaAssignedArea;
+use App\Models\SystemUserSessions;
 use App\Models\Training;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
@@ -273,7 +274,6 @@ class EmployeeProfileController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-
             /**
              * Fields Needed:
              *  employee_id
@@ -511,7 +511,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                         continue;
                     }
 
@@ -570,7 +570,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 
@@ -612,7 +612,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                         continue;
                     }
 
@@ -671,7 +671,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details->system[] = $this->buildSystemDetails($system_role);
+                        $side_bar_details->system[] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 
@@ -741,7 +741,7 @@ class EmployeeProfileController extends Controller
                 }
 
                 if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
                 }
             }
 
@@ -810,7 +810,7 @@ class EmployeeProfileController extends Controller
                 }
 
                 if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
                 }
             }
         }
@@ -818,20 +818,37 @@ class EmployeeProfileController extends Controller
         return $side_bar_details;
     }
 
-    private function buildSystemDetails($system_role)
+    //Storing of system sessions
+    private function generateSystemSessionID($user_id, $system)
+    {
+        $sessionId = Str::uuid();
+                
+        SystemUserSessions::create([
+            'user_id' => $user_id,
+            'system_code' => $system['code'],
+            'session_id' => $sessionId
+        ]);
+
+        $domain =  Crypt::decrypt($system['domain']);
+
+        return $domain."/".$sessionId;
+    }
+
+    private function buildSystemDetails($user_id, $system_role)
     {
         $build_role_details = $this->buildRoleDetails($system_role);
 
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name']
-        ];
+        ];        
 
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
             'code' => $system_role->system['code'],
             'roles' => [$role],
+            'url' => $this->generateSystemSessionID($user_id, $system_role->system),
             'modules' => $build_role_details['modules']
         ];
     }

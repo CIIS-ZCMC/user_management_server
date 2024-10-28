@@ -4,13 +4,14 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use App\Helpers\Helpers;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
 use App\Models\System;
@@ -21,6 +22,26 @@ class SystemController extends Controller
     private $PLURAL_MODULE_NAME = 'systems';
     private $SINGULAR_MODULE_NAME = 'system';
     
+    public function authenticateUserFromDifferentSystem(Request $request)
+    {
+        $unique_id = $request->unique_id;
+        
+        if(!$unique_id){
+            return response()->json(['message' => "unauthorized"], Response::HTTP_UNAUTHORIZED);
+        }
+    }
+
+    // In case the env client domain doesn't work
+    public function updateUMISDATA(){
+        $system = System::find(1)->update([
+            'domain' => Crypt::encryptString("http://localhost:5173")
+        ]);
+        
+
+        // System::find(4)->update(['api_key' => Str::random(60)]);
+        return response()->json(['message' => "Success"], 200);
+    }
+
     public function index(Request $request)
     {
         try{
@@ -41,13 +62,15 @@ class SystemController extends Controller
         try{
             $cleanData = [];
 
+            $domain = Crypt::encrypt($request->domain);
+
             foreach ($request->all() as $key => $value) {
                 if($key === 'domain')
                 {
-                    $cleanData[$key] = Crypt::encrypt($value);
+                    $cleanData[$key] = $domain;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value); 
+                $cleanData[$key] = strip_tags($value);
             }
 
             $check_if_exist =  System::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
@@ -56,6 +79,7 @@ class SystemController extends Controller
                 return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
             }
 
+            $cleanData['api_key'] = Str::random(60);
             $system = System::create($cleanData);
             
             $log = Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
