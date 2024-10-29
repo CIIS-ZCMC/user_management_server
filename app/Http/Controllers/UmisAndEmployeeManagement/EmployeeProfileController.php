@@ -291,8 +291,8 @@ class EmployeeProfileController extends Controller
             /**
              * For Persist password even when it expired for set months of expiration.
              */
-            if ($request->persist_password !== null && $request->persist_password === 1) {
-                $fortyDaysFromNow = Carbon::now()->addDays(40);
+            if ($request->persist_password !== null && (int) $request->persist_password === 1) {
+                $fortyDaysFromNow = Carbon::now()->addDays(90);
                 $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
                 $employee_profile->update(['password_expiration_at' => $fortyDaysExpiration]);
@@ -580,7 +580,7 @@ class EmployeeProfileController extends Controller
         } else {
             $side_bar_details = $sidebar_cache;
         }
-
+        
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -756,60 +756,71 @@ class EmployeeProfileController extends Controller
                  * Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
                  */
 
-                foreach ($side_bar_details['system'] as &$system) {
-                    if ($system['id'] === $jo_system_role->system_id) {
-                        $system_role_exist = false;
+                $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-                        foreach ($system['roles'] as $value) {
-                            if ($value['name'] === $role->name) {
-                                $system_role_exist = true;
-                                break; // No need to continue checking once the role is found
-                            }
-                        }
-
-                        if (!$system_role_exist) {
-                            $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-
-                            $cacheExpiration = Carbon::now()->addYear();
-                            Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-
-                            $system['roles'][] = [
-                                'id' => $jo_system_roles_data['id'],
-                                'name' => $jo_system_roles_data['name']
-                            ];
-
-                            // Convert the array of objects to a collection
-                            $modulesCollection = collect($system['modules']);
-
-                            foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Check if the module with the code exists in the collection
-                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
-                                    return $module['code'] === $role_module['code'];
-                                });
-
-                                if ($existingModuleIndex !== false) {
-                                    // If the module exists, modify its permissions
-                                    $existingModule = $modulesCollection->get($existingModuleIndex);
-                                    foreach ($role_module['permissions'] as $permission) {
-                                        // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $existingModule['permissions'])) {
-                                            $existingModule['permissions'][] = $permission;
-                                        }
-                                    }
-                                    $modulesCollection->put($existingModuleIndex, $existingModule);
-                                } else {
-                                    // If the module doesn't exist, add it to the collection
-                                    $modulesCollection->push($role_module);
+                if($exists){
+                    foreach ($side_bar_details['system'] as &$system) {
+                        if ($system['id'] === $jo_system_role->system_id) {
+                            $system_role_exist = false;
+    
+                            // Check if role exist in the system
+                            foreach ($system['roles'] as $value) {
+                                if ($value['name'] === $role->name) {
+                                    $system_role_exist = true;
+                                    break; // No need to continue checking once the role is found
                                 }
                             }
-
-                            // Assign back the modified modules collection to the system
-                            $system['modules'] = $modulesCollection->toArray();
+    
+                            if (!$system_role_exist) {
+                                $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+    
+                                $cacheExpiration = Carbon::now()->addYear();
+                                Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+    
+                                $system['roles'][] = [
+                                    'id' => $jo_system_roles_data['id'],
+                                    'name' => $jo_system_roles_data['name']
+                                ];
+    
+                                // Convert the array of objects to a collection
+                                $modulesCollection = collect($system['modules']);
+    
+                                foreach ($jo_system_roles_data['modules'] as $role_module) {
+                                    // Check if the module with the code exists in the collection
+                                    $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                        return $module['code'] === $role_module['code'];
+                                    });
+    
+                                    if ($existingModuleIndex !== false) {
+                                        // If the module exists, modify its permissions
+                                        $existingModule = $modulesCollection->get($existingModuleIndex);
+                                        foreach ($role_module['permissions'] as $permission) {
+                                            // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                            if (!in_array($permission, $existingModule['permissions'])) {
+                                                $existingModule['permissions'][] = $permission;
+                                            }
+                                        }
+                                        $modulesCollection->put($existingModuleIndex, $existingModule);
+                                    } else {
+                                        // If the module doesn't exist, add it to the collection
+                                        $modulesCollection->push($role_module);
+                                    }
+                                }
+    
+                                // Assign back the modified modules collection to the system
+                                $system['modules'] = $modulesCollection->toArray();
+                            }
                         }
                     }
                 }
 
-                if (count($side_bar_details['system']) === 0) {
+                /** 
+                 * On empty system this will direct insert the system
+                 * Or
+                 * when system is not empty but the target system doesn't exist this will append to it
+                 */
+                if (count($side_bar_details['system']) === 0 || !$exists) {
+                    Helpers::errorLog("EmployeeProfile", "buildSidebarDetails", "Check for existing DONE");
                     $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
                 }
             }
@@ -831,7 +842,7 @@ class EmployeeProfileController extends Controller
 
         $domain =  Crypt::decrypt($system['domain']);
 
-        return $domain."/".$sessionId;
+        return $domain."/signing-in/".$sessionId;
     }
 
     private function buildSystemDetails($user_id, $system_role)

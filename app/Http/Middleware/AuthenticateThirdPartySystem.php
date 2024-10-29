@@ -23,10 +23,12 @@ class AuthenticateThirdPartySystem
         try{
             $api_key = $request->header('UMIS-Api-Key');
 
-            $api_key_exist = System::where("key", $api_key)->first();
+            Helpers::errorLog("Athenticate", "handle", $api_key);
+            
+            $api_key_exist = System::where("api_key", $api_key)->first();
 
             if(!$api_key_exist){
-                return response()->json(['message' => "Un Authorized Request."], 404);
+                return response()->json(['message' => "Unrecognize third party system."], 404);
             }
 
             if($api_key_exist->deactivated_at !== null){

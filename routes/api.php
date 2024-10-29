@@ -2624,6 +2624,9 @@ Route::middleware('auth.cookie')->group(function () {
  * Upon user load on the other client then the server api will request for user permission details from the umis
  * then store the data in the database of the server api
  */
- Route::middleware(\App\Http\Middleware\AuthenticateThirdPartySystem::class)->group(function(){
-    
+
+ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::middleware("auth.thirdparty")->group(function(){
+        Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+     });
  });
