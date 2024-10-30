@@ -685,7 +685,9 @@ class EmployeeProfileController extends Controller
 
             if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "COMMON-REG")->first();
-                $reg_system_role = SystemRole::where('role_id', $role->id)->first();
+                $reg_system_role = SystemRole::where('role_id', operator: $role->id)->first();
+
+                $exists = array_search($reg_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $reg_system_role->system_id) {
@@ -740,7 +742,12 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if (count($side_bar_details['system']) === 0) {
+                /** 
+                 * On empty system this will direct insert the system
+                 * Or
+                 * when system is not empty but the target system doesn't exist this will append to it
+                 */
+                if (count($side_bar_details['system']) === 0 || !$exists) {
                     $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
                 }
             }

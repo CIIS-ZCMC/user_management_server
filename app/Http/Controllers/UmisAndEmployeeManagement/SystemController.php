@@ -26,7 +26,6 @@ use App\Models\WorkExperience;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -43,6 +42,7 @@ class SystemController extends Controller
     
     public function authenticateUserFromDifferentSystem(Request $request)
     {
+        $api = $request->api_key;
         $session_id = $request->query("session_id");
         
         if(!$session_id){
@@ -68,8 +68,8 @@ class SystemController extends Controller
             $designation = $plantilla->designation;
         }
 
-        $permissions = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
-        $user_details = $this->generateEmployeeProfileDetails($employee_profile, $permissions);
+        $permissions = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api['id']);
+        $user_details = $this->generateEmployeeProfileDetails($employee_profile);
         $session = AccessToken::where("employee_profile_id", $employee_profile->id)->first();
 
         return response()->json([
@@ -79,7 +79,7 @@ class SystemController extends Controller
         ], 200);
     }
 
-    public function generateEmployeeProfileDetails($employee_profile, $side_bar_details)
+    public function generateEmployeeProfileDetails($employee_profile)
     {
         $personal_information = $employee_profile->personalInformation;
         $assigned_area = $employee_profile->assignedArea;
@@ -179,47 +179,10 @@ class SystemController extends Controller
             'weight' => $personal_information->weight,
         ];
 
-        $address = [
-            'residential_address' => null,
-            'residential_zip_code' => null,
-            'residential_telephone_no' => null,
-            'permanent_address' => null,
-            'permanent_zip_code' => null,
-            'permanent_telephone_no' => null
-        ];
-
-        $addresses = $personal_information->addresses;
-
-        foreach ($addresses as $value) {
-
-            if ($value->is_residential_and_permanent) {
-                $address['residential_address'] = $value->address;
-                $address['residential_zip_code'] = $value->zip_code;
-                $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                $address['permanent_address'] = $value->address;
-                $address['permanent_zip_code'] = $value->zip_code;
-                $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                break;
-            }
-
-            if ($value->is_residential) {
-                $address['residential_address'] = $value->address;
-                $address['residential_zip_code'] = $value->zip_code;
-                $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-            } else {
-                $address['permanent_address'] = $value->address;
-                $address['permanent_zip_code'] = $value->zip_code;
-                $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-            }
-        }
-
-
         return [
-            'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
-            'is_2fa' => $employee_profile->is_2fa,
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
             'pin_created_at' => $employee_profile->pin_created_at,
@@ -230,43 +193,18 @@ class SystemController extends Controller
             'employee_details' => [
                 'employee' => $employee,
                 'personal_information' => $personal_information_data,
-                'contact' => $personal_information->contact === null ? null : new ContactResource($personal_information->contact),
-                'address' => $address,
-                'family_background' => $personal_information->familyBackground === null ? null : new FamilyBackGroundResource($personal_information->familyBackground),
-                'children' => ChildResource::collection($personal_information->children),
-                'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
-                    return $row->is_request === 0;
-                })),
-                'affiliations_and_others' => [
-                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function ($row) {
-                        return $row->is_request === 0;
-                    })),
-                    'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
-                    'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                    'training' => TrainingResource::collection($personal_information->training->filter(function ($row) {
-                        return $row->is_request === 0;
-                    })),
-                    'other' => OtherInformationResource::collection($personal_information->otherInformation),
-                ],
-                'issuance' => $employee_profile->issuanceInformation,
-                'reference' => $employee_profile->personalInformation->references,
-                'legal_information' => $employee_profile->personalInformation->legalInformation,
-                'identification' => $employee_profile->personalInformation->identificationNumber === null ? null : new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
+                'contact' => $personal_information->contact === null ? null : new ContactResource($personal_information->contact)
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
-            'area_id' => $area_assigned['details']->id,
-            'side_bar_details' => $side_bar_details
+            'area_id' => $area_assigned['details']->id
         ];
     }
     
-    private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
+    private function buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api_id)
     {
         $sidebar_cache = Cache::forget($designation['name']);
         $sidebar_cache = Cache::get($designation['name']);
-
-        $side_bar_details['designation_id'] = $designation['id'];
-        $side_bar_details['designation_name'] = $designation['name'];
         $side_bar_details['system'] = [];
 
         if ($sidebar_cache === null) {
@@ -281,7 +219,7 @@ class SystemController extends Controller
              * permission
              */
             $position_system_roles = PositionSystemRole::with([
-                'systemRole' => function ($query) {
+                'systemRole' => function ($query) use ($api_id) {
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
@@ -291,7 +229,8 @@ class SystemController extends Controller
                                 }
                             ]);
                         },
-                    ]);
+                    ])
+                    ->where('system_id', $api_id);
                 }
             ])->where('designation_id', $designation['id'])->get();
 
@@ -387,7 +326,7 @@ class SystemController extends Controller
         if (!empty($special_access_roles)) {
 
             $special_access_permissions = SpecialAccessRole::with([
-                'systemRole' => function ($query) {
+                'systemRole' => function ($query) use ($api_id) {
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
@@ -397,7 +336,8 @@ class SystemController extends Controller
                                 }
                             ]);
                         }
-                    ]);
+                    ])
+                    ->where('system_id', $api_id);
                 }
             ])->where('employee_profile_id', $employee_profile['id'])->get();
 
@@ -483,112 +423,42 @@ class SystemController extends Controller
 
             if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "COMMON-REG")->first();
-                $reg_system_role = SystemRole::where('role_id', $role->id)->first();
+                $reg_system_role = SystemRole::where('role_id', $role->id)->where("system_id", $api_id)->first();
 
-                foreach ($side_bar_details['system'] as &$system) {
-                    if ($system['id'] === $reg_system_role->system_id) {
-                        $system_role_exist = false;
-
-                        foreach ($system['roles'] as $value) {
-                            if ($value['name'] === $role->name) {
-                                $system_role_exist = true;
-                                break; // No need to continue checking once the role is found
-                            }
-                        }
-
-                        if (!$system_role_exist) {
-                            $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
-
-                            $cacheExpiration = Carbon::now()->addYear();
-                            Cache::put("COMMON-REG", $reg_system_roles_data, $cacheExpiration);
-
-                            $system['roles'][] = [
-                                'id' => $reg_system_roles_data['id'],
-                                'name' => $reg_system_roles_data['name']
-                            ];
-
-                            // Convert the array of objects to a collection
-                            $modulesCollection = collect($system['modules']);
-
-                            foreach ($reg_system_roles_data['modules'] as $role_module) {
-                                // Check if the module with the code exists in the collection
-                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
-                                    return $module['code'] === $role_module['code'];
-                                });
-
-                                if ($existingModuleIndex !== false) {
-                                    // If the module exists, modify its permissions
-                                    $existingModule = $modulesCollection->get($existingModuleIndex);
-                                    foreach ($role_module['permissions'] as $permission) {
-                                        // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $existingModule['permissions'])) {
-                                            $existingModule['permissions'][] = $permission;
-                                        }
-                                    }
-                                    $modulesCollection->put($existingModuleIndex, $existingModule);
-                                } else {
-                                    // If the module doesn't exist, add it to the collection
-                                    $modulesCollection->push($role_module);
-                                }
-                            }
-
-                            // Assign back the modified modules collection to the system
-                            $system['modules'] = $modulesCollection->toArray();
-                        }
-                    }
-                }
-
-                if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
-                }
-            }
-
-            if ($employment_type->name == "Job Order") {
-                $role = Role::where("code", "COMMON-JO")->first();
-                $jo_system_role = SystemRole::where('role_id', $role->id)->first();
-                /**
-                 * If bug happens that user has rights but for JOB ORDER is unll on Cache Uncomment this code.
-                 *
-                 * $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-                 * $cacheExpiration = Carbon::now()->addYear();
-                 * Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-                 */
-
-                $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
-
-                if($exists){
+                if($reg_system_role !== null){
+                    $exists = array_search($reg_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+                    
                     foreach ($side_bar_details['system'] as &$system) {
-                        if ($system['id'] === $jo_system_role->system_id) {
+                        if ($system['id'] === $reg_system_role->system_id && $system['id'] === $api_id) {
                             $system_role_exist = false;
-    
-                            // Check if role exist in the system
+
                             foreach ($system['roles'] as $value) {
                                 if ($value['name'] === $role->name) {
                                     $system_role_exist = true;
                                     break; // No need to continue checking once the role is found
                                 }
                             }
-    
+
                             if (!$system_role_exist) {
-                                $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-    
+                                $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
+
                                 $cacheExpiration = Carbon::now()->addYear();
-                                Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-    
+                                Cache::put("COMMON-REG", $reg_system_roles_data, $cacheExpiration);
+
                                 $system['roles'][] = [
-                                    'id' => $jo_system_roles_data['id'],
-                                    'name' => $jo_system_roles_data['name']
+                                    'id' => $reg_system_roles_data['id'],
+                                    'name' => $reg_system_roles_data['name']
                                 ];
-    
+
                                 // Convert the array of objects to a collection
                                 $modulesCollection = collect($system['modules']);
-    
-                                foreach ($jo_system_roles_data['modules'] as $role_module) {
+
+                                foreach ($reg_system_roles_data['modules'] as $role_module) {
                                     // Check if the module with the code exists in the collection
                                     $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                         return $module['code'] === $role_module['code'];
                                     });
-    
+
                                     if ($existingModuleIndex !== false) {
                                         // If the module exists, modify its permissions
                                         $existingModule = $modulesCollection->get($existingModuleIndex);
@@ -604,27 +474,109 @@ class SystemController extends Controller
                                         $modulesCollection->push($role_module);
                                     }
                                 }
-    
+
                                 // Assign back the modified modules collection to the system
                                 $system['modules'] = $modulesCollection->toArray();
                             }
                         }
                     }
-                }
 
-                /** 
-                 * On empty system this will direct insert the system
-                 * Or
-                 * when system is not empty but the target system doesn't exist this will append to it
-                 */
-                if (count($side_bar_details['system']) === 0 || !$exists) {
-                    Helpers::errorLog("EmployeeProfile", "buildSidebarDetails", "Check for existing DONE");
-                    $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
+                    /** 
+                     * On empty system this will direct insert the system
+                     * Or
+                     * when system is not empty but the target system doesn't exist this will append to it
+                     */
+                    if (count($side_bar_details['system']) === 0 || !$exists) {
+                        $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
+                    }
+                }
+            }
+
+            if ($employment_type->name == "Job Order") {
+                $role = Role::where("code", "COMMON-JO")->first();
+                $jo_system_role = SystemRole::where('role_id', $role->id)->where("system_id", $api_id)->first();
+                
+                // ignore system that is not the target api
+                if($jo_system_role !== null) {
+                    /**
+                     * If bug happens that user has rights but for JOB ORDER is unll on Cache Uncomment this code.
+                     *
+                     * $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+                     * $cacheExpiration = Carbon::now()->addYear();
+                     * Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+                     */
+
+                    $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
+                    if($exists){
+                        foreach ($side_bar_details['system'] as &$system) {
+                            if ($system['id'] === $jo_system_role->system_id  && $system['id'] === $api_id) {
+                                $system_role_exist = false;
+        
+                                // Check if role exist in the system
+                                foreach ($system['roles'] as $value) {
+                                    if ($value['name'] === $role->name) {
+                                        $system_role_exist = true;
+                                        break; // No need to continue checking once the role is found
+                                    }
+                                }
+        
+                                if (!$system_role_exist) {
+                                    $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+        
+                                    $cacheExpiration = Carbon::now()->addYear();
+                                    Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+        
+                                    $system['roles'][] = [
+                                        'id' => $jo_system_roles_data['id'],
+                                        'name' => $jo_system_roles_data['name']
+                                    ];
+        
+                                    // Convert the array of objects to a collection
+                                    $modulesCollection = collect($system['modules']);
+        
+                                    foreach ($jo_system_roles_data['modules'] as $role_module) {
+                                        // Check if the module with the code exists in the collection
+                                        $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                            return $module['code'] === $role_module['code'];
+                                        });
+        
+                                        if ($existingModuleIndex !== false) {
+                                            // If the module exists, modify its permissions
+                                            $existingModule = $modulesCollection->get($existingModuleIndex);
+                                            foreach ($role_module['permissions'] as $permission) {
+                                                // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                                if (!in_array($permission, $existingModule['permissions'])) {
+                                                    $existingModule['permissions'][] = $permission;
+                                                }
+                                            }
+                                            $modulesCollection->put($existingModuleIndex, $existingModule);
+                                        } else {
+                                            // If the module doesn't exist, add it to the collection
+                                            $modulesCollection->push($role_module);
+                                        }
+                                    }
+        
+                                    // Assign back the modified modules collection to the system
+                                    $system['modules'] = $modulesCollection->toArray();
+                                }
+                            }
+                        }
+                    }
+    
+                    /** 
+                     * On empty system this will direct insert the system
+                    * Or
+                    * when system is not empty but the target system doesn't exist this will append to it
+                    */
+                    if (count($side_bar_details['system']) === 0 || !$exists) {
+                        $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
+                    }
                 }
             }
         }
 
-        return $side_bar_details;
+        return $side_bar_details['system'][0];
     }
 
     private function buildSystemDetails($system_role)
