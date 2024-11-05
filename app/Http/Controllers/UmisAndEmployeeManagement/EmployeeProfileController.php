@@ -1264,6 +1264,11 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
+            /**
+             * Delete all System of user if it has
+             */
+            SystemUserSessions::where("user_id", $user->id)->delete();
+
             return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(config('app.cookie_name'), '', -1);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());

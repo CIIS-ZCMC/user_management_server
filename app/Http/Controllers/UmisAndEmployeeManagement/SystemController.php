@@ -76,6 +76,7 @@ class SystemController extends Controller
             'user_details' => $user_details,
             'session' => $session,
             'permissions' => $permissions,
+            'authorization_pin' => $employee_profile['authorization_pin']
         ], 200);
     }
 
