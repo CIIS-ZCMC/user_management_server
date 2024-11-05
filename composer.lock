@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0c5bfadf1afac751decd0f1f4c460709",
+    "content-hash": "8ea5b1265c072ef706e0a8f5e67aa857",
     "packages": [
         {
             "name": "batang-it/tad-php",
@@ -9765,7 +9765,9 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^8.1",
-        "ext-gd": "*"
+        "ext-gd": "*",
+        "ext-http": "*",
+        "ext-openssl": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "2.6.0"

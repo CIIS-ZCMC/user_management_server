@@ -7,15 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CertificateAttachments;
 use App\Models\CertificateDetails;
 use App\Models\CertificateLogs;
-use App\Models\EmployeeProfile;
-use App\Models\PersonalInformation;
+use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use setasign\Fpdi\Tcpdf\Fpdi;
 
 
 class DigitalSignatureController extends Controller
@@ -258,132 +254,40 @@ class DigitalSignatureController extends Controller
         }
     }
 
-    public function signDTR(Request $request)
+    public function signDtrOwner(Request $request): JsonResponse
     {
         try {
-            // Validate the incoming request
-            $request->validate([
-                'dtr_file' => 'required|file',
+            $client = new Client();
+            $response = $client->post('http://127.0.0.1:8000/sign-dtr-owner/', [
+                'multipart' => [
+                    [
+                        'name'     => 'input_pdf',
+                        'contents' => fopen($request->file('dtr_file')->path(), 'r'),
+                    ],
+                    [
+                        'name'     => 'p12_file',
+                        'contents' => fopen($request->file('cert_file')->path(), 'r'),
+                    ],
+                    [
+                        'name'     => 'p12_password',
+                        'contents' => $request->cert_password,
+                    ],
+                    [
+                        'name'     => 'image',
+                        'contents' => fopen($request->file('cert_img_file')->path(), 'r'),
+                    ],
+                    [
+                        'name'     => 'whole_month',
+                        'contents' => $request->whole_month,
+                    ]
+                ]
             ]);
 
-            $user = $request->user;
-
-            // query certificate attachments and certificate details
-            $cert_attachments = CertificateAttachments::where('employee_profile_id', $user->id)
-                ->select('file_path', 'img_path', 'cert_password')
-                ->first();
-            $cert_details = CertificateDetails::where('employee_profile_id', $user->id)
-                ->select('subject_owner', 'issued_by', 'organization_unit', 'country', 'valid_from', 'valid_till', 'private_key')
-                ->first();
-
-            if (!$cert_attachments) {
-                return response()->json(['message' => 'No certificate attachments found for the user.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-            if (!$cert_details) {
-                return response()->json(['message' => 'No certificate details found for the user.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            if (!$response->getStatusCode() == 200) {
+                return response()->json(['message' => 'Failed to sign document'], $response->getStatusCode());
             }
 
-            // certificate attachments data
-            $cert_filename = $cert_attachments->filename;
-            $cert_file_path = $cert_attachments->file_path;
-            $cert_img_name = $cert_attachments->img_name;
-            $cert_img_path = $cert_attachments->img_path;
-
-            $pfx_file = public_path('storage\\certificates\\' . $cert_file_path);
-            $pfx_password = Crypt::decryptString($cert_attachments->cert_password);
-            $private_key = Crypt::decryptString($cert_details->private_key);
-
-            $signature_img_path = public_path('storage\\e_signatures\\' . $cert_img_path);
-            $signer_name = $cert_details->subject_owner;
-
-            if (!file_exists($pfx_file)) {
-                return response()->json(['message' => 'Certificate file does not exist.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-            if (!file_exists($signature_img_path)) {
-                return response()->json(['message' => 'Signature image file does not exist.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-
-            $pkcs12 = file_get_contents($pfx_file);
-            $certs = [];
-
-            if (openssl_pkcs12_read($pkcs12, $certs, $pfx_password)) {
-                if (!is_array($certs) || !isset($certs['cert'])) {
-                    return response()->json(['message' => 'Certificate data not available.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-                }
-                $certificate = $certs['cert'];
-            } else {
-                return response()->json(['message' => 'Failed to read certificate.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-
-            $cert_info = openssl_x509_parse($certificate);
-
-            $dtr_file = public_path('storage\\dtr\\dtr2.pdf');
-            // Get request file
-//            $dtr_file = $request->file('dtr_file');
-//
-//
-//            if (!$dtr_file || !$dtr_file->isValid()) {
-//                return response()->json(['message' => 'Unable to read DTR file.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-//            }
-
-            $pdf = new Fpdi();
-            // Set custom margins to 0 and disable automatic page breaks
-            $pdf->SetMargins(0, 0, 0);
-            $pdf->SetAutoPageBreak(false, 0);
-            $pdf->SetPrintHeader(false);
-            $pdf->SetPrintFooter(false);
-
-            $page_count = $pdf->setSourceFile($dtr_file);
-
-            for ($page = 1; $page <= $page_count; $page++) {
-
-                $template_id = $pdf->importPage($page);
-                $size = $pdf->getTemplateSize($template_id);
-
-                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                $pdf->useTemplate($template_id);
-
-                if ($page == 1) {
-                    $timestamp = date('Y-m-d H:i:s');
-                    $signature_text = "Digitally Signed by: \n$signer_name\nDate & Time: $timestamp\n\n";
-                    $pdf->SetFont('helvetica', 'B', 7);
-                    $image_x = 20;
-                    $image_width = 35;
-                    $image_height = 15;
-
-                    $text_width = $pdf->getStringWidth($signature_text) + 3;
-                    $text_height = $pdf->getStringHeight($text_width, $signature_text);
-
-                    $signature_box_height= max($image_height, $text_height);
-
-                    $box_y = 225;
-                    $image_y = $box_y + (($signature_box_height - $image_height) / 2);
-                    $text_y = $box_y + (($signature_box_height - $text_height) / 2);
-
-                    $text_x = $image_x + $image_width;
-
-                    $pdf->Image($signature_img_path, $image_x, $image_y, $image_width, $image_height, 'png', '', '', false, 300, '', false, false, 0, false, false, false);
-                    $pdf->SetXY($text_x, $text_y);
-                    $pdf->MultiCell($text_width, $text_height, $signature_text, 0, 'L', false, 1);
-                    $pdf->setSignatureAppearance($image_x, $box_y, $text_width - ($text_width / 2) + ($text_width / 4), $signature_box_height);
-                    $pdf->setSignature($certificate, $private_key, '', '', 2, $cert_info['subject']);
-                }
-            }
-
-            $signed_dtr_path = storage_path('app/public/signed_dtr/' . trim($signer_name) . '_xxx' . $user->id . '.pdf');
-            // Overwrite the file if it already exists
-            if (file_exists($signed_dtr_path)) {
-                unlink($signed_dtr_path);
-            }
-
-            $result = $pdf->Output($signed_dtr_path, 'F');
-
-            if (!$result) {
-                return response()->json(['message' => 'Unable to save signed file.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-
-            return response()->json(['message' => 'DTR Signed Successfully!'], Response::HTTP_OK);
-
+            return response()->json(['message' => 'Document signed successfully', 'file' => $response->getBody()], 200);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signDTR', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

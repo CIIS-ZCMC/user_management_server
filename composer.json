@@ -10,8 +10,10 @@
     "require": {
         "php": "^8.1",
         "ext-gd": "*",
+        "ext-http": "*",
+        "ext-openssl": "*",
         "batang-it/tad-php": "0.4.3",
-        "guzzlehttp/guzzle": "^7.2",
+        "guzzlehttp/guzzle": "^7.9",
         "hkvstore/dompdf": "^2.0",
         "jenssegers/agent": "^2.6",
         "laravel/framework": "^10.10",
@@ -22,8 +24,7 @@
         "maatwebsite/excel": "^3.1",
         "phpmailer/phpmailer": "^6.8",
         "setasign/fpdi-tcpdf": "^2.3",
-        "torann/geoip": "^3.0",
-        "ext-openssl": "*"
+        "torann/geoip": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
