@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code');
+            $table->text('description')->nullable();
             $table->string('domain', 360);
             $table->text('api_key')->nullable();
             $table->datetime('key_deactivated_at')->nullable();

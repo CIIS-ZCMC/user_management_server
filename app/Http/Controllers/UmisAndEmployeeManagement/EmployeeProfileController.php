@@ -608,6 +608,8 @@ class EmployeeProfileController extends Controller
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
 
+                    $exists = array_search($system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
                     /**
                      * If side bar details system array is empty
                      */
@@ -670,8 +672,13 @@ class EmployeeProfileController extends Controller
                         }
                     }
 
-                    if (!$system_exist) {
-                        $side_bar_details->system[] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                    /** 
+                     * On empty system this will direct insert the system
+                     * Or
+                     * when system is not empty but the target system doesn't exist this will append to it
+                     */
+                    if (count($side_bar_details['system']) === 0 || !$exists) {
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 

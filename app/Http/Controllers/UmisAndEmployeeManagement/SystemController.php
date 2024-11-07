@@ -45,38 +45,50 @@ class SystemController extends Controller
         $api = $request->api_key;
         $session_id = $request->query("session_id");
         
-        if(!$session_id){
-            return response()->json(['message' => "unauthorized"], Response::HTTP_UNAUTHORIZED);
-        }
-
-        $system_user_sessions = SystemUserSessions::where("session_id", $session_id)->first();
+        $permissions = null;
+        $user_details = null;
+        $session = null;
         
-        if(!$system_user_sessions){
-            return response()->json(['message' => "unauthorized session id is invalid."], Response::HTTP_UNAUTHORIZED);
+        try{
+
+            if(!$session_id){
+                return response()->json(['message' => "unauthorized"], Response::HTTP_UNAUTHORIZED);
+            }
+    
+            $system_user_sessions = SystemUserSessions::where("session_id", $session_id)->first();
+            
+            if(!$system_user_sessions){
+                return response()->json(['message' => "unauthorized session id is invalid."], Response::HTTP_UNAUTHORIZED);
+            }
+    
+            $employee_profile = EmployeeProfile::find($system_user_sessions['user_id']);
+    
+            $assigned_area = $employee_profile->assignedArea;
+            $special_access_roles = $employee_profile->specialAccessRole;
+    
+            if ($assigned_area['plantilla_id'] === null) {
+                $designation = $assigned_area->designation;
+            } else {
+                //Employment is plantilla retrieve the plantilla and its designation.
+                $plantilla = $assigned_area->plantilla;
+                $designation = $plantilla->designation;
+            }
+    
+            $permissions = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api['id']);
+            $user_details = $this->generateEmployeeProfileDetails($employee_profile);
+            $session = AccessToken::where("employee_profile_id", $employee_profile->id)->first();
+        }catch(\Throwable $th){
+            Helpers::infoLog("SystemController", "authenticateUserFromDifferentSystem", $th->getMessage());
+            return response()->json([
+                'message' => "Failed to authenticate."
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $employee_profile = EmployeeProfile::find($system_user_sessions['user_id']);
-
-        $assigned_area = $employee_profile->assignedArea;
-        $special_access_roles = $employee_profile->specialAccessRole;
-
-        if ($assigned_area['plantilla_id'] === null) {
-            $designation = $assigned_area->designation;
-        } else {
-            //Employment is plantilla retrieve the plantilla and its designation.
-            $plantilla = $assigned_area->plantilla;
-            $designation = $plantilla->designation;
-        }
-
-        $permissions = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api['id']);
-        $user_details = $this->generateEmployeeProfileDetails($employee_profile);
-        $session = AccessToken::where("employee_profile_id", $employee_profile->id)->first();
 
         return response()->json([
             'user_details' => $user_details,
             'session' => $session,
             'permissions' => $permissions,
-            'authorization_pin' => $employee_profile['authorization_pin']
+            'authorization_pin' => $employee_profile->authorization_pin
         ], 200);
     }
 
@@ -326,8 +338,14 @@ class SystemController extends Controller
          */
         if (!empty($special_access_roles)) {
 
+            // Convert to a Laravel collection
+            $collection = collect($special_access_roles);
+
+            // Retrieve all ids and store them in id_array
+            $id_array = $collection->pluck('id')->toArray();
+
             $special_access_permissions = SpecialAccessRole::with([
-                'systemRole' => function ($query) use ($api_id) {
+                'systemRole' => function ($query) {
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
@@ -337,15 +355,16 @@ class SystemController extends Controller
                                 }
                             ]);
                         }
-                    ])
-                    ->where('system_id', $api_id);
+                    ]);
                 }
-            ])->where('employee_profile_id', $employee_profile['id'])->get();
+            ])->whereIn('id', $id_array)->get();
 
             if (count($special_access_permissions) > 0) {
                 foreach ($special_access_permissions as $key => $special_access_permission) {
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
+
+                    $exists = array_search($system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
                     /**
                      * If side bar details system array is empty
@@ -354,6 +373,7 @@ class SystemController extends Controller
                         $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
                         continue;
                     }
+                    
 
                     foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
@@ -409,8 +429,13 @@ class SystemController extends Controller
                         }
                     }
 
-                    if (!$system_exist) {
-                        $side_bar_details->system[] = $this->buildSystemDetails($system_role);
+                    /** 
+                     * On empty system this will direct insert the system
+                     * Or
+                     * when system is not empty but the target system doesn't exist this will append to it
+                     */
+                    if (count($side_bar_details['system']) === 0 || !$exists) {
+                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
                     }
                 }
 
@@ -626,7 +651,7 @@ class SystemController extends Controller
     }
     // In case the env client domain doesn't work
     public function updateUMISDATA(){
-        $system = System::find(1)->update([
+        $system = System::find(4)->update([
             'domain' => Crypt::encrypt(env("PR_MONITORING_ORIGIN"))
         ]);
         
