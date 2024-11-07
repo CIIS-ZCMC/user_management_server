@@ -75,6 +75,10 @@ Route::middleware('auth.cookie')->group(function () {
 
 
     Route::namespace('App\Http\Controllers')->group(function () {
+        
+        Route::post('redcap-module-import', 'RedcapController@import');
+        Route::post('redcap-module', 'RedcapController@storeRedCapModule');
+        Route::get('redcap-module-employees', 'RedcapController@employessWithRedCapModules');
 
         Route::get('announcements/{id}', 'AnnouncementsController@show');
         Route::get('announcements', 'AnnouncementsController@showAnnouncement');

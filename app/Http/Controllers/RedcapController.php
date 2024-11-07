@@ -14,7 +14,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RedcapController extends Controller
 {
-
     public function import(Request $request)
     {
         // Validate the file input
@@ -62,24 +61,10 @@ class RedcapController extends Controller
     public function storeRedCapModule(Request $request)
     {
         $cleanData = [];
-    
-        foreach($request as $key => $value){
-            if($key === 'user' || $key === 'permissions'){
-                continue;
-            }
-
-            if($value === null){
-                $cleanData[$key] = $value;
-                continue;
-            }
-
-            if($key === 'origin'){
-                $cleanData[$key] = Crypt::encryptString($value);
-                continue;
-            }
-
-            $cleanData[$key] = strip_tags($value);
-        }
+        $cleanData['name'] = strip_tags($request->name);
+        $cleanData['code'] = strip_tags($request->code);
+        $cleanData['origin'] = Crypt::encryptString($request->code);
+        $cleanData['path'] = $request->path;
 
         $exist = RedcapModules::where('name', $cleanData['name'])->first();
 

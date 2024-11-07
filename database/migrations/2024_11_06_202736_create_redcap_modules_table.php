@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->string('origin')->default('https://redcap.zcmc.online');
-            $table->string('path')->default("/surveys/?s=PM7WYL74HRYHDXYA&informant_id=");
+            $table->text('origin');
+            $table->string('path');
             $table->timestamps();
         });
     }
