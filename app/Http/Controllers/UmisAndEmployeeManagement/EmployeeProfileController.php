@@ -1390,6 +1390,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
