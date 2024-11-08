@@ -26,42 +26,38 @@ class EmployeesRedcapModulesImport implements ToCollection, WithHeadingRow
         });
 
         // Fix start here
-        $filteredData = array_filter((array) $filteredRows, function ($row) {
-            return !empty($row); // Keep rows that are not empty
+        $filteredData = array_filter($filteredRows->toArray(), function ($row) {
+            // Check if the row is an array with exactly three elements, all of which are non-empty
+            return is_array($row) && count($row) === 3 &&
+                   !empty($row[0]) && !empty($row[1]) && !empty($row[2]);
         });
 
-
-        Helpers::infoLog("Test", "Test", $filteredData);
-        
         // Iterate through each filtered row and handle the import logic
-        foreach ($filteredRows as $row) {
+        foreach ($filteredData as $row) {
+            if($row[0] === 'EmployeeID') continue;
+
+            // Assuming $row is structured with numeric keys: 0 => EmployeeID, 1 => Code, 2 => Link
+            $employeeId = $row[0];
+            $code = $row[1];
+            $employeeAuthId = $row[2];  // Assuming this is the Link column
+
             // Retrieve employee profile based on the code in the Excel row
-            $employee = EmployeeProfile::where('employee_id', $row['EmployeeID']);
+            $employee = EmployeeProfile::where('employee_id', $employeeId)->first();
 
             // Retrieve the redcap module based on the code in the Excel row
-            $redcap_module = RedcapModules::where('code', $row['Code'])->first();
-            
-            // Parse the URL to get the query string
-            // $link = parse_url($row['Link']);
-
-            // Extract query parameters into an associative array
-            // parse_str($parsedUrl['query'], $queryParams);
-
-            // Retrieve the 'informant_id' parameter (unique identifier)
-            // $employeeAuthId = $queryParams['informant_id'] ?? null;
-            $employeeAuthId = $row['Link'];
+            $redcap_module = RedcapModules::where('code', $code)->first();
 
             // If the redcap module exists, store the data in the EmployeeRedcapModules model
             if ($redcap_module) {
                 EmployeeRedcapModules::create([
                     'redcap_module_id' => $redcap_module->id,
-                    'employee_profile_id' => $row['employeeid'],
+                    'employee_profile_id' => $employee->id,
                     'employee_auth_id' => $employeeAuthId,
                     'deactivated_at' => null
                 ]);
             } else {
                 // Handle missing module, log or handle as necessary
-                \Log::warning('Missing RedcapModule for code: ' . $row['code']);
+                \Log::warning('Missing RedcapModule for code: ' . $code);
             }
         }
     }

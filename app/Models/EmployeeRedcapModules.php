@@ -22,7 +22,12 @@ class EmployeeRedcapModules extends Model
 
     public $timestamp = true;
     
-    public function redCapModule()
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function redcapModule()
     {
         return $this->belongsTo(RedcapModules::class);
     }

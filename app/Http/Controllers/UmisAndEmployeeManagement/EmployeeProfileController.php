@@ -20,10 +20,12 @@ use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\EmployeeProfileUpdateResource;
+use App\Http\Resources\EmployeeRedcapModulesResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Jobs\SendEmailJob;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeRedcapModules;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\FailedLoginTrail;
@@ -439,6 +441,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -460,6 +463,11 @@ class EmployeeProfileController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function employeeRedcapModules($employee)
+    {
+        return EmployeeRedcapModulesResource::collection($employee->employeeRedcapModules);
     }
 
     private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)

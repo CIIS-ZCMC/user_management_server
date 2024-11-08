@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\RedcapEmployeeListResource;
 use App\Imports\EmployeesRedcapModulesImport;
 use App\Models\EmployeeRedcapModules;
 
@@ -45,7 +46,7 @@ class RedcapController extends Controller
     public function employessWithRedCapModules(Request $request)
     {
         return response()->json([
-            'employees_with_redcap_modules' => EmployeeRedcapModules::all(),
+            'employees_with_redcap_modules' => RedcapEmployeeListResource::collection(EmployeeRedcapModules::all()),
             'message' => "List of employee with redcap surveys link."
         ], Response::HTTP_OK);
     }
@@ -63,7 +64,7 @@ class RedcapController extends Controller
         $cleanData = [];
         $cleanData['name'] = strip_tags($request->name);
         $cleanData['code'] = strip_tags($request->code);
-        $cleanData['origin'] = Crypt::encryptString($request->code);
+        $cleanData['origin'] = Crypt::encryptString($request->origin);
         $cleanData['path'] = $request->path;
 
         $exist = RedcapModules::where('name', $cleanData['name'])->first();
