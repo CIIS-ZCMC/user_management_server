@@ -4,16 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Resources\ChildResource;
-use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\ContactResource;
-use App\Http\Resources\EducationalBackgroundResource;
-use App\Http\Resources\FamilyBackGroundResource;
-use App\Http\Resources\IdentificationNumberResource;
-use App\Http\Resources\OtherInformationResource;
-use App\Http\Resources\TrainingResource;
-use App\Http\Resources\VoluntaryWorkResource;
-use App\Http\Resources\WorkExperienceResource;
 use App\Models\AccessToken;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
@@ -194,12 +185,14 @@ class SystemController extends Controller
 
         return [
             'employee_profile_id' => $employee_profile['id'],
+            'profile_url' => $employee_profile['profile_url'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
             'pin_created_at' => $employee_profile->pin_created_at,
             'designation' => $designation['name'],
+            'designation_code' => $designation['code'],
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
             'shifting' => $employee_profile->shifting,
@@ -209,6 +202,7 @@ class SystemController extends Controller
                 'contact' => $personal_information->contact === null ? null : new ContactResource($personal_information->contact)
             ],
             'area_assigned' => $area_assigned['details']->name,
+            'area_assigned_code' => $area_assigned['details']->code,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id
         ];
