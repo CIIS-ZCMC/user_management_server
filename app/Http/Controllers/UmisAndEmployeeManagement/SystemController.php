@@ -41,7 +41,6 @@ class SystemController extends Controller
         $session = null;
         
         try{
-
             if(!$session_id){
                 return response()->json(['message' => "unauthorized"], Response::HTTP_UNAUTHORIZED);
             }
@@ -55,7 +54,9 @@ class SystemController extends Controller
             $employee_profile = EmployeeProfile::find($system_user_sessions['user_id']);
     
             $assigned_area = $employee_profile->assignedArea;
-            $special_access_roles = $employee_profile->specialAccessRole;
+            $system_role_ids = SystemRole::where('system_id', $api['id'])->pluck('id')->toArray();
+            
+            $special_access_roles = SpecialAccessRole::whereIn('system_role_id', $system_role_ids)->get();
     
             if ($assigned_area['plantilla_id'] === null) {
                 $designation = $assigned_area->designation;
@@ -645,11 +646,10 @@ class SystemController extends Controller
     }
     // In case the env client domain doesn't work
     public function updateUMISDATA(){
-        $system = System::find(4)->update([
-            'domain' => Crypt::encrypt(env("PR_MONITORING_ORIGIN"))
-        ]);
+        $system = System::find(1)->update([
+            'domain' => Crypt::encrypt(env("PORTAL_CLIENT_DOMAIN"))
+        ]); 
         
-
         // System::find(4)->update(['api_key' => Str::random(60)]);
         return response()->json(['message' => "Success"], 200);
     }

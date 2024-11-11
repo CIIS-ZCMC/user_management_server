@@ -864,6 +864,10 @@ class EmployeeProfileController extends Controller
 
         $domain =  Crypt::decrypt($system['domain']);
 
+        if($system['code'] === 'UMIS'){
+            return $domain;
+        }
+
         return $domain."/signing-in/".$sessionId;
     }
 
@@ -1199,6 +1203,7 @@ class EmployeeProfileController extends Controller
 
     public function revalidateAccessToken(Request $request)
     {
+
         try {
             $employee_profile = $request->user;
 
@@ -1260,6 +1265,8 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+            
+            Helpers::infoLog("Test", 'wasp', "Test");
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
