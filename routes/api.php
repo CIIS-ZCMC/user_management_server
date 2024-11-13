@@ -16,9 +16,13 @@ use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 // Attach CSP in response
 // Route::middleware('csp.token')->group(function(){});
 
+Route::get('/initialize-storage', function (Request $request) {
+    Artisan::call('storage:link');
+});
 
-Route::get('/initialize-storage', function () {
-    // Artisan::call('storage:link');
+// In case the env client domain doesn't work
+Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function(){
+    Route::get('update-system', 'SystemController@updateUMISDATA');
 });
 
 
@@ -76,6 +80,10 @@ Route::middleware('auth.cookie')->group(function () {
 
 
     Route::namespace('App\Http\Controllers')->group(function () {
+        
+        Route::post('redcap-module-import', 'RedcapController@import');
+        Route::post('redcap-module', 'RedcapController@storeRedCapModule');
+        Route::get('redcap-module-employees', 'RedcapController@employessWithRedCapModules');
 
         Route::get('announcements/{id}', 'AnnouncementsController@show');
         Route::get('announcements', 'AnnouncementsController@showAnnouncement');
@@ -2622,3 +2630,20 @@ Route::middleware('auth.cookie')->group(function () {
         Route::post('sign-dtr', 'DigitalSignatureController@signDTR');
     });
 });
+
+/**
+ * Third party system end points
+ * 
+ * Authentication of server api will be done here
+ * While user authorization verification will be done on requester server
+ * only if the permission is intended for that server
+ * 
+ * Upon user load on the other client then the server api will request for user permission details from the umis
+ * then store the data in the database of the server api
+ */
+
+ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::middleware("auth.thirdparty")->group(function(){
+        Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+     });
+ });

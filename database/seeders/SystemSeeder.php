@@ -20,7 +20,7 @@ class SystemSeeder extends Seeder
         System::create([
             'name' => 'User Management Information System',
             'code' => Cache::get('system_abbreviation'),
-            'domain' => Crypt::encrypt(env('SESSION_DOMAIN')),
+            'domain' => Crypt::encrypt(env('CLIENT_DOMAIN')),
             'status' => 1
         ]);
     }
