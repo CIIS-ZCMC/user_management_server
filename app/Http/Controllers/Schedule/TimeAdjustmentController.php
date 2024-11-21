@@ -30,7 +30,7 @@ class TimeAdjustmentController extends Controller
         try {
 
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching ' . $this->PLURAL_MODULE_NAME . '.');
-            return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjustment::all())], Response::HTTP_OK);
+            return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjustment::orderBy('id', 'DESC')->get())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

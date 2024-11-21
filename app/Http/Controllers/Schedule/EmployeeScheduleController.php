@@ -441,7 +441,7 @@ class EmployeeScheduleController extends Controller
         try {
             // Validate the file
             $request->validate([
-                'csv_file' => 'required|mimes:csv,txt|max:2048',
+                'csv_file' => 'required|mimes:csv,txt,xlsx|max:2048',
             ]);
 
             // Check if the file is valid
@@ -452,6 +452,14 @@ class EmployeeScheduleController extends Controller
                 // Read and process the CSV file
                 $csvData = array_map('str_getcsv', file(storage_path('app/' . $filePath)));
                 $header = array_shift($csvData);
+
+                $timeShifts = [
+                    '8' => TimeShift::where('first_in', '08:00:00')->where('first_out', '16:00:00')->first()->id ?? null,
+                    '6' => TimeShift::where('first_in', '06:00:00')->where('first_out', '14:00:00')->first()->id ?? null,
+                    '2' => TimeShift::where('first_in', '14:00:00')->where('first_out', '22:00:00')->first()->id ?? null,
+                    '10' => TimeShift::where('first_in', '22:00:00')->where('first_out', '06:00:00')->first()->id ?? null,
+                    'default' => TimeShift::where('first_in', '08:00:00')->where('second_out', '17:00:00')->first()->id ?? null,
+                ];
 
                 foreach ($csvData as $row) {
                     $employee_id = $row[0];
@@ -468,62 +476,96 @@ class EmployeeScheduleController extends Controller
                     // Loop through each day of the month
                     for ($i = 4; $i < count($row); $i++) {
                         $shift = $row[$i];
-                        switch ($shift) {
-                            case '8':
-                                $time_shift = TimeShift::where('first_in', '08:00:00')->where('first_out', '16:00:00')->first()->id;
-                                break;
-                            case '6':
-                                $time_shift = TimeShift::where('first_in', '06:00:00')->where('first_out', '14:00:00')->first()->id;
-                                break;
-                            case '2':
-                                $time_shift = TimeShift::where('first_in', '14:00:00')->where('first_out', '22:00:00')->first()->id;
-                                break;
-                            case '10':
-                                $time_shift = TimeShift::where('first_in', '22:00:00')->where('first_out', '06:00:00')->first()->id;
-                                break;
-                            case 'H':
-                                $time_shift = null;
-                                break;
-                            case '✓':
-                                $time_shift = null;
-                                break;
-                            default:
-                                $time_shift = TimeShift::where('first_in', '08:00:00')->where('second_out', '17:00:00')->first()->id;
-                                break;
-                        }
+                        $time_shift = $timeShifts[$shift] ?? ($shift === 'H' || $shift === '✓' ? null : $timeShifts['default']);
+
+                        $day = $i - 3; // Adjust index to match day
+                        $month_parse = Carbon::parse("first day of $month $year")->format('m');
+                        $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
+                        $isWeekend = Carbon::parse($date)->isWeekend();
+
+                        // switch ($shift) {
+                        //     case '8':
+                        //         $time_shift = TimeShift::where('first_in', '08:00:00')->where('first_out', '16:00:00')->first()->id;
+                        //         break;
+                        //     case '6':
+                        //         $time_shift = TimeShift::where('first_in', '06:00:00')->where('first_out', '14:00:00')->first()->id;
+                        //         break;
+                        //     case '2':
+                        //         $time_shift = TimeShift::where('first_in', '14:00:00')->where('first_out', '22:00:00')->first()->id;
+                        //         break;
+                        //     case '10':
+                        //         $time_shift = TimeShift::where('first_in', '22:00:00')->where('first_out', '06:00:00')->first()->id;
+                        //         break;
+                        //     case 'H':
+                        //         $time_shift = null;
+                        //         break;
+                        //     case '✓':
+                        //         $time_shift = null;
+                        //         break;
+                        //     default:
+                        //         $time_shift = TimeShift::where('first_in', '08:00:00')->where('second_out', '17:00:00')->first()->id;
+                        //         break;
+                        // }
+
 
                         if ($time_shift !== null) {
-                            $month_parse = Carbon::parse("first day of $month $year")->format('m');
-                            $day = $i - 3; // Because the first 4 columns are Lastname, Firstname, Month, Year
-                            $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
+                            // $day = $i - 3; // Because the first 4 columns are Lastname, Firstname, Month, Year
+                            // $month_parse = Carbon::parse("first day of $month $year")->format('m');
+                            // $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
 
-                            $isweekend = (Carbon::parse($date))->isWeekend();
+                            // $isWeekend = (Carbon::parse($date))->isWeekend();
 
                             // Create or get the schedule
                             $schedule = Schedule::firstOrCreate(
                                 [
                                     'date' => $date,
                                     'time_shift_id' => $time_shift,
-                                    'is_weekend' => $isweekend ? 1 : 0
+                                    'is_weekend' => $isWeekend ? 1 : 0
                                 ],
                                 [
                                     'date' => $date,
                                     'time_shift_id' => $time_shift,
-                                    'is_weekend' => $isweekend ? 1 : 0
+                                    'is_weekend' => $isWeekend ? 1 : 0
                                 ],
                             );
 
+                            $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                                ->whereHas('schedule', function ($query) use ($date) {
+                                    $query->where('date', '=', $date);
+                                })->first();
+
+                            if ($employee_schedule !== null) {
+                                $employee_schedule->update([
+                                    'employee_profile_id' => $employee->id,
+                                    'schedule_id' => $schedule->id,
+                                ]);
+                            } else {
+                                EmployeeSchedule::create([
+                                    'employee_profile_id' => $employee->id,
+                                    'schedule_id' => $schedule->id,
+                                ]);
+                            }
+
                             // Create or update employee schedule
-                            EmployeeSchedule::updateOrCreate(
-                                [
-                                    'employee_profile_id' => $employee->id,
-                                    'schedule_id' => $schedule->id,
-                                ],
-                                [
-                                    'employee_profile_id' => $employee->id,
-                                    'schedule_id' => $schedule->id,
-                                ]
-                            );
+                            // EmployeeSchedule::updateOrCreate(
+                            //     [
+                            //         'employee_profile_id' => $employee->id,
+                            //         'schedule_id' => $schedule->id,
+                            //     ],
+                            //     [
+                            //         'employee_profile_id' => $employee->id,
+                            //         'schedule_id' => $schedule->id,
+                            //     ]
+                            // );
+                        } else {
+                            $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                                ->whereHas('schedule', function ($query) use ($date) {
+                                    $query->where('date', '=', $date);
+                                })->first();
+
+                            if ($employee_schedule) {
+                                $employee_schedule->delete();
+                            }
                         }
                     }
                 }

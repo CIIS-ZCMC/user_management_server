@@ -39,6 +39,7 @@ class ScheduleController extends Controller
         try {
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
+            $selected_area = $request->area;
 
             $month = $request->month;  // Replace with the desired month (1 to 12)
             $year = $request->year;   // Replace with the desired year
@@ -52,7 +53,7 @@ class ScheduleController extends Controller
             $employees = [$request->employees];
             $employee_ids = explode(',', $employees[0]);
 
-            $sql = EmployeeProfile::whereIn('id', $employee_ids)
+            $sql = EmployeeProfile::whereIn('employee_profiles.id', $employee_ids) // Specify the table for `id`
                 ->with([
                     'schedule' => function ($query) {
                         $query->with(['timeShift', 'holiday']);
@@ -60,7 +61,11 @@ class ScheduleController extends Controller
                     'personalInformation',
                     'assignedArea',
                     'schedule.timeShift'
-                ])->get();
+                ])
+                ->join('personal_informations', 'employee_profiles.personal_information_id', '=', 'personal_informations.id')
+                ->orderBy('personal_informations.last_name', 'ASC')
+                ->select('employee_profiles.*') // Ensure only `employee_profiles` fields are selected
+                ->get();
 
             $employee = ScheduleResource::collection($sql);
 
@@ -75,7 +80,7 @@ class ScheduleController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('generate_schedule/section-schedule', compact('employee', 'holiday', 'month', 'year', 'dates', 'user', 'recommending_officer', 'approving_officer'))->render();
+            $html = view('generate_schedule/section-schedule', compact('employee', 'holiday', 'month', 'year', 'dates', 'user', 'recommending_officer', 'approving_officer', 'selected_area'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'landscape');

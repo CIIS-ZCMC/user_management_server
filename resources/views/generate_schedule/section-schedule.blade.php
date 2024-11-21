@@ -118,7 +118,7 @@
         }
 
         .td-name {
-            font-size: 12px;
+            font-size: 9px;
             /* Adjusted font size */
             font-weight: bold;
             text-align: left;
@@ -214,7 +214,7 @@
 
     <div class="topnav">
         <div class="float-left">
-            Department : <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
+            Department : <span class="underline">{{ $selected_area }}</span>
         </div>
 
         <div class="float-right">
@@ -224,7 +224,7 @@
 
     <div class="container">
         <div class="table-responsive"> <!-- Added -->
-            <table class="table-bordered" border="1" cellspacing="0" cellpadding="8">
+            <table class="table-bordered" border="1" cellspacing="0" cellpadding="2">
                 <thead>
                     <tr>
                         <th rowspan="2">#</th>
