@@ -161,9 +161,6 @@ class EmployeeScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $employee = $cleanData['employee'];
-            $selected_date = $cleanData['selected_date'];   // Selected Date;
-
             $employee = $cleanData['employee'] ?? null;
             $selected_date = $cleanData['selected_date'] ?? null;
 
