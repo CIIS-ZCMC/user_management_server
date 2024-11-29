@@ -364,10 +364,17 @@ class TimeAdjustmentController extends Controller
                     $adjustmentData['first_in'] = isset($record['time_in']) ? Carbon::parse($record['time_in'])->format('H:i:s') : null;
                     $adjustmentData['first_out'] = isset($record['time_out']) ? Carbon::parse($record['time_out'])->format('H:i:s') : null;
                 } else {
-                    $adjustmentData['first_in'] = isset($record['time_in']) ? Carbon::parse($record['time_in'])->format('H:i:s') : null;
-                    $adjustmentData['first_out'] = isset($record['break_out']) ? Carbon::parse($record['break_out'])->format('H:i:s') : null;
-                    $adjustmentData['second_in'] = isset($record['break_in']) ? Carbon::parse($record['break_in'])->format('H:i:s') : null;
-                    $adjustmentData['second_out'] = isset($record['time_out']) ? Carbon::parse($record['time_out'])->format('H:i:s') : null;
+                    if (isset($record['time_in']) && !isset($record['break_out']) && !isset($record['break_in']) && isset($record['time_out'])) {
+                        // Scenario: Only `time_in` and `time_out` only pass on payload
+                        $adjustmentData['first_in'] = isset($record['time_in']) ? Carbon::parse($record['time_in'])->format('H:i:s') : null;
+                        $adjustmentData['first_out'] = isset($record['time_out']) ? Carbon::parse($record['time_out'])->format('H:i:s') : null;
+                    } else {
+                        // Scenario: Includes `break_out` and `break_in`
+                        $adjustmentData['first_in'] = isset($record['time_in']) ? Carbon::parse(time: $record['time_in'])->format('H:i:s') : null;
+                        $adjustmentData['first_out'] = isset($record['break_out']) ? Carbon::parse($record['break_out'])->format('H:i:s') : null;
+                        $adjustmentData['second_in'] = isset($record['break_in']) ? Carbon::parse($record['break_in'])->format('H:i:s') : null;
+                        $adjustmentData['second_out'] = isset($record['time_out']) ? Carbon::parse($record['time_out'])->format('H:i:s') : null;
+                    }
                 }
 
                 // Store the time adjustment for this date
@@ -419,7 +426,7 @@ class TimeAdjustmentController extends Controller
                 $dtrHelper = new DTRcontroller();
                 $dtrHelper->RecomputeHours($dtr->biometric_id, $month, $year, $dtr->dtr_date);
 
-                $dtr->is_time_adjustment = 1;
+                $dtr->is_time_adjustment = "1";
                 $dtr->update();
 
                 $data->daily_time_record_id = $dtr->id;
