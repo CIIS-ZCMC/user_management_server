@@ -48,7 +48,7 @@ class MResetAllPass extends Controller
                 $hashPassword = Hash::make($password . config('app.salt_value'));
 
                 // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
-                if (in_array($employee->id, [2374])) {
+                if (in_array($employee->id, [2389])) {
 
                     $employee->authorization_pin = null;
                     $employee->password_encrypted = Crypt::encryptString($hashPassword);
