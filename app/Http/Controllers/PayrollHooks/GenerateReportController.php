@@ -267,6 +267,231 @@ class GenerateReportController extends Controller
         $year_of = $request->year_of;
 
 
+        $totalDaysInMonth = Carbon::createFromDate($year_of, $month_of, 1)->daysInMonth;
+        $expectedMinutesPerDay = 480;
+
+        $employee_dtr = EmployeeProfile::with([
+            'dailyTimeRecords' => function ($query) use ($year_of, $month_of) {
+                $query->whereYear('dtr_date', $year_of)
+                    ->whereMonth('dtr_date', $month_of)
+                    ->selectRaw('biometric_id, SUM(total_working_minutes) as total_working_minutes, 
+                                               SUM(overtime_minutes) as total_overtime_minutes,
+                                               SUM(undertime_minutes) as total_undertime_minutes')
+                    ->groupBy('biometric_id');
+            },
+            'approvedOB' => function ($query) use ($year_of, $month_of, $expectedMinutesPerDay) {
+                $query->whereYear('date_from', $year_of)
+                    ->whereMonth('date_from', $month_of)
+                    ->selectRaw('employee_profile_id, SUM(DATEDIFF(date_to, date_from) + 1) * ? as total_ob_minutes', [$expectedMinutesPerDay])
+                    ->groupBy('employee_profile_id');
+            },
+            'approvedOT' => function ($query) use ($year_of, $month_of, $expectedMinutesPerDay) {
+                $query->whereYear('date_from', $year_of)
+                    ->whereMonth('date_from', $month_of)
+                    ->selectRaw('employee_profile_id, SUM(DATEDIFF(date_to, date_from) + 1) * ? as total_ot_minutes', [$expectedMinutesPerDay])
+                    ->groupBy('employee_profile_id');
+            },
+            'receivedLeave' => function ($query) use ($year_of, $month_of, $expectedMinutesPerDay) {
+                $query->whereYear('date_from', $year_of)
+                    ->whereMonth('date_from', $month_of)
+                    ->selectRaw('employee_profile_id, SUM(DATEDIFF(date_to, date_from) + 1) * ? as total_leave_minutes', [$expectedMinutesPerDay])
+                    ->groupBy('employee_profile_id');
+            },
+            'dtrInvalidEntry' => function ($query) use ($year_of, $month_of) {
+                $query->whereYear('dtr_date', $year_of)
+                    ->whereMonth('dtr_date', $month_of);
+            },
+            'schedule' => function ($query) use ($year_of, $month_of) {
+                $query->whereYear('date', $year_of)
+                    ->whereMonth('date', $month_of);
+            },
+            'employeeDtr' => function ($query) use ($year_of, $month_of) {
+                $query->whereYear('dtr_date', $year_of)
+                    ->whereMonth('dtr_date', $month_of);
+            },
+            'leaveApplications' => function ($query) use ($year_of, $month_of) {
+                $query->where(function ($query) use ($year_of, $month_of) {
+                    // Include records where the leave period starts or ends within the month
+                    $query->whereYear('date_from', $year_of)
+                        ->whereMonth('date_from', $month_of)
+                        ->orWhere(function ($query) use ($year_of, $month_of) {
+                        $query->whereYear('date_to', $year_of)
+                            ->whereMonth('date_to', $month_of);
+                    });
+                })->where('status', 'received');
+            }
+        ])->get();
+
+        $holiday = Holiday::whereRaw("LEFT(month_day, 2) = ?", [str_pad($month_of, 2, '0', STR_PAD_LEFT)])->get();
+
+        $data = $employee_dtr->map(function ($employee) use ($year_of, $month_of, $totalDaysInMonth, $request, $expectedMinutesPerDay, $holiday) {
+            $biometric_id = $employee->biometric_id;
+
+            $NoOfInvalidEntry = [];
+
+            // Skip if employee area is not assigned
+            if (!$employee->assignedArea)
+                return null;
+
+            // Handle payroll periodsJ
+            $payrollPeriodStart = 1;
+            $payrollPeriodEnd = $totalDaysInMonth;
+
+            // Pre-fetch counts and related values
+            $scheduleCount = $employee->schedule->count();
+            $NoOfInvalidEntry = $employee->dtrInvalidEntry->count();
+            $receivedLeave = $employee->receivedLeave;
+
+            // Salary details
+            $salary_grade = $employee->assignedArea->salary_grade_id;
+            $salary_step = $employee->assignedArea->salary_grade_step;
+
+            // Extract totals safely with null coalescing (CALCULATED VALUES GROUP)
+            $totalWorkingMinutes = $employee->dailyTimeRecords->first()->total_working_minutes ?? 0;
+            $totalOBMinutes = $employee->approvedOB->first()->total_ob_minutes ?? 0;
+            $totalOTMinutes = $employee->approvedOT->first()->total_ot_minutes ?? 0;
+            $totalLeaveMinutes = $employee->receivedLeave->first()->total_leave_minutes ?? 0;
+            $totalOvertimeMinutes = $employee->dailyTimeRecords->first()->total_overtime_minutes ?? 0;
+            $totalUnderTimeMinutes = $employee->dailyTimeRecords->first()->total_undertime_minutes ?? 0;
+
+            $totalMinutes = $totalWorkingMinutes + $totalOBMinutes + $totalOTMinutes + $totalLeaveMinutes;
+            $totalWorkingHours = $totalMinutes / 60;
+            $noOfPresentDays = round($totalMinutes / $expectedMinutesPerDay, 1);
+
+            // Leave-related data
+            $noOfLeaveWoPay = $receivedLeave->where('without_pay', true)->sum(function ($leave) {
+                return Carbon::parse($leave->date_to)->diffInDays(Carbon::parse($leave->date_from)) + 1;
+            });
+
+            $noOfLeaveWPay = $receivedLeave->where('without_pay', false)->sum(function ($leave) {
+                return Carbon::parse($leave->date_to)->diffInDays(Carbon::parse($leave->date_from)) + 1;
+            });
+
+            // Absence and day-off calculations
+            $noOfAbsences = $scheduleCount - $noOfPresentDays;
+            $noOfDayOff = $totalDaysInMonth - $scheduleCount;
+
+            if ($employee->employmentType->name === "Job Order") {
+                if ($request->first_half) {
+                    $payrollPeriodStart = 1;
+                    $payrollPeriodEnd = 15;
+                } elseif ($request->second_half) {
+                    $payrollPeriodStart = 16;
+                    $payrollPeriodEnd = $totalDaysInMonth;
+                }
+            }
+
+            // Holiday Pay(Regular Employee)
+            $holidayPay = 0;
+            if ($employee->employmentType->name !== "Job Order") {
+                $dtrDates = $employee->employeeDtr
+                    ->map(fn($dtr) => Carbon::parse($dtr->dtr_date)->format('m-d'))
+                    ->toArray();
+
+                $scheduleDates = $employee->schedule
+                    ->map(fn($schedule) => Carbon::parse($schedule->date)->format('m-d'))
+                    ->toArray();
+
+                // Loop through holidays in the current month
+                foreach ($holiday as $holidayRecord) {
+                    $holidayMonthDay = $holidayRecord->month_day;
+
+                    // Check if the employee has a schedule on the holiday
+                    $isScheduledOnHoliday = in_array($holidayMonthDay, $scheduleDates);
+
+                    // Check if there is no DTR entry on the holiday
+                    $hasNoDtrOnHoliday = !in_array($holidayMonthDay, $dtrDates);
+
+                    // If scheduled on a holiday but has no DTR, add holiday pay
+                    if ($isScheduledOnHoliday && $hasNoDtrOnHoliday) {
+                        $holidayPay++;
+                    }
+                }
+            }
+
+            // Salary computations (SALARY VALUES GROUP)
+            $grandBasicSalary = $this->computed->BasicSalary($salary_grade, $salary_step, $scheduleCount)['GrandTotal'];
+            $rates = $this->computed->Rates($grandBasicSalary, $scheduleCount);
+            $grossSalary = $this->computed->GrossSalary($noOfPresentDays, $grandBasicSalary, $noOfAbsences);
+
+            $absentRate = $this->computed->AbsentRates($noOfAbsences, $rates);
+            $undertimeRate = $this->computed->UndertimeRates($totalUnderTimeMinutes, $rates);
+
+            $netSalary = $this->computed->NetSalaryFromTimeDeduction($grossSalary, $undertimeRate, $absentRate, $employee->employmentType->name);
+
+            // Calculate Holiday Pay (in monetary terms)
+            $ratePerDay = $rates['Daily'];
+            $holidayPayRate = $ratePerDay * $holidayPay;
+
+            // Overall Net Salary (Net Salary + Holiday Pay)
+            $overallNetSalary = $netSalary + $holidayPayRate;
+
+            // //This function Return True or False
+            $OutOfPayroll = $this->computed->OutofPayroll($netSalary, $employee->employmentType, $totalMinutes);
+
+            return [
+                'Biometric_id' => $biometric_id,
+                'Payroll' => "{$payrollPeriodStart} - {$payrollPeriodEnd}",
+                'From' => $payrollPeriodStart,
+                'To' => $payrollPeriodEnd,
+                'Month' => $month_of,
+                'Year' => $year_of,
+                'Is_out' => $OutOfPayroll,
+                "NightDifferentials" => [],
+
+                // Calculated values
+                'TotalWorkingMinutes' => $totalMinutes,
+                'TotalWorkingHours' => $totalWorkingHours,
+                'TotalOvertimeMinutes' => $totalOvertimeMinutes,
+                'TotalUndertimeMinutes' => $totalUnderTimeMinutes,
+                'NoofPresentDays' => $noOfPresentDays,
+                'NoofLeaveWoPay' => $noOfLeaveWoPay,
+                'NoofLeaveWPay' => $noOfLeaveWPay,
+                'NoofAbsences' => $noOfAbsences,
+                "NoofInvalidEntry" => $NoOfInvalidEntry,
+                'NoofDayOff' => $noOfDayOff,
+                'schedule' => $scheduleCount,
+
+                // Salary values
+                'GrandBasicSalary' => $grandBasicSalary,
+                'Rates' => $rates,
+                'GrossSalary' => $grossSalary,
+                'TimeDeductions' => [
+                    'AbsentRate' => $absentRate,
+                    'UndertimeRate' => $undertimeRate,
+                ],
+                'NetSalary' => $netSalary,
+                'OverallNetSalary' => $overallNetSalary,
+                'Employee' => [
+                    'profile_id' => $employee->id,
+                    'employee_id' => $employee->employee_id,
+                    'Information' => $employee->personalInformation,
+                    'Designation' => $employee->findDesignation(),
+                    'Hired' => $employee->date_hired,
+                    'EmploymentType' => $employee->employmentType,
+                    'Excluded' => InActiveEmployee::where('employee_id', $employee->employee_id)->first(),
+                    'leaveApplications' => $employee->leaveApplications->isNotEmpty() ? [
+                        'country' => $employee->leaveApplications->first()->country ?? null,
+                        'city' => $employee->leaveApplications->first()->city ?? null,
+                        'from' => $employee->leaveApplications->first()->date_from ?? null,
+                        'to' => $employee->leaveApplications->first()->date_to ?? null,
+                        'leavetype' => LeaveType::find($employee->leaveApplications->first()->leave_type_id ?? null)->name ?? "",
+                        'without_pay' => $employee->leaveApplications->first()->without_pay ?? null,
+                        'dates_covered' => $this->helper->getDateIntervals($employee->leaveApplications->first()->date_from ?? null, $employee->leaveApplications->first()->date_to ?? null),
+                    ] : [],
+                    'employeeLeaveCredits' => $employee->employeeLeaveCredits
+
+                ],
+                'Assigned_area' => $employee->assignedArea->findDetails(),
+                'SalaryData' => [
+                    'step' => $employee->assignedArea->salary_grade_step,
+                    'salaryGroup' => $employee->assignedArea->salaryGrade,
+                ],
+            ];
+        });
+
+        return $data;
+
         $employeeIds = DB::table('daily_time_records')
             ->whereYear('dtr_date', $year_of)
             ->whereMonth('dtr_date', $month_of)
