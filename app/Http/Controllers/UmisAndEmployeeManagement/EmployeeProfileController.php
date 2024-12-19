@@ -20,15 +20,18 @@ use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\EmployeeProfileUpdateResource;
+use App\Http\Resources\EmployeeRedcapModulesResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Jobs\SendEmailJob;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeRedcapModules;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\FailedLoginTrail;
 use App\Models\OfficerInChargeTrail;
 use App\Models\PlantillaAssignedArea;
+use App\Models\SystemUserSessions;
 use App\Models\Training;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
@@ -273,7 +276,6 @@ class EmployeeProfileController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-
             /**
              * Fields Needed:
              *  employee_id
@@ -291,8 +293,8 @@ class EmployeeProfileController extends Controller
             /**
              * For Persist password even when it expired for set months of expiration.
              */
-            if ($request->persist_password !== null && $request->persist_password === 1) {
-                $fortyDaysFromNow = Carbon::now()->addDays(40);
+            if ($request->persist_password !== null && (int) $request->persist_password === 1) {
+                $fortyDaysFromNow = Carbon::now()->addDays(90);
                 $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
                 $employee_profile->update(['password_expiration_at' => $fortyDaysExpiration]);
@@ -439,6 +441,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -460,6 +463,11 @@ class EmployeeProfileController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function employeeRedcapModules($employee)
+    {
+        return EmployeeRedcapModulesResource::collection($employee->employeeRedcapModules);
     }
 
     private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
@@ -511,7 +519,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                         continue;
                     }
 
@@ -570,7 +578,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 
@@ -580,7 +588,7 @@ class EmployeeProfileController extends Controller
         } else {
             $side_bar_details = $sidebar_cache;
         }
-
+        
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -608,11 +616,13 @@ class EmployeeProfileController extends Controller
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
 
+                    $exists = array_search($system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
                     /**
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                         continue;
                     }
 
@@ -670,8 +680,13 @@ class EmployeeProfileController extends Controller
                         }
                     }
 
-                    if (!$system_exist) {
-                        $side_bar_details->system[] = $this->buildSystemDetails($system_role);
+                    /** 
+                     * On empty system this will direct insert the system
+                     * Or
+                     * when system is not empty but the target system doesn't exist this will append to it
+                     */
+                    if (count($side_bar_details['system']) === 0 || !$exists) {
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 
@@ -685,7 +700,9 @@ class EmployeeProfileController extends Controller
 
             if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "COMMON-REG")->first();
-                $reg_system_role = SystemRole::where('role_id', $role->id)->first();
+                $reg_system_role = SystemRole::where('role_id', operator: $role->id)->first();
+
+                $exists = array_search($reg_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $reg_system_role->system_id) {
@@ -740,8 +757,13 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
+                /** 
+                 * On empty system this will direct insert the system
+                 * Or
+                 * when system is not empty but the target system doesn't exist this will append to it
+                 */
+                if (count($side_bar_details['system']) === 0 || !$exists) {
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
                 }
             }
 
@@ -756,61 +778,72 @@ class EmployeeProfileController extends Controller
                  * Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
                  */
 
-                foreach ($side_bar_details['system'] as &$system) {
-                    if ($system['id'] === $jo_system_role->system_id) {
-                        $system_role_exist = false;
+                $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-                        foreach ($system['roles'] as $value) {
-                            if ($value['name'] === $role->name) {
-                                $system_role_exist = true;
-                                break; // No need to continue checking once the role is found
-                            }
-                        }
-
-                        if (!$system_role_exist) {
-                            $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-
-                            $cacheExpiration = Carbon::now()->addYear();
-                            Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-
-                            $system['roles'][] = [
-                                'id' => $jo_system_roles_data['id'],
-                                'name' => $jo_system_roles_data['name']
-                            ];
-
-                            // Convert the array of objects to a collection
-                            $modulesCollection = collect($system['modules']);
-
-                            foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Check if the module with the code exists in the collection
-                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
-                                    return $module['code'] === $role_module['code'];
-                                });
-
-                                if ($existingModuleIndex !== false) {
-                                    // If the module exists, modify its permissions
-                                    $existingModule = $modulesCollection->get($existingModuleIndex);
-                                    foreach ($role_module['permissions'] as $permission) {
-                                        // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $existingModule['permissions'])) {
-                                            $existingModule['permissions'][] = $permission;
-                                        }
-                                    }
-                                    $modulesCollection->put($existingModuleIndex, $existingModule);
-                                } else {
-                                    // If the module doesn't exist, add it to the collection
-                                    $modulesCollection->push($role_module);
+                if($exists){
+                    foreach ($side_bar_details['system'] as &$system) {
+                        if ($system['id'] === $jo_system_role->system_id) {
+                            $system_role_exist = false;
+    
+                            // Check if role exist in the system
+                            foreach ($system['roles'] as $value) {
+                                if ($value['name'] === $role->name) {
+                                    $system_role_exist = true;
+                                    break; // No need to continue checking once the role is found
                                 }
                             }
-
-                            // Assign back the modified modules collection to the system
-                            $system['modules'] = $modulesCollection->toArray();
+    
+                            if (!$system_role_exist) {
+                                $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+    
+                                $cacheExpiration = Carbon::now()->addYear();
+                                Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+    
+                                $system['roles'][] = [
+                                    'id' => $jo_system_roles_data['id'],
+                                    'name' => $jo_system_roles_data['name']
+                                ];
+    
+                                // Convert the array of objects to a collection
+                                $modulesCollection = collect($system['modules']);
+    
+                                foreach ($jo_system_roles_data['modules'] as $role_module) {
+                                    // Check if the module with the code exists in the collection
+                                    $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                        return $module['code'] === $role_module['code'];
+                                    });
+    
+                                    if ($existingModuleIndex !== false) {
+                                        // If the module exists, modify its permissions
+                                        $existingModule = $modulesCollection->get($existingModuleIndex);
+                                        foreach ($role_module['permissions'] as $permission) {
+                                            // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                            if (!in_array($permission, $existingModule['permissions'])) {
+                                                $existingModule['permissions'][] = $permission;
+                                            }
+                                        }
+                                        $modulesCollection->put($existingModuleIndex, $existingModule);
+                                    } else {
+                                        // If the module doesn't exist, add it to the collection
+                                        $modulesCollection->push($role_module);
+                                    }
+                                }
+    
+                                // Assign back the modified modules collection to the system
+                                $system['modules'] = $modulesCollection->toArray();
+                            }
                         }
                     }
                 }
 
-                if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
+                /** 
+                 * On empty system this will direct insert the system
+                 * Or
+                 * when system is not empty but the target system doesn't exist this will append to it
+                 */
+                if (count($side_bar_details['system']) === 0 || !$exists) {
+                    Helpers::errorLog("EmployeeProfile", "buildSidebarDetails", "Check for existing DONE");
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
                 }
             }
         }
@@ -818,20 +851,41 @@ class EmployeeProfileController extends Controller
         return $side_bar_details;
     }
 
-    private function buildSystemDetails($system_role)
+    //Storing of system sessions
+    private function generateSystemSessionID($user_id, $system)
+    {
+        $sessionId = Str::uuid();
+                
+        SystemUserSessions::create([
+            'user_id' => $user_id,
+            'system_code' => $system['code'],
+            'session_id' => $sessionId
+        ]);
+
+        $domain =  Crypt::decrypt($system['domain']);
+
+        if($system['code'] === 'UMIS'){
+            return $domain;
+        }
+
+        return $domain."/signing-in/".$sessionId;
+    }
+
+    private function buildSystemDetails($user_id, $system_role)
     {
         $build_role_details = $this->buildRoleDetails($system_role);
 
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name']
-        ];
+        ];        
 
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
             'code' => $system_role->system['code'],
             'roles' => [$role],
+            'url' => $this->generateSystemSessionID($user_id, $system_role->system),
             'modules' => $build_role_details['modules']
         ];
     }
@@ -1149,6 +1203,7 @@ class EmployeeProfileController extends Controller
 
     public function revalidateAccessToken(Request $request)
     {
+
         try {
             $employee_profile = $request->user;
 
@@ -1199,6 +1254,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1209,6 +1265,8 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+            
+            Helpers::infoLog("Test", 'wasp', "Test");
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
@@ -1228,6 +1286,11 @@ class EmployeeProfileController extends Controller
             foreach ($accessToken as $token) {
                 $token->delete();
             }
+
+            /**
+             * Delete all System of user if it has
+             */
+            SystemUserSessions::where("user_id", $user->id)->delete();
 
             return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(config('app.cookie_name'), '', -1);
         } catch (\Throwable $th) {
@@ -1334,6 +1397,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),

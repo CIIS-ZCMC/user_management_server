@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('systems', function (Blueprint $table) {
+        Schema::create('redcap_modules', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code');
-            $table->text('description')->nullable();
-            $table->string('domain', 360);
-            $table->text('api_key')->nullable();
-            $table->datetime('key_deactivated_at')->nullable();
-            $table->integer('status')->default(0);
-            $table->softDeletes();
+            $table->string('code')->nullable();
+            $table->text('origin');
+            $table->string('path');
             $table->timestamps();
         });
     }
@@ -30,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('systems');
+        Schema::dropIfExists('redcap_modules');
     }
 };

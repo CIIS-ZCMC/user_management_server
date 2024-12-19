@@ -69,6 +69,11 @@ class EmployeeProfile extends Authenticatable
         'password' => 'hashed',
     ];
 
+    public function employeeRedcapModules()
+    {
+        return $this->hasMany(EmployeeRedcapModules::class);
+    }
+
     public function personalInformation()
     {
         return $this->belongsTo(PersonalInformation::class);
