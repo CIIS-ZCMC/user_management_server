@@ -672,86 +672,14 @@ class EmployeeProfile extends Authenticatable
             ->whereNull('second_out');
     }
 
-    private function calculateMinutesForPeriod($records, $year, $month, $expectedMinutesPerDay)
+    public function nigthDuties()
     {
-        $totalMinutes = 0;
-
-        foreach ($records as $record) {
-            $startDate = Carbon::parse($record->date_from);
-            $endDate = Carbon::parse($record->date_to)->endOfDay();
-
-            if ($startDate->year == $year && $startDate->month == $month) {
-                // Ensure end date doesn't exceed the month's boundary
-                $endDate = min($endDate, Carbon::create($year, $month, 1)->endOfMonth());
-                $daysInPeriod = $startDate->diffInDays($endDate) + 1;
-
-                // Add minutes for each day in the period
-                $totalMinutes += $daysInPeriod * $expectedMinutesPerDay;
-            }
-        }
-
-        return $totalMinutes;
-    }
-
-
-    public function calculateTotalWorkingMinutes($year_of, $month_of)
-    {
-        // Define expected minutes per day
-        $expectedMinutesPerDay = 480;
-
-        // Fetch DTR records for the specified year and month and calculate total working, overtime, and undertime minutes
-        $dtrQuery = $this->dailyTimeRecords()
-            ->whereYear('dtr_date', $year_of)
-            ->whereMonth('dtr_date', $month_of)
-            ->selectRaw('SUM(total_working_minutes) as total_working_minutes');
-
-        // Calculate total minutes directly for OB, OT, and Leave using selectRaw for efficiency
-        $obQuery = $this->approvedOB()
-            ->whereYear('date_from', $year_of)
-            ->whereMonth('date_from', $month_of)
-            ->selectRaw('SUM(DATEDIFF(date_to, date_from) + 1) * ? as total_ob_minutes', [$expectedMinutesPerDay]);
-
-        $otQuery = $this->approvedOT()
-            ->whereYear('date_from', $year_of)
-            ->whereMonth('date_from', $month_of)
-            ->selectRaw('SUM(DATEDIFF(date_to, date_from) + 1) * ? as total_ot_minutes', [$expectedMinutesPerDay]);
-
-        $leaveQuery = $this->receivedLeave()
-            ->whereYear('date_from', $year_of)
-            ->whereMonth('date_from', $month_of)
-            ->selectRaw('SUM(DATEDIFF(date_to, date_from) + 1) * ? as total_leave_minutes', [$expectedMinutesPerDay]);
-
-        // Combine all queries
-        $result = $dtrQuery
-            ->addSelect([
-                'total_ob_minutes' => $obQuery,
-                'total_ot_minutes' => $otQuery,
-                'total_leave_minutes' => $leaveQuery
-            ])
-            ->first(); // Get the first (and only) result as we are querying per employee
-
-        // Calculate the total minutes and other values
-        $totalMinutes = $result->total_working_minutes + $result->total_ob_minutes + $result->total_ot_minutes + $result->total_leave_minutes;
-        $noOfPresentDays = $totalMinutes / $expectedMinutesPerDay;
-
-        // If you want to calculate undertime properly, it should be based on the difference between the expected and actual working hours
-        $undertimeMinutes = $this->dailyTimeRecords()
-            ->whereYear('dtr_date', $year_of)
-            ->whereMonth('dtr_date', $month_of)
-            ->sum('undertime_minutes');
-
-        $overtimeMinutes = $this->dailyTimeRecords()
-            ->whereYear('dtr_date', $year_of)
-            ->whereMonth('dtr_date', $month_of)
-            ->sum('overtime_minutes');
-
-        // Return the final data
-        return [
-            'TotalWorkingMinutes' => $totalMinutes,
-            'TotalWorkingHours' => $totalMinutes / 60,
-            'TotalOvertimeMinutes' => $overtimeMinutes,
-            'TotalUndertimeMinutes' => $undertimeMinutes,
-            'NoOfPresentDays' => $noOfPresentDays,
-        ];
+        return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id')
+            ->whereTime('first_in', '>=', '18:00') // Check if first_in is 6:00 PM or later
+            ->whereTime('first_out', '>=', '06:00') // Check if first_out is 6:00 AM or earlier
+            ->orWhere(function ($query) {
+                $query->whereTime('second_in', '>=', '18:00') // Check second_in for 6 PM
+                    ->whereTime('second_out', '>=', '06:00'); // Check second_out for 6 AM
+            });
     }
 }
