@@ -268,6 +268,9 @@ class GenerateReportController extends Controller
         $totalDaysInMonth = Carbon::createFromDate($year_of, $month_of, 1)->daysInMonth;
         $expectedMinutesPerDay = 480;
 
+        $totalDaysInMonth = Carbon::createFromDate($year_of, $month_of, 1)->daysInMonth;
+        $expectedMinutesPerDay = 480;
+
         $employee_dtr = EmployeeProfile::with([
             'dailyTimeRecords' => function ($query) use ($year_of, $month_of) {
                 $query->whereYear('dtr_date', $year_of)
@@ -317,6 +320,10 @@ class GenerateReportController extends Controller
                             ->whereMonth('date_to', $month_of);
                     });
                 })->where('status', 'received');
+            },
+            'nigthDuties' => function ($query) use ($year_of, $month_of) {
+                $query->whereYear('dtr_date', $year_of)
+                    ->whereMonth('dtr_date', $month_of);
             }
         ])->get();
 
@@ -326,6 +333,7 @@ class GenerateReportController extends Controller
             $biometric_id = $employee->biometric_id;
 
             $NoOfInvalidEntry = [];
+            $nightDifferentials = [];
 
             // Skip if employee area is not assigned
             if (!$employee->assignedArea)
@@ -427,6 +435,14 @@ class GenerateReportController extends Controller
             // //This function Return True or False
             $OutOfPayroll = $this->computed->OutofPayroll($netSalary, $employee->employmentType, $totalMinutes);
 
+            $first_in = $employee->nigthDuties->first()->first_in ?? null;
+            $first_out = $employee->nigthDuties->first()->first_out ?? null;
+            $nightDifferentials[] = $this->getNightDifferentialHours($first_in, $first_out, $biometric_id, [], $employee->schedule);
+
+            $nightDiff = array_values(array_filter($nightDifferentials, function ($row) use ($biometric_id) {
+                return isset($row['biometric_id']) && $row['biometric_id'] == $biometric_id;
+            }));
+
             return [
                 'Biometric_id' => $biometric_id,
                 'Payroll' => "{$payrollPeriodStart} - {$payrollPeriodEnd}",
@@ -435,7 +451,7 @@ class GenerateReportController extends Controller
                 'Month' => $month_of,
                 'Year' => $year_of,
                 'Is_out' => $OutOfPayroll,
-                "NightDifferentials" => [],
+                "NightDifferentials" => $nightDiff,
 
                 // Calculated values
                 'TotalWorkingMinutes' => $totalMinutes,
@@ -488,62 +504,64 @@ class GenerateReportController extends Controller
             ];
         });
 
-        return $data;
+        return $data->filter();
+
+        // $employeeIds = DB::table('daily_time_records')
+        //     ->whereYear('dtr_date', $year_of)
+        //     ->whereMonth('dtr_date', $month_of)
+        //     ->distinct()  // Ensures unique values
+        //     ->pluck('biometric_id');  // employee_id
 
 
-        $employeeIds = DB::table('daily_time_records')
-            ->whereYear('dtr_date', $year_of)
-            ->whereMonth('dtr_date', $month_of)
-            ->distinct()  // Ensures unique values
-            ->pluck('biometric_id');  // employee_id
+        // $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)->where('biometric_id', 438)->get();
 
-        $profiles = EmployeeProfile::whereIn('biometric_id', $employeeIds)->where('id', 132)->get();
+        // // $profiles = EmployeeProfile::where("biometric_id",493)->get();
 
-        $data = [];
+        // $data = [];
 
-        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-        $daysTotalMonth = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-        $defaultInit = 1;
-        $nightDifferentials = [];
-        $whole_month = $request->whole_month;
-        $first_half = $request->first_half;
-        $second_half = $request->second_half;
-        $init = 1;
-        $count = [];
+        // $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+        // $daysTotalMonth = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+        // $defaultInit = 1;
+        // $nightDifferentials = [];
+        // $whole_month = $request->whole_month;
+        // $first_half = $request->first_half;
+        // $second_half = $request->second_half;
+        // $init = 1;
+        // $count = [];
 
-        foreach ($profiles as $row) {
-            $Employee = $row;
-            if (!$Employee->assignedArea) {
-                continue;
-            }
+        // foreach ($profiles as $row) {
+        //     $Employee = $row;
+        //     if (!$Employee->assignedArea) {
+        //         continue;
+        //     }
 
-            if ($Employee->employmentType->name == "Job Order") {
-                if ($first_half) {
-                    $init = 1;
-                    $days_In_Month = 15;
-                } else if ($second_half) {
-                    $init = 16;
-                }
-            } else {
-                $init = 1;
-                $days_In_Month = $daysTotalMonth;
-            }
+        //     if ($Employee->employmentType->name == "Job Order") {
+        //         if ($first_half) {
+        //             $init = 1;
+        //             $days_In_Month = 15;
+        //         } else if ($second_half) {
+        //             $init = 16;
+        //         }
+        //     } else {
+        //         $init = 1;
+        //         $days_In_Month = $daysTotalMonth;
+        //     }
 
 
-            if ($first_half || $second_half) {
-                if ($Employee->employmentType->name == "Job Order") {
-                    // echo "Job Order \n";
-                    $data[] = $this->retrieveData($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
-                }
-            } else {
-                if ($Employee->employmentType->name != "Job Order") {
-                    $data[] = $this->retrieveData($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
-                }
-            }
-        }
+        //     if ($first_half || $second_half) {
+        //         if ($Employee->employmentType->name == "Job Order") {
+        //             // echo "Job Order \n";
+        //             $data[] = $this->retrieveData($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
+        //         }
+        //     } else {
+        //         if ($Employee->employmentType->name != "Job Order") {
+        //             $data[] = $this->retrieveData($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request);
+        //         }
+        //     }
+        // }
 
 
-        return $data;
+        // return $data;
     }
     public function retrieveNightDiff($Employee, $row, $month_of, $year_of, $init, $days_In_Month, $defaultInit, $daysTotalMonth, $request)
     {
