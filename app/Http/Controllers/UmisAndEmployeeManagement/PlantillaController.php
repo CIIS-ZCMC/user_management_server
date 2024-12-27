@@ -40,11 +40,54 @@ class PlantillaController extends Controller
     public function index(Request $request)
     {
         try {
+            $search = $request->query('search');
+            $current_page = $request->query('currentPage');
+            $limit = $request->query("limit");
+            $offset = $current_page === 1 ? 0 : $current_page * $limit;
+            $salary_grade = $request->query('salaryGrade');
+            $area_name = $request->query('areaName');
 
-            $plantillas = PlantillaNumber::where('is_dissolve', false)->get();
+            
+            $total_page_count = PlantillaNumber::where('is_dissolve', false)
+                ->when($search, function ($query) use ($search) {
+                    return $query->where('number', 'like', "$search%");
+                })
+                ->when($salary_grade, function ($query) use ($salary_grade) {
+                    return $query->whereHas('plantilla.designation.salaryGrade', function ($query) use ($salary_grade) {
+                        $query->where('salary_grade_number', $salary_grade);
+                    });
+                })
+                ->count();
+
+            $plantillas = PlantillaNumber::where('is_dissolve', false)
+                ->when($search, function ($query) use ($search) {
+                    return $query->where('number', 'like', "$search%");
+                })
+                ->when($salary_grade, function ($query) use ($salary_grade) {
+                    return $query->whereHas('plantilla.designation.salaryGrade', function ($query) use ($salary_grade) {
+                        $query->where('salary_grade_number', $salary_grade);
+                    });
+                })
+                ->limit($limit)
+                ->offset($offset)
+                ->get();
+
+            if($area_name) {
+                $filteredPlantillas = $plantillas->filter(function ($plantilla) use ($area_name) {
+                    $areaDetails = $plantilla->assignedArea->area()['details'];
+                    return strpos(strtolower($areaDetails['name']), strtolower($area_name)) !== false;
+                });
+
+                return response()->json([
+                    'data' => PlantillaNumberAllResource::collection($filteredPlantillas),
+                    'total_page_count' => $filteredPlantillas < $limit? 1 : ceil(count($filteredPlantillas) / $limit),
+                    'message' => 'Area Plantilla list retrieved.'
+                ], Response::HTTP_OK);
+            }
 
             return response()->json([
                 'data' => PlantillaNumberAllResource::collection($plantillas),
+                'total_page_count' => $total_page_count < $limit ? 1 : ceil($total_page_count / $limit),
                 'message' => 'Plantilla list retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

@@ -158,9 +158,38 @@ class SystemRoleController extends Controller
     public function employeesWithSpecialAccess(Request $request)
     {
         try {
-            $employees = EmployeeProfile::whereHas('specialAccessRole')->get();
+            $current_page = $request->query("currentPage");
+            $limit = $request->query("limit");
+            $search = $request->query('search');
+            $offset = ($current_page  - 1) * $limit;
+
+            if($search){
+                $employees = EmployeeProfile::whereHas('specialAccessRole')
+                    ->whereHas('personalInformation', function ($query) use ($search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->where('last_name', 'like', "$search%")
+                            ->orWhere('first_name', 'like', "$search%")
+                            ->orWhere('middle_name', 'like', "$search%");
+                        });
+                    })
+                    ->limit($limit)
+                    ->offset($offset)
+                    ->get();
+                
+                return response()->json([
+                    'total_page_count' => $employees->count() < 10 ? 1 : ceil($employees->count()/10),
+                    'offset' => $offset,
+                    'data' => EmployeeWithSpecialAccessResource::collection($employees),
+                    'message' => 'Search Special access role assign successfully.'
+                ], Response::HTTP_OK);
+            }
+
+            $total_page = EmployeeProfile::whereHas('specialAccessRole')->count();
+            $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->offset(value: $offset)->get();
 
             return response()->json([
+                'total_page_count' => $total_page < 10 ? 1: ceil($total_page/10),
+                'offset' => $offset,
                 'data' => EmployeeWithSpecialAccessResource::collection($employees),
                 'message' => 'Special access role assign successfully.'
             ], Response::HTTP_OK);

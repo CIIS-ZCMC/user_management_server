@@ -613,6 +613,7 @@ class SystemController extends Controller
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
             'code' => $system_role->system['code'],
+            'domain' => $system_role->system['domain'] !== null? Crypt::decrypt($system_role->system['domain']): null,
             'roles' => [$role],
             'modules' => $build_role_details['modules']
         ];

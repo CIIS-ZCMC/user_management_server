@@ -1445,6 +1445,22 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function resendOTP(Request $request)
+    {
+        try {
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+
+            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+
+            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function updatePin(Request $request)
     {
         try {
@@ -1541,22 +1557,6 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function resendOTP(Request $request)
-    {
-        try {
-            $employee_details = json_decode($request->cookie('employee_details'));
-            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-
-            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
-            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
-
-            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
     public function newPassword(Request $request)
     {
         try {
@@ -1625,7 +1625,7 @@ class EmployeeProfileController extends Controller
                     'password_encrypted' => $encryptedPassword,
                     'password_created_at' => now(),
                     'password_expiration_at' => $threeMonths,
-                    'is_2fa' => $request->two_factor ?? false,
+                    'is_2fa' => $request->two_factor,
                     'authorization_pin' => strip_tags($request->pin),
                     'pin_created_at' => now()
                 ]);
