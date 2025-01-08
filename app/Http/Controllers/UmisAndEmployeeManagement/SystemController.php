@@ -56,7 +56,8 @@ class SystemController extends Controller
             $assigned_area = $employee_profile->assignedArea;
             $system_role_ids = SystemRole::where('system_id', $api['id'])->pluck('id')->toArray();
             
-            $special_access_roles = SpecialAccessRole::whereIn('system_role_id', $system_role_ids)->get();
+            $special_access_roles = SpecialAccessRole::whereIn('system_role_id', $system_role_ids)
+                ->where('employee_profile_id', $employee_profile->id)->get();
     
             if ($assigned_area['plantilla_id'] === null) {
                 $designation = $assigned_area->designation;
@@ -227,7 +228,7 @@ class SystemController extends Controller
              * permission
              */
             $position_system_roles = PositionSystemRole::with([
-                'systemRole' => function ($query) use ($api_id) {
+                'systemRole' => function ($query) {
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
@@ -237,10 +238,14 @@ class SystemController extends Controller
                                 }
                             ]);
                         },
-                    ])
-                    ->where('system_id', $api_id);
+                    ]);
                 }
-            ])->where('designation_id', $designation['id'])->get();
+            ])
+            ->whereHas('systemRole', function ($query) use ($api_id) {
+                $query->where('system_id', $api_id);
+            })
+            ->where('designation_id', $designation['id'])
+            ->get();
 
             if (count($position_system_roles) !== 0) {
                 /**
