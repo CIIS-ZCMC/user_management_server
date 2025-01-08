@@ -341,7 +341,8 @@ class EmployeeProfileController extends Controller
             /**
              * For password expired.
              */
-            if (Carbon::now()->startOfDay()->gte($employee_profile->password_expiration_at)) {
+            $passwordExpirationDate = Carbon::parse($employee_profile->password_expiration_at);
+            if ($employee_profile->password_expiration_at && $passwordExpirationDate->isPast()) {
                 // Mandatory change password for annual.
                 if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
                     return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
