@@ -21,7 +21,7 @@ Route::get('/initialize-storage', function (Request $request) {
 });
 
 // In case the env client domain doesn't work
-Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function(){
+Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
     Route::get('update-system', 'SystemController@updateUMISDATA');
 });
 
@@ -80,7 +80,7 @@ Route::middleware('auth.cookie')->group(function () {
 
 
     Route::namespace('App\Http\Controllers')->group(function () {
-        
+
         Route::post('redcap-module-import', 'RedcapController@import');
         Route::post('redcap-module', 'RedcapController@storeRedCapModule');
         Route::get('redcap-module-employees', 'RedcapController@employessWithRedCapModules');
@@ -2642,8 +2642,8 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
- Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::middleware("auth.thirdparty")->group(function(){
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::middleware("auth.thirdparty")->group(function () {
         Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
-     });
- });
+    });
+});
