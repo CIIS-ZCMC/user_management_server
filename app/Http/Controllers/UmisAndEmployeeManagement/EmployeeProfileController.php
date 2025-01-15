@@ -4184,6 +4184,7 @@ class EmployeeProfileController extends Controller
     public function store(EmployeeProfileNewResource $request)
     {
         try {
+            $personal_information_value = json_decode($request->personal_information);
             DB::beginTransaction();
 
             /**
@@ -4410,7 +4411,7 @@ class EmployeeProfileController extends Controller
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
 
-            $cleanData['employee_id'] = $new_employee_id;
+            $cleanData['employee_id'] = strip_tags($personal_information_value->employee_id);
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($personal_information->id);
