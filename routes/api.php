@@ -26,12 +26,17 @@ Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(functi
 });
 
 
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
+    Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
+    Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+});
+
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('test', 'DashboardController@test');
-
 
     Route::get('announcementslist', 'AnnouncementsController@index');
     Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
