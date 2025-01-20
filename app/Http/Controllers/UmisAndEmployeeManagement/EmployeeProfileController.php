@@ -55,9 +55,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Models\PasswordTrail;
 use App\Rules\StrongPassword;
-use Illuminate\Http\Response;
 use App\Models\AssignAreaTrail;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
@@ -342,16 +342,21 @@ class EmployeeProfileController extends Controller
              * For password expired.
              */
             $passwordExpirationDate = Carbon::parse($employee_profile->password_expiration_at);
+            $passwordCreationDate = Carbon::parse($employee_profile->password_created_at);
             if ($employee_profile->password_expiration_at && $passwordExpirationDate->isPast()) {
-                // Mandatory change password for annual.
-                if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
-                    return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                $currentYear = Carbon::now()->year;
+                $passwordYear = $passwordCreationDate->year;
+
+                $message = null;
+
+                if($currentYear > $passwordYear){
+                    $message = "Your account password has expired, it is mandatory to change the password.";
+                }else{
+                    $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
-                //Optional change password
-                return response()->json(['message' => 'expired-optional'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
+                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -1937,10 +1942,11 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function updatePasswordExpiration($id, $sector, Request $request)
+    public function updatePasswordExpiration(Request $request)
     {
         try {
-            $employee_profile = $request->user;
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             $now = Carbon::now();
             $threeMonths = $now->addMonths(3);
@@ -1958,22 +1964,22 @@ class EmployeeProfileController extends Controller
 
             $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-                $ip = $request->ip();
+            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+            //     $ip = $request->ip();
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($login_trail->ip_address !== $ip) {
-                    $data = Helpers::generateMyOTP($employee_profile);
+            //     if ($login_trail->ip_address !== $ip) {
+            //         $data = Helpers::generateMyOTP($employee_profile);
 
-                    if ($this->mail->send($data)) {
-                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                    }
+            //         if ($this->mail->send($data)) {
+            //             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+            //                 ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            //         }
 
-                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
-                }
-            }
+            //         return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
+            //     }
+            // }
 
             if ($access_token !== null) {
                 AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
@@ -1983,20 +1989,17 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool)$employee_profile->is_2fa) {
-                $data = Helpers::generateMyOTP($employee_profile);
+            // if ((bool)$employee_profile->is_2fa) {
+            //     $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-                if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                }
+            //     SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                return response()->json([
-                    'message' => 'Failed to send OTP to your email.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+            //     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
+            //         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            // }
 
             $token = $employee_profile->createToken();
+
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -2027,6 +2030,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -2034,6 +2038,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -2044,6 +2049,8 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+
+            Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
