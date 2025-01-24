@@ -140,8 +140,8 @@ class SystemController extends Controller
         $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
         $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
 
-
         $employee = [
+            'head' => $employee_profile->employeeHeadOfficer(),
             'profile_url' => $profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,

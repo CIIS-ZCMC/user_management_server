@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Helpers;
+use App\Http\Resources\EmployeeHeadResource;
 use App\Http\Resources\OfficialBusinessApplication;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -595,6 +596,8 @@ class EmployeeProfile extends Authenticatable
 
     public function employeeHead($assigned_area)
     {
+        $assigned_area = $this->assignedArea->findDetails();
+        
         $model = "App\\Models\\$assigned_area[sector]";
         $sector_head = $model::where('id', $assigned_area['details']->id)->first();
 
@@ -607,6 +610,27 @@ class EmployeeProfile extends Authenticatable
                 return $sector_head->supervisor_employee_profile_id;
             case 'Unit':
                 return $sector_head->head_employee_profile_id;
+            default:
+                return null;
+        }
+    }
+
+    public function employeeHeadOfficer()
+    {
+        $assigned_area = $this->assignedArea->findDetails();
+        
+        $model = "App\\Models\\$assigned_area[sector]";
+        $sector_head = $model::where('id', $assigned_area['details']->id)->first();
+
+        switch ($assigned_area['sector']) {
+            case 'Division':
+                return new EmployeeHeadResource($sector_head->divisionHead);
+            case 'Department':
+                return new EmployeeHeadResource($sector_head->departmentHead);
+            case 'Section':
+                return new EmployeeHeadResource($sector_head->supervisor);
+            case 'Unit':
+                return new EmployeeHeadResource($sector_head->head);
             default:
                 return null;
         }

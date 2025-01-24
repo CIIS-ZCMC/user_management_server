@@ -36,9 +36,9 @@ Route::post('leave-application-import', [LeaveApplicationController::class, 'imp
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('test', 'DashboardController@test');
+    // Route::get('test', 'DashboardController@test');
 
-    Route::get('announcementslist', 'AnnouncementsController@index');
+    // Route::get('announcementslist', 'AnnouncementsController@index');
     Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
     Route::get('announcements/{id}', 'AnnouncementsController@show');
 
@@ -54,6 +54,9 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('news-search', 'NewsController@searchNews');
     Route::get('news/{id}', 'NewsController@show');
     Route::get('notification', 'NotificationController@store');
+
+    
+    Route::put('account-recovery', 'AccountRecoveryController@update');
 });
 
 Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
@@ -81,12 +84,17 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
         
+        
+        // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        //     Route::put('account-recovery', 'AccountRecoveryController@update');
+        // });
+
         Route::post('redcap-module-import', 'RedcapController@import');
         Route::post('redcap-module', 'RedcapController@storeRedCapModule');
         Route::get('redcap-module-employees', 'RedcapController@employessWithRedCapModules');
 
-        Route::get('announcements/{id}', 'AnnouncementsController@show');
-        Route::get('announcements', 'AnnouncementsController@showAnnouncement');
+        Route::get('announcements/{id}', 'AnnouncementsController@showAnnouncement');
+        Route::get('announcements', 'AnnouncementsController@index');
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('notifications', 'NotificationController@getNotificationsById');
         });

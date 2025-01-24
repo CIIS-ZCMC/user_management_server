@@ -42,6 +42,10 @@ class SendEmailJob implements ShouldQueue
                 $subject = 'Your ZCMC Portal Account.';
                 $body = View::make('mail.credentials', $data)->render();
                 break;
+            case "reset_account":
+                $subject = 'Your ZCMC Portal Account.';
+                $body = View::make('reset_password.recover', $data)->render();
+                break;
             case "email_verification":
                 $subject = 'Your OTP Email Verification';
                 $body = View::make('mail.otp', $data)->render();

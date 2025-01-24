@@ -2053,7 +2053,7 @@ class EmployeeProfileController extends Controller
             Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
 
             return response()
-                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->json(["user" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
