@@ -47,6 +47,51 @@ class PlantillaController extends Controller
             $salary_grade = $request->query('salaryGrade');
             $area_name = $request->query('areaName');
 
+            $plantillas = PlantillaNumber::where('is_dissolve', false)
+                ->when($search, function ($query) use ($search) {
+                    return $query->where('number', 'like', "$search%");
+                })
+                ->when($salary_grade, function ($query) use ($salary_grade) {
+                    return $query->whereHas('plantilla.designation.salaryGrade', function ($query) use ($salary_grade) {
+                        $query->where('salary_grade_number', $salary_grade);
+                    });
+                })
+                ->get();
+
+            if($area_name) {
+                $filteredPlantillas = $plantillas->filter(function ($plantilla) use ($area_name) {
+                    $areaDetails = $plantilla->assignedArea->area()['details'];
+                    return strpos(strtolower($areaDetails['name']), strtolower($area_name)) !== false;
+                });
+
+                return response()->json([
+                    'data' => PlantillaNumberAllResource::collection($filteredPlantillas),
+                    'total_page_count' => $filteredPlantillas < $limit? 1 : ceil(count($filteredPlantillas) / $limit),
+                    'message' => 'Area Plantilla list retrieved.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => PlantillaNumberAllResource::collection($plantillas),
+                'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Change this when the client is updated already to handle pagination
+    public function index2(Request $request)
+    {
+        try {
+            $search = $request->query('search');
+            $current_page = $request->query('currentPage');
+            $limit = $request->query("limit");
+            $offset = $current_page === 1 ? 0 : $current_page * $limit;
+            $salary_grade = $request->query('salaryGrade');
+            $area_name = $request->query('areaName');
+
             
             $total_page_count = PlantillaNumber::where('is_dissolve', false)
                 ->when($search, function ($query) use ($search) {
@@ -196,8 +241,11 @@ class PlantillaController extends Controller
             // if ($user['authorization_pin'] !==  $cleanData['pin']) {
             //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             // }
+
+            DB::beginTransaction();
             $employee_profile = EmployeeProfile::findOrFail($id);
             $to_assign = $request->toassign;
+            
             /* plantilla_id | plantilla_numbers */
             $user_Current_Plantilla = $employee_profile->assignedArea->plantilla_number_id;
             if ($user_Current_Plantilla) {
@@ -221,35 +269,37 @@ class PlantillaController extends Controller
                     'end_at' => now()
                 ]);
 
-                $old_assignedArea->delete();
-
-                $New = PlantillaAssignedArea::where('plantilla_number_id', $to_assign)->first();
+                $plantilla_assigned_area = PlantillaAssignedArea::where('plantilla_number_id', $to_assign)->first();
                 $newPlantilla = PlantillaNumber::where('id', $to_assign)->first()->plantilla;
-                $newdivision_id = null;
-                $newdepartment_id = null;
-                $newsection_id = null;
-                $newunit_id = null;
+                $area = [];
 
-                if ($New->division_id !== NULL) {
-                    $newdivision_id = $New->division_id;
+
+                DB::rollBack();
+    
+                return response()->json([
+                    'data' => $to_assign,
+                    'message' => 'No plantilla records found for this user.'
+                ], Response::HTTP_NOT_FOUND);
+                if($plantilla_assigned_area->division_id !== null){
+                    $area[] = ["division_id" => $$plantilla_assigned_area->division_id];
                 }
-                if ($New->department_id !== NULL) {
-                    $newdepartment_id = $New->department_id;
+
+                if($plantilla_assigned_area->department_id !== null){
+                    $area[] = ["department_id" => $$plantilla_assigned_area->department_id];
                 }
-                if ($New->section_id !== NULL) {
-                    $newsection_id = $New->section_id;
+
+                if($plantilla_assigned_area->section_id !== null){
+                    $area[] = ["section_id" => $$plantilla_assigned_area->section_id];
                 }
-                if ($New->unit_id !== NULL) {
-                    $newunit_id = $New->unit_id;
+
+                if($plantilla_assigned_area->unit_id !== null){
+                    $area[] = ["unit_id" => $$plantilla_assigned_area->unit_id];
                 }
 
                 AssignArea::create([
+                    ...$area,
                     'salary_grade_step' => 1,
                     'employee_profile_id' => $id,
-                    'division_id' => $newdivision_id,
-                    'department_id' => $newdepartment_id,
-                    'section_id' => $newsection_id,
-                    'unit_id' => $newunit_id,
                     'designation_id' => $newPlantilla->designation_id,
                     'plantilla_id' => $newPlantilla->id,
                     'plantilla_number_id' => $to_assign,
@@ -280,15 +330,22 @@ class PlantillaController extends Controller
 
                 $plantilla = $newPlantilla;
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
+                $old_assignedArea->delete();
+
+                DB::commit();
 
                 return response()->json([
                     'message' => 'Plantilla reassigned successfully!'
                 ], Response::HTTP_OK);
             }
+
+            DB::rollBack();
+
             return response()->json([
                 'message' => 'No plantilla records found for this user.'
             ], Response::HTTP_NOT_FOUND);
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'reAssignPlantilla', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -384,10 +441,12 @@ class PlantillaController extends Controller
                 return response()->json(['message' => 'No record found for designation with id ' . $id], Response::HTTP_NOT_FOUND);
             }
 
-            $plantilla_numbers = PlantillaNumber::whereHas('plantilla', function($query) use ($id) {
+            $plantilla_numbers = PlantillaNumber::where('is_vacant', 1)
+            ->where('assigned_at', NULL)
+            ->where('is_dissolve', 0)
+            ->whereHas('plantilla', function($query) use ($id) {
                 return $query->where('designation_id', $id);
-            })->where('is_vacant', 1)
-            ->where('assigned_at', NULL)->get();
+            })->get();
 
             return response()->json([
                 'data' => PlantillaWithDesignationResource::collection($plantilla_numbers),
