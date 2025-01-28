@@ -386,8 +386,8 @@ class PlantillaController extends Controller
 
             $plantilla_numbers = PlantillaNumber::whereHas('plantilla', function($query) use ($id) {
                 return $query->where('designation_id', $id);
-            })->where('is_vacant', 0)
-            ->where('assigned_at', '<>', NULL)->get();
+            })->where('is_vacant', 1)
+            ->where('assigned_at', NULL)->get();
 
             return response()->json([
                 'data' => PlantillaWithDesignationResource::collection($plantilla_numbers),
