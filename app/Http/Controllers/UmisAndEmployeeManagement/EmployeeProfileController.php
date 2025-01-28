@@ -23,14 +23,23 @@ use App\Http\Resources\EmployeeProfileUpdateResource;
 use App\Http\Resources\EmployeeRedcapModulesResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Jobs\SendEmailJob;
+use App\Models\Address;
+use App\Models\Child;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
 use App\Models\EmployeeRedcapModules;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\FailedLoginTrail;
+use App\Models\FamilyBackground;
+use App\Models\IdentificationNumber;
+use App\Models\IssuanceInformation;
+use App\Models\LegalInformation;
 use App\Models\OfficerInChargeTrail;
+use App\Models\OtherInformation;
+use App\Models\PersonalInformation;
 use App\Models\PlantillaAssignedArea;
+use App\Models\Reference;
 use App\Models\SystemUserSessions;
 use App\Models\Training;
 use App\Models\WorkExperience;
@@ -5304,18 +5313,21 @@ class EmployeeProfileController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
+                DB::rollBack();
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
 
             if (!$employee_profile) {
+                DB::rollBack();
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $position = $employee_profile->position();
 
             if (is_array($position)) {
+                DB::rollBack();
                 $area = $employee_profile->assignedArea->findDetails();
                 return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
@@ -5345,9 +5357,16 @@ class EmployeeProfileController extends Controller
             }
 
             $assign_area = $employee_profile->assignedArea;
+            
+            $areas = [
+                'division_id' => $assign_area['division_id'],
+                'department_id' => $assign_area['department_id'],
+                'section_id' => $assign_area['section_id'],
+                'unit_id' => $assign_area['unit_id'],
+            ];
 
             AssignAreaTrail::create([
-                $assign_area,
+                ...$areas,
                 'employee_profile_id' => $employee_profile->id,
                 'started_at' => $employee_profile->date_hired,
                 'end_at' => now()
@@ -5367,9 +5386,8 @@ class EmployeeProfileController extends Controller
                 'deactivated_at' => now()
             ]);
 
-            DB::commit();
-
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -5812,4 +5830,128 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function remove(Request $request)
+    {
+        $remarks = $request->remarks;
+
+        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%".$remarks."%")->get();
+
+        DB::beginTransaction();
+
+        try{
+            foreach($in_active_employees as $in_active_employee)
+            {
+                $employee_profile = EmployeeProfile::find($in_active_employee->employee_profile_id);
+    
+                $assign_area = AssignArea::where('employee_profile_id', $employee_profile->id)->first();
+                $assign_area_trail = AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->get();
+                
+                $personal_information = PersonalInformation::find($employee_profile->personal_information_id);
+                $addresses = Address::where('personal_information_id', $personal_information->id)->get();
+                $contact = Contact::where('personal_information_id', $personal_information->id)->first();
+                $childs = Child::where('personal_information_id', $personal_information->id)->get();
+                $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id', $personal_information->id)->get();
+                $education_backgrounds = EducationalBackground::where('personal_information_id', $personal_information->id)->get();
+                $family_backgrounds = FamilyBackground::where('personal_information_id', $personal_information->id)->get();
+                $identification_numbers = IdentificationNumber::where('personal_information_id', $personal_information->id)->get();
+                $issuance_information = IssuanceInformation::where('employee_profile_id', $employee_profile->id)->first();
+                $legal_informations = LegalInformation::where('personal_information_id', $personal_information->id)->get();
+                $other_informations = OtherInformation::where("personal_information_id", $personal_information->id)->get();
+                $references = Reference::where('personal_information_id', $personal_information->id)->get();
+                $trainings = Training::where('personal_information_id', $personal_information->id)->get();
+                $special_access_roles = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $failed_login_trails = FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->get();
+    
+                if($contact !== null){
+                    $contact->delete();
+                }
+    
+                if(count($addresses) > 0){
+                    Address::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($childs) > 0){
+                    Child::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($civil_service_eligibilities) > 0){
+                    CivilServiceEligibility::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($education_backgrounds) > 0){
+                    EducationalBackground::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($family_backgrounds) > 0){
+                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();    
+                }
+    
+                if(count($identification_numbers) > 0){
+                    IdentificationNumber::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if($issuance_information !== null){
+                    $issuance_information->delete();
+                }
+    
+                if(count($legal_informations) > 0){
+                    LegalInformation::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($other_informations) > 0){
+                    OtherInformation::where("personal_information_id", $personal_information->id)->delete();
+                }
+    
+                if(count($references) > 0){
+                    Reference::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($trainings) > 0){
+                    Training::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($special_access_roles) > 0){
+                    SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                if(count($assign_area_trail) > 0){
+                    AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                if($assign_area !== null){
+                    $assign_area->delete();
+                }
+
+                if(count($assign_area_trail) > 0){
+                    AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_leave_credits) > 0){
+                    EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_overtime_credits) > 0){
+                    EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($failed_login_trails) > 0){
+                    FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                $in_active_employee->delete();
+                $employee_profile->delete();
+                $personal_information->delete();
+            }
+        }catch(\Throwable $th){
+            DB::rollBack();
+            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. ".$th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        DB::commit();
+
+        return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
+    }    
 }

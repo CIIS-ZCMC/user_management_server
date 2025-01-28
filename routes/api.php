@@ -77,13 +77,15 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     Route::get('validate-token', 'CsrfTokenController@validateToken');
     Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
     Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+
+    
+    Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
 });
 
 Route::middleware('auth.cookie')->group(function () {
 
 
     Route::namespace('App\Http\Controllers')->group(function () {
-        
         
         // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
         //     Route::put('account-recovery', 'AccountRecoveryController@update');
