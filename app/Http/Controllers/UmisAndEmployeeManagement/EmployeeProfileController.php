@@ -27,6 +27,7 @@ use App\Models\Address;
 use App\Models\Child;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeRedcapModules;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
@@ -5934,7 +5935,10 @@ class EmployeeProfileController extends Controller
                 }
 
                 if(count($employee_overtime_credits) > 0){
-                    EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->delete();
+                    foreach($employee_overtime_credits as $employee_overtime_credit){
+                        EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_overtime_credit->id)->delete();
+                        $employee_overtime_credit->delete();
+                    }
                 }
 
                 if(count($failed_login_trails) > 0){
