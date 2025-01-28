@@ -384,16 +384,10 @@ class PlantillaController extends Controller
                 return response()->json(['message' => 'No record found for designation with id ' . $id], Response::HTTP_NOT_FOUND);
             }
 
-            $plantillas = $designation->plantilla;
-            $plantilla_numbers = [];
-
-            foreach ($plantillas as $plantilla) {
-                foreach ($plantilla->plantillaNumbers as $value) {
-                    if ($value->is_vacant && $value->assigned_at !== null) {
-                        $plantilla_numbers[] = $value;
-                    }
-                }
-            }
+            $plantilla_numbers = PlantillaNumber::whereHas('plantilla', function($query) use ($id) {
+                return $query->where('designation_id', $id);
+            })->where('is_vacant', 0)
+            ->where('assigned_at', '<>', NULL)->get();
 
             return response()->json([
                 'data' => PlantillaWithDesignationResource::collection($plantilla_numbers),
