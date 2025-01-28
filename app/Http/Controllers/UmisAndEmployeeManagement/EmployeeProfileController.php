@@ -5865,6 +5865,7 @@ class EmployeeProfileController extends Controller
                 $employee_leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
                 $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
                 $failed_login_trails = FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_redcap_modules = EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->get();
     
                 if($contact !== null){
                     $contact->delete();
@@ -5943,6 +5944,10 @@ class EmployeeProfileController extends Controller
 
                 if(count($failed_login_trails) > 0){
                     FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_redcap_modules) > 0){
+                    EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->delete();
                 }
     
                 $in_active_employee->delete();
