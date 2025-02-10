@@ -12,8 +12,10 @@ use App\Http\Resources\PositionSystemRoleOnlyResource;
 use App\Http\Resources\SpecialAccessRoleAssignResource;
 use App\Models\Designation;
 use App\Models\EmployeeProfile;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
+use App\Models\SystemModule;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Helpers\Helpers;
@@ -156,9 +158,38 @@ class SystemRoleController extends Controller
     public function employeesWithSpecialAccess(Request $request)
     {
         try {
-            $employees = EmployeeProfile::whereHas('specialAccessRole')->get();
+            $current_page = $request->query("currentPage");
+            $limit = $request->query("limit");
+            $search = $request->query('search');
+            $offset = ($current_page  - 1) * $limit;
+
+            if($search){
+                $employees = EmployeeProfile::whereHas('specialAccessRole')
+                    ->whereHas('personalInformation', function ($query) use ($search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->where('last_name', 'like', "$search%")
+                            ->orWhere('first_name', 'like', "$search%")
+                            ->orWhere('middle_name', 'like', "$search%");
+                        });
+                    })
+                    ->limit($limit)
+                    ->offset($offset)
+                    ->get();
+                
+                return response()->json([
+                    'total_page_count' => $employees->count() < 10 ? 1 : ceil($employees->count()/10),
+                    'offset' => $offset,
+                    'data' => EmployeeWithSpecialAccessResource::collection($employees),
+                    'message' => 'Search Special access role assign successfully.'
+                ], Response::HTTP_OK);
+            }
+
+            $total_page = EmployeeProfile::whereHas('specialAccessRole')->count();
+            $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->offset(value: $offset)->get();
 
             return response()->json([
+                'total_page_count' => $total_page < 10 ? 1: ceil($total_page/10),
+                'offset' => $offset,
                 'data' => EmployeeWithSpecialAccessResource::collection($employees),
                 'message' => 'Special access role assign successfully.'
             ], Response::HTTP_OK);
@@ -315,13 +346,31 @@ class SystemRoleController extends Controller
 
                 foreach ($role_value['modules'] as $module_value) {
                     foreach ($module_value['permissions'] as $permission_value) {
-                        $module_permission = ModulePermission::where('system_module_id', $module_value['module_id'])
-                            ->where('permission_id', $permission_value)->first();
+                        $module_permission = null; 
+                        $permission_id = $permission_value;
 
-                        if (!$module_permission) break;
+                        // Check if the existing module and permission has relation
+                        $is_exist = ModulePermission::where('system_module_id', $module_value['module_id'])
+                            ->where('permission_id', $permission_id)->first();
 
+                        // If does not exist register a new module permission data
+                        if (!$is_exist){
+                            $module = SystemModule::find($module_value['module_id']);
+                            $permission = Permission::find($permission_id);
+
+                            $module_permission = ModulePermission::create([
+                                "active" => 1,
+                                "code" => $module['code']." ".$permission['action'],
+                                "system_module_id" => $module['id'],
+                                "permission_id" => $permission['id']
+                            ]);
+                        }else{
+                            // Assign the existing module permission on variable to be use
+                            $module_permission = $is_exist;
+                        }
+                        
                         $role_module_permission = RoleModulePermission::create([
-                            'module_permission_id' => $module_permission->id,
+                            'module_permission_id' => $module_permission['id'],
                             'system_role_id' => $system_role->id
                         ]);
 

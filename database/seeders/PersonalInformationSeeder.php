@@ -191,7 +191,7 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password . Cache::get('salt_value'));
+        $hashPassword = Hash::make($password . config('app.salt_value'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
 
         $now = Carbon::now();

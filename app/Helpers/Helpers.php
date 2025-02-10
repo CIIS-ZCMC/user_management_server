@@ -351,15 +351,18 @@ class Helpers
         $permission = $request->permission;
         list($module, $action) = explode(' ', $permission);
 
-        return [
+        $data = [
             'employee_profile_id' => $user->id,
             'module_id' => $moduleID,
             'action' => $action,
             'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
-            'ip_address' => $ip
+            'ip_address' => $ip,
+            'execution_time' => 0
         ];
+
+        SystemLogs::create($data);
     }
 
     public static function registerExchangeDutyLogs($data_id, $user_id, $action)

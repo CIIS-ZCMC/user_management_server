@@ -107,6 +107,9 @@ Route::get('/new-account', function () {
     return view('mail/new_account');
 });
 
+Route::get('/reset-account', function () {
+    return view('reset_password.recover');
+});
 
 Route::namespace('App\Http\Controllers\Schedule')->group(function () {
     Route::get('/schedule-generate', 'ScheduleController@generate');
