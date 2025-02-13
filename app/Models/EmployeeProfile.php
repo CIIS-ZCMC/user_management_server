@@ -624,13 +624,13 @@ class EmployeeProfile extends Authenticatable
 
         switch ($assigned_area['sector']) {
             case 'Division':
-                return new EmployeeHeadResource($sector_head->divisionHead);
+                return $sector_head->chief_employee_profile_id !== null? new EmployeeHeadResource($sector_head->divisionHead) : null;
             case 'Department':
-                return new EmployeeHeadResource($sector_head->departmentHead);
+                return $sector_head->head_employee_profile_id !== null? new EmployeeHeadResource($sector_head->departmentHead) : null;
             case 'Section':
-                return new EmployeeHeadResource($sector_head->supervisor);
+                return $sector_head->supervisor_id !== null? new EmployeeHeadResource($sector_head->supervisor) : null;
             case 'Unit':
-                return new EmployeeHeadResource($sector_head->head);
+                return  $sector_head->head_employee_profile_id !== null? new EmployeeHeadResource($sector_head->head) : null;
             default:
                 return null;
         }

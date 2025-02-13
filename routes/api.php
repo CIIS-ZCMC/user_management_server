@@ -83,7 +83,6 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 });
 
 Route::middleware('auth.cookie')->group(function () {
-
     
     Route::namespace('App\Http\Controllers')->group(function () {
 
