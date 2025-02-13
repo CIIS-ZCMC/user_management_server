@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Imports\EmployeeProfileImport;
 use Maatwebsite\Excel\Excel;
 
+
 class ResetPasswordWithCsv extends Controller
 {
     public function getLinkOfEmployeeToResetPassword(Request $request, Excel $excel)
@@ -29,10 +30,14 @@ class ResetPasswordWithCsv extends Controller
 
         if (!empty($data) && isset($data[0])) {
             foreach (array_slice($data[0], 1) as $row) {
-                $employeeId = $row[2] ?? null;
-            
-                if (!empty($employeeId)) {
-                    $filteredEmployeeIds[] = trim($employeeId);
+                $employee_need_update_of_credentials = $row[2]?? null;
+
+                if(!empty($employee_need_update_of_credentials)){
+                    $employeeId = $row[3] ?? null;
+                
+                    if (!empty($employeeId)) {
+                        $filteredEmployeeIds[] = trim($employeeId);
+                    }
                 }
             }
         }else{
@@ -44,6 +49,7 @@ class ResetPasswordWithCsv extends Controller
         $employees = EmployeeProfile::whereIn('employee_id', $filteredEmployeeIds)->get();
 
         $employeeProfileIds = $employees->pluck('id')->toArray();
+        $chunkedEmployeeProfileIds = array_chunk($employeeProfileIds, 10);
 
         $employee_details = $employees->map(function ($employee) {
             return [
@@ -52,16 +58,22 @@ class ResetPasswordWithCsv extends Controller
             ];
         })->toArray();
 
+
         $baseLink = config('app.server_domain') . "/api/reset-password-with-employee-ids?";
-        $queryString = http_build_query(['employee_profile_ids' => $employeeProfileIds]);
-        $reset_password_url = $baseLink . $queryString;
+        $urls = [];
+
+        foreach($chunkedEmployeeProfileIds as $employee_profile_ids)
+        {
+            $queryString = http_build_query(['employee_profile_ids' => $employee_profile_ids]);
+            $urls[] = $baseLink . $queryString;
+        }
 
         return response()->json([
             'data' => $employee_details,
             'metadata' => [
                 "employee_profile_ids" => $employeeProfileIds,
-                "method" => "GET",
-                "link" => $reset_password_url
+                "method" => "POST",
+                "links" => $urls
             ]
         ],Response::HTTP_OK);
     }
