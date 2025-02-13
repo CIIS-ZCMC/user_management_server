@@ -87,6 +87,7 @@ Route::middleware('auth.cookie')->group(function () {
     Route::namespace('App\Http\Controllers')->group(function () {
 
         Route::namespace("Migration")->group(function(){
+            Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
             Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
         });
         

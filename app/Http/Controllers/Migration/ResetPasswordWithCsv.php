@@ -8,33 +8,86 @@ use App\Jobs\SendEmailJob;
 use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
-
-use function Laravel\Prompts\select;
+use App\Imports\EmployeeProfileImport;
+use Maatwebsite\Excel\Excel;
 
 class ResetPasswordWithCsv extends Controller
 {
+    public function getLinkOfEmployeeToResetPassword(Request $request, Excel $excel)
+    {
+        $request->validate([
+            'new_employee_list' => 'required|mimes:xlsx,csv|max:2048',
+        ]);
+
+        $file = $request->file('new_employee_list');
+
+        $data = $excel->toArray(new EmployeeProfileImport(), $file);
+
+        $filteredEmployeeIds = [];
+
+        if (!empty($data) && isset($data[0])) {
+            foreach (array_slice($data[0], 1) as $row) {
+                $employeeId = $row[2] ?? null;
+            
+                if (!empty($employeeId)) {
+                    $filteredEmployeeIds[] = trim($employeeId);
+                }
+            }
+        }else{
+            return response()->json([
+                'message' => 'Please check if there is data exist in the UMIS ID. If does please notify support by contacting the ciiz.zcmc@gmail.com.'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $employees = EmployeeProfile::whereIn('employee_id', $filteredEmployeeIds)->get();
+
+        $employeeProfileIds = $employees->pluck('id')->toArray();
+
+        $employee_details = $employees->map(function ($employee) {
+            return [
+                'id' => $employee->id,
+                'employee_id' => $employee->employee_id
+            ];
+        })->toArray();
+
+        $baseLink = config('app.server_domain') . "/api/reset-password-with-employee-ids?";
+        $queryString = http_build_query(['employee_profile_ids' => $employeeProfileIds]);
+        $reset_password_url = $baseLink . $queryString;
+
+        return response()->json([
+            'data' => $employee_details,
+            'metadata' => [
+                "employee_profile_ids" => $employeeProfileIds,
+                "method" => "GET",
+                "link" => $reset_password_url
+            ]
+        ],Response::HTTP_OK);
+    }
+
     public function resetAndSendNewCredentialToUsers(Request $request)
     {
         try {
-            $employeeIds = $request->input('employee_ids'); // Laravel automatically handles JSON
+            $employeeIds = $request->query('employee_profile_ids');
+
+            if (!is_array($employeeIds)) {
+                $employeeIds = explode(',', $employeeIds);
+            }
+
             $employees = EmployeeProfile::whereIn('id', $employeeIds)->get();
 
             $temp = [];
             $failed_emails = [];
 
-
             foreach ($employees as $employee) {
                 $password = Helpers::generatePassword();
                 $hashPassword = Hash::make($password . config('app.salt_value'));
-                
 
                 $employee->authorization_pin = null;
                 $employee->password_encrypted = Crypt::encryptString($hashPassword);
                 $employee->save();
-                // $default_password = Helpers::generatePassword();
+                
                 $data = [
                     'employeeID' => $employee->employee_id,
                     'Password' => $password,
@@ -65,6 +118,7 @@ class ResetPasswordWithCsv extends Controller
                 ]);
             }
 
+
             if(count($failed_emails) > 0){
                 return response()->json([
                     'data' => $temp,
@@ -78,6 +132,7 @@ class ResetPasswordWithCsv extends Controller
                 "message" => "Successfully send new account credentials to selected employees."
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            // dd($th);
             return response()->json([
                 'message' => $th->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
