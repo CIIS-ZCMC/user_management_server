@@ -87,7 +87,7 @@ Route::middleware('auth.cookie')->group(function () {
     Route::namespace('App\Http\Controllers')->group(function () {
 
         Route::namespace("Migration")->group(function(){
-            Route::post('reset-password-with-csv', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+            Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
         });
         
         // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
