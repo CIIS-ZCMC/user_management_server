@@ -29,6 +29,7 @@ class MResetAllPass extends Controller
     public function create()
     {
         //
+        dd('hi');
         $emm = null;
         try {
             // dd(EmployeeProfile::all());
@@ -48,7 +49,7 @@ class MResetAllPass extends Controller
                 $hashPassword = Hash::make($password . config('app.salt_value'));
 
                 // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
-                if (in_array($employee->id, [2389])) {
+                if (in_array($employee->id, [2663])) {
 
                     $employee->authorization_pin = null;
                     $employee->password_encrypted = Crypt::encryptString($hashPassword);
