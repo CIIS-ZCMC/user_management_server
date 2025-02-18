@@ -37,8 +37,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-
-
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Helpers
 {
@@ -453,7 +453,6 @@ class Helpers
 
         return $dates;
     }
-
     public static function checkSaveFile($attachment, $FILE_URL)
     {
         $fileName = '';
@@ -467,30 +466,51 @@ class Helpers
                 $mime = $finfo->file($filePath);
                 $mime = explode(';', $mime)[0];
 
-                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+                $allowedMimeTypes = [
+                    'image/jpeg',
+                    'image/png',
+                    'image/gif',
+                    'application/pdf',
+                    'application/x-pkcs12', // Common MIME type for .pfx
+                    'application/x-pkcs12; charset=binary', // Sometimes used MIME type
+                    'application/octet-stream' // Fallback MIME type
+                ];
 
                 if (!in_array($mime, $allowedMimeTypes)) {
                     return response()->json(['message' => 'Invalid file type'], Response::HTTP_BAD_REQUEST);
                 }
 
-                // Check for potential malicious content
-                $fileContent = file_get_contents($filePath);
-
-                if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                    return response()->json(['message' => 'File contains potential malicious content'], Response::HTTP_BAD_REQUEST);
+                // Check for potential malicious content for non-PFX files
+                if (!in_array($mime, ['application/x-pkcs12', 'application/x-pkcs12; charset=binary', 'application/octet-stream'])) {
+                    $fileContent = file_get_contents($filePath);
+                    if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
+                        return response()->json(['message' => 'File contains potential malicious content'], Response::HTTP_BAD_REQUEST);
+                    }
                 }
 
-                $file = $attachment;
-                $fileName = base64_encode(Hash::make(time())) . '.' . $file->getClientOriginalExtension();
+                // Generate a secure filename
+                $fileName = Str::random(40) . '_' . time() . '.' . $file->getClientOriginalExtension();
+                
+                // Store the file in private storage
+                $storagePath = Storage::disk('private')->putFileAs(
+                    $FILE_URL,
+                    $file,
+                    $fileName
+                );
 
-                $file->move(public_path($FILE_URL), $fileName);
+                if (!$storagePath) {
+                    throw new \Exception('Failed to store the file');
+                }
             }
         } catch (\Throwable $th) {
+            \Log::error('File upload failed: ' . $th->getMessage());
             return ['failed', $th->getMessage()];
         }
 
         return $fileName;
     }
+
+
 
     public static function infoLog($controller, $module, $message)
     {
@@ -752,7 +772,6 @@ class Helpers
             })
             ->exists();
 
-
         // Return true if any overlap is found, otherwise false
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO || $overlappingOvertimeActivities || $overlappingOvertimeDirect;
     }
@@ -879,7 +898,6 @@ class Helpers
         return $schedules;
     }
 
-
     public static function hasSchedule($start, $end, $employeeId)
     {
         $currentDate = $start;
@@ -930,11 +948,11 @@ class Helpers
             $isHolidayByMonthDay = Holiday::where('month_day', $dateFormatted)->get();
 
             $isHolidayExists = Holiday::where('month_day', $dateFormatted)
-            ->where(function ($query) use ($currentDate) {
-                $query->where('isspecial', 1)
-                    ->orWhere('effectiveDate', $currentDate);
-            })
-            ->exists();
+                ->where(function ($query) use ($currentDate) {
+                    $query->where('isspecial', 1)
+                        ->orWhere('effectiveDate', $currentDate);
+                })
+                ->exists();
 
             if ($isHolidayExists) {
                 // If it's a holiday, skip the check and continue to the next day
@@ -950,16 +968,16 @@ class Helpers
                 ->exists();
 
             // If schedule is missing for any day that is not a weekend or holiday, return false
-             // If schedule is missing for any day that is not a weekend or holiday, return false
-        if (!$hasSchedule) {
-            $dayOfWeek = date('N', strtotime($currentDate));
-            if ($dayOfWeek != 6 && $dayOfWeek != 7) {
-                return ['status' => false];
+            // If schedule is missing for any day that is not a weekend or holiday, return false
+            if (!$hasSchedule) {
+                $dayOfWeek = date('N', strtotime($currentDate));
+                if ($dayOfWeek != 6 && $dayOfWeek != 7) {
+                    return ['status' => false];
+                }
+            } else {
+                // Increment the counter if there is a schedule and it's not a holiday
+                $totalWithSchedules++;
             }
-        } else {
-            // Increment the counter if there is a schedule and it's not a holiday
-            $totalWithSchedules++;
-        }
 
 
             // Move to the next day
@@ -969,6 +987,7 @@ class Helpers
         // Return true if schedules are found for every weekday and include the total count
         return ['status' => true, 'totalWithSchedules' => $totalWithSchedules];
     }
+
     public static function getTotalHours($start, $end, $employeeId)
     {
         $totalHours = EmployeeSchedule::where('employee_profile_id', $employeeId)
@@ -1074,7 +1093,7 @@ class Helpers
                 }
 
                 if ($section->department_id !== null) {
-                    $department = Department::where('id', $section->department_id)->first();
+                    $department = Department::find($section->department_id);
 
                     $division = Division::where('id', $department->division_id)->get();
                     $area = $area->merge($division->map(function ($item) {
@@ -1169,13 +1188,11 @@ class Helpers
         });
     }
 
-
     public static function getFirstInAndOutBiometric($biometric_id, $date, $overtimeFromTime, $overtimeToTime)
     {
         $dailyTimeRecord = DailyTimeRecords::where('biometric_id', $biometric_id)
             ->whereDate('dtr_date', $date)
             ->first();
-
 
         // Initialize first in and first out biometric times
         $firstInBiometric = null;
@@ -1258,10 +1275,10 @@ class Helpers
         }
     }
 
-    public static function customRound($numericValue) {
-        return (double) number_format($numericValue, 2, '.', '');
+    public static function customRound($numericValue)
+    {
+        return (float) number_format($numericValue, 2, '.', '');
     }
-
 
     public static function generatePdf($employees, $columns, $report_name, $orientation)
     {
@@ -1306,7 +1323,6 @@ class Helpers
             return $transformed;
         }, $data);
 
-
         // Generate the HTML from the view
         $html = view('report.employee_record_report', [
             'columns' => $columns,
@@ -1323,7 +1339,7 @@ class Helpers
         return $dompdf->stream($report_name . '.pdf');
     }
 
-    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = []): ?JsonResponse
+    public static function generateAttendancePdf($employees, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
     {
         try {
             // Increase memory limit and execution time
@@ -1337,7 +1353,6 @@ class Helpers
             $options->set('isRemoteEnabled', false);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-
 
             // Set file storage base path for assets
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
@@ -1377,7 +1392,6 @@ class Helpers
                 'filters' => $filters,
             ])->render();
 
-
             // Load the generated HTML into Dompdf
             $dompdf->loadHtml($html);
 
@@ -1389,7 +1403,6 @@ class Helpers
 
             // Stream the generated PDF back to the user
             return $dompdf->stream($report_name . '.pdf');
-
         } catch (\Exception $e) {
             // Return a response indicating an error
             return response()->json([
@@ -1397,7 +1410,6 @@ class Helpers
             ], 500);
         }
     }
-
 
     public static function generateLeavePdf($results, $columns, $report_name, $orientation, $report_summary = [], $filters = [])
     {
