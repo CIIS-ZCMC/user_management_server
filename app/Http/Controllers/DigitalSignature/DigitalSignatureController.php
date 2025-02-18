@@ -13,10 +13,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 
-
 class DigitalSignatureController extends Controller
 {
     private string $CONTROLLER_NAME = 'DigitalSignature';
+    private string $PYTHON_SERVICE_URL = 'http://127.0.0.1:8000'; // Adjust this to your FastAPI service URL
 
     /**
      * Display a listing of the resource.
@@ -140,6 +140,7 @@ class DigitalSignatureController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     private function extractCertificateDetails($id): JsonResponse|array
     {
         try {
@@ -257,39 +258,159 @@ class DigitalSignatureController extends Controller
     public function signDtrOwner(Request $request): JsonResponse
     {
         try {
-            $client = new Client();
-            $response = $client->post('http://127.0.0.1:8000/sign-dtr-owner/', [
-                'multipart' => [
-                    [
-                        'name'     => 'input_pdf',
-                        'contents' => fopen($request->file('dtr_file')->path(), 'r'),
-                    ],
-                    [
-                        'name'     => 'p12_file',
-                        'contents' => fopen($request->file('cert_file')->path(), 'r'),
-                    ],
-                    [
-                        'name'     => 'p12_password',
-                        'contents' => $request->cert_password,
-                    ],
-                    [
-                        'name'     => 'image',
-                        'contents' => fopen($request->file('cert_img_file')->path(), 'r'),
-                    ],
-                    [
-                        'name'     => 'whole_month',
-                        'contents' => $request->whole_month,
-                    ]
-                ]
+            $user = $request->user;
+
+            // Validate request
+            $request->validate([
+                'input_pdf' => 'required|file|mimes:pdf',
+                'whole_month' => 'required|boolean',
             ]);
 
-            if (!$response->getStatusCode() == 200) {
-                return response()->json(['message' => 'Failed to sign document'], $response->getStatusCode());
+            // Get certificate details
+            $certificate = CertificateAttachments::with('certificateDetails')
+                ->where('employee_profile_id', $user->id)
+                ->first();
+
+            if (!$certificate) {
+                return response()->json(['message' => 'No certificate found for this user.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['message' => 'Document signed successfully', 'file' => $response->getBody()], 200);
+            // Create multipart form data
+            $client = new Client();
+            
+            // Get certificate password
+            $cert_password = Crypt::decryptString($certificate->cert_password);
+
+            try {
+                $response = $client->post($this->PYTHON_SERVICE_URL . '/sign-dtr-owner/', [
+                    'multipart' => [
+                        [
+                            'name' => 'input_pdf',
+                            'contents' => fopen($request->file('input_pdf')->getPathname(), 'r'),
+                            'filename' => $request->file('input_pdf')->getClientOriginalName()
+                        ],
+                        [
+                            'name' => 'p12_file',
+                            'contents' => fopen(storage_path('app/public/certificates/' . $certificate->filename), 'r'),
+                            'filename' => $certificate->filename
+                        ],
+                        [
+                            'name' => 'image',
+                            'contents' => fopen(storage_path('app/public/e_signatures/' . $certificate->img_name), 'r'),
+                            'filename' => $certificate->img_name
+                        ],
+                        [
+                            'name' => 'p12_password',
+                            'contents' => $cert_password
+                        ],
+                        [
+                            'name' => 'whole_month',
+                            'contents' => $request->whole_month ? 'true' : 'false'
+                        ]
+                    ],
+                    'timeout' => 30,
+                ]);
+
+                // Create log entry
+                CertificateLogs::create([
+                    'certificate_attachment_id' => $certificate->id,
+                    'employee_profile_id' => $user->id,
+                    'action' => "sign",
+                    'description' => "Sign DTR as owner",
+                ]);
+
+                // Return the signed PDF directly from the Python service
+                return response($response->getBody()->getContents())
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Disposition', 'attachment; filename="signed_dtr.pdf"');
+
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                $error_message = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
+                throw new \Exception("Python service error: " . $error_message);
+            }
+
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'signDTR', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signDtrOwner', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function signDtrIncharge(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user;
+
+            // Validate request
+            $request->validate([
+                'input_pdf' => 'required|file|mimes:pdf',
+                'whole_month' => 'required|boolean',
+            ]);
+
+            // Get certificate details
+            $certificate = CertificateAttachments::with('certificateDetails')
+                ->where('employee_profile_id', $user->id)
+                ->first();
+
+            if (!$certificate) {
+                return response()->json(['message' => 'No certificate found for this user.'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Create multipart form data
+            $client = new Client();
+            
+            // Get certificate password
+            $cert_password = Crypt::decryptString($certificate->cert_password);
+
+            try {
+                $response = $client->post($this->PYTHON_SERVICE_URL . '/sign-dtr-incharge/', [
+                    'multipart' => [
+                        [
+                            'name' => 'input_pdf',
+                            'contents' => fopen($request->file('input_pdf')->getPathname(), 'r'),
+                            'filename' => $request->file('input_pdf')->getClientOriginalName()
+                        ],
+                        [
+                            'name' => 'p12_file',
+                            'contents' => fopen(storage_path('app/public/certificates/' . $certificate->filename), 'r'),
+                            'filename' => $certificate->filename
+                        ],
+                        [
+                            'name' => 'image',
+                            'contents' => fopen(storage_path('app/public/e_signatures/' . $certificate->img_name), 'r'),
+                            'filename' => $certificate->img_name
+                        ],
+                        [
+                            'name' => 'p12_password',
+                            'contents' => $cert_password
+                        ],
+                        [
+                            'name' => 'whole_month',
+                            'contents' => $request->whole_month ? 'true' : 'false'
+                        ]
+                    ],
+                    'timeout' => 30,
+                ]);
+
+                // Create log entry
+                CertificateLogs::create([
+                    'certificate_attachment_id' => $certificate->id,
+                    'employee_profile_id' => $user->id,
+                    'action' => "sign",
+                    'description' => "Sign DTR as incharge",
+                ]);
+
+                // Return the signed PDF directly from the Python service
+                return response($response->getBody()->getContents())
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Disposition', 'attachment; filename="signed_dtr.pdf"');
+
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                $error_message = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
+                throw new \Exception("Python service error: " . $error_message);
+            }
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signDtrIncharge', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -22,7 +22,6 @@ return new class extends Migration
             $table->dateTime('valid_from')->nullable();
             $table->dateTime('valid_till')->nullable();
             $table->text('public_key')->nullable();
-            $table->text('private_key')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
