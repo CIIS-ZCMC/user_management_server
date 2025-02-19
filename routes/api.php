@@ -21,7 +21,7 @@ Route::get('/initialize-storage', function (Request $request) {
 });
 
 // In case the env client domain doesn't work
-Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function(){
+Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
     Route::get('update-system', 'SystemController@updateUMISDATA');
 });
 
@@ -55,7 +55,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('news/{id}', 'NewsController@show');
     Route::get('notification', 'NotificationController@store');
 
-    
+
     Route::put('account-recovery', 'AccountRecoveryController@update');
 });
 
@@ -78,19 +78,19 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
     Route::get('generate-pds', 'PersonalInformationController@generatePDS');
 
-    
+
     Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
 });
 
 Route::middleware('auth.cookie')->group(function () {
-    
+
     Route::namespace('App\Http\Controllers')->group(function () {
 
         Route::namespace("Migration")->group(function(){
             Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
             Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
         });
-        
+
         // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
         //     Route::put('account-recovery', 'AccountRecoveryController@update');
         // });
@@ -186,12 +186,19 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('human-resources', 'DashboardController@humanResource');
         });
+
+        /**
+         * Digital Signature
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::post('digital-signature', 'DigitalCertificateController@store');
+            Route::post('sign-dtr','DigitalCertificateController@signDtr');
+        });
     });
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-        Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         Route::delete('signout', 'EmployeeProfileController@signOut');
-
+ Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         /**
          * Login Trail Module
          */
@@ -2639,17 +2646,17 @@ Route::middleware('auth.cookie')->group(function () {
 
 /**
  * Third party system end points
- * 
+ *
  * Authentication of server api will be done here
  * While user authorization verification will be done on requester server
  * only if the permission is intended for that server
- * 
+ *
  * Upon user load on the other client then the server api will request for user permission details from the umis
  * then store the data in the database of the server api
  */
 
- Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::middleware("auth.thirdparty")->group(function(){
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::middleware("auth.thirdparty")->group(function () {
         Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
-     });
- });
+    });
+});
