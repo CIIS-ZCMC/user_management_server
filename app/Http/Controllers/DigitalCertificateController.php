@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\DigitalCertificate;
 use App\Http\Controllers\Controller;
+use App\Services\DigitalSignatureService;
+use App\Services\DtrSigningService;
 use Illuminate\Http\Request;
 use App\Helpers\Helpers;
 use App\Models\DigitalCertificateFile;
@@ -12,13 +14,25 @@ use Illuminate\Support\Facades\Crypt;
 use App\Traits\DigitalCertificateLoggable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\DigitalSignedDtr;
 
 class DigitalCertificateController extends Controller
 {
     use DigitalCertificateLoggable;
 
-    private string $CONTROLLER_NAME = 'DigitalCertificates';
+    private string $CONTROLLER_NAME = 'DigitalCertificateController';
+    protected $signatureService;
+    protected $dtrSigningService;
+
+    public function __construct(
+        DigitalSignatureService $signatureService,
+        DtrSigningService $dtrSigningService
+    ) {
+        $this->signatureService = $signatureService;
+        $this->dtrSigningService = $dtrSigningService;
+    }
 
     /**
      * Display a listing of the resource.
@@ -27,7 +41,7 @@ class DigitalCertificateController extends Controller
     {
         try {
             $user = $request->user;
-            
+
             $certificates = DigitalCertificate::with(['digitalCertificateFile'])
                 ->where('employee_profile_id', $user->id)
                 ->get();
@@ -276,10 +290,10 @@ class DigitalCertificateController extends Controller
                 $cert_file = $request->file('cert_file');
                 if ($cert_file->isValid()) {
                     $cert_file_name_encrypted = Helpers::checkSaveFile($cert_file, 'certificates');
-                    
+
                     // Delete old certificate file
                     Storage::disk('private')->delete('certificates/' . $certificate->digitalCertificateFile->filename);
-                    
+
                     // Update certificate file details
                     $certificate->digitalCertificateFile->update([
                         'filename' => $cert_file_name_encrypted,
@@ -295,10 +309,10 @@ class DigitalCertificateController extends Controller
                 $cert_img_file = $request->file('cert_img_file');
                 if ($cert_img_file->isValid()) {
                     $cert_img_file_name_encrypted = Helpers::checkSaveFile($cert_img_file, 'e_signatures');
-                    
+
                     // Delete old signature file
                     Storage::disk('private')->delete('e_signatures/' . $certificate->digitalCertificateFile->img_name);
-                    
+
                     // Update signature file details
                     $certificate->digitalCertificateFile->update([
                         'img_name' => $cert_img_file_name_encrypted,
@@ -479,30 +493,31 @@ class DigitalCertificateController extends Controller
 
             // Step 2: Extract private key and certificate
             $cert_content = Storage::disk('private')->get('certificates/' . $certificate_attachment->filename);
-            
+
             // Log certificate details for debugging
-            \Log::debug('Certificate Content Length: ' . strlen($cert_content));
-            \Log::debug('Certificate File Extension: ' . pathinfo($certificate_attachment->filename, PATHINFO_EXTENSION));
-            
+            Log::debug('Certificate Content Length: ' . strlen($cert_content));
+            Log::debug('Certificate File Extension: ' . pathinfo($certificate_attachment->filename, PATHINFO_EXTENSION));
+
             // Clear any existing OpenSSL errors
             while (openssl_error_string() !== false);
-            
+
             $certs = [];
             if (!openssl_pkcs12_read($cert_content, $certs, $cert_password)) {
                 $ssl_errors = [];
                 while ($ssl_error = openssl_error_string()) {
                     $ssl_errors[] = $ssl_error;
                 }
-                
+
                 DB::rollBack();
                 // Clean up any stored files
-                Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name
-                ]);
-                
+                if (isset($cert_file_name_encrypted)) {
+                    Storage::disk('private')->delete('certificates/' . $cert_file_name_encrypted);
+                }
+                if (isset($cert_img_file_name_encrypted)) {
+                    Storage::disk('private')->delete('e_signatures/' . $cert_img_file_name_encrypted);
+                }
                 $error_message = 'Failed to extract private key from certificate. OpenSSL Errors: ' . implode(', ', $ssl_errors);
-                \Log::error($error_message);
+                Log::error($error_message);
                 throw new \Exception($error_message);
             }
 
@@ -524,7 +539,7 @@ class DigitalCertificateController extends Controller
             $certificate = $certs['cert'];
 
             // encrypt pem file
-            $pem_certificate = Crypt::encryptString($certificate_attachment->employee_profile_id) ;
+            $pem_certificate = Crypt::encryptString($certificate_attachment->employee_profile_id);
             $pem_private_key = Crypt::encryptString($certificate_attachment->employee_profile_id);
 
             // Save PEM files using Storage facade
@@ -624,6 +639,90 @@ class DigitalCertificateController extends Controller
             DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'saveCertificateDetails', $th->getMessage());
             throw $th;
+        }
+    }
+
+    public function signDtr(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'nullable|file|mimes:pdf',
+                'employee_profile_id' => 'integer|required',
+                'signer' => 'required|string|in:owner,incharge',
+                'whole_month' => 'required|boolean',
+                'document_ids' => 'required_if:signer,incharge'
+            ]);
+
+            $employee_profile_id = $request->input('employee_profile_id');
+            $signer = $request->input('signer');
+            $whole_month = $request->input('whole_month');
+            
+            // Convert document_ids to array
+            $document_ids = [];
+            if ($signer === 'incharge') {
+                $input = $request->input('document_ids');
+                $document_ids = explode(',', $input);
+                $document_ids = array_map('intval', $document_ids);
+                
+                if (empty($document_ids)) {
+                    throw new \Exception('At least one document ID is required for incharge signing.');
+                }
+            }
+
+            // Get the certificate for the signer
+            $certificate = DigitalCertificate::with('digitalCertificateFile')
+                ->where('employee_profile_id', $employee_profile_id)
+                ->latest()
+                ->first();
+
+            if (!$certificate) {
+                throw new \Exception('No digital certificate found for the employee.');
+            }
+
+            $this->validateCertificateFiles($certificate);
+
+            if ($request->input('signer') === 'owner') {
+                if (!$request->hasFile('file')) {
+                    throw new \Exception('PDF file is required for owner signing.');
+                }
+
+                $signedDocuments = [$this->dtrSigningService->processOwnerSigning(
+                    $request->file('file'),
+                    $certificate,
+                    $request->boolean('whole_month')
+                )];
+            } else {
+                $signedDocuments = $this->dtrSigningService->processInchargeSigning(
+                    $document_ids,  // Pass the processed array instead of raw input
+                    $certificate,
+                    $request->boolean('whole_month')
+                );
+            }
+
+            return response()->json([
+                'message' => 'Documents signed successfully',
+                'signed_documents' => $signedDocuments
+            ], 200);
+        } catch (\Throwable $th) {
+            Log::error('Error in signDtr: ' . $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signDtr', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Validate certificate files existence
+     */
+    protected function validateCertificateFiles(DigitalCertificate $certificate): void
+    {
+        $p12FilePath = 'certificates/' . $certificate->digitalCertificateFile->filename;
+        if (!Storage::disk('private')->exists($p12FilePath)) {
+            throw new \Exception('P12 file not found.');
+        }
+
+        $signatureImagePath = 'e_signatures/' . $certificate->digitalCertificateFile->img_name;
+        if (!Storage::disk('private')->exists($signatureImagePath)) {
+            throw new \Exception('Signature image file not found.');
         }
     }
 }
