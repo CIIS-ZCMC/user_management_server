@@ -201,8 +201,10 @@ class DigitalCertificateController extends Controller
 
             // Return response with success message
             return response()->json([
-                'message' => 'Certificate files and details saved successfully.'
-            ]);
+                'message' => 'Certificate files and details saved successfully.',
+                'data' => $request->user
+            ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -466,9 +468,9 @@ class DigitalCertificateController extends Controller
     {
         try {
             // Step 1: Retrieve and validate resources
-            $certificate_attachment = DigitalCertificateFile::where('id', $id)->first();
+            $certificate_file = DigitalCertificateFile::where('id', $id)->first();
 
-            if (!$certificate_attachment) {
+            if (!$certificate_file) {
                 DB::rollBack();
                 throw new \Exception('Certificate attachment not found.');
             }
@@ -478,25 +480,25 @@ class DigitalCertificateController extends Controller
             Storage::disk('private')->makeDirectory('e_signatures');
 
             // Get the file contents using Storage facade
-            if (!Storage::disk('private')->exists('certificates/' . $certificate_attachment->filename)) {
+            if (!Storage::disk('private')->exists('certificates/' . $certificate_file->filename)) {
                 DB::rollBack();
                 throw new \Exception('Certificate file not found.');
             }
 
-            if (!Storage::disk('private')->exists('e_signatures/' . $certificate_attachment->img_name)) {
+            if (!Storage::disk('private')->exists('e_signatures/' . $certificate_file->img_name)) {
                 DB::rollBack();
                 throw new \Exception('Signature image file not found.');
             }
 
             // Get cert password - the model accessor will handle decryption
-            $cert_password = $certificate_attachment->cert_password;
+            $cert_password = $certificate_file->cert_password;
 
             // Step 2: Extract private key and certificate
-            $cert_content = Storage::disk('private')->get('certificates/' . $certificate_attachment->filename);
+            $cert_content = Storage::disk('private')->get('certificates/' . $certificate_file->filename);
 
             // Log certificate details for debugging
             Log::debug('Certificate Content Length: ' . strlen($cert_content));
-            Log::debug('Certificate File Extension: ' . pathinfo($certificate_attachment->filename, PATHINFO_EXTENSION));
+            Log::debug('Certificate File Extension: ' . pathinfo($certificate_file->filename, PATHINFO_EXTENSION));
 
             // Clear any existing OpenSSL errors
             while (openssl_error_string() !== false);
@@ -539,16 +541,16 @@ class DigitalCertificateController extends Controller
             $certificate = $certs['cert'];
 
             // encrypt pem file
-            $pem_certificate = Crypt::encryptString($certificate_attachment->employee_profile_id);
-            $pem_private_key = Crypt::encryptString($certificate_attachment->employee_profile_id);
+            $pem_certificate = Crypt::encryptString($certificate_file->employee_profile_id);
+            $pem_private_key = Crypt::encryptString($certificate_file->employee_profile_id);
 
             // Save PEM files using Storage facade
             if (!Storage::disk('private')->put('certificates/' . $pem_certificate . '_cert.pem', $certificate)) {
                 DB::rollBack();
                 // Clean up any stored files
                 Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name
+                    'certificates/' . $certificate_file->filename,
+                    'e_signatures/' . $certificate_file->img_name
                 ]);
                 throw new \Exception('Failed to save certificate PEM file.');
             }
@@ -557,8 +559,8 @@ class DigitalCertificateController extends Controller
                 DB::rollBack();
                 // Clean up any stored files
                 Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name,
+                    'certificates/' . $certificate_file->filename,
+                    'e_signatures/' . $certificate_file->img_name,
                     'certificates/' . $pem_certificate . '_cert.pem'
                 ]);
                 throw new \Exception('Failed to save private key PEM file.');
@@ -569,8 +571,8 @@ class DigitalCertificateController extends Controller
                 DB::rollBack();
                 // Clean up any stored files
                 Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name,
+                    'certificates/' . $certificate_file->filename,
+                    'e_signatures/' . $certificate_file->img_name,
                     'certificates/' . $pem_certificate . '_cert.pem',
                     'certificates/' . $pem_private_key . '_key.pem'
                 ]);
@@ -669,10 +671,11 @@ class DigitalCertificateController extends Controller
                 }
             }
 
+            //TODO: BUG @ SAVING IMAGE
+
             // Get the certificate for the signer
             $certificate = DigitalCertificate::with('digitalCertificateFile')
                 ->where('employee_profile_id', $employee_profile_id)
-                ->latest()
                 ->first();
 
             if (!$certificate) {
