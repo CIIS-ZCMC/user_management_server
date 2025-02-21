@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\AssignedArea;
 
 use App\Models\Schedule;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EmployeeProfile extends Authenticatable
 {
@@ -642,5 +643,25 @@ class EmployeeProfile extends Authenticatable
     public function dailyTimeRecords()
     {
         return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id');
+    }
+
+    public function digitalSignedLeaves(): HasMany
+    {
+        return $this->hasMany(DigitalSignedLeave::class);
+    }
+
+    public function digitalSignedDtrs(): HasMany
+    {
+        return $this->hasMany(DigitalSignedDtr::class);
+    }
+
+    public function digitalCertificateLog(): HasMany
+    {
+        return $this->hasMany(DigitalCertificateLog::class);
+    }
+
+    public function digitalCertificate(): HasMany
+    {
+        return $this->hasMany(DigitalCertificate::class);
     }
 }
