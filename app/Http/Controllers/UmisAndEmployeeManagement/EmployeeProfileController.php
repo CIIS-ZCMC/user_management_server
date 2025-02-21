@@ -126,6 +126,11 @@ class EmployeeProfileController extends Controller
         $this->two_auth = new TwoFactorAuthController();
     }
 
+    public function employeeListSample(Request $request)
+    {
+        return EmployeeProfile::limit(30)->offset(0)->get();
+    }
+
     public function employeesCards(Request $request)
     {
         try {
