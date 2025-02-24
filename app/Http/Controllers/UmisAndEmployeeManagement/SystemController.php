@@ -141,8 +141,7 @@ class SystemController extends Controller
         $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
         $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
 
-        $is_digisig_registered = DigitalCertificate::where('employee_profile_id', $employee_profile->id)->exists();
-
+  
         $employee = [
             'profile_url' => $profile_url,
             'employee_id' => $employee_profile->employee_id,
@@ -209,7 +208,6 @@ class SystemController extends Controller
             'area_assigned_code' => $area_assigned['details']->code,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id,
-            'is_digisig_registered' => $is_digisig_registered
         ];
     }
     
