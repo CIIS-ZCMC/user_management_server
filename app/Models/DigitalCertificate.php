@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DigitalCertificate extends Model
 {
@@ -35,5 +36,21 @@ class DigitalCertificate extends Model
     public function digitalCertificateFile(): BelongsTo
     {
         return $this->belongsTo(DigitalCertificateFile::class);
+    }
+
+    /**
+     * Get the digital signed DTRs associated with this digital certificate.
+     */
+    public function digitalSignedDtrs(): HasMany
+    {
+        return $this->hasMany(DigitalSignedDtr::class);
+    }
+
+    /**
+     * Get the digital signed leaves associated with this digital certificate.
+     */
+    public function digitalSignedLeaves(): HasMany
+    {
+        return $this->hasMany(DigitalSignedLeave::class);
     }
 }

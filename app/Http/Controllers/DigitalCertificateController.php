@@ -119,7 +119,7 @@ class DigitalCertificateController extends Controller
                 $cert_file_name = pathinfo($cert_file->getClientOriginalName(), PATHINFO_FILENAME);
                 $cert_file_extension = $cert_file->getClientOriginalExtension();
                 $cert_file_size = $cert_file->getSize();
-                $cert_file_name_encrypted = Helpers::checkSaveFile($cert_file, 'certificates');
+                $cert_file_name_encrypted = Helpers::checkSaveFileForDigitalSignature($cert_file, 'certificates');
 
                 // Verify if cert_file was stored properly
                 if (!Storage::disk('private')->exists('certificates/' . $cert_file_name_encrypted)) {
@@ -132,7 +132,7 @@ class DigitalCertificateController extends Controller
                 $cert_img_file_name = pathinfo($cert_img_file->getClientOriginalName(), PATHINFO_FILENAME);
                 $cert_img_file_extension = $cert_img_file->getClientOriginalExtension();
                 $cert_img_file_size = $cert_img_file->getSize();
-                $cert_img_file_name_encrypted = Helpers::checkSaveFile($cert_img_file, 'e_signatures');
+                $cert_img_file_name_encrypted = Helpers::checkSaveFileForDigitalSignature($cert_img_file, 'e_signatures');
                 // Verify if cert_img_file was stored properly
                 if (!Storage::disk('private')->exists('e_signatures/' . $cert_img_file_name_encrypted)) {
                     DB::rollBack();
@@ -201,8 +201,9 @@ class DigitalCertificateController extends Controller
 
             // Return response with success message
             return response()->json([
-                'message' => 'Certificate files and details saved successfully.'
-            ]);
+                'message' => 'Certificate files and details saved successfully.',
+                'data' => $request->user
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -289,7 +290,7 @@ class DigitalCertificateController extends Controller
             if ($request->hasFile('cert_file')) {
                 $cert_file = $request->file('cert_file');
                 if ($cert_file->isValid()) {
-                    $cert_file_name_encrypted = Helpers::checkSaveFile($cert_file, 'certificates');
+                    $cert_file_name_encrypted = Helpers::checkSaveFileForDigitalSignature($cert_file, 'certificates');
 
                     // Delete old certificate file
                     Storage::disk('private')->delete('certificates/' . $certificate->digitalCertificateFile->filename);
@@ -308,7 +309,7 @@ class DigitalCertificateController extends Controller
             if ($request->hasFile('cert_img_file')) {
                 $cert_img_file = $request->file('cert_img_file');
                 if ($cert_img_file->isValid()) {
-                    $cert_img_file_name_encrypted = Helpers::checkSaveFile($cert_img_file, 'e_signatures');
+                    $cert_img_file_name_encrypted = Helpers::checkSaveFileForDigitalSignature($cert_img_file, 'e_signatures');
 
                     // Delete old signature file
                     Storage::disk('private')->delete('e_signatures/' . $certificate->digitalCertificateFile->img_name);
@@ -466,9 +467,9 @@ class DigitalCertificateController extends Controller
     {
         try {
             // Step 1: Retrieve and validate resources
-            $certificate_attachment = DigitalCertificateFile::where('id', $id)->first();
+            $certificate_file = DigitalCertificateFile::where('id', $id)->first();
 
-            if (!$certificate_attachment) {
+            if (!$certificate_file) {
                 DB::rollBack();
                 throw new \Exception('Certificate attachment not found.');
             }
@@ -478,25 +479,25 @@ class DigitalCertificateController extends Controller
             Storage::disk('private')->makeDirectory('e_signatures');
 
             // Get the file contents using Storage facade
-            if (!Storage::disk('private')->exists('certificates/' . $certificate_attachment->filename)) {
+            if (!Storage::disk('private')->exists('certificates/' . $certificate_file->filename)) {
                 DB::rollBack();
                 throw new \Exception('Certificate file not found.');
             }
 
-            if (!Storage::disk('private')->exists('e_signatures/' . $certificate_attachment->img_name)) {
+            if (!Storage::disk('private')->exists('e_signatures/' . $certificate_file->img_name)) {
                 DB::rollBack();
                 throw new \Exception('Signature image file not found.');
             }
 
             // Get cert password - the model accessor will handle decryption
-            $cert_password = $certificate_attachment->cert_password;
+            $cert_password = $certificate_file->cert_password;
 
             // Step 2: Extract private key and certificate
-            $cert_content = Storage::disk('private')->get('certificates/' . $certificate_attachment->filename);
+            $cert_content = Storage::disk('private')->get('certificates/' . $certificate_file->filename);
 
             // Log certificate details for debugging
             Log::debug('Certificate Content Length: ' . strlen($cert_content));
-            Log::debug('Certificate File Extension: ' . pathinfo($certificate_attachment->filename, PATHINFO_EXTENSION));
+            Log::debug('Certificate File Extension: ' . pathinfo($certificate_file->filename, PATHINFO_EXTENSION));
 
             // Clear any existing OpenSSL errors
             while (openssl_error_string() !== false);
@@ -539,16 +540,16 @@ class DigitalCertificateController extends Controller
             $certificate = $certs['cert'];
 
             // encrypt pem file
-            $pem_certificate = Crypt::encryptString($certificate_attachment->employee_profile_id);
-            $pem_private_key = Crypt::encryptString($certificate_attachment->employee_profile_id);
+            $pem_certificate = Crypt::encryptString($certificate_file->employee_profile_id);
+            $pem_private_key = Crypt::encryptString($certificate_file->employee_profile_id);
 
             // Save PEM files using Storage facade
             if (!Storage::disk('private')->put('certificates/' . $pem_certificate . '_cert.pem', $certificate)) {
                 DB::rollBack();
                 // Clean up any stored files
                 Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name
+                    'certificates/' . $certificate_file->filename,
+                    'e_signatures/' . $certificate_file->img_name
                 ]);
                 throw new \Exception('Failed to save certificate PEM file.');
             }
@@ -557,8 +558,8 @@ class DigitalCertificateController extends Controller
                 DB::rollBack();
                 // Clean up any stored files
                 Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name,
+                    'certificates/' . $certificate_file->filename,
+                    'e_signatures/' . $certificate_file->img_name,
                     'certificates/' . $pem_certificate . '_cert.pem'
                 ]);
                 throw new \Exception('Failed to save private key PEM file.');
@@ -569,8 +570,8 @@ class DigitalCertificateController extends Controller
                 DB::rollBack();
                 // Clean up any stored files
                 Storage::disk('private')->delete([
-                    'certificates/' . $certificate_attachment->filename,
-                    'e_signatures/' . $certificate_attachment->img_name,
+                    'certificates/' . $certificate_file->filename,
+                    'e_signatures/' . $certificate_file->img_name,
                     'certificates/' . $pem_certificate . '_cert.pem',
                     'certificates/' . $pem_private_key . '_key.pem'
                 ]);
@@ -656,14 +657,14 @@ class DigitalCertificateController extends Controller
             $employee_profile_id = $request->input('employee_profile_id');
             $signer = $request->input('signer');
             $whole_month = $request->input('whole_month');
-            
+
             // Convert document_ids to array
             $document_ids = [];
             if ($signer === 'incharge') {
                 $input = $request->input('document_ids');
                 $document_ids = explode(',', $input);
                 $document_ids = array_map('intval', $document_ids);
-                
+
                 if (empty($document_ids)) {
                     throw new \Exception('At least one document ID is required for incharge signing.');
                 }
@@ -672,7 +673,6 @@ class DigitalCertificateController extends Controller
             // Get the certificate for the signer
             $certificate = DigitalCertificate::with('digitalCertificateFile')
                 ->where('employee_profile_id', $employee_profile_id)
-                ->latest()
                 ->first();
 
             if (!$certificate) {
@@ -702,7 +702,61 @@ class DigitalCertificateController extends Controller
             return response()->json([
                 'message' => 'Documents signed successfully',
                 'signed_documents' => $signedDocuments
-            ], 200);
+            ], HTTP_OK);
+        } catch (\Throwable $th) {
+            Log::error('Error in signDtr: ' . $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signDtr', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function signLeaveApplication(Request $request)
+    {
+        try {
+            // TODO:
+            // > Get the input file from leave attachment id of the
+            // > Pass the employee profile id
+            // > Pass the signer [owner, head, sao, cao]
+
+            $request->validate([
+                'employee_profile_id' => 'integer|required',
+                'signer' => 'required|string|in:owner,head,sao,cao',
+                'document_ids' => 'required_if:signer,head,sao,cao'
+            ]);
+
+            $employee_profile_id = $request->input('employee_profile_id');
+            $signer = $request->input('signer');
+
+            $document_ids = [];
+            if ($signer === 'head' || $signer === 'sao' || $signer === 'cao') {
+                $input = $request->input('document_ids');
+                $document_ids = explode(',', $input);
+                $document_ids = array_map('intval', $document_ids);
+
+                if (empty($document_ids)) {
+                    throw new \Exception('At least one document ID is required for signing');
+                }
+            }
+
+            // Get the certificate for the signer
+            $certificate = DigitalCertificate::with('digitalCertificatFile')
+                ->where('employee_profile_id', $employee_profile_id)
+                ->first();
+
+            if (!$certificate) {
+                throw new \Exception('No digital certificate found for the employee.');
+            }
+
+            $this->validateCertificateFiles($certificate);
+
+            if ($signer === 'owner') {
+            } else {
+            }
+
+            return response()->json([
+                'message' => 'Document signed successfully',
+                // 'signed_documents' => $signedDocuments
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Log::error('Error in signDtr: ' . $th->getMessage());
             Helpers::errorLog($this->CONTROLLER_NAME, 'signDtr', $th->getMessage());

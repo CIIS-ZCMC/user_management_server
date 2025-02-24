@@ -102,6 +102,7 @@ use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\EmployeesAssignedAreaResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Models\DigitalCertificate;
 use App\Models\LeaveApplication;
 
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -1132,6 +1133,7 @@ class EmployeeProfileController extends Controller
             }
         }
 
+        $is_digisig_registered = DigitalCertificate::where('employee_profile_id', $employee_profile->id)->exists();
 
         return [
             'personal_information_id' => $personal_information->id,
@@ -1175,7 +1177,8 @@ class EmployeeProfileController extends Controller
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id,
-            'side_bar_details' => $side_bar_details
+            'side_bar_details' => $side_bar_details,
+            'is_digisig_registered' => $is_digisig_registered
         ];
     }
 

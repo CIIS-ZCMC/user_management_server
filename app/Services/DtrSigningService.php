@@ -149,13 +149,14 @@ class DtrSigningService
             throw new \Exception("Signature image file not found or not readable");
         }
 
-        return $this->signatureService->signDtr(
+        return $this->signatureService->signDtrDocument(
             $pdfPath,
             $p12Path,
             $certificate->digitalCertificateFile->cert_password,
             $signaturePath,
             $wholeMonth,
-            $signer
+            $signer,
+            'dtr'
         );
     }
 
