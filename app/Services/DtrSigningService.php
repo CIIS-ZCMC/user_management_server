@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Models\DigitalCertificate;
 use App\Models\DigitalSignedDtr;
+use App\Traits\DigitalCertificateLoggable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 class DtrSigningService
 {
+    use DigitalCertificateLoggable;
     protected $signatureService;
 
     public function __construct(DigitalSignatureService $signatureService)
@@ -26,7 +28,7 @@ class DtrSigningService
         bool $wholeMonth
     ): array {
         $pdfPath = $this->storeTemporaryFile($pdfFile);
-        
+
         try {
             $signedDocument = $this->signDocument(
                 Storage::disk('private')->path($pdfPath),
@@ -36,9 +38,9 @@ class DtrSigningService
             );
 
             $signedFilename = $this->generateSignedFilename($certificate->employee_profile_id, $pdfFile->getClientOriginalName(), 'owner');
-            
+
             $storedPath = $this->storeSignedDocument($signedFilename, $signedDocument);
-            
+
             $signedDtr = $this->createSignedDtrRecord(
                 $certificate,
                 $signedFilename,
@@ -46,6 +48,13 @@ class DtrSigningService
                 'owner',
                 $wholeMonth,
                 $pdfFile->getClientOriginalName()
+            );
+
+            $this->logCertificateAction(
+                $certificate->digital_certificate_file_id,
+                $certificate->employee_profile_id,
+                'SIGNED',
+                $certificate->employee_profile_id . ': Owner signed DTR'
             );
 
             return [
@@ -95,6 +104,13 @@ class DtrSigningService
                     $wholeMonth,
                     $doc->file_name,
                     $doc->id
+                );
+
+                $this->logCertificateAction(
+                    $certificate->digital_certificate_file_id,
+                    $certificate->employee_profile_id,
+                    'SIGNED',
+                    $certificate->employee_profile_id . ': Incharge signed DTR'
                 );
 
                 $signedDocuments[] = [
@@ -166,12 +182,12 @@ class DtrSigningService
     protected function generateSignedFilename(int $employeeId, string $originalName, string $signer): string
     {
         $signerSuffix = $signer === 'owner' ? '_signed_by_owner' : '_signed_by_incharge';
-        
-        return $employeeId . '_' . 
-               date('Y_m_d') . '_' . 
-               pathinfo($originalName, PATHINFO_FILENAME) . 
-               $signerSuffix . 
-               '.pdf';
+
+        return $employeeId . '_' .
+            date('Y_m_d') . '_' .
+            pathinfo($originalName, PATHINFO_FILENAME) .
+            $signerSuffix .
+            '.pdf';
     }
 
     /**
@@ -181,13 +197,13 @@ class DtrSigningService
     {
         // Remove employee ID, date pattern, and signing suffixes
         $name = pathinfo($filename, PATHINFO_FILENAME);
-        
+
         // Remove employee ID and date pattern (e.g., "2398_2025_02_19_")
         $name = preg_replace('/^\d+_\d{4}_\d{2}_\d{2}_/', '', $name);
-        
+
         // Remove signing suffixes
         $name = str_replace(['_signed_by_owner', '_signed_by_incharge'], '', $name);
-        
+
         return $name;
     }
 
@@ -215,13 +231,6 @@ class DtrSigningService
         string $originalFilename,
         ?int $previousDocumentId = null
     ): DigitalSignedDtr {
-        $monthYear = null;
-        if ($wholeMonth) {
-            preg_match('/(\d{4})[-_](\d{2})/', $originalFilename, $matches);
-            if (count($matches) === 3) {
-                $monthYear = $matches[1] . '-' . $matches[2];
-            }
-        }
 
         return DigitalSignedDtr::create([
             'employee_profile_id' => $certificate->employee_profile_id,
@@ -230,7 +239,6 @@ class DtrSigningService
             'file_path' => $path,
             'signer_type' => $signerType,
             'whole_month' => $wholeMonth,
-            'month_year' => $monthYear,
             'signing_details' => [
                 'original_filename' => $originalFilename,
                 'signed_at' => now()->toIso8601String(),

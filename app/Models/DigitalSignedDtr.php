@@ -17,7 +17,6 @@ class DigitalSignedDtr extends Model
         'file_path',
         'signer_type',
         'whole_month',
-        'month_year',
         'status',
         'signing_details',
         'signed_at',
@@ -25,7 +24,6 @@ class DigitalSignedDtr extends Model
 
     protected $casts = [
         'signing_details' => 'array',
-        'signed_at' => 'datetime',
     ];
 
     public function employeeProfile(): BelongsTo
