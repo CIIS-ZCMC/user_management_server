@@ -47,7 +47,8 @@ class DigitalSignatureService
 
             // Only include wholeMonth parameter for DTR documents
             if ($documentType === 'dtr' && $wholeMonth !== null) {
-                $params['whole_month'] = $wholeMonth;
+                // Convert to strict boolean and ensure it's sent as true/false string
+                $params['whole_month'] = $wholeMonth ? 'true' : 'false';
             }
 
             // Create multipart form data

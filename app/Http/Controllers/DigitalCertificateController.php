@@ -656,7 +656,7 @@ class DigitalCertificateController extends Controller
 
             $employee_profile_id = $request->input('employee_profile_id');
             $signer = $request->input('signer');
-            $whole_month = $request->input('whole_month');
+            $whole_month = $request->boolean('whole_month');
 
             // Convert document_ids to array
             $document_ids = [];
@@ -689,20 +689,20 @@ class DigitalCertificateController extends Controller
                 $signedDocuments = [$this->dtrSigningService->processOwnerSigning(
                     $request->file('file'),
                     $certificate,
-                    $request->boolean('whole_month')
+                    $whole_month
                 )];
             } else {
                 $signedDocuments = $this->dtrSigningService->processInchargeSigning(
                     $document_ids,  // Pass the processed array instead of raw input
                     $certificate,
-                    $request->boolean('whole_month')
+                    $whole_month
                 );
             }
 
             return response()->json([
                 'message' => 'Documents signed successfully',
                 'signed_documents' => $signedDocuments
-            ], HTTP_OK);
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Log::error('Error in signDtr: ' . $th->getMessage());
             Helpers::errorLog($this->CONTROLLER_NAME, 'signDtr', $th->getMessage());

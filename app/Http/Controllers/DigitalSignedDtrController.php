@@ -10,6 +10,8 @@ use App\Helpers\Helpers;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\DigitalSignatureResources\DigitalSignedDtrResource;
+use App\Http\Resources\DigitalSignatureResources\DigitalSignedDtrShowResource;
 
 class DigitalSignedDtrController extends Controller
 {
@@ -23,29 +25,35 @@ class DigitalSignedDtrController extends Controller
         try {
             $query = DigitalSignedDtr::query();
 
-            // Filter by employee_profile_id if provided
             if ($request->has('employee_profile_id')) {
                 $query->where('employee_profile_id', $request->input('employee_profile_id'));
             }
 
-            // Filter by signer_type if provided
             if ($request->has('signer_type')) {
                 $query->where('signer_type', $request->input('signer_type'));
             }
 
-            // Filter by month_year if provided (YYYY-MM format)
             if ($request->has('month_year')) {
                 $query->where('month_year', $request->input('month_year'));
             }
 
-            // Filter by status
             if ($request->has('status')) {
                 $query->where('status', $request->input('status'));
             }
 
             $documents = $query->orderBy('created_at', 'desc')->paginate(10);
 
-            return response()->json($documents);
+            if ($documents->isEmpty()) {
+                return response()->json([
+                    'message' => 'No digital signed DTR found',
+                    'data' => []
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            return response()->json([
+                'message' => 'Retrieved all digital signed DTR',
+                'data' => DigitalSignedDtrResource::collection($documents)
+            ]);
         } catch (\Throwable $th) {
             Log::error('Error in index: ' . $th->getMessage());
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -75,7 +83,10 @@ class DigitalSignedDtrController extends Controller
                 );
             }
 
-            return response()->json($document);
+            return response()->json([
+                'message' => 'Retrieved digital signed DTR successfully',
+                'data' => new DigitalSignedDtrShowResource($document)
+            ]);
         } catch (\Throwable $th) {
             Log::error('Error in show: ' . $th->getMessage());
             Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
@@ -99,7 +110,7 @@ class DigitalSignedDtrController extends Controller
 
             return response()->json([
                 'message' => 'Document status updated successfully',
-                'document' => $document
+                'document' => $document->file_path
             ]);
         } catch (\Throwable $th) {
             Log::error('Error in update: ' . $th->getMessage());
@@ -151,4 +162,7 @@ class DigitalSignedDtrController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
 }
