@@ -110,8 +110,14 @@ class DigitalCertificateController extends Controller
                 return response()->json(['message' => 'cert_img_file is missing or invalid.'], Response::HTTP_BAD_REQUEST);
             }
 
-            // get cert password
-            $cert_password = $request->cert_password;
+            // Validate certificate password
+            $cert_file = $request->file('cert_file');
+            $cert_content = file_get_contents($cert_file->path());
+            
+            if (!$this->validateCertificatePassword($cert_content, $request->cert_password)) {
+                DB::rollBack();
+                return response()->json(['message' => 'Invalid certificate password.'], Response::HTTP_BAD_REQUEST);
+            }
 
             try {
                 // Store cert_file
@@ -641,6 +647,36 @@ class DigitalCertificateController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'saveCertificateDetails', $th->getMessage());
             throw $th;
         }
+    }
+
+    private function validateCertificatePassword($cert_file_content, $password): bool
+    {
+        // Clear any existing OpenSSL errors
+        while (openssl_error_string() !== false);
+
+        // Attempt to read the certificate with the provided password
+        $cert_data = [];
+        $result = openssl_pkcs12_read($cert_file_content, $cert_data, $password);
+
+        // If reading failed, return false
+        if (!$result) {
+            return false;
+        }
+
+        // Verify the structure of extracted certificate
+        if (!is_array($cert_data)) {
+            return false;
+        }
+
+        // Check for required components
+        $required_keys = ['cert', 'pkey'];
+        foreach ($required_keys as $key) {
+            if (!isset($cert_data[$key]) || empty($cert_data[$key])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function signDtr(Request $request)
