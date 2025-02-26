@@ -715,7 +715,7 @@ class DigitalCertificateController extends Controller
                 throw new \Exception('No digital certificate found for the employee.');
             }
 
-            $this->validateCertificateFiles($certificate);
+            Helpers::validateCertificateFiles($certificate);
 
             if ($request->input('signer') === 'owner') {
                 if (!$request->hasFile('file')) {
@@ -800,19 +800,5 @@ class DigitalCertificateController extends Controller
         }
     }
 
-    /**
-     * Validate certificate files existence
-     */
-    protected function validateCertificateFiles(DigitalCertificate $certificate): void
-    {
-        $p12FilePath = 'certificates/' . $certificate->digitalCertificateFile->filename;
-        if (!Storage::disk('private')->exists($p12FilePath)) {
-            throw new \Exception('P12 file not found.');
-        }
-
-        $signatureImagePath = 'e_signatures/' . $certificate->digitalCertificateFile->img_name;
-        if (!Storage::disk('private')->exists($signatureImagePath)) {
-            throw new \Exception('Signature image file not found.');
-        }
-    }
+   
 }

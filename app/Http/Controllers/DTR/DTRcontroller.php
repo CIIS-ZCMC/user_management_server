@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\DTR;
 
 use App\Models\Biometrics;
+use App\Models\DigitalCertificate;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
@@ -32,6 +33,10 @@ use PHPMailer\PHPMailer\SMTP;
 use App\Http\Controllers\DTR\DeviceLogsController;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Recompute;
+use App\Models\DigitalDtrSignatureRequest;
+use App\Models\DigitalDtrSignatureRequestFile;
+use App\Traits\DigitalDtrSignatureLoggable;
+use App\Models\DigitalDtrSignatureLog;
 
 class DTRcontroller extends Controller
 {
@@ -48,6 +53,8 @@ class DTRcontroller extends Controller
     private $CONTROLLER_NAME = "DTRcontroller";
 
     protected $DeviceLog;
+
+    use DigitalDtrSignatureLoggable;
 
     public function __construct()
     {
@@ -309,7 +316,7 @@ class DTRcontroller extends Controller
                 $validate,
                 $val,
                 $val,
-                $Schedule['daySchedule'] ?? [],
+                $val,
                 true
             );
         }
@@ -523,7 +530,6 @@ class DTRcontroller extends Controller
                                     }
 
                                     //   return $this->getvalidatedData($bioEntry);
-                                    //Get attendance first  group per employee biometric_id
                                     //get the first successful entry.
                                     //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
                                     //
@@ -565,7 +571,7 @@ class DTRcontroller extends Controller
                                             /**
                                              * No Schedule Pulling
                                              */
-                                            //  $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
+                                            //   $this->DTR->NoSchedulePull($this->getvalidatedData($bioEntry), $biometric_id);
                                         }
                                     }
                                 }
@@ -894,6 +900,8 @@ class DTRcontroller extends Controller
             $ishalf = 1;
             ini_set('max_execution_time', 86400);
 
+
+
             /*
             Multiple IDS for Multiple PDF generation
             */
@@ -1185,12 +1193,19 @@ class DTRcontroller extends Controller
                 $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
                 $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
 
+                Log::info($employee);
+                /* Save file for digital signature */
+                $fileContent = $dompdf->output();
+                $saveResult = $this->saveDTRFileForSignature($employee, $filename, $fileContent, date('Y-m-d', strtotime("$year_of-$month_of-01")));
+
+                if (!$saveResult['success']) {
+                    throw new \Exception($saveResult['message']);
+                }
+
                 /* Downloads as PDF */
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-            return $th;
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
     }
@@ -1380,8 +1395,6 @@ class DTRcontroller extends Controller
                     }
 
 
-
-
                     if (isset($daySched['scheduleDate'])) {
 
                         $sdate = $daySched['scheduleDate'];
@@ -1430,7 +1443,6 @@ class DTRcontroller extends Controller
 
                     ];
                 }, $dt_records);
-
 
                 $first_out = array_map(function ($res) {
                     return [
@@ -1494,6 +1506,7 @@ class DTRcontroller extends Controller
                     $leaveapp = $employee->leaveApplications->filter(function ($row) {
                         return $row['status'] == "received";
                     });
+
                     foreach ($leaveapp as $rows) {
                         $leavedata[] = [
                             'country' => $rows['country'],
@@ -1542,8 +1555,8 @@ class DTRcontroller extends Controller
                 }
 
                 $ctoData = [];
-                if ($employee->CTOApplication) {
-                    $CTO = $employee->CTOApplication->filter(function ($row) {
+                if ($employee->ctoApplications) {
+                    $CTO = $employee->ctoApplications->filter(function ($row) {
                         return $row['status'] == "approved";
                     });
 
@@ -1552,6 +1565,8 @@ class DTRcontroller extends Controller
                             'date' => date('Y-m-d', strtotime($rows['date'])),
                             'purpose' => $rows['purpose'],
                             'remarks' => $rows['remarks'],
+                            'is_am' => $rows['is_am'],
+                            'is_pm' => $rows['is_pm']
                         ];
                     }
                 }
@@ -1819,6 +1834,7 @@ class DTRcontroller extends Controller
 
                         $days = $days_Rendered;
                         $present_days = [];
+
                         foreach ($days as $entry) {
 
                             if (is_array($entry)) {
@@ -1938,7 +1954,6 @@ class DTRcontroller extends Controller
                                 $date_Range = array();
                                 $current_Date = strtotime($sdate);
 
-
                                 $date_Range[] = date('Y-m-d', $current_Date);
                                 $current_Date = strtotime('+1 day', $current_Date);
                                 $date_ranges = $date_Range;
@@ -1953,8 +1968,6 @@ class DTRcontroller extends Controller
                                     $entryf = $value->second_in;
                                 }
 
-
-
                                 if (date('Y-m-d', strtotime($entryf)) == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
                                 }
@@ -1962,7 +1975,6 @@ class DTRcontroller extends Controller
                                 $no_Sched_dtr[] = $this->mDTR($value);
                             }
                         }
-
 
                         $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
                             return $res['overtime_minutes'] >= 1;
@@ -2000,7 +2012,6 @@ class DTRcontroller extends Controller
                             $days_Rendered[] = array_values($count);
                         }
 
-
                         $days = $days_Rendered;
 
                         $present_days = [];
@@ -2013,7 +2024,6 @@ class DTRcontroller extends Controller
                                 }
                             }
                         }
-
 
                         $days_absences = [];
                         $days_present = [];
@@ -2039,7 +2049,6 @@ class DTRcontroller extends Controller
                             $numerical_value = date('j', $timestamp);
                             return $numerical_value + 1;
                         }, $days_present);
-
 
                         /**
                          * IF Two schedules only
@@ -2085,8 +2094,6 @@ class DTRcontroller extends Controller
                     }
                 }
             }
-
-
 
             $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $mdt = [];
@@ -2142,7 +2149,6 @@ class DTRcontroller extends Controller
             return response()->json(['message' => $th->getMessage()]);
         }
     }
-
 
     private function generateMonthly($month_of, $year_of, $biometric_id)
     {
@@ -2388,7 +2394,66 @@ class DTRcontroller extends Controller
         }
     }
 
+    private function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date)
+    {
+        try {
+            $digital_certificate = DigitalCertificate::where('employee_profile_id', $employee->id)->first();
 
+            if (!$digital_certificate) {
+                throw new \Exception("User is not yet registered for digital certificate.");
+            }
+
+            $signature_request = DigitalDtrSignatureRequest::create([
+                'employee_profile_id' => $employee->id,
+                'employee_head_profile_id' => $employee->employeeHead($employee->assignedArea->findDetails()),
+                'digital_certificate_id' => $digital_certificate->id,
+                'dtr_date' => $dtr_date,
+                'status' => 'Pending',
+                'remarks' => null,
+                'approved_at' => null
+            ]);
+
+            // Save the file
+            $file_extension = 'pdf';
+            $file_path = 'dtr_files/' . date('Y/m/');
+            $unique_filename = uniqid() . '_' . $filename;
+
+            // Ensure directory exists
+            Storage::makeDirectory($file_path);
+
+            // Store the file
+            Storage::put($file_path . $unique_filename, $fileContent);
+
+            // Create digital DTR signature request file record
+            $requestFile = new DigitalDtrSignatureRequestFile();
+            $requestFile->digital_dtr_signature_request_id = $signature_request->id;
+            $requestFile->file_name = $filename;
+            $requestFile->file_path = $file_path . $unique_filename;
+            $requestFile->file_extension = $file_extension;
+            $requestFile->file_size = strlen($fileContent);
+            $requestFile->save();
+
+            // Log the saving of the dtr file
+            $this->logDtrSignatureAction(
+                $signature_request->id,
+                $employee->id,
+                'created',
+                'DTR File Saved'
+            );
+            
+            return [
+                'success' => true,
+                'message' => 'Your DTR file saved successfully and is now pending for signature',
+                'request_id' => $signature_request->id
+            ];
+        } catch (\Exception $e) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'saveDTRFileForSignature', $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to save DTR file: ' . $e->getMessage()
+            ];
+        }
+    }
 
     public function test()
     {

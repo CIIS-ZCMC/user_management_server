@@ -27,7 +27,6 @@ return new class extends Migration
 
             // Add indexes for common queries
             $table->index('employee_profile_id');
-            $table->index('month_year');
             $table->index('signer_type');
             $table->index('digital_certificate_id');
         });
