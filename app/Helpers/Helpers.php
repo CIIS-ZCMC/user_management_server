@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\DigitalCertificate;
 
 class Helpers
 {
@@ -1521,5 +1522,21 @@ class Helpers
         $dompdf->render();
 
         return $dompdf->stream($report_name . '.pdf');
+    }
+
+     /**
+     * Validate certificate files existence
+     */
+    public static function validateCertificateFiles(DigitalCertificate $certificate): void
+    {
+        $p12FilePath = 'certificates/' . $certificate->digitalCertificateFile->filename;
+        if (!Storage::disk('private')->exists($p12FilePath)) {
+            throw new \Exception('P12 file not found.');
+        }
+
+        $signatureImagePath = 'e_signatures/' . $certificate->digitalCertificateFile->img_name;
+        if (!Storage::disk('private')->exists($signatureImagePath)) {
+            throw new \Exception('Signature image file not found.');
+        }
     }
 }

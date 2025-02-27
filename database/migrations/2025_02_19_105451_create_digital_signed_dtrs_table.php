@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('signer_type'); // owner or in-charge
             $table->boolean('whole_month')->default(false);
-            $table->string('month_year')->nullable(); // Format: YYYY-MM
             $table->string('status')->default('signed');
             $table->text('signing_details')->nullable(); // JSON encoded details about the signing process
             $table->timestamp('signed_at')->useCurrent();
@@ -28,7 +27,6 @@ return new class extends Migration
 
             // Add indexes for common queries
             $table->index('employee_profile_id');
-            $table->index('month_year');
             $table->index('signer_type');
             $table->index('digital_certificate_id');
         });

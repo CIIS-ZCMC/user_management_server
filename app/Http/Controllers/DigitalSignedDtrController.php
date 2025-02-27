@@ -83,6 +83,15 @@ class DigitalSignedDtrController extends Controller
                 );
             }
 
+            // Check if the user wants to view the file
+            if ($request->query('view', false)) {
+                return Storage::disk('private')->response(
+                    $document->file_path,
+                    $document->file_name,
+                    ['Content-Type' => 'application/pdf']
+                );
+            }
+
             return response()->json([
                 'message' => 'Retrieved digital signed DTR successfully',
                 'data' => new DigitalSignedDtrShowResource($document)

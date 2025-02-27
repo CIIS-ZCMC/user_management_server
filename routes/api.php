@@ -192,9 +192,14 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::post('digital-signature', 'DigitalCertificateController@store');
-            Route::post('sign-dtr','DigitalCertificateController@signDtr');
+            Route::post('sign-dtr', 'DigitalCertificateController@signDtr');
             Route::apiResource('signed-dtr', 'DigitalSignedDtrController');
             Route::apiResource('signed-leaves', 'DigitalSignedLeaveController');
+
+            // Digital DTR Signature Requests
+            Route::apiResource('dtr-sig-requests', 'DigitalDtrSignatureRequestController');
+            Route::post('approve-dtr', 'DigitalDtrSignatureRequestController@approveSignatureRequest');
+            Route::post('approve-dtr-batch', 'DigitalDtrSignatureRequestController@approveBatchSignatureRequests');
         });
     });
 
