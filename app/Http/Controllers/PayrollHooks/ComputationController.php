@@ -105,7 +105,7 @@ class ComputationController extends Controller
         return [
             'Weekly' => round($per_week, 2),
             'Daily' => round($per_day, 2),
-            'Hourly' => round($per_hour, precision: 2),
+            'Hourly' => round($per_hour, 2),
             'Minutes' => round($per_minute, 2),
         ];
     }

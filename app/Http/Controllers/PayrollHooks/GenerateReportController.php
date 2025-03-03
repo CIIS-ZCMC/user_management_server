@@ -324,11 +324,18 @@ class GenerateReportController extends Controller
                 $query->whereYear('dtr_date', $year_of)
                     ->whereMonth('dtr_date', $month_of);
             }
-        ])->get();
+        ]);
+
+        // $selectedEmployee = $request->selected_employee;
+        // if (isset($selectedEmployee)) {
+        //     $employee_dtr->whereIn('employee_id', $selectedEmployee);
+        // }
+
+        $employee_data = $employee_dtr->get();
 
         $holiday = Holiday::whereRaw("LEFT(month_day, 2) = ?", [str_pad($month_of, 2, '0', STR_PAD_LEFT)])->get();
 
-        $data = $employee_dtr->map(function ($employee) use ($year_of, $month_of, $totalDaysInMonth, $request, $expectedMinutesPerDay, $holiday) {
+        $data = $employee_data->map(function ($employee) use ($year_of, $month_of, $totalDaysInMonth, $request, $expectedMinutesPerDay, $holiday) {
             $biometric_id = $employee->biometric_id;
 
             $NoOfInvalidEntry = [];

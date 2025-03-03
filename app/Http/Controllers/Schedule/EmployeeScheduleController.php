@@ -480,38 +480,8 @@ class EmployeeScheduleController extends Controller
                         $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
                         $isWeekend = Carbon::parse($date)->isWeekend();
 
-                        // switch ($shift) {
-                        //     case '8':
-                        //         $time_shift = TimeShift::where('first_in', '08:00:00')->where('first_out', '16:00:00')->first()->id;
-                        //         break;
-                        //     case '6':
-                        //         $time_shift = TimeShift::where('first_in', '06:00:00')->where('first_out', '14:00:00')->first()->id;
-                        //         break;
-                        //     case '2':
-                        //         $time_shift = TimeShift::where('first_in', '14:00:00')->where('first_out', '22:00:00')->first()->id;
-                        //         break;
-                        //     case '10':
-                        //         $time_shift = TimeShift::where('first_in', '22:00:00')->where('first_out', '06:00:00')->first()->id;
-                        //         break;
-                        //     case 'H':
-                        //         $time_shift = null;
-                        //         break;
-                        //     case '✓':
-                        //         $time_shift = null;
-                        //         break;
-                        //     default:
-                        //         $time_shift = TimeShift::where('first_in', '08:00:00')->where('second_out', '17:00:00')->first()->id;
-                        //         break;
-                        // }
-
 
                         if ($time_shift !== null) {
-                            // $day = $i - 3; // Because the first 4 columns are Lastname, Firstname, Month, Year
-                            // $month_parse = Carbon::parse("first day of $month $year")->format('m');
-                            // $date = Carbon::create($year, $month_parse, $day)->format('Y-m-d');
-
-                            // $isWeekend = (Carbon::parse($date))->isWeekend();
-
                             // Create or get the schedule
                             $schedule = Schedule::firstOrCreate(
                                 [
@@ -543,17 +513,6 @@ class EmployeeScheduleController extends Controller
                                 ]);
                             }
 
-                            // Create or update employee schedule
-                            // EmployeeSchedule::updateOrCreate(
-                            //     [
-                            //         'employee_profile_id' => $employee->id,
-                            //         'schedule_id' => $schedule->id,
-                            //     ],
-                            //     [
-                            //         'employee_profile_id' => $employee->id,
-                            //         'schedule_id' => $schedule->id,
-                            //     ]
-                            // );
                         } else {
                             $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
                                 ->whereHas('schedule', function ($query) use ($date) {
