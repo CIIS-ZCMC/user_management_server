@@ -2415,14 +2415,12 @@ class DTRcontroller extends Controller
 
             // Save the file
             $file_extension = 'pdf';
-            $file_path = 'dtr_files/' . date('Y/m/');
-            $unique_filename = uniqid() . '_' . $filename;
+            $sanitized_filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
+            $unique_filename = date('Y-m-d') . '_' . uniqid() . '_' . $sanitized_filename . '.' . $file_extension;
+            $file_path = 'dtr_files/';
 
-            // Ensure directory exists
-            Storage::makeDirectory($file_path);
-
-            // Store the file
-            Storage::put($file_path . $unique_filename, $fileContent);
+            // Store the file in the private disk
+            Storage::disk('private')->put($file_path . $unique_filename, $fileContent);
 
             // Create digital DTR signature request file record
             $requestFile = new DigitalDtrSignatureRequestFile();

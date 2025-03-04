@@ -14,6 +14,7 @@ use App\Models\EmployeeProfile;
 use Illuminate\Support\Facades\DB;
 use App\Services\DigitalSignatureService;
 use App\Services\DtrSigningService;
+use Illuminate\Support\Facades\Storage;
 
 class DigitalDtrSignatureRequestController extends Controller
 {
@@ -37,8 +38,16 @@ class DigitalDtrSignatureRequestController extends Controller
     public function index(Request $request)
     {
         try {
+
+            $user = $request->user;
             $query = DigitalDtrSignatureRequest::query();
-            $query->with(['digitalDtrSignatureRequestFile']);
+            $query->with([
+                'digitalDtrSignatureRequestFile',
+                'employeeProfile.personalInformation',
+                'employeeHeadProfile.personalInformation'
+            ])
+                ->where('employee_head_profile_id', $user->id);
+
 
             if ($request->has('dtr_date')) {
                 $query->where('dtr_date', $request->input('dtr_date'));
@@ -123,10 +132,10 @@ class DigitalDtrSignatureRequestController extends Controller
             $employee = EmployeeProfile::with('personalInformation')->where('id', $user->id)->first();
             $employee_name = $employee->personalInformation->employeeName();
 
-            $signatureRequest = DigitalDtrSignatureRequest::where('id', $request->signature_request_id)
+            $signatureRequest = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')->where('id', $request->signature_request_id)
                 ->where('employee_head_profile_id', $user->id)
                 ->first();
-            
+
 
             if (!$signatureRequest) {
                 return response()->json(['message' => 'Digital DTR signature request not found'], Response::HTTP_NOT_FOUND);
@@ -141,15 +150,45 @@ class DigitalDtrSignatureRequestController extends Controller
                 $signatureRequest->id,
                 $user->id, // performed by
                 $signatureRequest->status,
-                'DTR Signature Request is ' . strtolower($signatureRequest->status) . ' by' . $employee_name,
+                'DTR Signature Request is ' . strtolower($signatureRequest->status) . ' by ' . $employee_name,
             );
 
-            $certificate = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signatureRequest->employee_profile_id)->first();
-            if (!$certificate) {
-                return response()->json(['message'=> 'Digital certificate not found'], Response::HTTP_NOT_FOUND);
+            $certificate_owner = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signatureRequest->employee_profile_id)->first();
+            if (!$certificate_owner) {
+                return response()->json(['message' => 'Digital certificate not found'], Response::HTTP_NOT_FOUND);
             }
 
-            $signDtrOwner = $this->dtrSigningService->processOwnerSigning($certificate, $signatureRequest, $user);
+            $certificate_incharge = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signatureRequest->employee_head_profile_id)->first();
+            if (!$certificate_incharge) {
+                return response()->json(['message' => 'Digital certificate not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $disk_name = 'private';
+            $file_path = $signatureRequest->digitalDtrSignatureRequestFile->file_path;
+
+            if (!Storage::disk($disk_name)->exists($file_path)) {
+                return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $file_content = Storage::disk($disk_name)->get($file_path);
+            $mime_type = Storage::disk($disk_name)->mimeType($file_path);
+            $filename = basename($file_path);
+
+            $temp_path = tempnam(sys_get_temp_dir(), 'uploaded_file_');
+            file_put_contents($temp_path, $file_content);
+
+            $uploaded_file = new \Illuminate\Http\UploadedFile(
+                $temp_path,
+                $filename,
+                $mime_type,
+                null,
+                true
+            );
+
+            // SIGN DTR OWNER
+            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request->whole_month);
+            // SIGN DTR INCHARGE
+            $this->dtrSigningService->processInchargeSigning([$signatureRequest->id], $certificate_incharge, $request->whole_month);
 
             return response()->json([
                 'message' => 'Signature request ' . strtolower($signatureRequest->status) . ' successfully',
@@ -160,6 +199,10 @@ class DigitalDtrSignatureRequestController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
+
 
     public function approveBatchSignatureRequests(Request $request)
     {
@@ -214,7 +257,6 @@ class DigitalDtrSignatureRequestController extends Controller
                     'message' => count($signatureRequests) . ' signature requests ' . strtolower($action) . ' successfully',
                     'data' => DigitalDtrSignatureRequestResource::collection($signatureRequests)
                 ], Response::HTTP_OK);
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 throw $e;
@@ -224,5 +266,4 @@ class DigitalDtrSignatureRequestController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 }
