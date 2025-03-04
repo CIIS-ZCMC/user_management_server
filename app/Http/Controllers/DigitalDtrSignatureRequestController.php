@@ -41,7 +41,11 @@ class DigitalDtrSignatureRequestController extends Controller
 
             $user = $request->user;
             $query = DigitalDtrSignatureRequest::query();
-            $query->with(['digitalDtrSignatureRequestFile'])
+            $query->with([
+                'digitalDtrSignatureRequestFile',
+                'employeeProfile.personalInformation',
+                'employeeHeadProfile.personalInformation'
+            ])
                 ->where('employee_head_profile_id', $user->id);
 
 
@@ -195,6 +199,10 @@ class DigitalDtrSignatureRequestController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
+
 
     public function approveBatchSignatureRequests(Request $request)
     {
