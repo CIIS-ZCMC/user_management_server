@@ -13,6 +13,7 @@ class DigitalSignedDtr extends Model
     protected $fillable = [
         'employee_profile_id',
         'digital_certificate_id',
+        'digital_dtr_signature_request_id',
         'file_name',
         'file_path',
         'signer_type',
@@ -34,5 +35,10 @@ class DigitalSignedDtr extends Model
     public function digitalCertificate(): BelongsTo
     {
         return $this->belongsTo(DigitalCertificate::class);
+    }
+
+    public function digitalDtrSignatureRequest(): BelongsTo
+    {
+        return $this->belongsTo(DigitalDtrSignatureRequest::class);
     }
 }

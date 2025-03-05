@@ -181,6 +181,8 @@ Route::middleware('auth.cookie')->group(function () {
             Route::apiResource('dtr-sig-requests', 'DigitalDtrSignatureRequestController');
             Route::post('approve-dtr', 'DigitalDtrSignatureRequestController@approveSignatureRequest');
             Route::post('approve-dtr-batch', 'DigitalDtrSignatureRequestController@approveBatchSignatureRequests');
+            Route::get('view-dtr/{id}', 'DigitalDtrSignatureRequestController@viewOrDownloadDTR');
+            Route::get('view-all-dtr', 'DigitalDtrSignatureRequestController@viewAllOrDownloadDTR');
         });
     });
 

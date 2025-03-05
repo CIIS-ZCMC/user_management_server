@@ -18,6 +18,7 @@ use App\Services\DtrSigningService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Notifications;
 use App\Models\UserNotifications;
+use App\Models\DigitalSignedDtr;
 
 class DigitalDtrSignatureRequestController extends Controller
 {
@@ -78,6 +79,100 @@ class DigitalDtrSignatureRequestController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function viewOrDownloadDTR(Request $request, $id)
+    {
+        try {
+            $signatureRequest = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')
+                ->where('id', $id)
+                ->where('employee_profile_id', $request->user->id)
+                ->firstOrFail();
+
+            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $signatureRequest->id)
+                ->where('signer_type', 'incharge')
+                ->firstOrFail();
+
+            if (!Storage::disk('private')->exists($signedDtr->file_path)) {
+                return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            if ($request->query('download', false)) {
+                return Storage::disk('private')->download(
+                    $signedDtr->file_path,
+                    $signedDtr->file_name,
+                    ['Content-Type' => 'application/pdf']
+                );
+            }
+
+            // View the file
+            return Storage::disk('private')->response(
+                $signedDtr->file_path,
+                $signedDtr->file_name,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Signature request or signed DTR not found'], Response::HTTP_NOT_FOUND);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'viewOrDownloadDTR', $th->getMessage());
+            return response()->json(['message' => 'An error occurred while processing your request'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function viewAllOrDownloadDTR(Request $request)
+    {
+        try {
+            $employeeHeadId = $request->user->id;
+
+            $query = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile', 'employeeProfile')
+                ->where('employee_head_profile_id', $employeeHeadId);
+
+            if ($request->has('status')) {
+                $query->where('status', $request->input('status'));
+            }
+
+            $signatureRequests = $query->orderBy('created_at', 'desc')->get();
+
+            if ($signatureRequests->isEmpty()) {
+                return response()->json([
+                    'message' => 'No DTR signature requests found',
+                    'data' => []
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            if ($request->query('download', false)) {
+                $zip = new \ZipArchive();
+                $zipFileName = 'dtr_files_' . now()->format('Y-m-d_H-i-s') . '.zip';
+                $zipFilePath = storage_path('app/temp/' . $zipFileName);
+
+                if ($zip->open($zipFilePath, \ZipArchive::CREATE) === TRUE) {
+                    foreach ($signatureRequests as $request) {
+                        $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $request->id)
+                            ->where('signer_type', 'incharge')
+                            ->first();
+
+                        if ($signedDtr && Storage::disk('private')->exists($signedDtr->file_path)) {
+                            $zip->addFile(storage_path('app/private/' . $signedDtr->file_path), $signedDtr->file_name);
+                        }
+                    }
+                    $zip->close();
+
+                    return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+                } else {
+                    return response()->json(['message' => 'Unable to create zip file'], Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            return response()->json([
+                'message' => 'Retrieved all DTR signature requests',
+                'data' => DigitalDtrSignatureRequestResource::collection($signatureRequests)
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'viewAllOrDownloadDTR', $th->getMessage());
+            return response()->json(['message' => 'An error occurred while processing your request'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
     /**
      * Display the specified resource.
@@ -191,9 +286,9 @@ class DigitalDtrSignatureRequestController extends Controller
             );
 
             // SIGN DTR OWNER
-            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request->whole_month);
+            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request->whole_month, $signature_request->id);
             // SIGN DTR INCHARGE
-            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $request->whole_month);
+            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $request->whole_month, $signature_request->id);
 
             $notification = Notifications::create([
                 'title' => $employee_name . ' has approved and signed your DTR',

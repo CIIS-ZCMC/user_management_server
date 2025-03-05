@@ -25,7 +25,8 @@ class DtrSigningService
     public function processOwnerSigning(
         UploadedFile $pdfFile,
         DigitalCertificate $certificate,
-        bool $wholeMonth
+        bool $wholeMonth,
+        int $signatureRequestId
     ): array {
         $pdfPath = $this->storeTemporaryFile($pdfFile);
 
@@ -47,7 +48,8 @@ class DtrSigningService
                 $storedPath,
                 'owner',
                 $wholeMonth,
-                $pdfFile->getClientOriginalName()
+                $pdfFile->getClientOriginalName(),
+                $signatureRequestId
             );
 
             $this->logCertificateAction(
@@ -73,7 +75,8 @@ class DtrSigningService
     public function processInchargeSigning(
         array $documentIds,
         DigitalCertificate $certificate,
-        bool $wholeMonth
+        bool $wholeMonth,
+        int $signatureRequestId
     ): array {
         $documents = $this->getValidOwnerSignedDocuments($documentIds);
         $signedDocuments = [];
@@ -103,7 +106,7 @@ class DtrSigningService
                     'incharge',
                     $wholeMonth,
                     $doc->file_name,
-                    $doc->id
+                    $signatureRequestId
                 );
 
                 $this->logCertificateAction(
@@ -229,12 +232,13 @@ class DtrSigningService
         string $signerType,
         bool $wholeMonth,
         string $originalFilename,
-        ?int $previousDocumentId = null
+        int $signatureRequestId, 
     ): DigitalSignedDtr {
 
         return DigitalSignedDtr::create([
             'employee_profile_id' => $certificate->employee_profile_id,
             'digital_certificate_id' => $certificate->id,
+            'digital_dtr_signature_request_id' => $signatureRequestId,
             'file_name' => $filename,
             'file_path' => $path,
             'signer_type' => $signerType,
@@ -244,7 +248,7 @@ class DtrSigningService
                 'signed_at' => now()->toIso8601String(),
                 'certificate_used' => $certificate->id,
                 'signer_type' => $signerType,
-                'previous_document_id' => $previousDocumentId
+                'digital_dtr_signature_request_id' => $signatureRequestId
             ]
         ]);
     }
