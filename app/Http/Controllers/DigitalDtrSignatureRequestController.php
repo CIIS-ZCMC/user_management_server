@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\NotificationResource;
 use App\Models\DigitalDtrSignatureRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use App\Services\DigitalSignatureService;
 use App\Services\DtrSigningService;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
 
 class DigitalDtrSignatureRequestController extends Controller
 {
@@ -42,9 +45,10 @@ class DigitalDtrSignatureRequestController extends Controller
             $user = $request->user;
             $query = DigitalDtrSignatureRequest::query();
             $query->with([
-                    'digitalDtrSignatureRequestFile', 
-                    'employeeProfile.personalInformation', 
-                    'employeeProfileHead.personalInformation'])
+                'digitalDtrSignatureRequestFile',
+                'employeeProfile.personalInformation',
+                'employeeProfileHead.personalInformation'
+            ])
                 ->where('employee_head_profile_id', $user->id);
 
 
@@ -191,6 +195,22 @@ class DigitalDtrSignatureRequestController extends Controller
             // SIGN DTR INCHARGE
             $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $request->whole_month);
 
+            $notification = Notifications::create([
+                'title' => $employee_name . ' has approved and signed your DTR',
+                'description' => 'Approval of Digital DTR Signature Request',
+                'module_path' => 'approve-dtr',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $certificate_owner->employee_profile_id,
+            ]);
+
+            Helpers::sendNotification([
+                'id' => $certificate_owner->employee_profile_id,
+                'data' => new NotificationResource($user_notification),
+            ]);
+
             return response()->json([
                 'message' => 'Signature request ' . strtolower($signature_request->status) . ' successfully',
             ], Response::HTTP_OK);
@@ -273,6 +293,22 @@ class DigitalDtrSignatureRequestController extends Controller
 
                 $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request_data['whole_month']);
                 $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $request_data['whole_month']);
+
+                $notification = Notifications::create([
+                    'title' => $employee_name . ' has approved and signed your DTR',
+                    'description' => 'Approval of Digital DTR Signature Request',
+                    'module_path' => 'approve-dtr',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $certificate_owner->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    'id' => $certificate_owner->employee_profile_id,
+                    'data' => new NotificationResource($user_notification),
+                ]);
 
                 $results[] = ['id' => $request_data['id'], 'status' => 'success', 'message' => 'Signature request processed successfully'];
             }
