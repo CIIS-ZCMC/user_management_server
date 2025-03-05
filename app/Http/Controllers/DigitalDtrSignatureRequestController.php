@@ -222,7 +222,6 @@ class DigitalDtrSignatureRequestController extends Controller
             $request->validate([
                 'signature_request_id' => 'required|exists:digital_dtr_signature_requests,id',
                 'approved' => 'required|boolean',
-                'whole_month' => 'required|boolean',
                 'remarks' => 'nullable|string|max:255',
             ]);
 
@@ -233,7 +232,6 @@ class DigitalDtrSignatureRequestController extends Controller
             $signature_request = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')->where('id', $request->signature_request_id)
                 ->where('employee_head_profile_id', $user->id)
                 ->first();
-
 
             if (!$signature_request) {
                 return response()->json(['message' => 'Digital DTR signature request not found'], Response::HTTP_NOT_FOUND);
@@ -262,7 +260,6 @@ class DigitalDtrSignatureRequestController extends Controller
             }
 
 
-
             $disk_name = 'private';
             $file_path = $signature_request->digitalDtrSignatureRequestFile->file_path;
 
@@ -286,9 +283,9 @@ class DigitalDtrSignatureRequestController extends Controller
             );
 
             // SIGN DTR OWNER
-            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request->whole_month, $signature_request->id);
-            // SIGN DTR INCHARGE
-            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $request->whole_month, $signature_request->id);
+            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $signature_request->whole_month, $signature_request->id);
+            // SIGN DTR INCHARGE                                                    
+            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $signature_request->whole_month, $signature_request->id);
 
             $notification = Notifications::create([
                 'title' => $employee_name . ' has approved and signed your DTR',
