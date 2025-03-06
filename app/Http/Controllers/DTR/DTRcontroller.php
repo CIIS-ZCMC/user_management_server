@@ -1196,7 +1196,7 @@ class DTRcontroller extends Controller
                 Log::info($employee);
                 /* Save file for digital signature */
                 $fileContent = $dompdf->output();
-                $saveResult = $this->saveDTRFileForSignature($employee, $filename, $fileContent, date('Y-m-d', strtotime("$year_of-$month_of-01")));
+                $saveResult = $this->saveDTRFileForSignature($employee, $filename, $fileContent, date('Y-m-d', strtotime("$year_of-$month_of-01")), $ishalf === 1 ? false : true);
 
                 if (!$saveResult['success']) {
                     throw new \Exception($saveResult['message']);
@@ -2394,7 +2394,7 @@ class DTRcontroller extends Controller
         }
     }
 
-    private function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date)
+    private function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date, $whole_month)
     {
         try {
             $digital_certificate = DigitalCertificate::where('employee_profile_id', $employee->id)->first();
@@ -2410,6 +2410,7 @@ class DTRcontroller extends Controller
                 'dtr_date' => $dtr_date,
                 'status' => 'Pending',
                 'remarks' => null,
+                'whole_month' => $whole_month,
                 'approved_at' => null
             ]);
 

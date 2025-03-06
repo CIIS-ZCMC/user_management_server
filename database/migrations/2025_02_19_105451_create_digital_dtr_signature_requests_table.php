@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('dtr_date');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->text('remarks')->nullable();
+            $table->boolean('whole_month')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
