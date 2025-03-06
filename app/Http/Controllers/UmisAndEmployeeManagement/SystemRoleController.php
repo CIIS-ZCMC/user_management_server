@@ -173,7 +173,7 @@ class SystemRoleController extends Controller
                         });
                     })
                     ->limit($limit)
-                    ->offset($offset)
+                    // ->offset($offset)
                     ->get();
                 
                 return response()->json([
@@ -185,11 +185,12 @@ class SystemRoleController extends Controller
             }
 
             $total_page = EmployeeProfile::whereHas('specialAccessRole')->count();
-            $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->offset(value: $offset)->get();
+            // $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->offset(value: $offset)->get();
+            $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->get();
 
             return response()->json([
                 'total_page_count' => $total_page < 10 ? 1: ceil($total_page/10),
-                'offset' => $offset,
+                // 'offset' => $offset,
                 'data' => EmployeeWithSpecialAccessResource::collection($employees),
                 'message' => 'Special access role assign successfully.'
             ], Response::HTTP_OK);

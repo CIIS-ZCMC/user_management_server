@@ -77,9 +77,9 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     Route::get('validate-token', 'CsrfTokenController@validateToken');
     Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
     Route::get('generate-pds', 'PersonalInformationController@generatePDS');
-
-
     Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
+    Route::get('employees-export-to-csv', 'EmployeeProfileController@exportEmployeeList');
+ 
 });
 
 Route::middleware('auth.cookie')->group(function () {
@@ -2648,6 +2648,8 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('login-device-browser-report', 'LoginActivitiesReport@generateDeviceBrowserLoginReport');
         });
+
+    
     });
 });
 

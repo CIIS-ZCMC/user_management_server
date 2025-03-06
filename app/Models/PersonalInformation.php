@@ -60,10 +60,10 @@ class PersonalInformation extends Model
     
         $nameExtension = $this->name_extension === NULL ? '' : $this->name_extension;
         if ($this->middle_name === NULL) {
-            return $this->last_name . ', ' . $this->first_name. ','. $nameExtension;
+            return $this->last_name . ', ' . $this->first_name . ($nameExtension ? ', ' . $nameExtension : '');
         }
 
-        return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name. ','. $nameExtension;
+        return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name. ($nameExtension ? ', ' . $nameExtension : '');
     }
 
     public function name()
@@ -71,10 +71,10 @@ class PersonalInformation extends Model
         $nameExtension = $this->name_extension === NULL ? '' : $this->name_extension;
 
         if ($this->middle_name === NULL) {
-            return $this->last_name . ', ' . $this->first_name. ','. $nameExtension;
+            return $this->last_name . ', ' . $this->first_name. ($nameExtension ? ', ' . $nameExtension : '');
         }
 
-        $name = $this->last_name . ', ' . $this->first_name.' ' . $this->middle_name. ','. $nameExtension;
+        $name = $this->last_name . ', ' . $this->first_name.' ' . $this->middle_name. ($nameExtension ? ', ' . $nameExtension : '');
 
         return $name;
     }
