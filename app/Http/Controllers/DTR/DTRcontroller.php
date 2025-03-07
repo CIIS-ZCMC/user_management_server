@@ -897,6 +897,7 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
             $FrontDisplay = $request->frontview;
+            $isWholeMonth = $request->is_whole_month;
             $ishalf = 1;
             ini_set('max_execution_time', 86400);
 
@@ -1196,7 +1197,7 @@ class DTRcontroller extends Controller
                 Log::info($employee);
                 /* Save file for digital signature */
                 $fileContent = $dompdf->output();
-                $saveResult = $this->saveDTRFileForSignature($employee, $filename, $fileContent, date('Y-m-d', strtotime("$year_of-$month_of-01")), $ishalf === 1 ? false : true);
+                $saveResult = $this->saveDTRFileForSignature($employee, $filename, $fileContent, date('Y-m-d', strtotime("$year_of-$month_of-01")), $isWholeMonth);
 
                 if (!$saveResult['success']) {
                     throw new \Exception($saveResult['message']);
@@ -2394,7 +2395,9 @@ class DTRcontroller extends Controller
         }
     }
 
-    private function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date, $whole_month)
+    //
+
+    public function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date, $whole_month)
     {
         try {
             $digital_certificate = DigitalCertificate::where('employee_profile_id', $employee->id)->first();
