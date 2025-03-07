@@ -2395,7 +2395,58 @@ class DTRcontroller extends Controller
         }
     }
 
-    //
+    /**
+     * Generate DTR without signature
+     * 
+     * @param int $employeeId The employee ID
+     * @param string $dtrDate The DTR date
+     * @return \Illuminate\Http\Response
+     */
+    public function generateUnsignedDTR($employeeId, $dtrDate)
+    {
+        // Algorithm:
+        // 1. Fetch employee data
+        // 2. Generate DTR based on attendance logs
+        // 3. Return DTR content without saving to database
+        // 4. No digital signature will be applied
+    }
+
+    /**
+     * Generate DTR with owner signature only
+     * 
+     * @param int $employeeId The employee ID
+     * @param string $dtrDate The DTR date
+     * @return \Illuminate\Http\Response
+     */
+    public function generateOwnerSignedDTR($employeeId, $dtrDate)
+    {
+        // Algorithm:
+        // 1. Fetch employee data and digital certificate
+        // 2. Generate DTR based on attendance logs
+        // 3. Apply owner's digital signature
+        // 4. Save signed DTR to database
+        // 5. Return success response
+    }
+
+    /**
+     * Generate DTR with owner signature and request in-charge signature
+     * 
+     * @param int $employeeId The employee ID
+     * @param int $inChargeId The in-charge employee ID
+     * @param string $dtrDate The DTR date
+     * @return \Illuminate\Http\Response
+     */
+    public function generateDTRWithSignatureRequest($employeeId, $inChargeId, $dtrDate)
+    {
+        // Algorithm:
+        // 1. Fetch employee and in-charge data and certificates
+        // 2. Generate DTR based on attendance logs
+        // 3. Apply owner's digital signature
+        // 4. Save signed DTR to database
+        // 5. Create signature request for in-charge
+        // 6. Send notification to in-charge
+        // 7. Return success response
+    }
 
     public function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date, $whole_month)
     {
@@ -2442,7 +2493,7 @@ class DTRcontroller extends Controller
                 'created',
                 'DTR File Saved'
             );
-            
+
             return [
                 'success' => true,
                 'message' => 'Your DTR file saved successfully and is now pending for signature',
