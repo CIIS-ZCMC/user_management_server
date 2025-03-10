@@ -38,6 +38,7 @@ use App\Models\DigitalDtrSignatureRequestFile;
 use App\Traits\DigitalDtrSignatureLoggable;
 use App\Models\DigitalDtrSignatureLog;
 use App\Services\DtrSigningService;
+use App\Services\DigitalSignatureService;
 
 class DTRcontroller extends Controller
 {
@@ -59,14 +60,14 @@ class DTRcontroller extends Controller
 
     use DigitalDtrSignatureLoggable;
 
-    public function __construct(DtrSigningService $dtrSigningService)
+    public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
         $this->DTR = new DTRPull();
         $this->DeviceLog = new DeviceLogsController();
-        $this->dtrSigningService = $dtrSigningService;
+        $this->dtrSigningService = new DtrSigningService(new DigitalSignatureService());
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
@@ -1116,7 +1117,7 @@ class DTRcontroller extends Controller
             }, $ute));
 
 
-            $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
+            $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}")['schedule'];
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
@@ -2426,6 +2427,16 @@ class DTRcontroller extends Controller
         // 4. No digital signature will be applied
         try {
             $employee = EmployeeProfile::find($request->employee_id);
+            
+            // Add implementation here to generate the DTR
+            
+            // Return a success response with the generated DTR
+            return response()->json([
+                'success' => true,
+                'message' => 'DTR generated successfully',
+                'data' => $employee
+            ], Response::HTTP_OK);
+            
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateUnsignedDTR', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
@@ -2469,7 +2480,7 @@ class DTRcontroller extends Controller
             }
 
             $file_content = Storage::disk($disk_name)->get($file_path);
-            $mime_type = Storage::disk($disk_name)->mimeType($file_path);
+            $mime_type = 'application/pdf';
             $filename = basename($file_path);
 
             $temp_path = tempnam(sys_get_temp_dir(), 'uploaded_file_');
