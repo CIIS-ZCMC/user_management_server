@@ -19,6 +19,7 @@ class DigitalDtrSignatureRequest extends Model
         'dtr_date',
         'status',
         'remarks',
+        'whole_month',
         'approved_at'
     ];
 
