@@ -23,14 +23,24 @@ use App\Http\Resources\EmployeeProfileUpdateResource;
 use App\Http\Resources\EmployeeRedcapModulesResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Jobs\SendEmailJob;
+use App\Models\Address;
+use App\Models\Child;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeRedcapModules;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\FailedLoginTrail;
+use App\Models\FamilyBackground;
+use App\Models\IdentificationNumber;
+use App\Models\IssuanceInformation;
+use App\Models\LegalInformation;
 use App\Models\OfficerInChargeTrail;
+use App\Models\OtherInformation;
+use App\Models\PersonalInformation;
 use App\Models\PlantillaAssignedArea;
+use App\Models\Reference;
 use App\Models\SystemUserSessions;
 use App\Models\Training;
 use App\Models\WorkExperience;
@@ -55,9 +65,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Models\PasswordTrail;
 use App\Rules\StrongPassword;
-use Illuminate\Http\Response;
 use App\Models\AssignAreaTrail;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
@@ -341,16 +351,22 @@ class EmployeeProfileController extends Controller
             /**
              * For password expired.
              */
-            if (Carbon::now()->startOfDay()->gte($employee_profile->password_expiration_at)) {
-                // Mandatory change password for annual.
-                if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
-                    return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+            $passwordExpirationDate = Carbon::parse($employee_profile->password_expiration_at);
+            $passwordCreationDate = Carbon::parse($employee_profile->password_created_at);
+            if ($employee_profile->password_expiration_at && $passwordExpirationDate->isPast()) {
+                $currentYear = Carbon::now()->year;
+                $passwordYear = $passwordCreationDate->year;
+
+                $message = null;
+
+                if($currentYear > $passwordYear){
+                    $message = "Your account password has expired, it is mandatory to change the password.";
+                }else{
+                    $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
-                //Optional change password
-                return response()->json(['message' => 'expired-optional'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
+                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -842,8 +858,73 @@ class EmployeeProfileController extends Controller
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    Helpers::errorLog("EmployeeProfile", "buildSidebarDetails", "Check for existing DONE");
                     $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
+                }
+            }
+        }
+
+        $public_system_roles = PositionSystemRole::where('is_public', 1)->get();
+
+
+        foreach($public_system_roles as $public_system_role)
+        {
+            $system_role_value = $public_system_role->systemRole;
+            $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
+            if(count($side_bar_details['system']) === 0 || !$exists){
+                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$public_system_role->systemRole);
+                continue;
+            }
+
+            foreach ($side_bar_details['system'] as &$system) {
+                if ($system['id'] === $system_role_value->system_id) {
+                    $system_role_exist = false;
+                    $role = $system_role_value->role;
+
+                    // Check if role exist in the system
+                    foreach ($system['roles'] as $value) {
+                        if ($value['name'] === $role->name) {
+                            $system_role_exist = true;
+                            break; // No need to continue checking once the role is found
+                        }
+                    }
+
+                    if (!$system_role_exist) {
+                        $public_system_roles_data = $this->buildRoleDetails($public_system_role->systemRole);
+
+                        $system['roles'][] = [
+                            'id' => $public_system_roles_data['id'],
+                            'name' => $public_system_roles_data['name']
+                        ];
+
+                        // Convert the array of objects to a collection
+                        $modulesCollection = collect($system['modules']);
+
+                        foreach ($public_system_roles_data['modules'] as $role_module) {
+                            // Check if the module with the code exists in the collection
+                            $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                return $module['code'] === $role_module['code'];
+                            });
+
+                            if ($existingModuleIndex !== false) {
+                                // If the module exists, modify its permissions
+                                $existingModule = $modulesCollection->get($existingModuleIndex);
+                                foreach ($role_module['permissions'] as $permission) {
+                                    // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                    if (!in_array($permission, $existingModule['permissions'])) {
+                                        $existingModule['permissions'][] = $permission;
+                                    }
+                                }
+                                $modulesCollection->put($existingModuleIndex, $existingModule);
+                            } else {
+                                // If the module doesn't exist, add it to the collection
+                                $modulesCollection->push($role_module);
+                            }
+                        }
+
+                        // Assign back the modified modules collection to the system
+                        $system['modules'] = $modulesCollection->toArray();
+                    }
                 }
             }
         }
@@ -1445,6 +1526,22 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function resendOTP(Request $request)
+    {
+        try {
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+
+            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+
+            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function updatePin(Request $request)
     {
         try {
@@ -1541,22 +1638,6 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function resendOTP(Request $request)
-    {
-        try {
-            $employee_details = json_decode($request->cookie('employee_details'));
-            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-
-            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
-            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
-
-            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
     public function newPassword(Request $request)
     {
         try {
@@ -1625,7 +1706,7 @@ class EmployeeProfileController extends Controller
                     'password_encrypted' => $encryptedPassword,
                     'password_created_at' => now(),
                     'password_expiration_at' => $threeMonths,
-                    'is_2fa' => $request->two_factor ?? false,
+                    'is_2fa' => $request->two_factor,
                     'authorization_pin' => strip_tags($request->pin),
                     'pin_created_at' => now()
                 ]);
@@ -1871,10 +1952,11 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function updatePasswordExpiration($id, $sector, Request $request)
+    public function updatePasswordExpiration(Request $request)
     {
         try {
-            $employee_profile = $request->user;
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             $now = Carbon::now();
             $threeMonths = $now->addMonths(3);
@@ -1892,22 +1974,22 @@ class EmployeeProfileController extends Controller
 
             $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-                $ip = $request->ip();
+            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+            //     $ip = $request->ip();
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($login_trail->ip_address !== $ip) {
-                    $data = Helpers::generateMyOTP($employee_profile);
+            //     if ($login_trail->ip_address !== $ip) {
+            //         $data = Helpers::generateMyOTP($employee_profile);
 
-                    if ($this->mail->send($data)) {
-                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                    }
+            //         if ($this->mail->send($data)) {
+            //             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+            //                 ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            //         }
 
-                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
-                }
-            }
+            //         return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
+            //     }
+            // }
 
             if ($access_token !== null) {
                 AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
@@ -1917,20 +1999,17 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool)$employee_profile->is_2fa) {
-                $data = Helpers::generateMyOTP($employee_profile);
+            // if ((bool)$employee_profile->is_2fa) {
+            //     $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-                if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                }
+            //     SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                return response()->json([
-                    'message' => 'Failed to send OTP to your email.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+            //     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
+            //         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            // }
 
             $token = $employee_profile->createToken();
+
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -1961,6 +2040,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -1968,6 +2048,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1979,8 +2060,10 @@ class EmployeeProfileController extends Controller
                 'employee_profile_id' => $employee_profile['id']
             ]);
 
+            Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
+
             return response()
-                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->json(["user" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
@@ -4183,6 +4266,7 @@ class EmployeeProfileController extends Controller
     public function store(EmployeeProfileNewResource $request)
     {
         try {
+            $personal_information_value = json_decode($request->personal_information);
             DB::beginTransaction();
 
             /**
@@ -4409,7 +4493,7 @@ class EmployeeProfileController extends Controller
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
 
-            $cleanData['employee_id'] = $new_employee_id;
+            $cleanData['employee_id'] = strip_tags($personal_information_value->employee_id);
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($personal_information->id);
@@ -5230,18 +5314,21 @@ class EmployeeProfileController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
+                DB::rollBack();
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
 
             if (!$employee_profile) {
+                DB::rollBack();
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $position = $employee_profile->position();
 
             if (is_array($position)) {
+                DB::rollBack();
                 $area = $employee_profile->assignedArea->findDetails();
                 return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
@@ -5271,9 +5358,16 @@ class EmployeeProfileController extends Controller
             }
 
             $assign_area = $employee_profile->assignedArea;
+            
+            $areas = [
+                'division_id' => $assign_area['division_id'],
+                'department_id' => $assign_area['department_id'],
+                'section_id' => $assign_area['section_id'],
+                'unit_id' => $assign_area['unit_id'],
+            ];
 
             AssignAreaTrail::create([
-                $assign_area,
+                ...$areas,
                 'employee_profile_id' => $employee_profile->id,
                 'started_at' => $employee_profile->date_hired,
                 'end_at' => now()
@@ -5293,9 +5387,8 @@ class EmployeeProfileController extends Controller
                 'deactivated_at' => now()
             ]);
 
-            DB::commit();
-
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -5738,4 +5831,136 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function remove(Request $request)
+    {
+        $remarks = $request->remarks;
+
+        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%".$remarks."%")->get();
+
+        DB::beginTransaction();
+
+        try{
+            foreach($in_active_employees as $in_active_employee)
+            {
+                $employee_profile = EmployeeProfile::find($in_active_employee->employee_profile_id);
+    
+                $assign_area = AssignArea::where('employee_profile_id', $employee_profile->id)->first();
+                $assign_area_trail = AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->get();
+                
+                $personal_information = PersonalInformation::find($employee_profile->personal_information_id);
+                $addresses = Address::where('personal_information_id', $personal_information->id)->get();
+                $contact = Contact::where('personal_information_id', $personal_information->id)->first();
+                $childs = Child::where('personal_information_id', $personal_information->id)->get();
+                $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id', $personal_information->id)->get();
+                $education_backgrounds = EducationalBackground::where('personal_information_id', $personal_information->id)->get();
+                $family_backgrounds = FamilyBackground::where('personal_information_id', $personal_information->id)->get();
+                $identification_numbers = IdentificationNumber::where('personal_information_id', $personal_information->id)->get();
+                $issuance_information = IssuanceInformation::where('employee_profile_id', $employee_profile->id)->first();
+                $legal_informations = LegalInformation::where('personal_information_id', $personal_information->id)->get();
+                $other_informations = OtherInformation::where("personal_information_id", $personal_information->id)->get();
+                $references = Reference::where('personal_information_id', $personal_information->id)->get();
+                $trainings = Training::where('personal_information_id', $personal_information->id)->get();
+                $special_access_roles = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $failed_login_trails = FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_redcap_modules = EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->get();
+    
+                if($contact !== null){
+                    $contact->delete();
+                }
+    
+                if(count($addresses) > 0){
+                    Address::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($childs) > 0){
+                    Child::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($civil_service_eligibilities) > 0){
+                    CivilServiceEligibility::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($education_backgrounds) > 0){
+                    EducationalBackground::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($family_backgrounds) > 0){
+                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();    
+                }
+    
+                if(count($identification_numbers) > 0){
+                    IdentificationNumber::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if($issuance_information !== null){
+                    $issuance_information->delete();
+                }
+    
+                if(count($legal_informations) > 0){
+                    LegalInformation::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($other_informations) > 0){
+                    OtherInformation::where("personal_information_id", $personal_information->id)->delete();
+                }
+    
+                if(count($references) > 0){
+                    Reference::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($trainings) > 0){
+                    Training::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($special_access_roles) > 0){
+                    SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                if(count($assign_area_trail) > 0){
+                    AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                if($assign_area !== null){
+                    $assign_area->delete();
+                }
+
+                if(count($assign_area_trail) > 0){
+                    AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_leave_credits) > 0){
+                    EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_overtime_credits) > 0){
+                    foreach($employee_overtime_credits as $employee_overtime_credit){
+                        EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_overtime_credit->id)->delete();
+                        $employee_overtime_credit->delete();
+                    }
+                }
+
+                if(count($failed_login_trails) > 0){
+                    FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_redcap_modules) > 0){
+                    EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                $in_active_employee->delete();
+                $employee_profile->delete();
+                $personal_information->delete();
+            }
+        }catch(\Throwable $th){
+            DB::rollBack();
+            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. ".$th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        DB::commit();
+
+        return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
+    }    
 }

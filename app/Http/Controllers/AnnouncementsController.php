@@ -42,10 +42,10 @@ class AnnouncementsController extends Controller
         }
     }
 
-    public function searchAnnouncement(Request $request)
+    public function searchAnnouncement($search, Request $request)
     {
         try{
-            $search = strip_tags($request->search);
+            $search = strip_tags($search);
 
             $event = Announcements::where('title',  'LIKE', '%'.$search.'%' )->get();
 

@@ -22,8 +22,6 @@ class AuthenticateThirdPartySystem
     {
         try{
             $api_key = $request->header('UMIS-Api-Key');
-
-            Helpers::errorLog("Athenticate", "handle", $api_key);
             
             $api_key_exist = System::where("api_key", $api_key)->first();
 

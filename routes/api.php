@@ -21,20 +21,27 @@ Route::get('/initialize-storage', function (Request $request) {
 });
 
 // In case the env client domain doesn't work
-Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function(){
-    Route::get('update-system', 'SystemController@updateUMISDATA');
-});
+Route::
+        namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
+            Route::get('update-system', 'SystemController@updateUMISDATA');
+        });
 
+
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
+            Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
+            Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+        });
 
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
 Route::
         namespace('App\Http\Controllers')->group(function () {
-            Route::get('test', 'DashboardController@test');
-
-
-            Route::get('announcementslist', 'AnnouncementsController@index');
+            // Route::get('test', 'DashboardController@test');
+        
+            // Route::get('announcementslist', 'AnnouncementsController@index');
             Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
             Route::get('announcements/{id}', 'AnnouncementsController@show');
 
@@ -50,6 +57,9 @@ Route::
             Route::get('news-search', 'NewsController@searchNews');
             Route::get('news/{id}', 'NewsController@show');
             Route::get('notification', 'NotificationController@store');
+
+
+            Route::put('account-recovery', 'AccountRecoveryController@update');
         });
 
 Route::
@@ -72,19 +82,30 @@ Route::
             Route::get('validate-token', 'CsrfTokenController@validateToken');
             Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
             Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+
+
+            Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
         });
 
 Route::middleware('auth.cookie')->group(function () {
 
-
     Route::namespace('App\Http\Controllers')->group(function () {
-        
+
+        Route::namespace("Migration")->group(function () {
+            Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
+            Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+        });
+
+        // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        //     Route::put('account-recovery', 'AccountRecoveryController@update');
+        // });
+
         Route::post('redcap-module-import', 'RedcapController@import');
         Route::post('redcap-module', 'RedcapController@storeRedCapModule');
         Route::get('redcap-module-employees', 'RedcapController@employessWithRedCapModules');
 
-        Route::get('announcements/{id}', 'AnnouncementsController@show');
-        Route::get('announcements', 'AnnouncementsController@showAnnouncement');
+        Route::get('announcements/{id}', 'AnnouncementsController@showAnnouncement');
+        Route::get('announcements', 'AnnouncementsController@index');
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('notifications', 'NotificationController@getNotificationsById');
         });
@@ -2640,8 +2661,9 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
- Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::middleware("auth.thirdparty")->group(function(){
-        Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
-     });
- });
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+            Route::middleware("auth.thirdparty")->group(function () {
+                Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+            });
+        });
