@@ -37,6 +37,7 @@ use App\Models\DigitalDtrSignatureRequest;
 use App\Models\DigitalDtrSignatureRequestFile;
 use App\Traits\DigitalDtrSignatureLoggable;
 use App\Models\DigitalDtrSignatureLog;
+use App\Models\DigitalSignedDtr;
 use App\Services\DigitalSignatureService;
 use App\Services\DtrSigningService;
 
@@ -1212,15 +1213,42 @@ class DTRcontroller extends Controller
                     throw new \Exception($saveResult['message']);
                 }
 
-                /* Save file for digital sig      $fileConten $dompdf->output();
- saveDTRFileForSignature               // $saveResult = $this->saveGeneratedDtrFile($employee, $filename, $fileContent, date('Y-m-d', strtotime("ar_of-$month_of-01")), $isWholeMonth);
+                // FETCH AND GET THE SIGNED DTR
+                $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $saveResult['request_id'])->first();
 
-             // if (!$saveResult['success']) {
+                if (!$signedDtr) {
+                    throw new \Exception('Failed to fetch signed DTR');
+                }
+
+                $signedDtrPath = $signedDtr->file_path;
+
+                if (!Storage::disk('private')->exists($signedDtrPath)) {
+                    throw new \Exception('Signed DTR file not found');
+                }
+
+                $fileContent = Storage::disk('private')->get($signedDtrPath);
+
+                $response = new \Illuminate\Http\Response($fileContent);
+                $response->header('Content-Type', 'application/pdf');
+                $response->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+
+                return $response;
+
+
+
+
+                
+
+                /* Save file for digital signature */
+                // $saveResult = $this->saveGeneratedDtrFile($employee, $filename, $fileContent, date('Y-m-d', strtotime("ar_of-$month_of-01")), $isWholeMonth);
+
+                // if (!$saveResult['success']) {
                 //     thrnew \Exception($saveResult['message']);
                 // }
 
                 /* Downloads as PDF */
-                $dompdf->stream($filename);
+                // $dompdf->stream($filename);
+                
             }
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()]);
