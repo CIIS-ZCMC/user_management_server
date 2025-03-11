@@ -1206,8 +1206,12 @@ class DTRcontroller extends Controller
                 $saveResult = match($dtr_sign) {
                     'for_owner' => $this->saveSignedDtrFileOwner($employee, $filename, $fileContent, $dtrDate, $wholeMonth),
                     'for_incharge' => $this->saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtrDate, $wholeMonth),
-                    default => null,
+                    default => $dompdf->stream($filename),
                 };
+
+                if ($dtr_sign !== 'for_owner' && $dtr_sign !== 'for_incharge') {
+                    return;
+                }
 
                 if (!$saveResult) {
                     throw new \Exception($saveResult['message']);
@@ -1233,21 +1237,6 @@ class DTRcontroller extends Controller
                 $response->header('Content-Disposition', 'inline; filename="' . $filename . '"');
 
                 return $response;
-
-
-
-
-                
-
-                /* Save file for digital signature */
-                // $saveResult = $this->saveGeneratedDtrFile($employee, $filename, $fileContent, date('Y-m-d', strtotime("ar_of-$month_of-01")), $isWholeMonth);
-
-                // if (!$saveResult['success']) {
-                //     thrnew \Exception($saveResult['message']);
-                // }
-
-                /* Downloads as PDF */
-                // $dompdf->stream($filename);
                 
             }
         } catch (\Throwable $th) {
