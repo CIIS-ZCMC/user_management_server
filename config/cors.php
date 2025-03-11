@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['PUT,DELETE,POST,GET,OPTIONS'],
 
-    'allowed_origins' => [env('CLIENT_DOMAIN'), env("PORTAL_CLIENT_DOMAIN")],
+    'allowed_origins' => [env('CLIENT_DOMAIN'), env("PORTAL_CLIENT_DOMAIN"), "http://10.0.2.2:8000"],
 
     'allowed_origins_patterns' => [],
 
