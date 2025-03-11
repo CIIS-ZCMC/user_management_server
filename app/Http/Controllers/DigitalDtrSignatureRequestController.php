@@ -173,33 +173,6 @@ class DigitalDtrSignatureRequestController extends Controller
         }
     }
 
-
-
-    /**
-     * Display the specified resource.
-     */
-    // public function show($id): BinaryFileResponse
-    // {
-    //     try {
-    //         $digitalDtrSignatureRequest = DigitalDtrSignatureRequestFile::findOrFail($id);
-    //         $filePath = storage_path('app/' . $digitalDtrSignatureRequest->file_path);
-
-    //         if (!file_exists($filePath)) {
-    //             return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);
-    //         }
-
-    //         return response()->file($filePath, [
-    //             'Content-Type' => Storage::mimeType($digitalDtrSignatureRequest->file_path),
-    //             'Content-Disposition' => 'inline; filename="' . basename($digitalDtrSignatureRequest->file_path) . '"'
-    //         ]);
-    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-    //         return response()->json(['message' => 'Digital DTR signature request file not found'], Response::HTTP_NOT_FOUND);
-    //     } catch (\Throwable $th) {
-    //         Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
-    //         return response()->json(['message' => 'An error occurred while retrieving the file'], Response::HTTP_INTERNAL_SERVER_ERROR);
-    //     }
-    // }
-
     public function show($id)
     {
         try {

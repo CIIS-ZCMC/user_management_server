@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('employee_head_profile_id')->constrained('employee_profiles')->onDelete('cascade');
             $table->foreignId('digital_certificate_id')->constrained('digital_certificate')->onDelete('cascade');
             $table->date('dtr_date');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'for_owner'])->default('pending');
             $table->text('remarks')->nullable();
             $table->boolean('whole_month')->nullable();
             $table->timestamp('approved_at')->nullable();

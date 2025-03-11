@@ -37,6 +37,8 @@ use App\Models\DigitalDtrSignatureRequest;
 use App\Models\DigitalDtrSignatureRequestFile;
 use App\Traits\DigitalDtrSignatureLoggable;
 use App\Models\DigitalDtrSignatureLog;
+use App\Services\DigitalSignatureService;
+use App\Services\DtrSigningService;
 
 class DTRcontroller extends Controller
 {
@@ -539,7 +541,6 @@ class DTRcontroller extends Controller
                                         $DaySchedule = $Schedule['daySchedule'];
                                         $BreakTime = $Schedule['break_Time_Req'];
 
-
                                         if (count($DaySchedule) >= 1) {
                                             if (isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']) {
 
@@ -896,7 +897,10 @@ class DTRcontroller extends Controller
             $month_of = $request->monthof;
             $year_of = $request->yearof;
             $view = $request->view;
-            $FrontDisplay = $request->frontview;
+            $FrontDisplay = $request->fronth;
+            $wholeMonth = $request->whole_month;
+            $dtr_sign = $request->dtr_sign;
+
             $ishalf = 1;
             ini_set('max_execution_time', 86400);
 
@@ -1192,15 +1196,28 @@ class DTRcontroller extends Controller
                 $dompdf->render();
                 $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
                 $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
+                $fileContent = $dompdf->output();
+                $dtrDate =  date('Y-m-d', strtotime("$year_of-$month_of-01"));
 
                 Log::info($employee);
-                /* Save file for digital signature */
-                $fileContent = $dompdf->output();
-                $saveResult = $this->saveDTRFileForSignature($employee, $filename, $fileContent, date('Y-m-d', strtotime("$year_of-$month_of-01")), $ishalf === 1 ? false : true);
+                
 
-                if (!$saveResult['success']) {
+                $saveResult = match($dtr_sign) {
+                    'for_owner' => $this->saveSignedDtrFileOwner($employee, $filename, $fileContent, $dtrDate, $wholeMonth),
+                    'for_incharge' => $this->saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtrDate, $wholeMonth),
+                    default => null,
+                };
+
+                if (!$saveResult) {
                     throw new \Exception($saveResult['message']);
                 }
+
+                /* Save file for digital sig      $fileConten $dompdf->output();
+ saveDTRFileForSignature               // $saveResult = $this->saveGeneratedDtrFile($employee, $filename, $fileContent, date('Y-m-d', strtotime("ar_of-$month_of-01")), $isWholeMonth);
+
+             // if (!$saveResult['success']) {
+                //     thrnew \Exception($saveResult['message']);
+                // }
 
                 /* Downloads as PDF */
                 $dompdf->stream($filename);
@@ -2394,7 +2411,8 @@ class DTRcontroller extends Controller
         }
     }
 
-    private function saveDTRFileForSignature($employee, $filename, $fileContent, $dtr_date, $whole_month)
+
+    public function saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtr_date, $whole_month)
     {
         try {
             $digital_certificate = DigitalCertificate::where('employee_profile_id', $employee->id)->first();
@@ -2416,7 +2434,7 @@ class DTRcontroller extends Controller
 
             // Save the file
             $file_extension = 'pdf';
-            $sanitized_filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
+            $sanitized_filename = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $filename);
             $unique_filename = date('Y-m-d') . '_' . uniqid() . '_' . $sanitized_filename . '.' . $file_extension;
             $file_path = 'dtr_files/';
 
@@ -2439,17 +2457,107 @@ class DTRcontroller extends Controller
                 'created',
                 'DTR File Saved'
             );
-            
+
             return [
                 'success' => true,
                 'message' => 'Your DTR file saved successfully and is now pending for signature',
                 'request_id' => $signature_request->id
             ];
         } catch (\Exception $e) {
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'saveDTRFileForSignature', $e->getMessage());
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'saveGeneratedDtrFile', $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Failed to save DTR file: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    private function saveSignedDtrFileOwner($employee, $filename, $fileContent, $dtr_date, $whole_month)
+    {
+        try {
+            $digitalCertificateOwner = DigitalCertificate::where('employee_profile_id', $employee->id)->first();
+            if (!$digitalCertificateOwner) {
+                throw new \Exception("User is not yet registered for digital certificate.");
+            }
+
+            $signatureService = new DigitalSignatureService();
+            $dtrSigningService = new DtrSigningService($signatureService);
+            $signatureRequest = DigitalDtrSignatureRequest::create([
+                'employee_profile_id' => $employee->id,
+                'employee_head_profile_id' => $employee->employeeHead($employee->assignedArea->findDetails()),
+                'digital_certificate_id' => $digitalCertificateOwner->id,
+                'dtr_date' => $dtr_date,
+                'status' => 'for_owner',
+                'remarks' => 'DTR file signed by owner',
+                'whole_month' => $whole_month === '0' ? false : true,
+                'approved_at' => now()
+            ]);
+
+            // Save the file
+            $file_extension = 'pdf';
+            $sanitized_filename = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $filename);
+            $unique_filename = date('Y-m-d') . '_' . uniqid() . '_' . $sanitized_filename . '.' . $file_extension;
+            $file_path = 'dtr_files/';
+
+            // Store the file in the private disk
+            Storage::disk('private')->put($file_path . $unique_filename, $fileContent);
+
+            // Create digital DTR signature request file record
+            $requestFile = new DigitalDtrSignatureRequestFile();
+            $requestFile->digital_dtr_signature_request_id = $signatureRequest->id;
+            $requestFile->file_name = $filename;
+            $requestFile->file_path = $file_path . $unique_filename;
+            $requestFile->file_extension = $file_extension;
+            $requestFile->file_size = strlen($fileContent);
+            $requestFile->save();
+
+            // Log the saving of the dtr file
+            $this->logDtrSignatureAction(
+                $signatureRequest->id,
+                $employee->id,
+                'created',
+                'DTR File Saved'
+            );
+
+            $certificateOwner = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $employee->id)->first();
+            if (!$certificateOwner) {
+                throw new \Exception("User is not yet registered for digital certificate.");
+            }
+
+            $diskName = 'private';
+            $filePath = $signatureRequest->digitalDtrSignatureRequestFile->file_path;
+            if (!Storage::disk($diskName)->exists($filePath)) {
+                return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $fileContent = Storage::disk($diskName)->get($filePath);
+            $mime_type = Storage::disk($diskName)->mimeType($filePath);
+            $filename = basename($filePath);
+
+            $tempPath = tempnam(sys_get_temp_dir(), 'uploaded_file_');
+            file_put_contents($tempPath, $fileContent);
+
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $tempPath,
+                $filename,
+                $mime_type,
+                null,
+                true
+            );
+
+            // SIGN DTR OWNER
+            $dtrSigningService->processOwnerSigning($uploadedFile, $certificateOwner, $signatureRequest->whole_month, $signatureRequest->id);
+
+            return [
+                'success' => true,
+                'message' => 'Your DTR file signed by owner and saved successfully',
+                'request_id' => $signatureRequest->id
+            ];
+        } catch (\Exception $e) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'saveSignedDtrFileOwner', $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to save signed DTR file: ' . $e->getMessage()
             ];
         }
     }
