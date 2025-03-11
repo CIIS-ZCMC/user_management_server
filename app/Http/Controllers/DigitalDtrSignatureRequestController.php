@@ -48,7 +48,7 @@ class DigitalDtrSignatureRequestController extends Controller
             $query->with([
                 'digitalDtrSignatureRequestFile',
                 'employeeProfile.personalInformation',
-                'employeeProfileHead.personalInformation'
+                'employeeHeadProfile.personalInformation'
             ])
                 ->where('employee_head_profile_id', $user->id);
 
@@ -85,8 +85,9 @@ class DigitalDtrSignatureRequestController extends Controller
         try {
             $signatureRequest = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')
                 ->where('id', $id)
-                ->where('employee_profile_id', $request->user->id)
+                // ->where('employee_profile_id', $request->user->id)
                 ->firstOrFail();
+                
 
             $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $signatureRequest->id)
                 ->where('signer_type', 'incharge')
@@ -223,6 +224,7 @@ class DigitalDtrSignatureRequestController extends Controller
                 'signature_request_id' => 'required|exists:digital_dtr_signature_requests,id',
                 'approved' => 'required|boolean',
                 'remarks' => 'nullable|string|max:255',
+                
             ]);
 
             $user = $request->user;
@@ -283,9 +285,9 @@ class DigitalDtrSignatureRequestController extends Controller
             );
 
             // SIGN DTR OWNER
-            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $signature_request->whole_month, $signature_request->id);
+            $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, false, $signature_request->id);
             // SIGN DTR INCHARGE                                                    
-            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $signature_request->whole_month, $signature_request->id);
+            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, false, $signature_request->id);
 
             $notification = Notifications::create([
                 'title' => $employee_name . ' has approved and signed your DTR',
