@@ -509,8 +509,8 @@ class EmployeeProfile extends Authenticatable
             case 'Department':
                 $sections = Section::where('department_id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $my_employees = $this->retrieveEmployees($employees, 'department_id', $section->department_id, [$user->id, 1]);
-                    $employees = array_merge($my_employees, (array) $section->supervisor);
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $section->department_id, [$user->id, 1]);
+                    // $employees = array_merge($my_employees, (array) $section->supervisor);
                 }
                 break;
 
