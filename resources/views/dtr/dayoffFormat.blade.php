@@ -5,6 +5,7 @@
     </td>
 
     <td class="time " style="font-weight:bold" id="entry{{ $i }}2">
+    
         @php
             $yesterDate = date('Y-m-d', strtotime($curDate . ' -1 day'));
             $yesdtr = array_values(
@@ -23,7 +24,7 @@
                         $curDate == date('Y-m-d', strtotime($yesdtr[0]->first_out)) &&
                         date('a', strtotime($yesdtr[0]->first_out)) == 'am'
                     ) {
-                        echo date('h:i a', strtotime($yesdtr[0]->first_out));
+                        echo date('h:i a', strtotime($yesdtr[0]->first_out)) ;
                     }
                 }
             }
@@ -56,7 +57,23 @@
                     ->first();
 
                 if ($dtr) {
-                    echo date('h:i a', strtotime($dtr->first_out));
+                    //Compare the last month sched.
+                //Check schedule. 
+                $lmD = date('Y-m-d', strtotime($dtr->first_out));
+
+                    $sched = $Schedule->filter(function ($res) use ($lmD) {
+                        return $res->schedule == $lmD;
+                    });
+                    //if not second in and  second out
+                        //- morning - am only..
+
+                        $firstSched = $sched->first();
+
+                if ($firstSched && !$firstSched->second_in && !$firstSched->second_out) {
+                    if(date('a', strtotime($dtr->first_out)) == "am"){
+                        echo date('Y-m-d h:i a', strtotime($dtr->first_out)) ;
+                    }         
+                }                 
                 }
             }
         @endphp
