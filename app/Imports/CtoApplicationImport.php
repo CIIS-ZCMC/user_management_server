@@ -21,9 +21,6 @@ class CtoApplicationImport implements ToModel
             return null;
         }
 
-
-
-
         // If the length is 10 (meaning the date is in 'Y-m-d' format), append ' 00:00:00' for the time part
         $dateFrom = trim($row[1]);
 

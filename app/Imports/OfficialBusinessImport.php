@@ -28,8 +28,6 @@ class OfficialBusinessImport implements ToModel
         $dateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', $dateFrom, 'Asia/Manila');
         $dateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', $dateTo, 'Asia/Manila');
 
-
-
         return new OfficialBusiness([
             'employee_profile_id'    => (int)$row[0],
             'date_from'              => $dateFromCarbon,

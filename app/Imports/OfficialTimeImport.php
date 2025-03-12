@@ -14,6 +14,8 @@ class OfficialTimeImport implements ToModel
      */
     public function model(array $row)
     {
+
+
         static $headerSkipped = false;
 
         if (!$headerSkipped) {
@@ -21,7 +23,7 @@ class OfficialTimeImport implements ToModel
             return null;
         }
 
-         $dateFrom = trim($row[1]);
+        $dateFrom = trim($row[1]);
         $dateTo = trim($row[2]);
         $timeFrom = trim($row[3]);  // Assuming time_from is in column 4
         $timeTo = trim($row[4]);    // Assuming time_to is in column 5

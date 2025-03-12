@@ -19,9 +19,24 @@ use App\Models\UserNotifications;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
+use App\Imports\CtoApplicationImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CtoApplicationController extends Controller
 {
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:csv,txt',
+        ]);
+
+        Excel::import(new CtoApplicationImport(), $request->file('file'));
+
+        return response()->json([
+            'message' => 'Import Succesfull.'
+        ], Response::HTTP_OK);
+    }
 
     public function index(Request $request)
     {

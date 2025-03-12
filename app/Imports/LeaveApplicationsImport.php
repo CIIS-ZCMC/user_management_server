@@ -17,6 +17,8 @@ class LeaveApplicationsImport implements ToModel
     public function model(array $row)
     {
 
+
+        
         static $headerSkipped = false;
 
         if (!$headerSkipped) {
