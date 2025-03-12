@@ -318,7 +318,7 @@ class TimeAdjustmentController extends Controller
 
             // Continue with your existing logic
             $user = $request->user;
-            $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+            $approving_officer = Section::where('code', 'HOPPS-HRMO')->first()->supervisor_employee_profile_id;
 
             $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
 
