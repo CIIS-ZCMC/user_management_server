@@ -545,7 +545,7 @@ class EmployeeProfile extends Authenticatable
         $my_section = Section::where('supervisor_employee_profile_id', $user->id)->pluck('id')->toArray();
         $my_unit = Unit::where('head_employee_profile_id', $user->id)->pluck('id')->toArray();
 
-        $assign_areas = AssignArea::where(function ($query) use ($my_division, $my_department, $my_section, $my_unit) {
+        $assign_areas = AssignArea::where(function ($query) use ($user, $my_division, $my_department, $my_section, $my_unit) {
             if (!empty($my_division))
                 $query->whereIn('division_id', $my_division);
             if (!empty($my_department))
@@ -554,7 +554,7 @@ class EmployeeProfile extends Authenticatable
                 $query->orWhereIn('section_id', $my_section);
             if (!empty($my_unit))
                 $query->orWhereIn('unit_id', $my_unit);
-        })->get();
+        })->whereNotIn('employee_profile_id', $user->id)->get();
 
         return $assign_areas->map(function ($assign_area) {
             return $assign_area->employeeProfile;
@@ -621,7 +621,7 @@ class EmployeeProfile extends Authenticatable
     public function employeeHead($assigned_area)
     {
         $assigned_area = $this->assignedArea->findDetails();
-        
+
         $model = "App\\Models\\$assigned_area[sector]";
         $sector_head = $model::where('id', $assigned_area['details']->id)->first();
 
@@ -642,19 +642,19 @@ class EmployeeProfile extends Authenticatable
     public function employeeHeadOfficer()
     {
         $assigned_area = $this->assignedArea->findDetails();
-        
+
         $model = "App\\Models\\$assigned_area[sector]";
         $sector_head = $model::where('id', $assigned_area['details']->id)->first();
 
         switch ($assigned_area['sector']) {
             case 'Division':
-                return $sector_head->chief_employee_profile_id !== null? new EmployeeHeadResource($sector_head->divisionHead) : null;
+                return $sector_head->chief_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->divisionHead) : null;
             case 'Department':
-                return $sector_head->head_employee_profile_id !== null? new EmployeeHeadResource($sector_head->departmentHead) : null;
+                return $sector_head->head_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->departmentHead) : null;
             case 'Section':
-                return $sector_head->supervisor_id !== null? new EmployeeHeadResource($sector_head->supervisor) : null;
+                return $sector_head->supervisor_id !== null ? new EmployeeHeadResource($sector_head->supervisor) : null;
             case 'Unit':
-                return  $sector_head->head_employee_profile_id !== null? new EmployeeHeadResource($sector_head->head) : null;
+                return $sector_head->head_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->head) : null;
             default:
                 return null;
         }
