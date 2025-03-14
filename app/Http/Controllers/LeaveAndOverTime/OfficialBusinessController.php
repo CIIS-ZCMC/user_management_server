@@ -13,13 +13,14 @@ use App\Models\Notifications;
 use App\Models\OfficialBusiness;
 
 use App\Http\Controllers\Controller;
+use App\Imports\OfficialBusinessImport;
 use App\Models\UserNotifications;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
-
+use Maatwebsite\Excel\Facades\Excel;
 
 class OfficialBusinessController extends Controller
 {
@@ -30,6 +31,20 @@ class OfficialBusinessController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:csv,txt',
+        ]);
+
+        Excel::import(new OfficialBusinessImport(), $request->file('file'));
+
+        return response()->json([
+            'message' => 'Import Succesfull.'
+        ], Response::HTTP_OK);
+    }
+
     public function index(Request $request)
     {
         try {

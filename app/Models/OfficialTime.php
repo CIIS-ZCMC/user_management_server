@@ -14,6 +14,7 @@ class OfficialTime extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'employee_profile_id',
         'date_from',
         'date_to',
         'time_from',
@@ -32,16 +33,19 @@ class OfficialTime extends Model
     ];
 
     public $timestamps = TRUE;
-    
-    public function employee() {
+
+    public function employee()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 
-    public function recommendingOfficer() {
+    public function recommendingOfficer()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'recommending_officer');
     }
 
-    public function approvingOfficer() {
+    public function approvingOfficer()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 
