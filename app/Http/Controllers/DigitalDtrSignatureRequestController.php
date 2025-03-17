@@ -87,6 +87,7 @@ class DigitalDtrSignatureRequestController extends Controller
             $signatureRequest = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')
                 ->where('id', $id)
                 ->where('employee_profile_id', $request->user->id)
+                ->orWhere('employee_head_profile_id', $request->user->id)
                 ->firstOrFail();
 
             $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $signatureRequest->id)
