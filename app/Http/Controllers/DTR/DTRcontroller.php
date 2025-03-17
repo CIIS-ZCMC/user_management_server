@@ -1200,44 +1200,51 @@ class DTRcontroller extends Controller
                 $fileContent = $dompdf->output();
                 $dtrDate =  date('Y-m-d', strtotime("$year_of-$month_of-01"));
 
-                Log::info($employee);
-                
 
-                $saveResult = match($dtr_sign) {
-                    'for_owner' => $this->saveSignedDtrFileOwner($employee, $filename, $fileContent, $dtrDate, $wholeMonth),
-                    'for_incharge' => $this->saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtrDate, $wholeMonth),
-                    default => $dompdf->stream($filename),
-                };
+                $saveResult = null;
 
-                if ($dtr_sign !== 'for_owner' && $dtr_sign !== 'for_incharge') {
-                    return;
+                if ($dtr_sign === 'for_owner') {
+                    $saveResult = $this->saveSignedDtrFileOwner($employee, $filename, $fileContent, $dtrDate, $wholeMonth);
+
+                    if ($dtr_sign !== 'for_owner' && $dtr_sign !== 'for_incharge') {
+                        return;
+                    }
+
+                    if (!$saveResult) {
+                        throw new \Exception($saveResult['message']);
+                    }
+
+                    // FETCH AND GET THE SIGNED DTR
+                    $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $saveResult['request_id'])->first();
+
+                    if (!$signedDtr) {
+                        Log::error('Failed to fetch signed DTR', ['request_id' => $saveResult['request_id']]);
+                        throw new \Exception('Failed to fetch signed DTR');
+                    }
+
+                    $signedDtrPath = $signedDtr->file_path;
+
+                    if (!Storage::disk('private')->exists($signedDtrPath)) {
+                        Log::error('Signed DTR file not found', ['file_path' => $signedDtrPath]);
+                        throw new \Exception('Signed DTR file not found');
+                    }
+
+                    $fileContent = Storage::disk('private')->get($signedDtrPath);
+
+                    $response = new \Illuminate\Http\Response($fileContent);
+                    $response->header('Content-Type', 'application/pdf');
+                    $response->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+
+                    return $response;
+                } else if ($dtr_sign === 'for_incharge') {
+                    $saveResult = $this->saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtrDate, $wholeMonth);
+                    return response()->json([
+                        'message' => 'DTR saved for signature request',
+                        'data' => $saveResult['request_id']
+                    ]);
+                } else {
+                    $dompdf->stream($filename);
                 }
-
-                if (!$saveResult) {
-                    throw new \Exception($saveResult['message']);
-                }
-
-                // FETCH AND GET THE SIGNED DTR
-                $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $saveResult['request_id'])->first();
-
-                if (!$signedDtr) {
-                    throw new \Exception('Failed to fetch signed DTR');
-                }
-
-                $signedDtrPath = $signedDtr->file_path;
-
-                if (!Storage::disk('private')->exists($signedDtrPath)) {
-                    throw new \Exception('Signed DTR file not found');
-                }
-
-                $fileContent = Storage::disk('private')->get($signedDtrPath);
-
-                $response = new \Illuminate\Http\Response($fileContent);
-                $response->header('Content-Type', 'application/pdf');
-                $response->header('Content-Disposition', 'inline; filename="' . $filename . '"');
-
-                return $response;
-                
             }
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()]);
