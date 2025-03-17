@@ -15,6 +15,7 @@ class OfficialBusiness extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'employee_profile_id',
         'date_from',
         'date_to',
         'status',

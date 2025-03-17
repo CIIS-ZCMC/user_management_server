@@ -17,7 +17,6 @@ use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemModule;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Helpers\Helpers;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
@@ -27,6 +26,7 @@ use App\Models\ModulePermission;
 use App\Models\SystemRole;
 use App\Models\System;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 class SystemRoleController extends Controller
 {
@@ -151,51 +151,95 @@ class SystemRoleController extends Controller
         return [
             'id' => $system_role->id,
             'name' => $system_role->role->name,
-            'modules' => array_values($modules), // Resetting array keys
+            'modules' => array_values($modules),
         ];
     }
 
     public function employeesWithSpecialAccess(Request $request)
     {
         try {
-            $current_page = $request->query("currentPage");
-            $limit = $request->query("limit");
+            $current_page = $request->query("currentPage", 1);
+            $limit = $request->query("limit", 10);
             $search = $request->query('search');
-            $offset = ($current_page  - 1) * $limit;
+            $sortColumn = $request->query('sortColumn', 'id'); 
+            $sortOrder = $request->query('sortOrder', 'asc'); 
+            
+            $offset = ($current_page - 1) * $limit;
 
-            if($search){
-                $employees = EmployeeProfile::whereHas('specialAccessRole')
-                    ->whereHas('personalInformation', function ($query) use ($search) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('last_name', 'like', "$search%")
-                            ->orWhere('first_name', 'like', "$search%")
-                            ->orWhere('middle_name', 'like', "$search%");
-                        });
-                    })
-                    ->limit($limit)
-                    // ->offset($offset)
-                    ->get();
-                
+            /**
+             * Priorities search if has value retrieve all employee that has personal_information last name related to the search value use like
+             * second priorities sort column (asc/desc) base on given value in sortOrder
+             * third use the offset and limit
+             */
+
+            $allowedSortColumns = ['id', 'name', 'job_position', 'area', 'special_access_role', 'effective_at'];
+
+            if (!in_array($sortColumn, $allowedSortColumns)) {
                 return response()->json([
-                    'total_page_count' => $employees->count() < 10 ? 1 : ceil($employees->count()/10),
-                    'offset' => $offset,
-                    'data' => EmployeeWithSpecialAccessResource::collection($employees),
-                    'message' => 'Search Special access role assign successfully.'
-                ], Response::HTTP_OK);
+                    'message' => 'Invalid sorting column.'
+                ], Response::HTTP_BAD_REQUEST);
             }
 
-            $total_page = EmployeeProfile::whereHas('specialAccessRole')->count();
-            // $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->offset(value: $offset)->get();
-            $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->get();
+            $query = EmployeeProfile::whereNotNull('employee_id')
+                ->whereHas("specialAccessRole")
+                ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
+                ->when($search, function ($q) use ($search) {
+                    $q->whereHas('personalInformation', function ($q) use ($search) {
+                        $q->where('last_name', 'like', "$search%");
+                    });
+                })
+                ->when($sortColumn, function ($q) use ($sortColumn, $sortOrder) {
+                    switch ($sortColumn) {
+                        case 'name':
+                            $q->leftJoin('personal_informations', 'employee_profiles.personal_information_id', '=', 'personal_informations.id')
+                                ->orderBy("personal_informations.last_name", $sortOrder);
+                            break;
+            
+                        case 'job_position':
+                            $q->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
+                                ->leftJoin('designations', 'assigned_areas.designation_id', '=', 'designations.id')
+                                ->orderBy("designations.name", $sortOrder);
+                            break;
+            
+                        case 'area':
+                            $q->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
+                                ->orderBy("assigned_areas.unit_id", $sortOrder);
+                            break;
+            
+                        case 'special_access_role':
+                            $q->leftJoin('special_access_roles', 'employee_profiles.id', '=', 'special_access_roles.employee_profile_id')
+                                ->orderBy("special_access_roles.system_role_id", $sortOrder);
+                            break;
+            
+                        case 'effective_at':
+                            $q->leftJoin('special_access_roles', 'employee_profiles.id', '=', 'special_access_roles.employee_profile_id')
+                                ->orderBy("special_access_roles.effective_at", $sortOrder);
+                            break;
+            
+                        default:
+                            $q->orderBy($sortColumn, $sortOrder);
+                            break;
+                    }
+                });
+
+            $total_count = $query->count();
+
+            $employees = $query->limit($limit)->offset($offset)->get();
+
+            // Filter out null assigned_area and empty special_access_role
+            // $filteredEmployees = $employees->filter(function ($employee) {
+            //     return is_null($employee->assigned_area);
+            // })->values(); // Reset array keys after filtering
 
             return response()->json([
-                'total_page_count' => $total_page < 10 ? 1: ceil($total_page/10),
-                // 'offset' => $offset,
-                'data' => EmployeeWithSpecialAccessResource::collection($employees),
-                'message' => 'Special access role assign successfully.'
+                'total_page_count' => $total_count < $limit ? 1 : ceil($total_count / $limit),
+                'offset' => $offset,
+                'data' => $employees,
+                'message' => 'Special access role data retrieved successfully.',
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'addSpecialAccessRole', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesWithSpecialAccess', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
