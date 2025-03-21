@@ -38,6 +38,11 @@ class Department extends Model
         return $this->hasMany(AssignArea::class);
     }
 
+    public function assignAreaTrails()
+    {
+        return $this->hasMany(AssignAreaTrail::class, 'department_id');
+    }
+
     public function division()
     {
         return $this->belongsTo(Division::class);
@@ -76,5 +81,10 @@ class Department extends Model
     public function sections()
     {
         return $this->hasMany(Section::class);
+    }
+
+    public function plantillaAssignAreas()
+    {
+        return $this->hasMany(PlantillaAssignedArea::class);
     }
 }

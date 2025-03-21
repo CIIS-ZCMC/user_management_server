@@ -16,7 +16,7 @@ class SystemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $api_key = $this->api_key === null || $this->api_key === 'NONE'? 'NONE': Crypt::decrypt($this->api_key);
+        $api_key = $this->api_key === null || $this->api_key === 'NONE'? 'NONE': $this->api_key;
         $key_status = $this->key_deactivated_at??"NONE";
         $status_message = ($this->status === 0) ? "Maintainance" : (($this->status === 1) ? "Active" : "Server Down");
         

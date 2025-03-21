@@ -47,7 +47,7 @@ class LeaveApplicationResource extends JsonResource
                 'id' => $area_details->id,
                 'name' => $area_details->name,
                 'code' => $area_details->code,
-                'oic' => $this->oic->personalInformation->name(),
+                'oic' => $this->oic->personalInformation->nameWithSurnameFirst(),
                 'position' => $this->oic->assignedArea->designation->name
             ];
         }
@@ -60,7 +60,7 @@ class LeaveApplicationResource extends JsonResource
                 "id" => $this->id,
                 "employee_profile" => [
                     'employee_id' => $this->employeeProfile->employee_id,
-                    'name' => $this->employeeProfile->personalInformation->name(),
+                    'name' => $this->employeeProfile->personalInformation->nameWithSurnameFirst(),
                     'designation_name' => $this->employeeProfile->assignedArea->designation->name,
                     'designation_code' => $this->employeeProfile->assignedArea->designation->code,
                     'area' => $area['details']->name,
@@ -88,7 +88,7 @@ class LeaveApplicationResource extends JsonResource
                 'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
                 "hrmo_officer" => [
                     "employee_id" => $this->hrmoOfficer->employee_id,
-                    "name" => $this->hrmoOfficer->personalInformation->name(),
+                    "name" => $this->hrmoOfficer->personalInformation->nameWithSurnameFirst(),
                     "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                     "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
                     "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
@@ -136,28 +136,28 @@ class LeaveApplicationResource extends JsonResource
             'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,
-                "name" => $this->hrmoOfficer->personalInformation->name(),
+                "name" => $this->hrmoOfficer->personalInformation->nameWithSurnameFirst(),
                 "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                 "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
                 "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
             ],
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
-                "name" => $this->recommendingOfficer->personalInformation->name(),
+                "name" => $this->recommendingOfficer->personalInformation->nameWithSurnameFirst(),
                 "designation" => $this->recommendingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->recommendingOfficer->assignedArea->designation->code,
                 "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
             ],
             "approving_officer" => [
                 "employee_id" => $this->approvingOfficer->employee_id,
-                "name" => $this->approvingOfficer->personalInformation->name(),
+                "name" => $this->approvingOfficer->personalInformation->nameWithSurnameFirst(),
                 "designation" => $this->approvingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
                 "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             "applied_by" => $this->appliedBy ? [
                 "employee_id" => $this->appliedBy->employee_id,
-                "name" => $this->appliedBy->personalInformation->fullName(),
+                "name" => $this->appliedBy->personalInformation->nameWithSurnameFirst(),
                 "designation" => $this->appliedBy->assignedArea->designation->name,
                 "designation_code" => $this->appliedBy->assignedArea->designation->code,
                 "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->appliedBy->profile_url,

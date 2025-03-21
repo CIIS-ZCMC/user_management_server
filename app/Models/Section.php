@@ -41,6 +41,10 @@ class Section extends Model
         return $this->hasMany(AssignArea::class);
     }
 
+    public function assignAreaTrails()
+    {
+        return $this->hasMany(AssignAreaTrail::class);
+    }
 
     public function division()
     {
@@ -80,5 +84,10 @@ class Section extends Model
     public function units()
     {
         return $this->hasMany(Unit::class);
+    }
+
+    public function plantillaAssignAreas()
+    {
+        return $this->hasMany(PlantillaAssignedArea::class);
     }
 }

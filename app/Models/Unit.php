@@ -80,4 +80,9 @@ class Unit extends Model
     {
         return $this->belongsTo(Division::class);
     }
+
+    public function plantillaAssignAreas()
+    {
+        return $this->hasMany(PlantillaAssignedArea::class);
+    }
 }

@@ -9,6 +9,7 @@ use App\Methods\Helpers;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
 use App\Http\Controllers\PayrollHooks\GenerateReportController;
+
 class ComputationController extends Controller
 {
     protected $helper;
@@ -16,14 +17,14 @@ class ComputationController extends Controller
     protected $Working_Hours;
 
 
-     public function __construct() {
+    public function __construct()
+    {
         $this->Working_Days = 22;
         $this->Working_Hours = 8;
         $this->helper = new Helpers();
-
     }
 
-    public function BasicSalary($sg, $step,$schedcount)
+    public function BasicSalary($sg, $step, $schedcount)
     {
         $SG = SalaryGrade::where('salary_grade_number', $sg)->where('is_active', 1)->whereDate('effective_at', "<=", date('Y-m-d'))->first();
         $salaryGrade = 0;
@@ -59,83 +60,96 @@ class ComputationController extends Controller
                 $salaryGrade = $SG->eight;
                 break;
         }
-      //  $salaryGrade = 35097;
-      if(!$schedcount){
-        $schedcount = 1;
-      }
-    return [
-        'Total'=> floor(( $this->Working_Days * $salaryGrade / $this->Working_Days) * 100) / 100,
-        'GrandTotal'=> $salaryGrade,
-    ];
-    }
-
-    public function GrossSalary($present_Days,$salary,$DaysCount){
-
-        if(!$DaysCount){
-            $DaysCount = 1;
+        //  $salaryGrade = 35097;
+        if (!$schedcount) {
+            $schedcount = 1;
         }
-
-        return round(($present_Days * $salary) / $this->Working_Days,2); // Contstant value. Required number of days
-
+        return [
+            'Total' => floor(($this->Working_Days * $salaryGrade / $this->Working_Days) * 100) / 100,
+            'GrandTotal' => $salaryGrade,
+        ];
     }
 
-    public function Rates($basic_Salary,$schedCount){
-        if(!$schedCount){
+    public function GrossSalary($present_Days, $salary, $NumbersOfAbsences)
+    {
+
+        if ($NumbersOfAbsences  == 0) {
+            return round($salary, 2);
+        }
+        return round(($present_Days * $salary) / $this->Working_Days, 2); // Contstant value. Required number of days
+    }
+
+    public function Rates($basic_Salary, $schedCount)
+    {
+        if (!$schedCount) {
             return [
                 'Weekly' => 0,
                 'Daily' => 0,
-                'Hourly' =>0,
+                'Hourly' => 0,
                 'Minutes' => 0,
             ];
         }
 
-           $per_day = round($basic_Salary / $this->Working_Days,2);
-            $per_hour = round($per_day / $this->Working_Hours,2);
-            $per_minutes = round($per_hour / 60,2);
-            $per_week = round($per_day * 5,2);
+        $per_day = $basic_Salary / $this->Working_Days;
 
-            return [
-                'Weekly' => floor($per_week * 100) / 100,
-                'Daily' => floor($per_day * 100) / 100,
-                'Hourly' => floor($per_hour * 100) / 100,
-                'Minutes' => floor($per_minutes * 100) / 100,
-            ];
+        // Calculate the per-hour rate
+        $per_hour = $per_day / $this->Working_Hours;
 
+        // Calculate the per-minute rate
+        $per_minute = $per_hour / 60;
 
+        // Calculate the per-week rate (assuming 5 workdays in a week)
+        $per_week = $per_day * 5;
+
+        // Return rates, rounded to 3 decimal places
+        return [
+            'Weekly'  => round($per_week, 2),
+            'Daily'   => round($per_day, 2),
+            'Hourly'  => round($per_hour, precision: 2),
+            'Minutes' => round($per_minute, 2),
+        ];
     }
 
-    public function UndertimeRates($total_Month_Undertime,$Rates){
-            return $total_Month_Undertime * $Rates['Minutes'];
+    public function UndertimeRates($total_Month_Undertime, $Rates)
+    {
+        return $total_Month_Undertime * $Rates['Minutes'];
     }
 
-    public function AbsentRates($Number_Absences,$Rates){
-        return round($Rates['Daily'] * $Number_Absences,2) ;
+    public function AbsentRates($Number_Absences, $Rates)
+    {
+        return round($Rates['Daily'] * $Number_Absences, 2);
     }
 
-    public function NetSalaryFromTimeDeduction($Rates,$totalworkedminutes,$undertimeRate,$absentRate,$grosssalary){
-        $deduction = $undertimeRate ;
-        $grossSal = $Rates['Minutes'] * $totalworkedminutes ;
-        $net =  floor(round( $grossSal - $deduction,2) * 100) /100;
+    public function NetSalaryFromTimeDeduction($GrossSalary, $undertimeRate, $absentRate, $emptype)
+    {
 
-
-
-        return $net ;
-
+        $deduction =  $absentRate;
+        if ($emptype == "Job Order") {
+            $deduction += $undertimeRate;
+        }
+        $net =  floor(round($GrossSalary, 2) * 100) / 100;
+        return $net - $deduction;
     }
 
-    public function OutofPayroll($overallnetSalary){
+    public function OutofPayroll($overallnetSalary, $employmentType, $total_Month_WorkingMinutes)
+    {
+
+
+        if ($total_Month_WorkingMinutes <= 2640) { // 22 days * 480 / 2 / 2
+            return true;
+        }
+
         $limit = 5000;
-        $halfLimit = $limit / 2;
+        if ($employmentType == "Job Order") {
+            $limit = 2500;
+        }
 
-        if ($overallnetSalary < $limit){
+
+
+        if ($overallnetSalary < $limit) {
             return true;
         }
 
         return false;
-
     }
-
-
-
-
 }

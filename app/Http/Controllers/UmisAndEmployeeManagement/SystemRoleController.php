@@ -12,10 +12,11 @@ use App\Http\Resources\PositionSystemRoleOnlyResource;
 use App\Http\Resources\SpecialAccessRoleAssignResource;
 use App\Models\Designation;
 use App\Models\EmployeeProfile;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
+use App\Models\SystemModule;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Helpers\Helpers;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
@@ -24,6 +25,8 @@ use App\Models\RoleModulePermission;
 use App\Models\ModulePermission;
 use App\Models\SystemRole;
 use App\Models\System;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 class SystemRoleController extends Controller
 {
@@ -148,21 +151,95 @@ class SystemRoleController extends Controller
         return [
             'id' => $system_role->id,
             'name' => $system_role->role->name,
-            'modules' => array_values($modules), // Resetting array keys
+            'modules' => array_values($modules),
         ];
     }
 
     public function employeesWithSpecialAccess(Request $request)
     {
         try {
-            $employees = EmployeeProfile::whereHas('specialAccessRole')->get();
+            $current_page = $request->query("currentPage", 1);
+            $limit = $request->query("limit", 10);
+            $search = $request->query('search');
+            $sortColumn = $request->query('sortColumn', 'id'); 
+            $sortOrder = $request->query('sortOrder', 'asc'); 
+            
+            $offset = ($current_page - 1) * $limit;
+
+            /**
+             * Priorities search if has value retrieve all employee that has personal_information last name related to the search value use like
+             * second priorities sort column (asc/desc) base on given value in sortOrder
+             * third use the offset and limit
+             */
+
+            $allowedSortColumns = ['id', 'name', 'job_position', 'area', 'special_access_role', 'effective_at'];
+
+            if (!in_array($sortColumn, $allowedSortColumns)) {
+                return response()->json([
+                    'message' => 'Invalid sorting column.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $query = EmployeeProfile::whereNotNull('employee_id')
+                ->whereHas("specialAccessRole")
+                ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
+                ->when($search, function ($q) use ($search) {
+                    $q->whereHas('personalInformation', function ($q) use ($search) {
+                        $q->where('last_name', 'like', "$search%");
+                    });
+                })
+                ->when($sortColumn, function ($q) use ($sortColumn, $sortOrder) {
+                    switch ($sortColumn) {
+                        case 'name':
+                            $q->leftJoin('personal_informations', 'employee_profiles.personal_information_id', '=', 'personal_informations.id')
+                                ->orderBy("personal_informations.last_name", $sortOrder);
+                            break;
+            
+                        case 'job_position':
+                            $q->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
+                                ->leftJoin('designations', 'assigned_areas.designation_id', '=', 'designations.id')
+                                ->orderBy("designations.name", $sortOrder);
+                            break;
+            
+                        case 'area':
+                            $q->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
+                                ->orderBy("assigned_areas.unit_id", $sortOrder);
+                            break;
+            
+                        case 'special_access_role':
+                            $q->leftJoin('special_access_roles', 'employee_profiles.id', '=', 'special_access_roles.employee_profile_id')
+                                ->orderBy("special_access_roles.system_role_id", $sortOrder);
+                            break;
+            
+                        case 'effective_at':
+                            $q->leftJoin('special_access_roles', 'employee_profiles.id', '=', 'special_access_roles.employee_profile_id')
+                                ->orderBy("special_access_roles.effective_at", $sortOrder);
+                            break;
+            
+                        default:
+                            $q->orderBy($sortColumn, $sortOrder);
+                            break;
+                    }
+                });
+
+            $total_count = $query->count();
+
+            $employees = $query->limit($limit)->offset($offset)->get();
+
+            // Filter out null assigned_area and empty special_access_role
+            // $filteredEmployees = $employees->filter(function ($employee) {
+            //     return is_null($employee->assigned_area);
+            // })->values(); // Reset array keys after filtering
 
             return response()->json([
-                'data' => EmployeeWithSpecialAccessResource::collection($employees),
-                'message' => 'Special access role assign successfully.'
+                'total_page_count' => $total_count < $limit ? 1 : ceil($total_count / $limit),
+                'offset' => $offset,
+                'data' => $employees,
+                'message' => 'Special access role data retrieved successfully.',
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'addSpecialAccessRole', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesWithSpecialAccess', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -292,6 +369,7 @@ class SystemRoleController extends Controller
         try {
             $success_data = [];
 
+            DB::beginTransaction();
             $system = System::find($id);
 
             if (!$system) {
@@ -299,7 +377,7 @@ class SystemRoleController extends Controller
             }
 
             foreach ($request->roles as $role_value) {
-                $role = Role::find($role_value['role_id']);
+                $role = Role::where('name', $role_value['role_name'])->first();
 
                 if (!$role) continue;
 
@@ -313,13 +391,31 @@ class SystemRoleController extends Controller
 
                 foreach ($role_value['modules'] as $module_value) {
                     foreach ($module_value['permissions'] as $permission_value) {
-                        $module_permission = ModulePermission::where('system_module_id', $module_value['module_id'])
-                            ->where('permission_id', $permission_value)->first();
+                        $module_permission = null; 
+                        $permission_id = $permission_value;
 
-                        if (!$module_permission) break;
+                        // Check if the existing module and permission has relation
+                        $is_exist = ModulePermission::where('system_module_id', $module_value['module_id'])
+                            ->where('permission_id', $permission_id)->first();
 
+                        // If does not exist register a new module permission data
+                        if (!$is_exist){
+                            $module = SystemModule::find($module_value['module_id']);
+                            $permission = Permission::find($permission_id);
+
+                            $module_permission = ModulePermission::create([
+                                "active" => 1,
+                                "code" => $module['code']." ".$permission['action'],
+                                "system_module_id" => $module['id'],
+                                "permission_id" => $permission['id']
+                            ]);
+                        }else{
+                            // Assign the existing module permission on variable to be use
+                            $module_permission = $is_exist;
+                        }
+                        
                         $role_module_permission = RoleModulePermission::create([
-                            'module_permission_id' => $module_permission->id,
+                            'module_permission_id' => $module_permission['id'],
                             'system_role_id' => $system_role->id
                         ]);
 
@@ -330,12 +426,14 @@ class SystemRoleController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in creating system role, attaching permissions ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
 
             return response()->json([
                 'data' => $success_data,
                 "message" => 'System roles and access rights registered successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

@@ -20,15 +20,28 @@ use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\EmployeeProfileUpdateResource;
+use App\Http\Resources\EmployeeRedcapModulesResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Jobs\SendEmailJob;
+use App\Models\Address;
+use App\Models\Child;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeOvertimeCreditLog;
+use App\Models\EmployeeRedcapModules;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\FailedLoginTrail;
+use App\Models\FamilyBackground;
+use App\Models\IdentificationNumber;
+use App\Models\IssuanceInformation;
+use App\Models\LegalInformation;
 use App\Models\OfficerInChargeTrail;
+use App\Models\OtherInformation;
+use App\Models\PersonalInformation;
 use App\Models\PlantillaAssignedArea;
+use App\Models\Reference;
+use App\Models\SystemUserSessions;
 use App\Models\Training;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
@@ -47,13 +60,14 @@ use App\Models\SystemRole;
 use App\Methods\MailConfig;
 use App\Models\AccessToken;
 use App\Models\Designation;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Models\PasswordTrail;
 use App\Rules\StrongPassword;
-use Illuminate\Http\Response;
 use App\Models\AssignAreaTrail;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
@@ -92,6 +106,9 @@ use App\Models\LeaveApplication;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use PhpParser\Node\Expr\Assign;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
+use Tests\Localization\AsInTest;
 
 
 class EmployeeProfileController extends Controller
@@ -107,6 +124,11 @@ class EmployeeProfileController extends Controller
     {
         $this->mail = new MailConfig();
         $this->two_auth = new TwoFactorAuthController();
+    }
+
+    public function employeeListSample(Request $request)
+    {
+        return EmployeeProfile::limit(30)->offset(0)->get();
     }
 
     public function employeesCards(Request $request)
@@ -269,7 +291,6 @@ class EmployeeProfileController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-
             /**
              * Fields Needed:
              *  employee_id
@@ -287,8 +308,8 @@ class EmployeeProfileController extends Controller
             /**
              * For Persist password even when it expired for set months of expiration.
              */
-            if ($request->persist_password !== null && $request->persist_password === 1) {
-                $fortyDaysFromNow = Carbon::now()->addDays(40);
+            if ($request->persist_password !== null && (int) $request->persist_password === 1) {
+                $fortyDaysFromNow = Carbon::now()->addDays(90);
                 $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
                 $employee_profile->update(['password_expiration_at' => $fortyDaysExpiration]);
@@ -335,16 +356,22 @@ class EmployeeProfileController extends Controller
             /**
              * For password expired.
              */
-            if (Carbon::now()->startOfDay()->gte($employee_profile->password_expiration_at)) {
-                // Mandatory change password for annual.
-                if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
-                    return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+            $passwordExpirationDate = Carbon::parse($employee_profile->password_expiration_at);
+            $passwordCreationDate = Carbon::parse($employee_profile->password_created_at);
+            if ($employee_profile->password_expiration_at && $passwordExpirationDate->isPast()) {
+                $currentYear = Carbon::now()->year;
+                $passwordYear = $passwordCreationDate->year;
+
+                $message = null;
+
+                if($currentYear > $passwordYear){
+                    $message = "Your account password has expired, it is mandatory to change the password.";
+                }else{
+                    $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
-                //Optional change password
-                return response()->json(['message' => 'expired-optional'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
+                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -357,28 +384,26 @@ class EmployeeProfileController extends Controller
              * Reuse the created token of first instance of signin to have single access token.
              */
 
-            $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
+            /** Uncomment this if this module is already in need */
+            // $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-                $ip = $request->ip();
-
+            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+            //     $ip = $request->ip();
 
             //Changes applied order by desc, old version in accurate due to wrong fetching of data
-         $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->first();
+            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->first();
 
+            //     if ($login_trail !== null) {
+            //         if ($login_trail->ip_address !== $ip) {
+            //             $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-                if ($login_trail !== null) {
-                    if ($login_trail->ip_address !== $ip) {
-                        $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+            //             SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                        SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
-
-                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_CONFLICT)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                    }
-                }
-            }
-
+            //             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+            //                 ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            //         }
+            //     }
+            // }
 
             // if ($access_token !== null) {
             AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
@@ -388,7 +413,7 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool) $employee_profile->is_2fa) {
+            if ((bool)$employee_profile->is_2fa) {
                 $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
                 SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
@@ -437,6 +462,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -454,10 +480,15 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
-        //    FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
+            // FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function employeeRedcapModules($employee)
+    {
+        return EmployeeRedcapModulesResource::collection($employee->employeeRedcapModules);
     }
 
     private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
@@ -509,7 +540,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                         continue;
                     }
 
@@ -568,7 +599,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 
@@ -578,7 +609,7 @@ class EmployeeProfileController extends Controller
         } else {
             $side_bar_details = $sidebar_cache;
         }
-
+        
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -606,11 +637,13 @@ class EmployeeProfileController extends Controller
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
 
+                    $exists = array_search($system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
                     /**
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                         continue;
                     }
 
@@ -668,8 +701,13 @@ class EmployeeProfileController extends Controller
                         }
                     }
 
-                    if (!$system_exist) {
-                        $side_bar_details->system[] = $this->buildSystemDetails($system_role);
+                    /** 
+                     * On empty system this will direct insert the system
+                     * Or
+                     * when system is not empty but the target system doesn't exist this will append to it
+                     */
+                    if (count($side_bar_details['system']) === 0 || !$exists) {
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
                     }
                 }
 
@@ -683,7 +721,9 @@ class EmployeeProfileController extends Controller
 
             if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "COMMON-REG")->first();
-                $reg_system_role = SystemRole::where('role_id', $role->id)->first();
+                $reg_system_role = SystemRole::where('role_id', operator: $role->id)->first();
+
+                $exists = array_search($reg_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $reg_system_role->system_id) {
@@ -738,8 +778,13 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
+                /** 
+                 * On empty system this will direct insert the system
+                 * Or
+                 * when system is not empty but the target system doesn't exist this will append to it
+                 */
+                if (count($side_bar_details['system']) === 0 || !$exists) {
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
                 }
             }
 
@@ -754,61 +799,137 @@ class EmployeeProfileController extends Controller
                  * Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
                  */
 
-                foreach ($side_bar_details['system'] as &$system) {
-                    if ($system['id'] === $jo_system_role->system_id) {
-                        $system_role_exist = false;
+                $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-                        foreach ($system['roles'] as $value) {
-                            if ($value['name'] === $role->name) {
-                                $system_role_exist = true;
-                                break; // No need to continue checking once the role is found
-                            }
-                        }
-
-                        if (!$system_role_exist) {
-                            $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-
-                            $cacheExpiration = Carbon::now()->addYear();
-                            Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-
-                            $system['roles'][] = [
-                                'id' => $jo_system_roles_data['id'],
-                                'name' => $jo_system_roles_data['name']
-                            ];
-
-                            // Convert the array of objects to a collection
-                            $modulesCollection = collect($system['modules']);
-
-                            foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Check if the module with the code exists in the collection
-                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
-                                    return $module['code'] === $role_module['code'];
-                                });
-
-                                if ($existingModuleIndex !== false) {
-                                    // If the module exists, modify its permissions
-                                    $existingModule = $modulesCollection->get($existingModuleIndex);
-                                    foreach ($role_module['permissions'] as $permission) {
-                                        // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $existingModule['permissions'])) {
-                                            $existingModule['permissions'][] = $permission;
-                                        }
-                                    }
-                                    $modulesCollection->put($existingModuleIndex, $existingModule);
-                                } else {
-                                    // If the module doesn't exist, add it to the collection
-                                    $modulesCollection->push($role_module);
+                if($exists){
+                    foreach ($side_bar_details['system'] as &$system) {
+                        if ($system['id'] === $jo_system_role->system_id) {
+                            $system_role_exist = false;
+    
+                            // Check if role exist in the system
+                            foreach ($system['roles'] as $value) {
+                                if ($value['name'] === $role->name) {
+                                    $system_role_exist = true;
+                                    break; // No need to continue checking once the role is found
                                 }
                             }
-
-                            // Assign back the modified modules collection to the system
-                            $system['modules'] = $modulesCollection->toArray();
+    
+                            if (!$system_role_exist) {
+                                $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+    
+                                $cacheExpiration = Carbon::now()->addYear();
+                                Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+    
+                                $system['roles'][] = [
+                                    'id' => $jo_system_roles_data['id'],
+                                    'name' => $jo_system_roles_data['name']
+                                ];
+    
+                                // Convert the array of objects to a collection
+                                $modulesCollection = collect($system['modules']);
+    
+                                foreach ($jo_system_roles_data['modules'] as $role_module) {
+                                    // Check if the module with the code exists in the collection
+                                    $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                        return $module['code'] === $role_module['code'];
+                                    });
+    
+                                    if ($existingModuleIndex !== false) {
+                                        // If the module exists, modify its permissions
+                                        $existingModule = $modulesCollection->get($existingModuleIndex);
+                                        foreach ($role_module['permissions'] as $permission) {
+                                            // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                            if (!in_array($permission, $existingModule['permissions'])) {
+                                                $existingModule['permissions'][] = $permission;
+                                            }
+                                        }
+                                        $modulesCollection->put($existingModuleIndex, $existingModule);
+                                    } else {
+                                        // If the module doesn't exist, add it to the collection
+                                        $modulesCollection->push($role_module);
+                                    }
+                                }
+    
+                                // Assign back the modified modules collection to the system
+                                $system['modules'] = $modulesCollection->toArray();
+                            }
                         }
                     }
                 }
 
-                if (count($side_bar_details['system']) === 0) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
+                /** 
+                 * On empty system this will direct insert the system
+                 * Or
+                 * when system is not empty but the target system doesn't exist this will append to it
+                 */
+                if (count($side_bar_details['system']) === 0 || !$exists) {
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
+                }
+            }
+        }
+
+        $public_system_roles = PositionSystemRole::where('is_public', 1)->get();
+
+
+        foreach($public_system_roles as $public_system_role)
+        {
+            $system_role_value = $public_system_role->systemRole;
+            $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
+            if(count($side_bar_details['system']) === 0 || !$exists){
+                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$public_system_role->systemRole);
+                continue;
+            }
+
+            foreach ($side_bar_details['system'] as &$system) {
+                if ($system['id'] === $system_role_value->system_id) {
+                    $system_role_exist = false;
+                    $role = $system_role_value->role;
+
+                    // Check if role exist in the system
+                    foreach ($system['roles'] as $value) {
+                        if ($value['name'] === $role->name) {
+                            $system_role_exist = true;
+                            break; // No need to continue checking once the role is found
+                        }
+                    }
+
+                    if (!$system_role_exist) {
+                        $public_system_roles_data = $this->buildRoleDetails($public_system_role->systemRole);
+
+                        $system['roles'][] = [
+                            'id' => $public_system_roles_data['id'],
+                            'name' => $public_system_roles_data['name']
+                        ];
+
+                        // Convert the array of objects to a collection
+                        $modulesCollection = collect($system['modules']);
+
+                        foreach ($public_system_roles_data['modules'] as $role_module) {
+                            // Check if the module with the code exists in the collection
+                            $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                return $module['code'] === $role_module['code'];
+                            });
+
+                            if ($existingModuleIndex !== false) {
+                                // If the module exists, modify its permissions
+                                $existingModule = $modulesCollection->get($existingModuleIndex);
+                                foreach ($role_module['permissions'] as $permission) {
+                                    // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                    if (!in_array($permission, $existingModule['permissions'])) {
+                                        $existingModule['permissions'][] = $permission;
+                                    }
+                                }
+                                $modulesCollection->put($existingModuleIndex, $existingModule);
+                            } else {
+                                // If the module doesn't exist, add it to the collection
+                                $modulesCollection->push($role_module);
+                            }
+                        }
+
+                        // Assign back the modified modules collection to the system
+                        $system['modules'] = $modulesCollection->toArray();
+                    }
                 }
             }
         }
@@ -816,20 +937,41 @@ class EmployeeProfileController extends Controller
         return $side_bar_details;
     }
 
-    private function buildSystemDetails($system_role)
+    //Storing of system sessions
+    private function generateSystemSessionID($user_id, $system)
+    {
+        $sessionId = Str::uuid();
+                
+        SystemUserSessions::create([
+            'user_id' => $user_id,
+            'system_code' => $system['code'],
+            'session_id' => $sessionId
+        ]);
+
+        $domain =  Crypt::decrypt($system['domain']);
+
+        if($system['code'] === 'UMIS'){
+            return $domain;
+        }
+
+        return $domain."/signing-in/".$sessionId;
+    }
+
+    private function buildSystemDetails($user_id, $system_role)
     {
         $build_role_details = $this->buildRoleDetails($system_role);
 
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name']
-        ];
+        ];        
 
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
             'code' => $system_role->system['code'],
             'roles' => [$role],
+            'url' => $this->generateSystemSessionID($user_id, $system_role->system),
             'modules' => $build_role_details['modules']
         ];
     }
@@ -897,7 +1039,7 @@ class EmployeeProfileController extends Controller
             $months = $dateFrom->diffInMonths($dateTo);
             if ($work->company == "Zamboanga City Medical Center") {
                 $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
-                $totalZcmc  += $totalZcmcMonths;
+                $totalZcmc += $totalZcmcMonths;
             }
 
             $totalMonths += $months;
@@ -909,12 +1051,12 @@ class EmployeeProfileController extends Controller
             $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
         }
 
-        $total = $currentServiceMonths +  $totalMonths;
-        $totalYears = floor($total  / 12);
+        $total = $currentServiceMonths + $totalMonths;
+        $totalYears = floor($total / 12);
 
         // Total service in ZCMC
         $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
-        $totalYearsInZcmc = floor($totalMonthsInZcmc  / 12);
+        $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
 
 
         $employee = [
@@ -996,7 +1138,6 @@ class EmployeeProfileController extends Controller
         }
 
 
-
         return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
@@ -1046,11 +1187,10 @@ class EmployeeProfileController extends Controller
     //**Require employee id *
     public function signOutFromOtherDevice(Request $request)
     {
-        $employee_details = json_decode($request->cookie('employee_details'));
-        $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-
         try {
+            $employee_details = json_decode($request->cookie('employee_details'));
 
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -1062,11 +1202,11 @@ class EmployeeProfileController extends Controller
             $otp_expiration = Carbon::parse($employee_profile->otp_expiration);
 
             if ($currentDateTime->diffInMinutes($otp_expiration) > $otpExpirationMinutes) {
-                return response()->json(['message' => 'OTP has expired. Click the resent code to request a new OTP'], Response::HTTP_BAD_REQUEST);
+                return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
             }
 
-            if ((int) $otp !== $employee_profile->otp) {
-                return response()->json(['message' => 'Provided OTP is invalid'], Response::HTTP_BAD_REQUEST);
+            if ((int)$otp !== $employee_profile->otp) {
+                return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
             }
 
             $employee_profile->update([
@@ -1141,7 +1281,6 @@ class EmployeeProfileController extends Controller
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
-
             FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signOutFromOtherDevice]: " . $th->getMessage()]);
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1150,6 +1289,7 @@ class EmployeeProfileController extends Controller
 
     public function revalidateAccessToken(Request $request)
     {
+
         try {
             $employee_profile = $request->user;
 
@@ -1200,6 +1340,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1210,6 +1351,8 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+            
+            Helpers::infoLog("Test", 'wasp', "Test");
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
@@ -1229,6 +1372,11 @@ class EmployeeProfileController extends Controller
             foreach ($accessToken as $token) {
                 $token->delete();
             }
+
+            /**
+             * Delete all System of user if it has
+             */
+            SystemUserSessions::where("user_id", $user->id)->delete();
 
             return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(config('app.cookie_name'), '', -1);
         } catch (\Throwable $th) {
@@ -1335,6 +1483,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1382,6 +1531,22 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function resendOTP(Request $request)
+    {
+        try {
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+
+            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+
+            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function updatePin(Request $request)
     {
         try {
@@ -1414,7 +1579,6 @@ class EmployeeProfileController extends Controller
             $password = strip_tags($request->password);
             $new_password = strip_tags($request->new_password);
             $cleanData = ["password" => $new_password];
-
 
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
@@ -1475,22 +1639,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => '2fa updated.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function resendOTP(Request $request)
-    {
-        try {
-            $employee_details = json_decode($request->cookie('employee_details'));
-            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-
-            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
-            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
-
-            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1563,7 +1711,7 @@ class EmployeeProfileController extends Controller
                     'password_encrypted' => $encryptedPassword,
                     'password_created_at' => now(),
                     'password_expiration_at' => $threeMonths,
-                    'is_2fa' => $request->two_factor ?? false,
+                    'is_2fa' => $request->two_factor,
                     'authorization_pin' => strip_tags($request->pin),
                     'pin_created_at' => now()
                 ]);
@@ -1734,28 +1882,28 @@ class EmployeeProfileController extends Controller
 
                 switch ($sector) {
                     case "division":
-                        $area_details = Division::find((int) $area);
+                        $area_details = Division::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for division with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
                     case "department":
-                        $area_details = Department::find((int) $area);
+                        $area_details = Department::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for department with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
                     case "section":
-                        $area_details = Section::find((int) $area);
+                        $area_details = Section::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for section with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
                     case "unit":
-                        $area_details = Unit::find((int) $area);
+                        $area_details = Unit::find((int)$area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for unit with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
@@ -1809,10 +1957,11 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function updatePasswordExpiration($id, $sector, Request $request)
+    public function updatePasswordExpiration(Request $request)
     {
         try {
-            $employee_profile = $request->user;
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             $now = Carbon::now();
             $threeMonths = $now->addMonths(3);
@@ -1830,22 +1979,22 @@ class EmployeeProfileController extends Controller
 
             $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-                $ip = $request->ip();
+            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+            //     $ip = $request->ip();
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($login_trail->ip_address !== $ip) {
-                    $data = Helpers::generateMyOTP($employee_profile);
+            //     if ($login_trail->ip_address !== $ip) {
+            //         $data = Helpers::generateMyOTP($employee_profile);
 
-                    if ($this->mail->send($data)) {
-                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                    }
+            //         if ($this->mail->send($data)) {
+            //             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+            //                 ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            //         }
 
-                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
-                }
-            }
+            //         return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
+            //     }
+            // }
 
             if ($access_token !== null) {
                 AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
@@ -1855,20 +2004,17 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool) $employee_profile->is_2fa) {
-                $data = Helpers::generateMyOTP($employee_profile);
+            // if ((bool)$employee_profile->is_2fa) {
+            //     $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-                if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                }
+            //     SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                return response()->json([
-                    'message' => 'Failed to send OTP to your email.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+            //     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
+            //         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+            // }
 
             $token = $employee_profile->createToken();
+
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -1899,6 +2045,7 @@ class EmployeeProfileController extends Controller
             } while ($trials !== 0);
 
             if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
+                FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "Please be inform that your account currently doesn't have access to the system."]);
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
@@ -1906,6 +2053,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
+            $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1917,8 +2065,10 @@ class EmployeeProfileController extends Controller
                 'employee_profile_id' => $employee_profile['id']
             ]);
 
+            Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
+
             return response()
-                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->json(["user" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
@@ -2136,30 +2286,48 @@ class EmployeeProfileController extends Controller
         }
     }
 
-
+    /**
+     * Display a searchable list of employee profiles.
+     *
+     * This method retrieves a list of active employee profiles
+     * and returns them in a JSON response. If a search term is provided,
+     * the method filters the employee profiles based on the search term.
+     *
+     * @param \Illuminate\Http\Request $request The incoming HTTP request.
+     * @return JsonResponse The JSON response containing the employee profiles.
+     */
     public function indexDropdown(Request $request)
     {
         try {
-            // $cacheExpiration = Carbon::now()->addDay();
+            // Create the base query for active employee profiles, excluding the profile with id 1
+            $query = EmployeeProfile::with('personalInformation')
+                ->whereNotIn('employee_profiles.id', [1])
+                ->whereNull('employee_profiles.deactivated_at');
 
-            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-            //     return EmployeeProfile::all();
-            // });
-            $employee_profiles = EmployeeProfile::all();
+            // Apply search filter if a search term is provided
+            if ($search = $request->input('search')) {
+                $query->where(function ($query) use ($search) {
+                    $query->whereHas('personalInformation', function ($q) use ($search) {
+                        if (!empty($search)) {
+                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                        }
+                    });
+                });
+            }
 
+            // Execute the query to get all filtered results
+            $employeeProfiles = $query->get();
 
-            // Return a JSON response with the paginated employee profiles and pagination metadata
+            // Return a JSON response with the employee profiles
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles->items()), // Current page items
-                'current_page' => $employee_profiles->currentPage(), // Current page number
-                'last_page' => $employee_profiles->lastPage(), // Total number of pages
-                'per_page' => $employee_profiles->perPage(), // Number of items per page
-                'total' => $employee_profiles->total(), // Total number of items
+                'data' => EmployeeProfileResource::collection($employeeProfiles), // All matching employee profiles
+                'total' => count($employeeProfiles), // Total number of items
                 'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             // Log any exceptions and return an error response
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'indexDropdown', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -2175,40 +2343,25 @@ class EmployeeProfileController extends Controller
      * based on the search term before applying pagination.
      *
      * @param \Illuminate\Http\Request $request The incoming HTTP request.
-     * @return \Illuminate\Http\JsonResponse The JSON response containing the employee profiles and pagination metadata.
+     * @return JsonResponse The JSON response containing the employee profiles and pagination metadata.
      */
+
     public function index(Request $request)
     {
         try {
-            // Fetch the search term and page number from the request
-            $search = $request->input('search');
-            $page = $request->input('page', 1); // Default to page 1 if not provided
+            $cacheExpiration = Carbon::now()->addDay();
 
-            // Create the base query for active employee profiles, excluding the profile with id 1
-            $query = EmployeeProfile::with('personalInformation')
-                ->whereNotIn('employee_profiles.id', [1])
-                ->whereNull('employee_profiles.deactivated_at');
-
-            // Apply search filtering if a search term is provided
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('personalInformation', function ($q) use ($search) {
-                        $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%");
-                    });
-                });
-            }
-
-            // Apply pagination (10 rows per page) with the specified page number
-            $employee_profiles = $query->paginate(10, ['*'], 'page', $page);
+            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+                // Modify the query to exclude deactivated employees and employee profile ID 1
+                return EmployeeProfile::whereNull('deactivated_at')
+                    ->where('id', '!=', 1)
+                    ->get();
+            });
 
             // Return a JSON response with the paginated employee profiles and pagination metadata
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles->items()), // Current page items
-                'current_page' => $employee_profiles->currentPage(), // Current page number
-                'last_page' => $employee_profiles->lastPage(), // Total number of pages
-                'per_page' => $employee_profiles->perPage(), // Number of items per page
-                'total' => $employee_profiles->total(), // Total number of items
+                'count' => $employee_profiles->count(),
+                'data' => EmployeeProfileResource::collection($employee_profiles), // Current page items
                 'message' => 'List of employees retrieved.' // Success message
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -2219,12 +2372,398 @@ class EmployeeProfileController extends Controller
     }
 
 
+    public function employeeRecords(Request $request): JsonResponse
+    {
+        try {
+            $employees = collect();
+            $sector = $request->query('sector');
+            $area_id = $request->query('area_id');
+            $designation_id = $request->query('designation_id');
+            $employment_type = $request->query('employment_type_id');
+            $search = $request->query('search');
+            $per_page = 10;
+            $current_page = $request->query('page', 1); // Get the page from request, default is 1
+
+            if ((!$sector && $area_id) || ($sector && !$area_id)) {
+                return response()->json(['message' => 'Invalid sector or area id input'], 400);
+            }
+
+            if (!$sector && !$area_id) {
+                $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                    $query->whereNull('deactivated_at');
+                }])
+                    ->where('employee_profile_id', '<>', 1)
+                    ->when($search, function ($query) use ($search) {
+                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                            if (!empty($search)) {
+                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                            }
+                        });
+                    })->when($designation_id, function ($query) use ($designation_id) {
+                        $query->where('designation_id', $designation_id);
+                    })->when($employment_type, function ($query) use ($employment_type) {
+                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                            $q->where('employment_type_id', $employment_type);
+                        });
+                    })
+                    ->get();
+            } else {
+                switch ($sector) {
+                    case 'division':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('division_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $departments = Department::where('division_id', $area_id)->get();
+                        foreach ($departments as $department) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('department_id', $department->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $sections = Section::where('department_id', $department->id)->get();
+                            foreach ($sections as $section) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('section_id', $section->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })->when($designation_id, function ($query) use ($designation_id) {
+                                            $query->where('designation_id', $designation_id);
+                                        })->when($employment_type, function ($query) use ($employment_type) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        })
+                                        ->get()
+                                );
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $employees = $employees->merge(
+                                        AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }])
+                                            ->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)
+                                            ->when($search, function ($query) use ($search) {
+                                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                    if (!empty($search)) {
+                                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                    }
+                                                });
+                                            })->when($designation_id, function ($query) use ($designation_id) {
+                                                $query->where('designation_id', $designation_id);
+                                            })->when($employment_type, function ($query) use ($employment_type) {
+                                                $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                    $q->where('employment_type_id', $employment_type);
+                                                });
+                                            })
+                                            ->get()
+                                    );
+                                }
+                            }
+                        }
+
+                        // Get sections directly under the division (if any) that are not under any department
+                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })->when($designation_id, function ($query) use ($designation_id) {
+                                            $query->where('designation_id', $designation_id);
+                                        })->when($employment_type, function ($query) use ($employment_type) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'department':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('department_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $sections = Section::where('department_id', $area_id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })->when($designation_id, function ($query) use ($designation_id) {
+                                            $query->where('designation_id', $designation_id);
+                                        })->when($employment_type, function ($query) use ($employment_type) {
+                                            $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                                $q->where('employment_type_id', $employment_type);
+                                            });
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'section':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('section_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $area_id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })->when($designation_id, function ($query) use ($designation_id) {
+                                        $query->where('designation_id', $designation_id);
+                                    })->when($employment_type, function ($query) use ($employment_type) {
+                                        $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                            $q->where('employment_type_id', $employment_type);
+                                        });
+                                    })
+                                    ->get()
+                            );
+                        }
+                        break;
+
+                    case 'unit':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('unit_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })->when($designation_id, function ($query) use ($designation_id) {
+                                    $query->where('designation_id', $designation_id);
+                                })->when($employment_type, function ($query) use ($employment_type) {
+                                    $query->whereHas('employeeProfile', function ($q) use ($employment_type) {
+                                        $q->where('employment_type_id', $employment_type);
+                                    });
+                                })
+                                ->get()
+                        );
+                        break;
+                    default:
+                        return response()->json(['message' => 'Invalid input. Please input a valid sector'], 400);
+                }
+            }
+
+            // After all merge operations
+            $employees = $employees->unique('employee_profile_id');
+            // Sort employees by first name
+            $employees = $employees->sortBy(function ($employee) {
+                return $employee->employeeProfile->personalInformation->first_name;
+            });
+
+            $paginated_employees = new LengthAwarePaginator(
+                $employees->forPage($current_page, 10),
+                $employees->count(),
+                $per_page,
+                $current_page,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
+
+            // Transform and paginate employee data
+            $data = EmployeeProfileResource::collection($paginated_employees->pluck('employeeProfile'));
+
+            return response()->json([
+                'pagination' => [
+                    'current_page' => $paginated_employees->currentPage(),
+                    'per_page' => $paginated_employees->perPage(),
+                    'total' => $paginated_employees->total(),
+                    'last_page' => $paginated_employees->lastPage(),
+                    'has_more_pages' => $paginated_employees->hasMorePages(),
+                ],
+                'count' => $paginated_employees->count(),
+                'data' => $data,
+                'message' => 'List of employee records retrieved'
+            ], ResponseAlias::HTTP_OK);
+        } catch (\Throwable $th) {
+            // Log any exceptions and return an error response
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function getUserListMentions(Request $request)
     {
         try {
             $user = $request->user;
-
 
 
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
@@ -2233,7 +2772,7 @@ class EmployeeProfileController extends Controller
                 return [
                     'id' => $user->id,
                     'name' => $user->personalInformation->fullName(),
-                    'avatar'  => config("app.server_domain") . "/photo/profiles/" . $user->profile_url,
+                    'avatar' => config("app.server_domain") . "/photo/profiles/" . $user->profile_url,
                 ];
             });
 
@@ -2361,10 +2900,393 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function getAllEmployees(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $title_print = $user->assignedArea->findDetails()['details']['name'];
+
+            $position = $user->position();
+            if (!$position) {
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
+            }
+
+            $search = $request->query('search') ?? ''; // Use empty string if no search query
+            $sector = $request->query('sector'); // Use user's assigned sector if not provided
+            $area_id = $request->query('area_id'); // Use user's assigned area_id if not provided
+
+            $is_print = $request->query('is_print');
+            $employees = collect();
+
+            // If sector is empty or null, fetch the sector assigned to the user
+            if (empty($sector) && empty($area_id)) {
+                $sector = Str::lower($user->assignedArea->findDetails()['sector']);
+                $area_id = $user->assignedArea->findDetails()['details']['id'];
+
+                switch ($sector) {
+                    case 'division':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('division_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $departments = Department::where('division_id', $area_id)->get();
+                        foreach ($departments as $department) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('department_id', $department->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $sections = Section::where('department_id', $department->id)->get();
+                            foreach ($sections as $section) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('section_id', $section->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
+                                        ->get()
+                                );
+
+                                $units = Unit::where('section_id', $section->id)->get();
+                                foreach ($units as $unit) {
+                                    $employees = $employees->merge(
+                                        AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }])
+                                            ->where('unit_id', $unit->id)
+                                            ->where('employee_profile_id', '<>', 1)
+                                            ->when($search, function ($query) use ($search) {
+                                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                    if (!empty($search)) {
+                                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                    }
+                                                });
+                                            })
+                                            ->get()
+                                    );
+                                }
+                            }
+                        }
+
+                        // Get sections directly under the division (if any) that are not under any department
+                        $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'department':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('department_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $sections = Section::where('department_id', $area_id)->get();
+                        foreach ($sections as $section) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('section_id', $section->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $employees = $employees->merge(
+                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }])
+                                        ->where('unit_id', $unit->id)
+                                        ->where('employee_profile_id', '<>', 1)
+                                        ->when($search, function ($query) use ($search) {
+                                            $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                                if (!empty($search)) {
+                                                    $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                        ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                                }
+                                            });
+                                        })
+                                        ->get()
+                                );
+                            }
+                        }
+                        break;
+
+                    case 'section':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('section_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
+                                ->get()
+                        );
+
+                        $units = Unit::where('section_id', $area_id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $employees->merge(
+                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }])
+                                    ->where('unit_id', $unit->id)
+                                    ->where('employee_profile_id', '<>', 1)
+                                    ->when($search, function ($query) use ($search) {
+                                        $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                            if (!empty($search)) {
+                                                $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                            }
+                                        });
+                                    })
+                                    ->get()
+                            );
+                        }
+                        break;
+
+                    case 'unit':
+                        $employees = $employees->merge(
+                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }])
+                                ->where('unit_id', $area_id)
+                                ->where('employee_profile_id', '<>', 1)
+                                ->when($search, function ($query) use ($search) {
+                                    $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                        if (!empty($search)) {
+                                            $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                                ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                        }
+                                    });
+                                })
+                                ->get()
+                        );
+                        break;
+                    default:
+                        return response()->json(['message', 'Invalid input. Please input a valid sector'], 400);
+                }
+            } else {
+                // Existing sector-specific logic
+                switch ($sector) {
+                    case 'division':
+                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                            $query->whereNull('deactivated_at');
+                        }])
+                            ->where('division_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
+                                });
+                            })
+                            ->get();
+                        break;
+
+                    case 'department':
+                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                            $query->whereNull('deactivated_at');
+                        }])
+                            ->where('department_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
+                                });
+                            })
+                            ->get();
+                        break;
+
+                    case 'section':
+                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                            $query->whereNull('deactivated_at');
+                        }])
+                            ->where('section_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
+                                });
+                            })
+                            ->get();
+                        break;
+
+                    case 'unit':
+                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
+                            $query->whereNull('deactivated_at');
+                        }])
+                            ->where('unit_id', $area_id)
+                            ->where('employee_profile_id', '<>', 1)
+                            ->when($search, function ($query) use ($search) {
+                                $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
+                                    if (!empty($search)) {
+                                        $q->where('first_name', 'LIKE', '%' . $search . '%')
+                                            ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    }
+                                });
+                            })
+                            ->get();
+                        break;
+                }
+            }
+
+
+
+            $employees = $employees->map(function ($assign_area) {
+                $employeeProfile = $assign_area->employeeProfile;
+
+                if ($employeeProfile && $employeeProfile->personalInformation) {
+                    // Safely access employeeName
+                    $employeeProfile->full_name = $employeeProfile->personalInformation->employeeName();
+                } else {
+                    $employeeProfile->full_name = 'No Personal Information';
+                }
+
+                return $employeeProfile;
+            });
+
+            $columns = [
+                [
+                    "field" => "employee_id",
+                    "flex" => 1,
+                    "headerName" => "Employee ID"
+                ],
+                [
+                    "field" => "name",
+                    "flex" => 1,
+                    "headerName" => "Employee Name"
+                ],
+            ];
+
+            $data = EmployeeProfileResource::collection($employees);
+
+            if ($is_print) {
+                return Helpers::generatePdf($data, $columns, $title_print, 'portrait');
+            }
+            return response()->json([
+                'count' => $employees->count(),
+                'data' => $data,
+                'message' => 'list of employees retrieved.'
+            ]);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myEmployees', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     public function areasEmployees($id, $sector, Request $request)
     {
         try {
             $user = $request->user;
+
+
             $position = $user->position();
             $sector = strip_tags($sector);
             $key = Str::lower($sector) . "_id";
@@ -3250,18 +4172,18 @@ class EmployeeProfileController extends Controller
             switch ($area) {
                 case "division":
                     $division = Division::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $division->name, 'sector' => $area, 'code' => $division->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $division->name, 'sector' => $area, 'code' => $division->code];
                     $departments = Department::where('division_id', $area_id)->get();
 
                     foreach ($departments as $department) {
-                        $areas[] = ['id' => $department->id . '-' .  'department', 'name' => $department->name, 'sector' => 'department', 'code' => $department->code];
+                        $areas[] = ['id' => $department->id . '-' . 'department', 'name' => $department->name, 'sector' => 'department', 'code' => $department->code];
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
-                            $areas[] = ['id' => $section->id . '-' .  'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
+                            $areas[] = ['id' => $section->id . '-' . 'section', 'name' => $section->name, 'sector' => 'section', 'code' => $section->code];
 
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
-                                $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                                $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                             }
                         }
                     }
@@ -3271,13 +4193,13 @@ class EmployeeProfileController extends Controller
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                            $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                         }
                     }
                     break;
                 case "department":
                     $department = Department::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $department->name, 'sector' => $area, 'code' => $department->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $department->name, 'sector' => $area, 'code' => $department->code];
                     $sections = Section::where('department_id', $area_id)->get();
 
                     foreach ($sections as $section) {
@@ -3285,26 +4207,24 @@ class EmployeeProfileController extends Controller
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                            $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                         }
                     }
                     break;
                 case "section":
                     $section = Section::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $section->name, 'sector' => $area, 'code' => $section->code];
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $section->name, 'sector' => $area, 'code' => $section->code];
 
                     $units = Unit::where('section_id', $area_id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = ['id' => $unit->id . '-' .  'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
+                        $areas[] = ['id' => $unit->id . '-' . 'unit', 'name' => $unit->name, 'sector' => 'unit', 'code' => $unit->code];
                     }
                     break;
                 case "unit":
-                    $units = Unit::where('id', $area_id)->first();
-                    $areas[] = ['id' => $area_id . '-' .  strtolower($area), 'name' => $units->name, 'sector' => $area, 'code' => $unit->code];
+                    $unit = Unit::where('id', $area_id)->first();
+                    $areas[] = ['id' => $area_id . '-' . strtolower($area), 'name' => $unit->name, 'sector' => $area, 'code' => $unit->code];
                     break;
             }
-
-
 
             return response()->json([
                 'data' => $areas,
@@ -3315,9 +4235,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
 
     public function getEmployeeListByEmployementTypes(Request $request)
     {
@@ -3354,6 +4271,7 @@ class EmployeeProfileController extends Controller
     public function store(EmployeeProfileNewResource $request)
     {
         try {
+            $personal_information_value = json_decode($request->personal_information);
             DB::beginTransaction();
 
             /**
@@ -3580,7 +4498,7 @@ class EmployeeProfileController extends Controller
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
 
-            $cleanData['employee_id'] = $new_employee_id;
+            $cleanData['employee_id'] = strip_tags($personal_information_value->employee_id);
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($personal_information->id);
@@ -3598,9 +4516,9 @@ class EmployeeProfileController extends Controller
             } catch (\Throwable $th) {
             }
 
-            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) === 1 ? true : false;
-            $cleanData['solo_parent'] = strip_tags($request->solo_parent) === 1 ? true : false;
-            $cleanData['shifting'] = strip_tags($request->shifting) === 1 ? true : false;
+            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) == 1 ? true : false;
+            $cleanData['solo_parent'] = strip_tags($request->solo_parent) == 1 ? true : false;
+            $cleanData['shifting'] = strip_tags($request->shifting) == 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
             $cleanData['password_expiration_at'] = $twominutes;
@@ -3841,7 +4759,7 @@ class EmployeeProfileController extends Controller
              * get the excess data it has, example if employee ID is 2023061152 the excess data is 52
              * then increment it with 1 to use to new employee as part of employee ID
              */
-            $last_employee_id_registered_by_date = (int) substr($list_of_employee_by_date_hired, 8);
+            $last_employee_id_registered_by_date = (int)substr($list_of_employee_by_date_hired, 8);
             $employee_id = $date_hired_in_string . $last_employee_id_registered_by_date++;
 
             /**
@@ -3930,7 +4848,7 @@ class EmployeeProfileController extends Controller
                 $months = $dateFrom->diffInMonths($dateTo);
                 if ($work->company == "Zamboanga City Medical Center") {
                     $totalZcmcMonths = $dateFrom->diffInMonths($dateTo);
-                    $totalZcmc  += $totalZcmcMonths;
+                    $totalZcmc += $totalZcmcMonths;
                 }
 
                 $totalMonths += $months;
@@ -3942,12 +4860,12 @@ class EmployeeProfileController extends Controller
                 $currentServiceMonths = $dateHired->diffInMonths(Carbon::now());
             }
 
-            $total = $currentServiceMonths +  $totalMonths;
-            $totalYears = floor($total  / 12);
+            $total = $currentServiceMonths + $totalMonths;
+            $totalYears = floor($total / 12);
 
             // Total service in ZCMC
             $totalMonthsInZcmc = $totalZcmc + $currentServiceMonths;
-            $totalYearsInZcmc = floor($totalMonthsInZcmc  / 12);
+            $totalYearsInZcmc = floor($totalMonthsInZcmc / 12);
 
             $employee = [
                 'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
@@ -4401,18 +5319,21 @@ class EmployeeProfileController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
+                DB::rollBack();
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
 
             if (!$employee_profile) {
+                DB::rollBack();
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $position = $employee_profile->position();
 
             if (is_array($position)) {
+                DB::rollBack();
                 $area = $employee_profile->assignedArea->findDetails();
                 return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
@@ -4442,9 +5363,16 @@ class EmployeeProfileController extends Controller
             }
 
             $assign_area = $employee_profile->assignedArea;
+            
+            $areas = [
+                'division_id' => $assign_area['division_id'],
+                'department_id' => $assign_area['department_id'],
+                'section_id' => $assign_area['section_id'],
+                'unit_id' => $assign_area['unit_id'],
+            ];
 
             AssignAreaTrail::create([
-                $assign_area,
+                ...$areas,
                 'employee_profile_id' => $employee_profile->id,
                 'started_at' => $employee_profile->date_hired,
                 'end_at' => now()
@@ -4464,9 +5392,8 @@ class EmployeeProfileController extends Controller
                 'deactivated_at' => now()
             ]);
 
-            DB::commit();
-
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -4638,9 +5565,7 @@ class EmployeeProfileController extends Controller
             $sector = $request->sector;
             $area_id = $request->area_id;
             $employment_type_id = $request->employment_type_id;
-
             $page = $request->input('page', 1);
-
 
             if (!$sector && !$area_id) {
                 $employees = AssignArea::with(['employeeProfile.personalInformation'])
@@ -4904,7 +5829,6 @@ class EmployeeProfileController extends Controller
                 'per_page' => $employee_profiles->perPage(),
                 'total' => $employee_profiles->total(),
                 'data' => EmployeesAssignedAreaResource::collection($employee_profiles->items()),
-
                 'message' => 'List of filtered employees retrieved'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -4912,4 +5836,136 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function remove(Request $request)
+    {
+        $remarks = $request->remarks;
+
+        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%".$remarks."%")->get();
+
+        DB::beginTransaction();
+
+        try{
+            foreach($in_active_employees as $in_active_employee)
+            {
+                $employee_profile = EmployeeProfile::find($in_active_employee->employee_profile_id);
+    
+                $assign_area = AssignArea::where('employee_profile_id', $employee_profile->id)->first();
+                $assign_area_trail = AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->get();
+                
+                $personal_information = PersonalInformation::find($employee_profile->personal_information_id);
+                $addresses = Address::where('personal_information_id', $personal_information->id)->get();
+                $contact = Contact::where('personal_information_id', $personal_information->id)->first();
+                $childs = Child::where('personal_information_id', $personal_information->id)->get();
+                $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id', $personal_information->id)->get();
+                $education_backgrounds = EducationalBackground::where('personal_information_id', $personal_information->id)->get();
+                $family_backgrounds = FamilyBackground::where('personal_information_id', $personal_information->id)->get();
+                $identification_numbers = IdentificationNumber::where('personal_information_id', $personal_information->id)->get();
+                $issuance_information = IssuanceInformation::where('employee_profile_id', $employee_profile->id)->first();
+                $legal_informations = LegalInformation::where('personal_information_id', $personal_information->id)->get();
+                $other_informations = OtherInformation::where("personal_information_id", $personal_information->id)->get();
+                $references = Reference::where('personal_information_id', $personal_information->id)->get();
+                $trainings = Training::where('personal_information_id', $personal_information->id)->get();
+                $special_access_roles = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $failed_login_trails = FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->get();
+                $employee_redcap_modules = EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->get();
+    
+                if($contact !== null){
+                    $contact->delete();
+                }
+    
+                if(count($addresses) > 0){
+                    Address::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($childs) > 0){
+                    Child::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($civil_service_eligibilities) > 0){
+                    CivilServiceEligibility::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($education_backgrounds) > 0){
+                    EducationalBackground::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($family_backgrounds) > 0){
+                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();    
+                }
+    
+                if(count($identification_numbers) > 0){
+                    IdentificationNumber::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if($issuance_information !== null){
+                    $issuance_information->delete();
+                }
+    
+                if(count($legal_informations) > 0){
+                    LegalInformation::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($other_informations) > 0){
+                    OtherInformation::where("personal_information_id", $personal_information->id)->delete();
+                }
+    
+                if(count($references) > 0){
+                    Reference::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($trainings) > 0){
+                    Training::where('personal_information_id', $personal_information->id)->delete();
+                }
+    
+                if(count($special_access_roles) > 0){
+                    SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                if(count($assign_area_trail) > 0){
+                    AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                if($assign_area !== null){
+                    $assign_area->delete();
+                }
+
+                if(count($assign_area_trail) > 0){
+                    AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_leave_credits) > 0){
+                    EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_overtime_credits) > 0){
+                    foreach($employee_overtime_credits as $employee_overtime_credit){
+                        EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_overtime_credit->id)->delete();
+                        $employee_overtime_credit->delete();
+                    }
+                }
+
+                if(count($failed_login_trails) > 0){
+                    FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+
+                if(count($employee_redcap_modules) > 0){
+                    EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->delete();
+                }
+    
+                $in_active_employee->delete();
+                $employee_profile->delete();
+                $personal_information->delete();
+            }
+        }catch(\Throwable $th){
+            DB::rollBack();
+            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. ".$th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        DB::commit();
+
+        return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
+    }    
 }

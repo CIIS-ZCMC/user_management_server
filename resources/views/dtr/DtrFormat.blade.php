@@ -56,10 +56,9 @@
     #btnExport {
         margin-bottom: 10px;
         padding: 10px 20px 10px 20px;
-        border:1px solid transparent;
-
+        border: 1px solid transparent;
         outline: none;
-        background-color:#0283ca;
+        background-color: #0283ca;
         color: rgb(255, 255, 255);
         cursor: pointer;
         border-radius: 5px;
@@ -67,20 +66,23 @@
     }
 
     #btnExport:hover {
-        background-color:rgb(20, 89, 126);
-
+        background-color: rgb(20, 89, 126);
         border: 1px solid #3468C0;
     }
 </style>
 
 <div id="po">
 
-    <button id="btnExport" onclick="window.open('{{url('/').'/api/dtr-generate?biometric_id=['.$biometric_id.']&monthof='.$month.'&yearof='.$year.'&view=0&frontview=0'}}', '_blank')">Export DTR</button>
+    <button id="btnExport"
+        onclick="window.open('{{ url('/') . '/api/dtr-generate?biometric_id=[' . $biometric_id . ']&monthof=' . $month . '&yearof=' . $year . '&view=0&frontview=0' }}', '_blank')">Export
+        DTR</button>
+
 
     <table id="tabledate">
 
         <tr>
-            <th colspan="2" style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);font-size:45px">
+            <th colspan="2"
+                style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);font-size:45px">
                 {{ date('F', strtotime($year . '-' . $month . '-1')) }}
             </th>
 
@@ -123,10 +125,9 @@
                 style="background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);border-left: 1px solid rgb(184, 184, 184)">
                 Schedule
             </th>
-         <th
-            style="width:80px !important;background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);">
-              Night Shift Hours
-          </th>
+            <th style="width:80px !important;background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);">
+                Night Shift Hours
+            </th>
             <th style="background-color: whitesmoke">
                 Remarks
             </th>
@@ -234,7 +235,6 @@
                     $leavemessage = '';
                     foreach ($ourdata as $key => $value) {
                         $leavemessage = $value['leavetype'];
-
                     }
 
                     $officialTime = 'Official Time';
@@ -258,7 +258,7 @@
                     </td>
 
                     @include('dtr.TableDtrDate')
-{{--
+                    {{--
                     @if (count($checkIn) >= 1)
                         @php $val = $i; @endphp
                     @endif --}}

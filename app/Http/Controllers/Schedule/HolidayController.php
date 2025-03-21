@@ -52,7 +52,7 @@ class HolidayController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                
+
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -62,8 +62,8 @@ class HolidayController extends Controller
             }
 
             $holidays = Holiday::where('description', $cleanData['description'])
-                            ->where('month_day', $cleanData['month_day'])
-                            ->first();
+                ->where('month_day', $cleanData['month_day'])
+                ->first();
             if ($holidays) {
                 return response()->json(['message' => "Holiday Already Exist"], Response::HTTP_FOUND);
             }
@@ -129,7 +129,7 @@ class HolidayController extends Controller
         try {
             $data = Holiday::findOrFail($id);
             $data->delete();
-   
+
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([

@@ -14,6 +14,7 @@ class PositionSystemRole extends Model
     public $fillable = [
         'designation_id',
         'system_role_id',
+        'is_public',
         'deactivated_at'
     ];
 

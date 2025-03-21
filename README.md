@@ -92,6 +92,44 @@ Make sure you have the following installed:
 
 Your Laravel API should now be up and running.
 
+## Cron Jobs
+
+To manage background tasks and features, set up the following batch files and schedule them using Windows Task Scheduler.
+
+### Batch Files
+
+1. **Create `umis_task_services.bat`**:
+    This batch file runs the Laravel artisan command for background tasks.
+
+    ```bat
+    @echo off
+    cd /d "C:\path\to\your\project\root"
+    php artisan schedule:run
+    ```
+
+2. **Create `umis_email_task_feature.bat`**:
+    This batch file runs the Laravel artisan command for email-related tasks.
+
+    ```bat
+    @echo off
+    cd /d "C:\path\to\your\project\root"
+    php artisan email:send
+    ```
+
+Replace `"C:\path\to\your\project\root"` with the actual path to the root directory of your Laravel project.
+
+### Task Scheduler Setup
+
+1. Open **Task Scheduler** on your Windows machine.
+2. Click on **Create Basic Task**.
+3. Follow the wizard to set up the tasks:
+    - **Name**: Enter a name for the task (e.g., "UMIS Task Services").
+    - **Trigger**: Set the schedule according to how frequently you want the task to run.
+    - **Action**: Choose "Start a program" and select the corresponding `.bat` file.
+    - **Finish**: Review the settings and finish the setup.
+
+Repeat the above steps to create tasks for both `umis_task_services.bat` and `umis_email_task_feature.bat`.
+
 ## Contributing
 
 In terms of the current setup, this project will only be allowed to be used by the employee IT team.
