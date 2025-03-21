@@ -29,7 +29,7 @@ class LeaveTypeController extends Controller
     public function index(Request $request)
     {
         try {
-            $leave_types = LeaveType::where('is_other', false)->get();
+            $leave_types = LeaveType::all();
 
             return response()->json([
                 'data' => LeaveTypeResource::collection($leave_types),
@@ -58,6 +58,101 @@ class LeaveTypeController extends Controller
      * Retrieve list of leaveType with employee current credit status only with non-special leave.
      * */
     public function leaveTypeOptionWithEmployeeCreditsRecord(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+
+            if (!$employee_profile) {
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $leave_types = LeaveType::where('is_other', false)->get();
+            $result_data = [];
+
+            foreach ($leave_types as $leave_type) {
+                $requirements = $leave_type->requirements()->get();
+
+                if ($leave_type->is_special === 1) {
+                    $leave_type['total_credits'] = null;
+                    continue;
+                }
+                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                    ->where('leave_type_id', $leave_type->id)
+                    ->first();
+
+                $final_date = null;
+                $tomorrow = Carbon::tomorrow();
+
+
+                if ($leave_type->file_after === null && $leave_type->file_before !== null) {
+                    $hrmo_officer = Helpers::getHrmoOfficer();
+                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
+                        ->whereDate('s.date', '>=', $tomorrow)
+                        ->where('employee_profile_schedule.employee_profile_id', $hrmo_officer)
+                        ->limit($leave_type->file_before)->get();
+
+                    if (count($schedules) > 0) {
+                        $last_schedule = $schedules->last();
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }
+                    // else {
+                    //     // If there are no schedules, set the final date to 5 days from tomorrow
+                    //     $final_date = Carbon::parse($tomorrow)->addDays(10)->format('Y-m-d');
+                    // }
+                }
+
+                if ($leave_type->file_after !== null && $leave_type->code !== 'SL') {
+                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
+                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
+                        ->whereDate('s.date', '<=', Carbon::now())
+                        ->orderByDesc('s.date')->limit($leave_type->file_after)->get();
+
+                    if (count($schedules) > 0) {
+                        $last_schedule = $schedules->last();
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }
+                }
+
+                $result_data[] = [
+                    'value' => $leave_type->id,
+                    'label' => $leave_type->name,
+                    'description' => $leave_type->description,
+                    'period' => $leave_type->period,
+                    'file_date' => $leave_type->file_date,
+                    'month_value' => $leave_type->month_value,
+                    'annual_credit' => $leave_type->annual_credit,
+                    'is_active' => $leave_type->is_active,
+                    'is_special' => $leave_type->is_special,
+                    'is_country' => $leave_type->is_country,
+                    'is_illness' => $leave_type->is_illness,
+                    'is_study' => $leave_type->is_study,
+                    'is_days_recommended' => $leave_type->is_days_recommended,
+                    'created_at' => $leave_type->created_at,
+                    'updated_at' => $leave_type->updated_at,
+                    'allowed_date' => $final_date,
+                    'total_credits' => $leave_type->total_credits ? [
+                        'id' => $leave_type->total_credits->id,
+                        'employee_profile_id' => $leave_type->total_credits->employee_profile_id,
+                        'leave_type_id' => $leave_type->total_credits->leave_type_id,
+                        'total_leave_credits' => $leave_type->total_credits->total_leave_credits,
+                        'created_at' => $leave_type->total_credits->created_at,
+                        'updated_at' => $leave_type->total_credits->updated_at,
+                    ] : null,
+                    'requirements' => $requirements ?? [],
+                ];
+            }
+
+
+            return response()->json([
+                'data' => $result_data,
+                'message' => 'Retrieve all leave types records.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function hrmoLeaveTypeOptionWithEmployeeCreditsRecord(Request $request)
     {
         try {
             $employee_profile = $request->user;
