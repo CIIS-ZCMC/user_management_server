@@ -1601,7 +1601,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'Employee is under probation.'], Response::HTTP_FORBIDDEN);
             }
 
-            $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_id);
+            $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employeeProfile->assignedArea->findDetails(), $employee_id);
 
             $hrmo_officer = Helpers::getHrmoOfficer();
 
@@ -1699,10 +1699,21 @@ class LeaveApplicationController extends Controller
                     ]);
                 } else {
 
-
-                    $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_id)
+                    $leaveTypeOthers= LeaveType::find($request->leave_type_id)->first();
+                    if($leaveTypeOthers->is_other)
+                    {
+                        $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_id)
                         ->where('leave_type_id', $request->leave_type_id)->first();
+                    }
+                    else{
+                       
+                        $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
+                        $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_id)
+                        ->where('leave_type_id', $vlLeaveTypeId)->first();
 
+                    }
+                 
+                    
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
                     if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $checkSchedule['totalWithSchedules']) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
@@ -1769,7 +1780,7 @@ class LeaveApplicationController extends Controller
                             'used_leave_credits' => $employee_credit->used_leave_credits + $checkSchedule['totalWithSchedules']
                         ]);
 
-
+                        //FL LEAVE
                         if (LeaveType::find($request->leave_type_id)->code === 'FL') {
                             $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
 
@@ -1787,17 +1798,20 @@ class LeaveApplicationController extends Controller
 
                         // Deduct VL credits if leave type is EL
                         if (LeaveType::find($request->leave_type_id)->code === 'EL') {
+
+                         
                             $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
+
                             $employee_credit_vl = EmployeeLeaveCredit::where('employee_profile_id', $employee_id)
                                 ->where('leave_type_id', $vlLeaveTypeId)->first();
 
-                            if ($employee_credit_vl) {
-                                $previous_credit_vl = $employee_credit_vl->total_leave_credits;
-                                $employee_credit_vl->update([
-                                    'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
-                                    'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
-                                ]);
-                            }
+                            $previous_credit_vl = $employee_credit_vl->total_leave_credits;
+
+                            $employee_credit_vl->update([
+                                'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                                'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
+                            ]);
+                            
                         }
                     }
 
