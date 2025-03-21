@@ -1585,6 +1585,9 @@ class LeaveApplicationController extends Controller
     {
         try {
 
+
+
+
             $employee_id = $request->employee_id;
             $filed_date = $request->filed_date;
             $employee_profile = $request->user;
@@ -1782,6 +1785,22 @@ class LeaveApplicationController extends Controller
                                 'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
                                 'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
                             ]);
+                        }
+
+
+                        // Deduct VL credits if leave type is EL
+                        if (LeaveType::find($request->leave_type_id)->code === 'EL') {
+                            $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
+                            $employee_credit_vl = EmployeeLeaveCredit::where('employee_profile_id', $employee_id)
+                                ->where('leave_type_id', $vlLeaveTypeId)->first();
+
+                            if ($employee_credit_vl) {
+                                $previous_credit_vl = $employee_credit_vl->total_leave_credits;
+                                $employee_credit_vl->update([
+                                    'total_leave_credits' => $employee_credit_vl->total_leave_credits - $checkSchedule['totalWithSchedules'],
+                                    'used_leave_credits' => $employee_credit_vl->used_leave_credits + $checkSchedule['totalWithSchedules']
+                                ]);
+                            }
                         }
                     }
 

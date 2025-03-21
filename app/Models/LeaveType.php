@@ -17,6 +17,7 @@ class LeaveType extends Model
         'is_country' => 'boolean',
         'is_illness' => 'boolean',
         'is_study' => 'boolean',
+        'is_other' => 'boolean',
         'is_days_recommended' => 'boolean'
     ];
 
@@ -38,7 +39,8 @@ class LeaveType extends Model
         'is_country',
         'is_illness',
         'is_study',
-        'is_days_recommended'
+        'is_days_recommended',
+        'is_other'
     ];
 
     public function leaveTypeRequirements()
