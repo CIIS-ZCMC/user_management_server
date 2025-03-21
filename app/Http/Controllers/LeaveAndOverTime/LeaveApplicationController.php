@@ -1585,9 +1585,6 @@ class LeaveApplicationController extends Controller
     {
         try {
 
-
-
-
             $employee_id = $request->employee_id;
             $filed_date = $request->filed_date;
             $employee_profile = $request->user;
