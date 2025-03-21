@@ -43,7 +43,7 @@ class LeaveTypeController extends Controller
     public function hrmoLeaveTypes(Request $request)
     {
         try {
-            $leave_types = LeaveType::all();
+            $leave_types = LeaveType::get();
 
             return response()->json([
                 'data' => LeaveTypeResource::collection($leave_types),
