@@ -87,16 +87,8 @@ class DigitalDtrSignatureRequestController extends Controller
     public function viewOrDownloadDTR(Request $request, $id)
     {
         try {
-            $signatureRequest = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')
-                ->where('id', $id)
-                ->where('employee_profile_id', $request->user->id)
-                ->orWhere('employee_head_profile_id', $request->user->id)
-                ->firstOrFail();
-                
-
-            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $signatureRequest->id)
-                ->where('signer_type', 'incharge')
-                ->firstOrFail();
+            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $id)
+                ->first();
 
             if (!Storage::disk('private')->exists($signedDtr->file_path)) {
                 return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);

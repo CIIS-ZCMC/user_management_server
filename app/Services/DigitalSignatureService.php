@@ -76,11 +76,13 @@ class DigitalSignatureService
                     basename($image_path)
                 )
                 ->post("{$this->apiUrl}/sign-{$documentType}-{$signer}", $params);
+            
+                Log::debug('FastAPI Response:', ['response' => $this->apiUrl . '/sign-' . $documentType . '-' . $signer]);
 
             if ($response->failed()) {
                 $error_message = $response->json() ? json_encode($response->json()) : $response->body();
                 Log::error('FastAPI Error Response:', ['response' => $error_message]);
-                throw new \Exception("Failed to sign document: " . $error_message);
+                throw new \Exception("Failed to sign document: {$error_message}");
             }
 
             // Log successful response for debugging

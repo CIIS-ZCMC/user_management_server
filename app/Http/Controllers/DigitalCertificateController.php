@@ -725,13 +725,15 @@ class DigitalCertificateController extends Controller
                 $signedDocuments = [$this->dtrSigningService->processOwnerSigning(
                     $request->file('file'),
                     $certificate,
-                    $whole_month
+                    $whole_month,
+                    1
                 )];
             } else {
                 $signedDocuments = $this->dtrSigningService->processInchargeSigning(
                     $document_ids,  // Pass the processed array instead of raw input
                     $certificate,
-                    $whole_month
+                    $whole_month,
+                    1
                 );
             }
 
