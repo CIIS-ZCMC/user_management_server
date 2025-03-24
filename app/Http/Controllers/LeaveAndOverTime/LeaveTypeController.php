@@ -321,13 +321,13 @@ class LeaveTypeController extends Controller
             $leave_type = LeaveType::create($cleanData);
             if (!$leave_type->is_special) {
 
-                $employeesWithCredits = EmployeeLeaveCredit::select('employee_profile_id')
-                    ->distinct()
-                    ->get();
+                $employeesWithCredits = EmployeeLeaveCredit::groupBy('employee_profile_id')
+                    ->get(['employee_profile_id']);
 
-                foreach ($employeesWithCredits as $employeeId) {
+
+                foreach ($employeesWithCredits as $employee) {
                     EmployeeLeaveCredit::create([
-                        'employee_profile_id' => $employeeId,
+                        'employee_profile_id' => $employee->employee_profile_id, // Correctly accessing the property
                         'leave_type_id' => $leave_type->id,
                         'total_leave_credits' => 0,
                         'used_leave_credits' => 0
