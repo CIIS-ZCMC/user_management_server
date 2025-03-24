@@ -405,7 +405,6 @@ class CtoApplicationController extends Controller
     {
         try {
 
-
             $employee_profile = $request->user;
             $cto_applications = [];
 

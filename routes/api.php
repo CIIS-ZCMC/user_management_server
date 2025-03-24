@@ -1897,6 +1897,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-type-all', 'LeaveTypeController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-type-hrmo', 'LeaveTypeController@hrmoLeaveTypes');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-type/{id}', 'LeaveTypeController@show');
         });
@@ -1911,6 +1916,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-type-select', 'LeaveTypeController@leaveTypeOptionWithEmployeeCreditsRecord');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('leave-type-select-hrmo', 'LeaveTypeController@hrmoLeaveTypeOptionWithEmployeeCreditsRecord');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
@@ -2646,11 +2655,11 @@ Route::middleware('auth.cookie')->group(function () {
 
 /**
  * Third party system end points
- * 
+ *
  * Authentication of server api will be done here
  * While user authorization verification will be done on requester server
  * only if the permission is intended for that server
- * 
+ *
  * Upon user load on the other client then the server api will request for user permission details from the umis
  * then store the data in the database of the server api
  */

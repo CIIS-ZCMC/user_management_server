@@ -31,8 +31,8 @@ return new class extends Migration
             $table->boolean('is_illness')->default(false);
             $table->boolean('is_study')->default(false);
             $table->boolean('is_days_recommended')->default(false);
+            $table->boolean('is_others')->default(false);
             $table->timestamps();
-
         });
     }
 
