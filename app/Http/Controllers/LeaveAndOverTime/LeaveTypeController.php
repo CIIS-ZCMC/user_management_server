@@ -305,9 +305,33 @@ class LeaveTypeController extends Controller
             $cleanData['annual_credit'] = $cleanData['leave_credit_year'];
             $cleanData['is_active'] = true;
             $cleanData['is_other'] = $cleanData['is_other'];
+            $cleanData['is_special'] = $cleanData['is_special'];
+            $cleanData['republic_act'] = $cleanData['republic_act'];
+            $cleanData['description'] = $cleanData['description'];
+            $cleanData['period'] = $cleanData['period'];
+            $cleanData['file_date'] = $cleanData['file_date'];
+            $cleanData['file_before'] = $cleanData['file_before'];
+            $cleanData['is_country'] = $cleanData['is_country'];
+            $cleanData['is_illness'] = $cleanData['is_illness'];
+            $cleanData['is_study'] = $cleanData['is_study'];
+            $cleanData['is_days_recommended'] = $cleanData['is_days_recommended'];
+
+
 
             $leave_type = LeaveType::create($cleanData);
+            if (!$leave_type->is_special) {
 
+                $employeesWithCredits = EmployeeLeaveCredit::pluck('employee_profile_id')->unique();
+
+                foreach ($employeesWithCredits as $employeeId) {
+                    EmployeeLeaveCredit::create([
+                        'employee_profile_id' => $employeeId,
+                        'leave_type_id' => $leave_type->id,
+                        'total_leave_credits' => 0,
+                        'used_leave_credits' => 0
+                    ]);
+                }
+            }
             if ($request->requirements) {
                 foreach ($cleanData['requirements'] as $value) {
                     LeaveTypeRequirement::create([
