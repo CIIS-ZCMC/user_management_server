@@ -48,10 +48,13 @@ class DigitalDtrSignatureRequestController extends Controller
             $query->with([
                 'digitalDtrSignatureRequestFile',
                 'employeeProfile.personalInformation',
-                'employeeHeadProfile.personalInformation'
+                'employeeHeadProfile.personalInformation'       
             ])
-                ->where('employee_head_profile_id', $user->id)
-                ->where('status', 'pending');
+            ->where(function($query) use ($user) {
+                $query->where('employee_head_profile_id', $user->id)
+                      ->orWhere('employee_profile_id', $user->id);
+            })
+            ->where('status', '!=', 'for_owner');
 
 
             if ($request->has('dtr_date')) {
