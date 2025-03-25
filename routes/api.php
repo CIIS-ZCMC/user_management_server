@@ -1913,6 +1913,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-type-all', 'LeaveTypeController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-type-hrmo', 'LeaveTypeController@hrmoLeaveTypes');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-type/{id}', 'LeaveTypeController@show');
         });
@@ -1927,6 +1932,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-type-select', 'LeaveTypeController@leaveTypeOptionWithEmployeeCreditsRecord');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('leave-type-select-hrmo', 'LeaveTypeController@hrmoLeaveTypeOptionWithEmployeeCreditsRecord');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {

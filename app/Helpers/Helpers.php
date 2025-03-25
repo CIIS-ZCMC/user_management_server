@@ -78,7 +78,7 @@ class Helpers
     }
     public static function getHrmoOfficer()
     {
-        return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+        return Section::where('code', 'HOPPS-HRMO')->first()->supervisor_employee_profile_id;
     }
 
     public static function getChiefOfficer()
