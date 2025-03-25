@@ -1127,50 +1127,105 @@ class DTRcontroller extends Controller
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF', $viewData);
             } else {
+                // Check if we have a cached PDF version already to avoid regeneration
+                $pdfCacheKey = "dtr_pdf_{$biometric_id}_{$month_of}_{$year_of}";
+                if (cache()->has($pdfCacheKey)) {
+                    $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
+                    $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
+
+                    // Return cached PDF data
+                    $pdfData = cache()->get($pdfCacheKey);
+                    return response($pdfData)
+                        ->header('Content-Type', 'application/pdf')
+                        ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+                }
+
                 // PDF optimization
                 $options = new Options();
                 $options->set('isPhpEnabled', true);
                 $options->set('isHtml5ParserEnabled', true);
                 $options->set('isRemoteEnabled', true);
-                
-                // Add memory limit to improve performance
+
+                // Memory optimizations
                 $options->set('defaultFont', 'Arial');
                 $options->set('fontDir', storage_path('fonts'));
                 $options->set('fontCache', storage_path('fonts'));
                 $options->set('defaultMediaType', 'print');
                 $options->set('isFontSubsettingEnabled', true);
-                
+
                 // Optimize rendering
                 $options->set('tempDir', storage_path('framework/cache/dompdf'));
                 $options->set('logOutputFile', storage_path('logs/dompdf.log'));
                 $options->set('isJavascriptEnabled', false); // Disable JavaScript for speed
-                $options->set('dpi', 96); // Lower DPI for faster rendering
+                $options->set('dpi', 90); // Lower DPI for even faster rendering
                 $options->set('debugKeepTemp', false);
                 $options->set('debugCss', false);
                 $options->set('debugLayout', false);
-                
+
+                // Increase memory limit temporarily for large PDFs
+                $originalMemoryLimit = ini_get('memory_limit');
+                ini_set('memory_limit', '512M');
+
+                // Release unused memory before starting PDF generation
+                gc_enable();
+                gc_collect_cycles();
+
                 $dompdf = new Dompdf($options);
                 $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-                
-                // Cache view rendering to avoid regenerating it frequently for the same employee/month
+
+                // Cache view rendering with optimized data preprocessing
                 $viewCacheKey = "dtr_view_{$biometric_id}_{$month_of}_{$year_of}";
-                $html = cache()->remember($viewCacheKey, now()->addMinutes(15), function() use ($viewData) {
-                    return view('generate_dtr.PrintDTRPDF', $viewData)->render();
+                $html = cache()->remember($viewCacheKey, now()->addHours(1), function() use ($viewData) {
+                    // Pre-format data before rendering to reduce blade processing time
+                    $preparedData = $viewData;
+
+                    // Use data preprocessing to reduce template rendering time
+                    if (isset($preparedData['dtrRecords'])) {
+                        foreach ($preparedData['dtrRecords'] as $key => $record) {
+                            if (is_object($record) && isset($record->dtr_date)) {
+                                $record->formatted_date = date('Y-m-d', strtotime($record->dtr_date));
+                                // Pre-calculate other date-dependent values
+                                $record->day_of_week = date('l', strtotime($record->dtr_date));
+                                $record->is_weekend = in_array(date('w', strtotime($record->dtr_date)), [0, 6]);
+                            }
+                        }
+                    }
+
+                    return view('generate_dtr.PrintDTRPDF', $preparedData)->render();
                 });
-                
+
+                // Load the HTML content
                 $dompdf->loadHtml($html);
                 $dompdf->setPaper('Letter', 'portrait');
-                
-                // Memory management during PDF rendering
-                gc_collect_cycles(); // Force garbage collection before rendering
+
+                // Monitor memory usage
+                $memBefore = memory_get_usage(true);
+
+                // Render with proper memory management
                 $dompdf->render();
-                gc_collect_cycles(); // Clean up after rendering
-                
+
+                // Cache the generated PDF to avoid regeneration on subsequent requests
+                $pdfOutput = $dompdf->output();
+                cache()->put($pdfCacheKey, $pdfOutput, now()->addHours(1));
+
+                // Log memory usage for performance monitoring
+                $memAfter = memory_get_usage(true);
+                $memoryUsed = round(($memAfter - $memBefore) / 1024 / 1024, 2); // Convert to MB
+                Log::info("DTR PDF generation for {$biometric_id} used {$memoryUsed}MB of memory");
+
+                // Reset memory limit
+                ini_set('memory_limit', $originalMemoryLimit);
+
+                // Force garbage collection after rendering
+                gc_collect_cycles();
+
                 $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
                 $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
 
                 // Stream as PDF - use inline option for faster streaming
-                return $dompdf->stream($filename, ['Attachment' => 0]);
+                return response($pdfOutput)
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
             }
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
