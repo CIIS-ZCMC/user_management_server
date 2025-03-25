@@ -71,7 +71,7 @@ class DigitalDtrSignatureRequestController extends Controller
                 return response()->json([
                     'message' => 'No digital signed DTR found',
                     'data' => []
-                ], Response::HTTP_NOT_FOUND);
+                ], Response::HTTP_OK);
             }
 
             return response()->json([
@@ -252,7 +252,7 @@ class DigitalDtrSignatureRequestController extends Controller
 
             
             // SIGN DTR INCHARGE                                                    
-            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, false, $signature_request->id);
+            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $signature_request->whole_month, $signature_request->id);
 
             $notification = Notifications::create([
                 'title' => $employee_name . ' has approved and signed your DTR',
