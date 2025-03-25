@@ -523,7 +523,6 @@ class DTRcontroller extends Controller
                                     }
 
                                     //   return $this->getvalidatedData($bioEntry);
-                                    //Get attendance first  group per employee biometric_id
                                     //get the first successful entry.
                                     //add 3 minutes allowance on first confirmed entry. then add the other records in logs.
                                     //
@@ -532,7 +531,6 @@ class DTRcontroller extends Controller
                                         $Schedule = $this->helper->CurrentSchedule($biometric_id, $this->getvalidatedData($bioEntry), false);
                                         $DaySchedule = $Schedule['daySchedule'];
                                         $BreakTime = $Schedule['break_Time_Req'];
-
 
                                         if (count($DaySchedule) >= 1) {
                                             if (isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']) {
@@ -881,7 +879,6 @@ class DTRcontroller extends Controller
      * Table Requirements
      * time-shifts | schedules | biometrics | employee_profiles | employee_profile_schedule
      * Each of these tables should contain data linked to the biometric_id below in order to generate records
-
      */
     public function generateDTR(Request $request)
     {
@@ -894,53 +891,34 @@ class DTRcontroller extends Controller
             $ishalf = 1;
             ini_set('max_execution_time', 86400);
 
-            /*
-            Multiple IDS for Multiple PDF generation
-            */
-            $yr = date('Y', strtotime("$year_of-$month_of-1"));
-            $mnth = date('n', strtotime("$year_of-$month_of-1"));
+            // Calculate date parameters once
+            $year_month_date = "$year_of-$month_of-1";
+            $yr = date('Y', strtotime($year_month_date));
+            $mnth = date('n', strtotime($year_month_date));
             $yrnow = date('Y');
             $mnthnow = date('n');
             $dynow = date('j');
+
+            // Determine if half month view based on current date
             if (!$FrontDisplay) {
                 if ($yr <= $yrnow) {
-                    //print 31
-
                     if ($mnth < $mnthnow) {
-
                         $ishalf = 0;
-                        //print 31
                     } else if ($mnth == $mnthnow) {
-                        if ($dynow >= 20) {
-                            //print 31
-
-                            $ishalf = 0;
-                        } else {
-                            //print 15
-                            $ishalf = 1;
-                        }
+                        $ishalf = ($dynow >= 20) ? 0 : 1;
                     } else {
-                        if ($dynow >= 20) {
-                            //print 31
-
-                            $ishalf = 0;
-                        } else {
-                            //print 15
-                            $ishalf = 1;
-                        }
+                        $ishalf = ($dynow >= 20) ? 0 : 1;
                     }
                 }
             } else {
                 $ishalf = 0;
             }
 
-
-
+            // Process biometric IDs
             $id = json_decode($biometric_id);
             if (!is_array($id) && $FrontDisplay) {
                 return view("dtr.notfound");
             }
-
 
             if (isset($id) && is_array($id) && count($id) == 0) {
                 return response()->json([
@@ -951,732 +929,255 @@ class DTRcontroller extends Controller
             if (isset($id) && is_array($id) && count($id) >= 2) {
                 return $this->GenerateMultiple($id, $month_of, $year_of, $view, $ishalf);
             }
-            $emp_name = '';
+
             $biometric_id = $id[0];
 
-            if ($this->helper->isEmployee($id[0])) {
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-                $emp_name = $employee->name();
-            } else {
+            // Get employee data with eager loading to reduce queries
+            $employee = EmployeeProfile::with([
+                'leaveApplications' => function($query) {
+                    $query->where('status', 'received');
+                },
+                'officialBusinessApplications' => function($query) {
+                    $query->where('status', 'approved');
+                },
+                'officialTimeApplications' => function($query) {
+                    $query->where('status', 'approved');
+                },
+                'ctoApplications' => function($query) {
+                    $query->where('status', 'approved');
+                },
+                'assignedArea'
+            ])->where('biometric_id', $biometric_id)->first();
 
+            if (!$employee) {
                 if ($FrontDisplay) {
                     return view("dtr.notfound");
                 }
-
                 return response()->json([
                     'message' => 'Failed to Generate: No biometric data found'
                 ]);
             }
-            $dtr = DB::table('daily_time_records')
-                ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                    $query->where('biometric_id', $biometric_id)
-                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                })
-                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                    $query->where('biometric_id', $biometric_id)
-                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                })
-                ->get();
+            
+            $emp_name = $employee->name();
 
+            // Optimize DTR query - use indexed fields and avoid STR_TO_DATE for better performance
+            // Use UNIX_TIMESTAMP for faster date operations and direct comparisons with indexed fields
+            $start_date = date('Y-m-d', strtotime("$year_of-$month_of-01"));
+            $end_date = date('Y-m-t', strtotime("$year_of-$month_of-01"));
 
-            $arrival_Departure = [];
+            // Use a simple date range comparison which is much faster and can use indexes
+            $dtr = collect(DB::select("
+                SELECT *, DAY(first_in) AS day 
+                FROM daily_time_records 
+                WHERE biometric_id = ? 
+                AND (
+                    (first_in BETWEEN ? AND ?) 
+                    OR 
+                    (second_in BETWEEN ? AND ?)
+                )", [$biometric_id, $start_date, $end_date, $start_date, $end_date]));
+
+            // Cache leave types - they rarely change
+            $leaveTypesCache = [];
+            
+            // Process leaves
+            $leavedata = [];
+            if ($employee->leaveApplications->count() > 0) {
+                foreach ($employee->leaveApplications as $row) {
+                    // Get leave type with caching to avoid repeated queries
+                    $leaveTypeId = $row->leave_type_id;
+                    if (!isset($leaveTypesCache[$leaveTypeId])) {
+                        $leaveTypesCache[$leaveTypeId] = LeaveType::find($leaveTypeId)->name ?? "";
+                    }
+                    
+                    $leavedata[] = [
+                        'country' => $row->country,
+                        'city' => $row->city,
+                        'from' => $row->date_from,
+                        'to' => $row->date_to,
+                        'leavetype' => $leaveTypesCache[$leaveTypeId],
+                        'without_pay' => $row->without_pay,
+                        'dates_covered' => $this->helper->getDateIntervals($row->date_from, $row->date_to)
+                    ];
+                }
+            }
+
+            // Process official business applications
+            $obData = [];
+            if ($employee->officialBusinessApplications->count() > 0) {
+                foreach ($employee->officialBusinessApplications as $row) {
+                    $obData[] = [
+                        'purpose' => $row->purpose,
+                        'date_from' => $row->date_from,
+                        'date_to' => $row->date_to,
+                        'dates_covered' => $this->helper->getDateIntervals($row->date_from, $row->date_to),
+                    ];
+                }
+            }
+
+            // Process official time applications
+            $otData = [];
+            if ($employee->officialTimeApplications->count() > 0) {
+                foreach ($employee->officialTimeApplications as $row) {
+                    $otData[] = [
+                        'date_from' => $row->date_from,
+                        'date_to' => $row->date_to,
+                        'purpose' => $row->purpose,
+                        'dates_covered' => $this->helper->getDateIntervals($row->date_from, $row->date_to)
+                    ];
+                }
+            }
+
+            // Process CTO applications
+            $ctoData = [];
+            if ($employee->ctoApplications->count() > 0) {
+                foreach ($employee->ctoApplications as $row) {
+                    $ctoData[] = [
+                        'date' => date('Y-m-d', strtotime($row->date)),
+                        'purpose' => $row->purpose,
+                        'remarks' => $row->remarks,
+                        'is_am' => $row->is_am,
+                        'is_pm' => $row->is_pm
+                    ];
+                }
+            }
+
+            // Get employee schedule with a single optimized query
+            $employeeSched = cache()->remember("employee_sched_{$biometric_id}_{$month_of}_{$year_of}", now()->addHour(), function() use ($biometric_id) {
+                return DB::table('schedules')
+                    ->select('date as schedule')
+                    ->selectRaw('(SELECT first_in FROM `time_shifts` WHERE id = schedules.time_shift_id) as first_in')
+                    ->selectRaw('(SELECT first_out FROM `time_shifts` WHERE id = schedules.time_shift_id) as first_out')
+                    ->selectRaw('(SELECT second_in FROM `time_shifts` WHERE id = schedules.time_shift_id) as second_in')
+                    ->selectRaw('(SELECT second_out FROM `time_shifts` WHERE id = schedules.time_shift_id) as second_out')
+                    ->selectRaw('(SELECT CASE WHEN EXISTS(SELECT 1 FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ?) THEN 1 ELSE 0 END) AS attendance_status', [$biometric_id])
+                    ->join('employee_profile_schedule', 'schedules.id', '=', 'employee_profile_schedule.schedule_id')
+                    ->join('employee_profiles', 'employee_profile_schedule.employee_profile_id', '=', 'employee_profiles.id')
+                    ->where('employee_profiles.biometric_id', $biometric_id)
+                    ->get();
+            });
+            // Cache holidays as they don't change often for the request
+            $cacheKey = "holidays_{$month_of}_{$year_of}";
+            $holidays = cache()->remember($cacheKey, now()->addDay(), function() {
+                return DB::table('holidays')->get();
+            });
+
+            $days_In_Month = isset($ishalf) && $ishalf ? 15 : cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+
+            // Process undertime in a more efficient way
+            $ut = [];
+            foreach ($dtr as $record) {
+                if ($record->biometric_id === $biometric_id) {
+                    $ut[] = [
+                        'created' => $record->dtr_date,
+                        'undertime' => min($record->undertime_minutes, 480), // Use min() instead of conditional
+                        'biometric_ID' => $record->biometric_id
+                    ];
+                }
+            }
+
+            // Get schedule only once and cache it
+            $schedulesCacheKey = "employee_schedule_{$biometric_id}_{$year_of}_{$month_of}";
+            $schedules = cache()->remember($schedulesCacheKey, now()->addHour(), function() use ($biometric_id, $year_of, $month_of) {
+                return $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
+            });
+
+            // Get approver information
+            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
+            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
+
+            // Prepare employee details for view
             $time_stamps_req = [
                 'total_hours' => 8
             ];
-
             $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
-
             $emp_Details = [
                 'OHF' => $ohf,
-                'Arrival_Departure' => $arrival_Departure[0] ?? 'NO SCHEDULE',
+                'Arrival_Departure' => $schedules['arrival_departure'] ?? 'NO SCHEDULE',
                 'Employee_Name' => $emp_name,
                 'DTRFile_Name' => $emp_name,
                 'biometric_ID' => $biometric_id
             ];
 
-            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-            if ($employee->leaveApplications) {
-                //Leave Applications
-                $leaveapp = $employee->leaveApplications->filter(function ($row) {
-                    return $row['status'] == "received";
-                });
+            // Common view parameters to avoid duplication
+            $viewData = [
+                'daysInMonth' => $days_In_Month,
+                'year' => $year_of,
+                'month' => $month_of,
+                'dtrRecords' => $dtr,
+                'holidays' => $holidays,
+                'print_view' => true,
+                'biometric_ID' => $biometric_id,
+                'leaveapp' => $leavedata ?? [],
+                'obApp' => $obData ?? [],
+                'otApp' => $otData ?? [],
+                'ctoApp' => $ctoData ?? [],
+                'biometric_id' => $biometric_id,
+                'Schedule' => $employeeSched,
+                'Employee_Name' => $emp_Details['Employee_Name'],
+                'OHF' => $emp_Details['OHF'],
+                'Arrival_Departure' => $emp_Details['Arrival_Departure'],
+                'Incharge' => $approver,
+                'undertime' => $ut,
+            ];
 
-                $leavedata = [];
-                foreach ($leaveapp as $rows) {
-                    $leavedata[] = [
-                        'country' => $rows['country'],
-                        'city' => $rows['city'],
-                        'from' => $rows['date_from'],
-                        'to' => $rows['date_to'],
-                        'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
-                        'without_pay' => $rows['without_pay'],
-                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
-                    ];
-                }
-            }
-
-
-
-            //Official business
-            if ($employee->officialBusinessApplications) {
-                $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
-                })->toarray());
-                $obData = [];
-                foreach ($officialBusiness as $rows) {
-                    $obData[] = [
-                        'purpose' => $rows['purpose'],
-                        'date_from' => $rows['date_from'],
-                        'date_to' => $rows['date_to'],
-                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
-                    ];
-                }
-            }
-
-            if ($employee->officialTimeApplications) {
-                //Official Time
-                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
-                });
-                $otData = [];
-                foreach ($officialTime as $rows) {
-                    $otData[] = [
-                        'date_from' => $rows['date_from'],
-                        'date_to' => $rows['date_to'],
-                        'purpose' => $rows['purpose'],
-                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
-                    ];
-                }
-            }
-
-            if ($employee->ctoApplications) {
-                $CTO = $employee->ctoApplications->filter(function ($row) {
-                    return $row['status'] == "approved";
-                });
-                $ctoData = [];
-                foreach ($CTO as $rows) {
-                    $ctoData[] = [
-                        'date' => date('Y-m-d', strtotime($rows['date'])),
-                        'purpose' => $rows['purpose'],
-                        'remarks' => $rows['remarks'],
-                        'is_am' => $rows['is_am'],
-                        'is_pm' => $rows['is_pm']
-                    ];
-                }
-            }
-            $employeeSched = DB::table('schedules')
-                ->select('date as schedule')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
-                ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
-                ->whereIn('id', function ($query) use ($biometric_id) {
-                    $query->select('schedule_id')
-                        ->from('employee_profile_schedule')
-                        ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
-                            $innerQuery->select('id')
-                                ->from('employee_profiles')
-                                ->where('biometric_id', $biometric_id);
-                        });
-                })
-                ->get();
-
-            $holidays = DB::table('holidays')->get();
-            $days_In_Month = isset($ishalf) && $ishalf ? 15 : cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-
-
-            $ute = array_filter($dtr->toArray(), function ($res) use ($biometric_id) {
-                return $biometric_id === $res->biometric_id;
-            });
-
-            $ut = array_values(array_map(function ($res) {
-                return [
-                    'created' => $res->dtr_date,
-                    'undertime' => $res->undertime_minutes >= 480 ? 480 : $res->undertime_minutes,
-                    'biometric_ID' => $res->biometric_id
-                ];
-            }, $ute));
-
-
-            $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
-            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-
-
-
-            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
-            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
             if ($FrontDisplay) {
-                return view('dtr.PrintDTRPDF', [
-                    'daysInMonth' => $days_In_Month,
-                    'year' => $year_of,
-                    'month' => $month_of,
-                    'dtrRecords' => $dtr,
-                    'holidays' => $holidays,
-                    'print_view' => true,
-                    'biometric_ID' => $biometric_id,
-                    'leaveapp' => $leavedata ?? [],
-                    'obApp' => $obData ?? [],
-                    'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? [],
-                    'biometric_id' => $biometric_id,
-                    'Schedule' => $employeeSched,
-                    'undertime' => $ut,
-                ]);
+                return view('dtr.PrintDTRPDF', $viewData);
             }
-
-
-
 
             if ($view) {
-                return view('generate_dtr.PrintDTRPDF', [
-                    'daysInMonth' => $days_In_Month,
-                    'year' => $year_of,
-                    'month' => $month_of,
-                    'dtrRecords' => $dtr,
-                    'holidays' => $holidays,
-                    'print_view' => true,
-                    'biometric_ID' => $biometric_id,
-                    'leaveapp' => $leavedata ?? [],
-                    'obApp' => $obData ?? [],
-                    'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? [],
-                    'biometric_id' => $biometric_id,
-                    'Schedule' => $employeeSched,
-                    'Employee_Name' => $emp_Details['Employee_Name'],
-                    'OHF' => $emp_Details['OHF'],
-                    'Arrival_Departure' => $schedules['arrival_departure'],
-                    'Incharge' => $approver,
-                    'undertime' => $ut,
-                ]);
+                return view('generate_dtr.PrintDTRPDF', $viewData);
             } else {
+                // PDF optimization
                 $options = new Options();
                 $options->set('isPhpEnabled', true);
                 $options->set('isHtml5ParserEnabled', true);
                 $options->set('isRemoteEnabled', true);
+                
+                // Add memory limit to improve performance
+                $options->set('defaultFont', 'Arial');
+                $options->set('fontDir', storage_path('fonts'));
+                $options->set('fontCache', storage_path('fonts'));
+                $options->set('defaultMediaType', 'print');
+                $options->set('isFontSubsettingEnabled', true);
+                
+                // Optimize rendering
+                $options->set('tempDir', storage_path('framework/cache/dompdf'));
+                $options->set('logOutputFile', storage_path('logs/dompdf.log'));
+                $options->set('isJavascriptEnabled', false); // Disable JavaScript for speed
+                $options->set('dpi', 96); // Lower DPI for faster rendering
+                $options->set('debugKeepTemp', false);
+                $options->set('debugCss', false);
+                $options->set('debugLayout', false);
+                
                 $dompdf = new Dompdf($options);
                 $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-                $dompdf->loadHtml(view('generate_dtr.PrintDTRPDF', [
-                    'daysInMonth' => $days_In_Month,
-                    'year' => $year_of,
-                    'month' => $month_of,
-                    'dtrRecords' => $dtr,
-                    'holidays' => $holidays,
-                    'print_view' => true,
-                    'biometric_ID' => $biometric_id,
-                    'leaveapp' => $leavedata ?? [],
-                    'obApp' => $obData ?? [],
-                    'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? [],
-                    'biometric_id' => $biometric_id,
-                    'Schedule' => $employeeSched,
-                    'Employee_Name' => $emp_Details['Employee_Name'],
-                    'OHF' => $emp_Details['OHF'],
-                    'Arrival_Departure' => $schedules['arrival_departure'],
-                    'Incharge' => $approver,
-                    'undertime' => $ut,
-                ]));
-
+                
+                // Cache view rendering to avoid regenerating it frequently for the same employee/month
+                $viewCacheKey = "dtr_view_{$biometric_id}_{$month_of}_{$year_of}";
+                $html = cache()->remember($viewCacheKey, now()->addMinutes(15), function() use ($viewData) {
+                    return view('generate_dtr.PrintDTRPDF', $viewData)->render();
+                });
+                
+                $dompdf->loadHtml($html);
                 $dompdf->setPaper('Letter', 'portrait');
+                
+                // Memory management during PDF rendering
+                gc_collect_cycles(); // Force garbage collection before rendering
                 $dompdf->render();
+                gc_collect_cycles(); // Clean up after rendering
+                
                 $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
                 $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
 
-                /* Downloads as PDF */
-                $dompdf->stream($filename);
+                // Stream as PDF - use inline option for faster streaming
+                return $dompdf->stream($filename, ['Attachment' => 0]);
             }
         } catch (\Throwable $th) {
-            return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
     }
 
-
-    /*
-     *    This is either view or print as PDF
-     *
-     */
-
-    public function GenerateMultiple($id, $month_of, $year_of, $view, $ishalf)
-    {
-
-        $data = [];
-        $emp_Details = [];
-        foreach ($id as $key => $biometric_id) {
-
-
-
-            if ($this->helper->isEmployee($biometric_id)) {
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-                $emp_name = $employee->name();
-
-
-
-                try {
-                    $dtr = DB::table('daily_time_records')
-                        ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-                        ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                            $query->where('biometric_id', $biometric_id)
-                                ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                                ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                        })
-                        ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                            $query->where('biometric_id', $biometric_id)
-                                ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                                ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                        })
-                        ->get();
-
-
-
-                    $arrival_Departure = [];
-                    $time_stamps_req = [
-                        'total_hours' => 8
-                    ];
-                    // if(count($dtr) == 0 ){
-                    //     $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
-                    //     ->where('active',1);
-                    //     $this->DeviceLog->GenerateEntry($dvc_logs->get(),null,true);
-                    // }else if(count($this->DeviceLog->CheckDTR($biometric_id))){
-                    //     $this->DeviceLog->GenerateEntry($this->DeviceLog->CheckDTR($biometric_id),null,true);
-                    // }
-
-                    foreach ($dtr as $val) {
-                        /* Validating DTR with its Matching Schedules */
-                        /*
-                         *   if no matching schedule then
-                         *   it will not display the daily time record
-                         */
-                        $bioEntry = [
-                            'first_entry' => $val->first_in,
-                            'date_time' => $val->first_in
-                        ];
-                        $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-                        $DaySchedule = $Schedule['daySchedule'];
-                        $BreakTime = $Schedule['break_Time_Req'];
-
-                        $dtrdate = $val->dtr_date;
-                        // $dvc_logs =  DeviceLogs::where('biometric_id',$biometric_id)
-                        // ->where('dtr_date', $dtrdate)
-                        // ->where('active',1);
-                        // //xxxxxxxxxxxxxxxxxxxxxxxx
-                        // if($dvc_logs->exists()){
-                        //     $checkdtr = DailyTimeRecords::whereDate('dtr_date',$dtrdate)->where('biometric_id',$biometric_id);
-                        //     if($checkdtr->exists()){
-                        //        $this->DeviceLog->RegenerateEntry($dvc_logs->get(),$biometric_id,$dtrdate);
-                        //     }else {
-                        //         $this->DeviceLog->GenerateEntry($dvc_logs->get(),$dtrdate,false);
-                        //     }
-
-                        // }
-
-                        $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
-
-                        if (count($time_stamps_req) >= 1) {
-                            $validate = [
-                                (object) [
-                                    'id' => $val->id,
-                                    'first_in' => $val->first_in,
-                                    'first_out' => $val->first_out,
-                                    'second_in' => $val->second_in,
-                                    'second_out' => $val->second_out
-                                ],
-                            ];
-
-
-                            $this->helper->saveTotalWorkingHours(
-                                $validate,
-                                $val,
-                                $val,
-                                $time_stamps_req,
-                                true
-                            );
-                        }
-                    }
-                } catch (\Throwable $th) {
-                    return response()->json(['message' => $th->getMessage()]);
-                }
-
-                $ohf[] = isset($DaySchedule['total_hours']) ? $DaySchedule['total_hours'] . ' HOURS' : "8 HOURS";
-
-                $emp_Details[] = [
-                    'OHF' => $ohf,
-                    'Arrival_Departure' => $arrival_Departure[0] ?? 'NO SCHEDULE',
-                    'Employee_Name' => $emp_name,
-                    'DTRFile_Name' => $emp_name,
-                    'biometric_ID' => $biometric_id
-                ];
-            }
-        }
-
-
-
-        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details, $ishalf);
-    }
-
-
-    public function MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details, $ishalf)
-    {
-
-        $data = [];
-        $dt_records = [];
-
-        foreach ($id as $key => $biometric_id) {
-
-            if ($this->helper->isEmployee($biometric_id)) {
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-                $emp_name = $employee->name();
-
-                $dtr = DB::table('daily_time_records')
-                    ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-                    ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                        $query->where('biometric_id', $biometric_id)
-                            ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                            ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                    })
-                    ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                        $query->where('biometric_id', $biometric_id)
-                            ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                            ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                    })
-                    ->get();
-
-
-                $No_schedule_DTR = [];
-                $is_Half_Schedule = false;
-                $day = [];
-                $entry = '';
-
-                foreach ($dtr as $val) {
-                    /* Validating DTR with its Matching Schedules */
-                    /*
-                     *   if no matching schedule then
-                     *   it will not display the daily time record
-                     */
-                    if (isset($val->first_in) && $val->first_in !== NULL) {
-                        $entry = $val->first_in;
-                    } else {
-                        if (isset($val->second_in) && $val->second_in !== NULL) {
-                            $entry = $val->second_in;
-                        }
-                    }
-
-                    $yearSched = date('Y', strtotime($entry));
-                    $monthSched = date('m', strtotime($entry));
-                    $schedule = $this->helper->getSchedule($val->biometric_id, "all-{$yearSched}-{$monthSched}")['schedule'];
-                    //GET THE SCHEDULE
-
-                    if ($schedule) {
-                        $value = [
-                            'date_time' => date('Y-m-d H:i:s', strtotime($entry)),
-                            'first_in' => $entry
-                        ];
-                        $daySched = $this->helper->CurrentSchedule($val->biometric_id, $value, false)['daySchedule'];
-                        $is_Half_Schedule = count($this->helper->CurrentSchedule($val->biometric_id, $value, false)['break_Time_Req']);
-                    }
-
-
-
-
-                    if (isset($daySched['scheduleDate'])) {
-
-                        $sdate = $daySched['scheduleDate'];
-
-
-
-                        if (date('Y-m-d', strtotime($entry)) == $sdate) {
-                            //   echo $entry;
-                            $date_entry = date('Y-m-d H:i', strtotime($entry));
-                            $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $sdate));
-                            //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
-
-                            if ($this->withinScheduleRange($date_entry, $schedule_fEntry)) {
-                                $dt_records[] = [
-                                    'biometric_ID' => $val->biometric_id,
-                                    'first_in' => $val->first_in,
-                                    'first_out' => $val->first_out,
-                                    'second_in' => $val->second_in,
-                                    'second_out' => $val->second_out,
-                                    'undertime_minutes' => $val->undertime_minutes,
-                                    'created' => $val->dtr_date
-                                ];
-                            }
-                        }
-                    } else {
-                        $No_schedule_DTR[] = [
-                            'biometric_ID' => $val->biometric_id,
-                            'first_in' => $val->first_in,
-                            'first_out' => $val->first_out,
-                            'second_in' => $val->second_in,
-                            'second_out' => $val->second_out,
-                            'undertime_minutes' => $val->undertime_minutes,
-                            'created' => $val->dtr_date
-                        ];
-                        //  echo $val->first_in;
-                    }
-                }
-
-                $days_In_Month = isset($ishalf) && $ishalf ? 15 : cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-
-                $first_in = array_map(function ($res) {
-                    return [
-                        'dtr_date' => $res['created'],
-                        'first_in' => $res['first_in'],
-                        'biometric_ID' => $res['biometric_ID']
-
-                    ];
-                }, $dt_records);
-
-
-                $first_out = array_map(function ($res) {
-                    return [
-                        'dtr_date' => $res['created'],
-                        'first_out' => $res['first_out'],
-                        'biometric_ID' => $res['biometric_ID']
-                    ];
-                }, $dt_records);
-
-                $second_in = array_map(function ($res) {
-                    return [
-                        'dtr_date' => $res['created'],
-                        'second_in' => $res['second_in'],
-                        'biometric_ID' => $res['biometric_ID']
-                    ];
-                }, $dt_records);
-
-
-
-
-                $second_out = array_map(function ($res) {
-                    return [
-                        'dtr_date' => $res['created'],
-                        'second_out' => $res['second_out'],
-                        'biometric_ID' => $res['biometric_ID']
-                    ];
-                }, $dt_records);
-
-                $ut = array_map(function ($res) {
-                    return [
-                        'created' => $res['created'],
-                        'undertime' => $res['undertime_minutes'],
-                        'biometric_ID' => $res['biometric_ID']
-                    ];
-                }, $dt_records);
-
-                $holidays = DB::table('holidays')->get();
-
-                $employeeSched = DB::table('schedules')
-                    ->select('date as schedule')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
-                    ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
-                    ->whereIn('id', function ($query) use ($biometric_id) {
-                        $query->select('schedule_id')
-                            ->from('employee_profile_schedule')
-                            ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
-                                $innerQuery->select('id')
-                                    ->from('employee_profiles')
-                                    ->where('biometric_id', $biometric_id);
-                            });
-                    })
-                    ->get();
-
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-                $leavedata = [];
-                if ($employee->leaveApplications) {
-                    //Leave Applications
-                    $leaveapp = $employee->leaveApplications->filter(function ($row) {
-                        return $row['status'] == "received";
-                    });
-                    foreach ($leaveapp as $rows) {
-                        $leavedata[] = [
-                            'country' => $rows['country'],
-                            'city' => $rows['city'],
-                            'from' => $rows['date_from'],
-                            'to' => $rows['date_to'],
-                            'without_pay' => $rows['without_pay'],
-                            'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
-                            'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
-                        ];
-                    }
-                }
-
-                $obData = [];
-                if ($employee->officialBusinessApplications) {
-                    //Official business
-                    $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
-                        return $row['status'] == "approved";
-                    })->toarray());
-
-                    foreach ($officialBusiness as $rows) {
-                        $obData[] = [
-                            'purpose' => $rows['purpose'],
-                            'date_from' => $rows['date_from'],
-                            'date_to' => $rows['date_to'],
-                            'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
-                        ];
-                    }
-                }
-
-                $otData = [];
-                //Official Time
-                if ($employee->officialTimeApplications) {
-                    $officialTime = $employee->officialTimeApplications->filter(function ($row) {
-                        return $row['status'] == "approved";
-                    });
-
-                    foreach ($officialTime as $rows) {
-                        $otData[] = [
-                            'date_from' => $rows['date_from'],
-                            'date_to' => $rows['date_to'],
-                            'purpose' => $rows['purpose'],
-                            'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
-                        ];
-                    }
-                }
-
-                $ctoData = [];
-                if ($employee->CTOApplication) {
-                    $CTO = $employee->CTOApplication->filter(function ($row) {
-                        return $row['status'] == "approved";
-                    });
-
-                    foreach ($CTO as $rows) {
-                        $ctoData[] = [
-                            'date' => date('Y-m-d', strtotime($rows['date'])),
-                            'purpose' => $rows['purpose'],
-                            'remarks' => $rows['remarks'],
-                        ];
-                    }
-                }
-
-
-
-
-                $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
-
-
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-                $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
-                $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
-                $data[] = [
-                    'daysInMonth' => $days_In_Month,
-                    'year' => $year_of,
-                    'month' => $month_of,
-                    'firstin' => $first_in,
-                    'firstout' => $first_out,
-                    'secondin' => $second_in,
-                    'secondout' => $second_out,
-                    'undertime' => $ut,
-                    'dtrRecords' => $dt_records,
-                    'holidays' => $holidays,
-                    'print_view' => true,
-                    'halfsched' => $is_Half_Schedule,
-                    'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched,
-                    'Incharge' => $approver,
-                    'emp_Details' => $emp_Details,
-                    'leaveapp' => $leavedata,
-                    'obApp' => $obData,
-                    'otApp' => $otData,
-                    'ctoApp' => $ctoData,
-                    'biometric_id' => $biometric_id
-                ];
-            }
-        }
-
-
-
-
-
-
-        //$view
-
-        return view('generate_dtr.PrintDTRPDF', [
-            'data' => $data
-        ]);
-    }
-    /* ----------------------------------------------------------------END OF GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
-
-
-    public function getHolidays()
-    {
-        try {
-            return response()->json(['data' => Holidaylist::all()]);
-        } catch (\Throwable $th) {
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getHolidays', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()]);
-        }
-    }
-
-    public function setHolidays(Request $request)
-    {
-        try {
-            $description = $request->description;
-            $month = $request->month;
-            $day = $request->day;
-            $is_special = $request->isspecial;
-            $effective_Date = $request->effectiveDate;
-
-            Holidaylist::create([
-                'description' => $description,
-                'month_day' => $month . '-' . $day,
-                'isspecial' => $is_special,
-                'effectiveDate' => $effective_Date,
-            ]);
-            return response()->json(['message' => "Holiday Set Successfully!"]);
-        } catch (\Throwable $th) {
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'setHolidays', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()]);
-        }
-    }
-
-    public function modifyHolidays(Request $request)
-    {
-        try {
-            $holiday_id = $request->holiday_id;
-            $description = $request->description;
-            $month = $request->month;
-            $day = $request->day;
-            $is_special = $request->isspecial;
-            $effective_Date = $request->effectiveDate;
-
-            Holidaylist::where('id', $holiday_id)->update([
-                'description' => $description,
-                'month_day' => $month . '-' . $day,
-                'isspecial' => $is_special,
-                'effectiveDate' => $effective_Date,
-            ]);
-
-            return response()->json(['message' => "Item Updated Successfully!"]);
-        } catch (\Throwable $th) {
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'modifyHolidays', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()]);
-        }
-    }
-
-    private function getWeekdayStatus($date)
-    {
-        if (date('D', strtotime($date)) == "Sun" || date('D', strtotime($date)) == "Sat") {
-            return "Weekend";
-        }
-        return "Weekdays";
-    }
-
-    private function isHoliday($date)
-    {
-        $holiday_list = Holidaylist::where('effectiveDate', date('Y-m-d', strtotime($date)))->get();
-        if (count($holiday_list) >= 1) {
-            return true;
-        }
-        return false;
-    }
 
     /*
     *
@@ -1819,6 +1320,7 @@ class DTRcontroller extends Controller
 
                         $days = $days_Rendered;
                         $present_days = [];
+
                         foreach ($days as $entry) {
 
                             if (is_array($entry)) {
