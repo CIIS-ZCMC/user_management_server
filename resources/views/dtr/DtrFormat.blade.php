@@ -1,3 +1,87 @@
+@php
+    // Pre-calculate and cache dates and formats to avoid repetitive calculations in the loop
+    $monthName = date('F', strtotime($year . '-' . $month . '-1'));
+    $dateCache = [];
+    $dayNames = [];
+    $dateObjects = [];
+    $dayNumbers = [];
+    
+    // Pre-process leave applications for faster lookups
+    $leaveCache = [];
+    $obCache = [];
+    $otCache = [];
+    $ctoCache = [];
+    
+    // Create date strings for faster comparisons
+    for ($i = 1; $i <= $daysInMonth; $i++) {
+        $dateStr = $year . '-' . sprintf('%02d', $month) . '-' . sprintf('%02d', $i);
+        $timestamp = strtotime($dateStr);
+        $dateCache[$i] = date('Y-m-d', $timestamp);
+        $dayNames[$i] = date('l', $timestamp);
+        $dayNumbers[$i] = date('d', $timestamp);
+        $dateObjects[$i] = $timestamp;
+        
+        // Initialize caches for this date
+        $leaveCache[$dateStr] = false;
+        $obCache[$dateStr] = false;
+        $otCache[$dateStr] = false;
+        $ctoCache[$dateStr] = false;
+    }
+    
+    // Process leave applications once
+    foreach ($leaveapp as $row) {
+        foreach ($row['dates_covered'] as $date) {
+            $dateKey = date('Y-m-d', strtotime($date));
+            $dateParts = explode('-', $dateKey);
+            if ($dateParts[0] == $year && $dateParts[1] == sprintf('%02d', $month)) {
+                $leaveCache[$dateKey] = [
+                    'leavetype' => $row['leavetype'],
+                    'without_pay' => $row['without_pay']
+                ];
+            }
+        }
+    }
+    
+    // Process OB applications once
+    foreach ($obApp as $row) {
+        foreach ($row['dates_covered'] as $date) {
+            $dateKey = date('Y-m-d', strtotime($date));
+            $dateParts = explode('-', $dateKey);
+            if ($dateParts[0] == $year && $dateParts[1] == sprintf('%02d', $month)) {
+                $obCache[$dateKey] = true;
+            }
+        }
+    }
+    
+    // Process OT applications once
+    foreach ($otApp as $row) {
+        foreach ($row['dates_covered'] as $date) {
+            $dateKey = date('Y-m-d', strtotime($date));
+            $dateParts = explode('-', $dateKey);
+            if ($dateParts[0] == $year && $dateParts[1] == sprintf('%02d', $month)) {
+                $otCache[$dateKey] = true;
+            }
+        }
+    }
+    
+    // Process CTO applications once
+    foreach ($ctoApp as $row) {
+        $dateKey = date('Y-m-d', strtotime($row['date']));
+        $dateParts = explode('-', $dateKey);
+        if ($dateParts[0] == $year && $dateParts[1] == sprintf('%02d', $month)) {
+            $ctoCache[$dateKey] = true;
+        }
+    }
+    
+    // Define constants
+    $officialTime = 'Official Time';
+    $officialBusinessMessage = 'Official Business';
+    $absentMessage = 'Absent';
+    $dayoffmessage = 'Day-Off';
+    $holidayMessage = 'HOLIDAY';
+    $ctoMessage = 'CTO';
+@endphp
+
 <style>
     /* @import url('https://fonts.googleapis.com/css2?family=Onest:wght@200&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap') body {
         display: flex;
@@ -83,14 +167,13 @@
         <tr>
             <th colspan="2"
                 style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);font-size:45px">
-                {{ date('F', strtotime($year . '-' . $month . '-1')) }}
+                {{ $monthName }}
             </th>
 
             <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">AM</th>
 
             <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">PM</th>
             <th>
-
                 <table id="tblheader">
                     <tr>
                         <td></td>
@@ -141,128 +224,33 @@
 
             @for ($i = 1; $i <= $daysInMonth; $i++)
                 @php
-                    // $checkIn = array_filter($dtrRecords->toArray(), function ($res) use ($i) {
-                    //     return date('d', strtotime($res->first_in)) == $i &&
-                    //         date('d', strtotime($res->first_out)) == $i + 1;
-                    // });
-
-                    // $val = 0;
-                    // $outdd = array_map(function ($res) {
-                    //     return [
-                    //         'first_out' => $res['first_out'],
-                    //     ];
-                    // }, $checkIn);
-
-                    //Check LeaveApplication
-                    $filteredleaveDates = [];
-
-                    foreach ($leaveapp as $row) {
-                        foreach ($row['dates_covered'] as $date) {
-                            $filteredleaveDates[] = strtotime($date);
-                        }
-                    }
-                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
-                        $year,
-                        $month,
-                        $i,
-                    ) {
-                        $dateToCompare = date('Y-m-d', $timestamp);
-                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-                    $leave_Count = count($leaveApplication);
-
-                    //Check obD ates
-                    $filteredOBDates = [];
-                    foreach ($obApp as $row) {
-                        foreach ($row['dates_covered'] as $date) {
-                            $filteredOBDates[] = strtotime($date);
-                        }
-                    }
-                    $obApplication = array_filter($filteredOBDates, function ($timestamp) use ($year, $month, $i) {
-                        $dateToCompare = date('Y-m-d', $timestamp);
-                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-                    $ob_Count = count($obApplication);
-
-                    //Check otDates
-                    $filteredOTDates = [];
-                    foreach ($otApp as $row) {
-                        foreach ($row['dates_covered'] as $date) {
-                            $filteredOTDates[] = strtotime($date);
-                        }
-                    }
-                    $otApplication = array_filter($filteredOTDates, function ($timestamp) use ($year, $month, $i) {
-                        $dateToCompare = date('Y-m-d', $timestamp);
-                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-                    $ot_Count = count($otApplication);
-
-                    $ctoApplication = array_filter($ctoApp, function ($row) use ($year, $month, $i) {
-                        $dateToCompare = date('Y-m-d', strtotime($row['date']));
-                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
-                        return $dateToCompare === $dateToMatch;
-                    });
-                    $cto_Count = count($ctoApplication);
-
-                    $ourdata = [];
-
-                    foreach ($leaveapp as $row) {
-                        $dates_Interval = [];
-                        $from = strtotime($row['from']);
-                        $to = strtotime($row['to']);
-                        while ($from <= $to) {
-                            $dates_Interval[] = date('Y-m-d', $from);
-                            $from = strtotime('+1 day', $from);
-                        }
-
-                        if (
-                            in_array($year . '-' . sprintf('%02d', $month) . '-' . sprintf('%02d', $i), $dates_Interval)
-                        ) {
-                            // Date is covered, include this leave application in $leavedata
-                            $ourdata[] = [
-                                'country' => $row['country'],
-                                'city' => $row['city'],
-                                'from' => $row['from'],
-                                'to' => $row['to'],
-                                'without_pay' => $row['without_pay'],
-                                'leavetype' => $row['leavetype'],
-                            ];
-                        }
-                    }
+                    $currentDate = $dateCache[$i];
+                    
+                    // Get leave status from cache
+                    $leave_Count = $leaveCache[$currentDate] ? 1 : 0;
+                    $ob_Count = $obCache[$currentDate] ? 1 : 0;
+                    $ot_Count = $otCache[$currentDate] ? 1 : 0;
+                    $cto_Count = $ctoCache[$currentDate] ? 1 : 0;
+                    
+                    // Get leave message directly instead of recalculating
                     $leavemessage = '';
-                    foreach ($ourdata as $key => $value) {
-                        $leavemessage = $value['leavetype'];
+                    if ($leaveCache[$currentDate]) {
+                        $leavemessage = $leaveCache[$currentDate]['leavetype'];
                     }
-
-                    $officialTime = 'Official Time';
-                    $officialBusinessMessage = 'Official Business';
-                    $absentMessage = 'Absent';
-                    $dayoffmessage = 'Day-Off';
-                    $holidayMessage = 'HOLIDAY';
-                    $ctoMessage = 'CTO';
                 @endphp
 
                 <tr>
                     <td
-                        style="color:#3468C0;text-align:center;width:60px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">
-                        {{ date('d', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) }}
-
+                        style="color:#3468C0;text-align:center;width:60px;border-right:1px solid rgb(196, 197, 201);background-color: whitesmoke">
+                        {{ $dayNumbers[$i] }}
                     </td>
-                    <td style="width: 80px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">
+                    <td style="width: 80px;border-right:1px solid rgb(196, 197, 201);background-color: whitesmoke">
                         <span style="color:#637A9F; font-size:12px">
-                            {{ date('l', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) }}
+                            {{ $dayNames[$i] }}
                         </span>
                     </td>
 
                     @include('dtr.TableDtrDate')
-                    {{--
-                    @if (count($checkIn) >= 1)
-                        @php $val = $i; @endphp
-                    @endif --}}
-
                 </tr>
             @endfor
         </tbody>
@@ -275,19 +263,12 @@
 
 <script>
     document.addEventListener("keydown", function(event) {
-        if (event.keyCode === 123) {
+        if (event.keyCode === 123 || event.key === "F12" || (event.ctrlKey && event.shiftKey && (event.key === "I" || event.key === "J"))) {
             event.preventDefault();
         }
     });
 
     document.addEventListener("contextmenu", function(e) {
         e.preventDefault();
-    });
-
-
-    document.addEventListener("keydown", function(e) {
-        if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J"))) {
-            e.preventDefault();
-        }
     });
 </script>
