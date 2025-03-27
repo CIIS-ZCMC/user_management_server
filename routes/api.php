@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\LeaveAndOverTime\CtoApplicationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
+use App\Http\Controllers\LeaveAndOvertime\OfficialBusinessController;
+use App\Http\Controllers\LeaveAndOverTime\OfficialTimeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +38,9 @@ Route::namespace('App\Http\Controllers')->group(function () {
 });
 
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
+Route::post('cto-application-import', [CtoApplicationController::class, 'import']);
+Route::post('ob-application-import', [OfficialBusinessController::class, 'import']);
+Route::post('ot-application-import', [OfficialTimeController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
