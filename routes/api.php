@@ -2668,5 +2668,6 @@ Route::
         namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
             Route::middleware("auth.thirdparty")->group(function () {
                 Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+                Route::get('erp-data-areas', 'ErpDataController@index');
             });
         });
