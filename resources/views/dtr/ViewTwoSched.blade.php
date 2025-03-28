@@ -33,7 +33,7 @@
         @endif
     @else
         @if (count($empSched) == 0)
-            @include('dtr.dayoffFormat', ['dtr_dayoff' => true])
+            @include('dtr.dayoffFormat', ['dtr_dayoff' => true]) 
         @else
             @if (count($dtr) == 0 && count($empSched) && $empSched[0]->schedule < date('Y-m-d'))
                 @include('dtr.absentFormat', ['dtr_absent' => true])
@@ -58,6 +58,7 @@
                     @endif
                 </td>
                 <td class="time" id="entry{{ $i }}2">
+                
                     @php
                         $yesterDate = date('Y-m-d', strtotime($curDate . ' -1 day'));
                         $yesdtr = array_values(
@@ -112,7 +113,14 @@
                             $secondin = true;
                             $previousTimestamp = date('h:i a', strtotime($dtr[0]->first_in));
                         @endphp
+
+                        @if($dtr[0]->second_in &&  date('a', strtotime($dtr[0]->second_in)) == 'pm')
+                            {{ date('h:i a', strtotime($dtr[0]->second_in)) }}
+
+                        @else 
                         <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
+                        @endif
+                      
                     @endif
 
                 </td>
@@ -130,7 +138,15 @@
                         @php
                             $secondout = true;
                         @endphp
+
+
+                    @if($dtr[0]->second_out &&  date('a', strtotime($dtr[0]->second_out)) == 'pm')
+                            {{ date('h:i a', strtotime($dtr[0]->second_out)) }}
+
+                        @else 
                         <span style="font-size:8px;color:rgb(177, 166, 166)">NO ENTRY</span>
+                        @endif
+                       
                     @endif
 
                 </td>
