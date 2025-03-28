@@ -282,18 +282,32 @@ class DTRcontroller extends Controller
             ->where('dtr_date', $dtr_date)
             ->get();
 
-
+        
         foreach ($records as $val) {
+          
+            if (
+                empty($val->first_in) && 
+                empty($val->first_out) && 
+                !empty($val->second_in) && 
+                !empty($val->second_out)
+            ) {
+                $bioEntry = [
+                    'first_entry' => !empty($val->second_in) ? $val->second_in : $val->second_out,
+                    'date_time'   => !empty($val->second_in) ? $val->second_in : $val->second_out
+                ];
+            } else {
+                $bioEntry = [
+                    'first_entry' => !empty($val->first_in) ? $val->first_in : $val->first_out,
+                    'date_time'   => !empty($val->first_in) ? $val->first_in : $val->first_out
+                ];
+            }
+            
 
-            $bioEntry = [
-                'first_entry' => $val->first_in ?? $val->first_out,
-                'date_time' => $val->first_in ?? $val->first_out
-            ];
-
+       
 
             //Get matching Schedule.
             $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-
+           
             $validate = [
                 (object) [
                     'id' => $val->id,
@@ -304,6 +318,8 @@ class DTRcontroller extends Controller
                 ],
             ];
 
+         
+
 
             $this->helper->saveTotalWorkingHours(
                 $validate,
@@ -313,6 +329,8 @@ class DTRcontroller extends Controller
                 true
             );
         }
+
+      
     }
     public function RegenerateDTR()
     {
@@ -445,9 +463,12 @@ class DTRcontroller extends Controller
                 ];
 
 
+
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $this->DeviceLog->RegenerateEntry($Entry, $biometric_id, $dtr_date, $Schedule);
-                $this->RecomputeHours($biometric_id, $month, $year, $dtr_date);
+               $this->RecomputeHours($biometric_id, $month, $year, $dtr_date);
+             
+            
             }
         }
 
@@ -893,7 +914,7 @@ class DTRcontroller extends Controller
             $FrontDisplay = $request->frontview;
             $ishalf = 1;
             ini_set('max_execution_time', 86400);
-
+          
             /*
             Multiple IDS for Multiple PDF generation
             */
@@ -1106,10 +1127,12 @@ class DTRcontroller extends Controller
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
+           
 
             $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
             $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
             if ($FrontDisplay) {
+             
                 return view('dtr.PrintDTRPDF', [
                     'daysInMonth' => $days_In_Month,
                     'year' => $year_of,
@@ -1189,7 +1212,7 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-            return $th;
+          
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
@@ -1741,7 +1764,7 @@ class DTRcontroller extends Controller
                             $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
 
 
-
+                            
                             if (isset($schedule['date'])) {
 
                                 $date_now = date('Y-m-d');
