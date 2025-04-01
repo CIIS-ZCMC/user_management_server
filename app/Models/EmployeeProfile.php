@@ -468,6 +468,7 @@ class EmployeeProfile extends Authenticatable
     public function myEmployees($assign_area, $user)
     {
         $employees = [];
+        $other_employees = [];
         $division_heads = [];
         $division_employees = [];
         $department_employees = [];
@@ -554,11 +555,9 @@ class EmployeeProfile extends Authenticatable
                 $query->orWhereIn('section_id', $my_section);
             if (!empty($my_unit))
                 $query->orWhereIn('unit_id', $my_unit);
-        })->whereNotIn('employee_profile_id', $user->id)->get();
+        })->whereNotIn('employee_profile_id', [$user->id])->get();
 
-        return $assign_areas->map(function ($assign_area) {
-            return $assign_area->employeeProfile;
-        })->flatten()->all();
+        return $assign_areas->map(fn($assign_area) => $assign_area->employeeProfile)->flatten()->all();
     }
 
 
