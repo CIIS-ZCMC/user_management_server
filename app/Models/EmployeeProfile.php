@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Helpers;
+use App\Http\Controllers\UmisAndEmployeeManagement\SystemController;
 use App\Http\Resources\EmployeeHeadResource;
 use App\Http\Resources\OfficialBusinessApplication;
 use Carbon\Carbon;
@@ -507,42 +508,48 @@ class EmployeeProfile extends Authenticatable
                 break;
 
             case 'Department':
-                //If Department then get all staff under his/her department and section head/supervisor
-                $departments = Department::where('id', $assign_area['details']->id)->get();
-                foreach ($departments as $department) {
-                    if ($department->head_employee_profile_id === $user->id) {
-                        $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
-                    }
-                }
+                $departments = Department::where('id', $assign_area['details']->id)->where('head_employee_profile_id', $user->id)->get();
 
-                $sections = Section::with(['supervisor.assignedArea'])->where('department_id', $assign_area['details']->id)->get();
-                foreach ($sections as $section) {
-                    if ($section->supervisor && $section->supervisor->assignedArea) {
-                        if ($section->supervisor->assignedArea->findDetails()['details']->id !== $assign_area['details']->id) {
-                            $section_employees[] = $section->supervisor; // Add the head/supervisor if assignedArea doesn't match
+                if (count($departments) === 0) {
+                    $department = Department::find($assign_area['details']->id);
+                    $department_employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
+
+                    $employees = $department_employees;
+                } else {
+                    foreach ($departments as $department) {
+                        $department_employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
+                    }
+
+                    $sections = Section::where('department_id', $assign_area['details']->id)->get();
+                    if (count($sections) !== 0) {
+                        foreach ($sections as $section) {
+                            $section_employees[] = $section->supervisor;
                         }
                     }
+
+                    $employees = array_merge($department_employees, $section_employees);
                 }
                 break;
 
             case 'Section':
-                //If section then get all staff under his/her section and unit head/supervisor
-                $sections = Section::where('id', $assign_area['details']->id)->get();
-                foreach ($sections as $section) {
+                $sections = Section::where('id', $assign_area['details']->id)->where('supervisor_employee_profile_id', $user->id)->get();
+                if (count($section) === 0) {
+                    $section = Section::find($assign_area['details']->id);
                     $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
-                }
 
-                $units = Unit::with(['head.assignedArea'])->where('section_id', $assign_area['details']->id)->get();
-                foreach ($units as $unit) {
-                    // $unit_employees[] = $unit->head;
-                    if ($unit->head && $unit->head->assignedArea) {
-                        if ($unit->head->assignedArea->findDetails()['details']->id !== $assign_area['details']->id) {
-                            $unit_employees[] = $unit->head; // Add the head if assignedArea doesn't match
-                        }
+                    $employees = $section_employees;
+                } else {
+                    foreach ($sections as $section) {
+                        $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                     }
-                }
 
-                $employees = array_merge($unit_employees); //$section_employees,
+                    $units = Unit::where('section_id', $assign_area['details']->id)->get();
+                    foreach ($units as $unit) {
+                        $unit_employees[] = $unit->head;
+                    }
+
+                    $employees = array_merge($section_employees, $unit_employees);
+                }
                 break;
 
             case 'Unit':
