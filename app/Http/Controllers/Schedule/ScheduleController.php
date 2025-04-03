@@ -209,7 +209,7 @@ class ScheduleController extends Controller
             $my_area = $user->assignedArea->findDetails();
             $areas = [];
 
-            if ($my_area['details']->code === 'HRMO' || $user->employee_id === '1918091351') {
+            if ($my_area['details']->code === 'HOPPS-HRMO' || $user->employee_id === '1918091351') {
                 foreach ($this->areas() as $value) {
                     $areas[] = [
                         'id' => $value['area'],
@@ -221,52 +221,72 @@ class ScheduleController extends Controller
                 return response()->json(['data' => $areas, 'message' => "HRMO."], Response::HTTP_OK);
             }
 
-            switch ($my_area['sector']) {
-                case "Division":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
-                    $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
 
-                    foreach ($deparmtents as $department) {
-                        $areas[] = ['id' => $department->id, 'name' => $department->name, 'code' => $department->code, 'sector' => 'Department'];
+            // switch ($my_area['sector']) {
+            //     case "Division":
+            //         $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
+            //         $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
 
-                        $sections = Section::where('department_id', $department->id)->get();
-                        foreach ($sections as $section) {
-                            $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
-                        }
-                    }
+            //         foreach ($deparmtents as $department) {
+            //             $areas[] = ['id' => $department->id, 'name' => $department->name, 'code' => $department->code, 'sector' => 'Department'];
 
-                    $sections = Section::where('division_id', $my_area['details']->id)->get();
-                    foreach ($sections as $section) {
-                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
-                    }
-                    break;
-                case "Department":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
-                    $sections = Section::where('department_id', $my_area['details']->id)->get();
+            //             $sections = Section::where('department_id', $department->id)->get();
+            //             foreach ($sections as $section) {
+            //                 $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+            //             }
+            //         }
 
-                    foreach ($sections as $section) {
-                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+            //         $sections = Section::where('division_id', $my_area['details']->id)->get();
+            //         foreach ($sections as $section) {
+            //             $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+            //         }
+            //         break;
+            //     case "Department":
+            //         $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
+            //         $sections = Section::where('department_id', $my_area['details']->id)->get();
 
-                        $units = Unit::where('section_id', $section->id)->get();
-                        foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
-                        }
-                    }
-                    break;
+            //         foreach ($sections as $section) {
+            //             $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
 
-                case "Section":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
+            //             $units = Unit::where('section_id', $section->id)->get();
+            //             foreach ($units as $unit) {
+            //                 $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
+            //             }
+            //         }
+            //         break;
 
-                    $units = Unit::where('section_id', $my_area['details']->id)->get();
-                    foreach ($units as $unit) {
-                        $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
-                    }
-                    break;
+            //     case "Section":
+            //         $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
 
-                case "Unit":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
-                    break;
-            }
+            //         $units = Unit::where('section_id', $my_area['details']->id)->get();
+            //         foreach ($units as $unit) {
+            //             $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
+            //         }
+            //         break;
+
+            //     case "Unit":
+            //         $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
+            //         break;
+            // }
+
+
+            $sectors = [
+                'Division' => Division::where('chief_employee_profile_id', $user->id)->get(),
+                'Department' => Department::where('head_employee_profile_id', $user->id)->get(),
+                'Section' => Section::where('supervisor_employee_profile_id', $user->id)->get(),
+                'Unit' => Unit::where('head_employee_profile_id', $user->id)->get(),
+            ];
+
+            $areas = collect($sectors)->flatMap(function ($items, $sector) {
+                return $items->map(function ($item) use ($sector) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'code' => $item->code,
+                        'sector' => $sector
+                    ];
+                });
+            })->values()->all();
 
             return response()->json([
                 'data' => $areas,

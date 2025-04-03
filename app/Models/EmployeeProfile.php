@@ -507,25 +507,42 @@ class EmployeeProfile extends Authenticatable
                 break;
 
             case 'Department':
-                $sections = Section::where('department_id', $assign_area['details']->id)->get();
+                //If Department then get all staff under his/her department and section head/supervisor
+                $departments = Department::where('id', $assign_area['details']->id)->get();
+                foreach ($departments as $department) {
+                    if ($department->head_employee_profile_id === $user->id) {
+                        $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
+                    }
+                }
+
+                $sections = Section::with(['supervisor.assignedArea'])->where('department_id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'department_id', $section->department_id, [$user->id, 1]);
-                    // $employees = array_merge($my_employees, (array) $section->supervisor);
+                    if ($section->supervisor && $section->supervisor->assignedArea) {
+                        if ($section->supervisor->assignedArea->findDetails()['details']->id !== $assign_area['details']->id) {
+                            $section_employees[] = $section->supervisor; // Add the head/supervisor if assignedArea doesn't match
+                        }
+                    }
                 }
                 break;
 
             case 'Section':
+                //If section then get all staff under his/her section and unit head/supervisor
                 $sections = Section::where('id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
                     $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                 }
 
-                $units = Unit::where('section_id', $assign_area['details']->id)->get();
+                $units = Unit::with(['head.assignedArea'])->where('section_id', $assign_area['details']->id)->get();
                 foreach ($units as $unit) {
-                    $unit_employees[] = $unit->head;
+                    // $unit_employees[] = $unit->head;
+                    if ($unit->head && $unit->head->assignedArea) {
+                        if ($unit->head->assignedArea->findDetails()['details']->id !== $assign_area['details']->id) {
+                            $unit_employees[] = $unit->head; // Add the head if assignedArea doesn't match
+                        }
+                    }
                 }
 
-                $employees = array_merge($section_employees, $unit_employees);
+                $employees = array_merge($unit_employees); //$section_employees,
                 break;
 
             case 'Unit':
@@ -535,11 +552,11 @@ class EmployeeProfile extends Authenticatable
                 }
         }
 
-        $other_employees = $this->my_area($user);
+        $other_employees = $this->supervisingArea($user);
         return array_merge($employees, $other_employees);
     }
 
-    public function my_area($user)
+    public function supervisingArea($user)
     {
         $my_division = Division::where('chief_employee_profile_id', $user->id)->pluck('id')->toArray();
         $my_department = Department::where('head_employee_profile_id', $user->id)->pluck('id')->toArray();
