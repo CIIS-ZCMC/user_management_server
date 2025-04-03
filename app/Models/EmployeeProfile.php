@@ -533,7 +533,7 @@ class EmployeeProfile extends Authenticatable
 
             case 'Section':
                 $sections = Section::where('id', $assign_area['details']->id)->where('supervisor_employee_profile_id', $user->id)->get();
-                if (count($section) === 0) {
+                if (count($sections) === 0) {
                     $section = Section::find($assign_area['details']->id);
                     $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
 
