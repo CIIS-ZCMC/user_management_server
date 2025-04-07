@@ -243,7 +243,7 @@ class PersonalInformationSeeder extends Seeder
 
         AssignArea::create([
             'employee_profile_id' => $employee_profile->id,
-            'section_id' => Division::where('code', 'OMCC')->first()->id,
+            'section_id' => Division::where('area_id', 'OMCC-DI-001')->first()->id,
             'designation_id' => Designation::where('code', 'CP III')->first()->id,
             'effective_at' => now(),
             'end_date' => Carbon::now()->addYears(50)

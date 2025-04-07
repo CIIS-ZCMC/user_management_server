@@ -99,7 +99,7 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
-            if ($division->code === 'OMCC') {
+            if ($division->area_id === 'OMCC-DI-001') {
                 $role = Role::where('code', 'OMCC-01')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 

@@ -143,7 +143,7 @@ class EmployeeProfile extends Authenticatable
 
     public function createToken()
     {
-        Log::channel('custom-info')->info('PASSED');
+        // Log::channel('custom-info')->info('PASSED');
         // $publicKeyString
         AccessToken::where('employee_profile_id', $this->id)->delete();
 
@@ -250,7 +250,6 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(OvtApplicationLog::class);
     }
 
-
     public function removeRecords()
     {
         PasswordTrail::where('employee_profile_id', $this->id)->delete();
@@ -285,7 +284,7 @@ class EmployeeProfile extends Authenticatable
     public function position()
     {
         /** Division Chief */
-        $chief = Division::where('chief_employee_profile_id', $this->id)->where('code', 'OMCC')->first();
+        $chief = Division::where('chief_employee_profile_id', $this->id)->where('area_id', 'OMCC-DI-001')->first();
 
         if ($chief) {
             return [
@@ -295,7 +294,7 @@ class EmployeeProfile extends Authenticatable
         }
 
         /** Chief Nurse */
-        $chief_nurse = Division::where('chief_employee_profile_id', $this->id)->where('code', 'NS')->first();
+        $chief_nurse = Division::where('chief_employee_profile_id', $this->id)->where('area_id', 'NS-DI-004')->first();
 
         if ($chief_nurse) {
             return [
@@ -328,7 +327,7 @@ class EmployeeProfile extends Authenticatable
 
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
-        $nurse_service = Division::where('code', 'NS')->first();
+        $nurse_service = Division::where('area_id', 'NS-DI-004')->first();
 
         if ($head) {
             if ($head->department_id === $nurse_service->id) {
@@ -399,7 +398,7 @@ class EmployeeProfile extends Authenticatable
         if ($assign_area->section_id !== null) {
             $hr_employee = Section::find($assign_area->section_id);
 
-            if ($hr_employee->code === 'HRMO') {
+            if ($hr_employee->area_id === 'HRMO-DE-001') {
                 $role = Role::where('code', "HR-ADMIN")->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
                 $special_access_role = SpecialAccessRole::where('employee_profile_id', $this->id)

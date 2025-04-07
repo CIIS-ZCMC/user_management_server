@@ -66,7 +66,7 @@ class Overtime extends Model
       /** Must pass an argument of division code which must be HRMO for HR head and OMCC for Chief */
       public function isApprovedByChief()
       {
-          $division_head = Division::where('code', 'OMCC')->first()->chief();
+          $division_head = Division::where('area_id', 'OMCC-DI-001')->first()->chief();
 
           /**
            * Validate if Logs has record for hrmo approving the leave application by
@@ -83,7 +83,7 @@ class Overtime extends Model
       /** Must pass an argument of section code which must be HRMO for HR head and OMCC for Chief */
       public function isApprovedByHrmo()
       {
-          $section_supervisor = Section::where('code', 'HRMO')->first()->chief();
+          $section_supervisor = Section::where('area_id', 'HOPPS-HRMO-DE-001')->first()->chief();
 
           /**
            * Validate if Logs has record for hrmo approving the leave application by

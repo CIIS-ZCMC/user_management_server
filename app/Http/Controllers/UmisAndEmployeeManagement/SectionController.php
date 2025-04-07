@@ -102,7 +102,7 @@ class SectionController extends Controller
 
             $section->update($cleanData);
             
-            if($section->code === 'HRMO'){
+            if($section->area_id === 'HOPPS-HRMO-DE-001'){
                 $role = Role::where('code', 'HRMO-HEAD-01')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
