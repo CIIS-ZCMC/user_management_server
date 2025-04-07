@@ -14,6 +14,14 @@ class DivisionObserver
      */
     public function created(Division $division): void
     {
+        $code = $division->code;
+        $sector = "DI";
+        $total_divisions = Division::count();
+
+        $area_id = sprintf("%s-%s-%03d", $code, $sector, $total_divisions);
+
+        $division->update(['area_id' => $area_id]);
+
         Cache::forget($this->CACHE_KEY);
     }
 

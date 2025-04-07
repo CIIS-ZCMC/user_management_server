@@ -12,6 +12,7 @@ class Division extends Model
     protected $table = 'divisions';
 
     public $fillable = [
+        'area_id',
         'code',
         'name',
         'division_attachment_url',

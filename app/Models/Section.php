@@ -15,6 +15,7 @@ class Section extends Model
     protected $table = 'sections';
 
     public $fillable = [
+        'area_id',
         'name',
         'code',
         'section_attachment_url',

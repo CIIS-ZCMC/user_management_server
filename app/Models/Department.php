@@ -15,6 +15,7 @@ class Department extends Model
     protected $table = 'departments';
 
     public $fillable = [
+        'area_id',
         'name',
         'code',
         'department_attachment_url',

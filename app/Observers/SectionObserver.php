@@ -14,6 +14,13 @@ class SectionObserver
      */
     public function created(Section $section): void
     {
+        $code = $section->code;
+        $sector = "S";
+        $total_sections = Section::count();
+
+        $area_id = sprintf("%s-%s-%03d", $code, $sector, $total_sections);
+
+        $section->update(['area_id' => $area_id]);
         Cache::forget($this->CACHE_KEY);
     }
 

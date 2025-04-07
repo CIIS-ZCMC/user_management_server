@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('divisions', function (Blueprint $table) {
             $table->id();
+            $table->uuid('area_id')->unique()->nulalble();
             $table->string('name');
             $table->string('code')->nullable();
             $table->string('division_attachment_url')->nullable();

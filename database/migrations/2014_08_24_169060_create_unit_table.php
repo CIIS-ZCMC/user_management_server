@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->id();
+            $table->uuid('area_id')->unique()->nulalble();
             $table->string('name');
             $table->string('code')->nullable();
             $table->string('unit_attachment_url')->nullable();

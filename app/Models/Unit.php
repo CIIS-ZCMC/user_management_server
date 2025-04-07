@@ -15,6 +15,7 @@ class Unit extends Model
     protected $table = 'units';
 
     public $fillable = [
+        'area_id',
         'name',
         'code',
         'unit_attachment_url',

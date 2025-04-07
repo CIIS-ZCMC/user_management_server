@@ -14,6 +14,13 @@ class UnitObserver
      */
     public function created(Unit $unit): void
     {
+        $code = $unit->code;
+        $sector = "U";
+        $total_units = Unit::count();
+
+        $area_id = sprintf("%s-%s-%03d", $code, $sector, $total_units);
+
+        $unit->update(['area_id' => $area_id]);
         Cache::forget($this->CACHE_KEY);
     }
 
