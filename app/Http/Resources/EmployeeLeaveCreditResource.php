@@ -7,12 +7,12 @@ use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class EmployeeLeaveCredit extends JsonResource
+class EmployeeLeaveCreditResource extends JsonResource
 {
     public function toArray($request)
     {
         return [
-            "id"=> $this->id,
+            "id" => $this->id,
             'employee_profile_id' => $this->employee_profile_id,
             'name' => $this->employeeProfile->personalInformation->name(),
             'leave_type' => $this->leaveType,

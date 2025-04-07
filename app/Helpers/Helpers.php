@@ -77,7 +77,7 @@ class Helpers
     }
     public static function getHrmoOfficer()
     {
-        return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+        return Section::where('code', 'HOPPS-HRMO')->first()->supervisor_employee_profile_id;
     }
 
     public static function getChiefOfficer()
@@ -1261,8 +1261,9 @@ class Helpers
         }
     }
 
-    public static function customRound($numericValue) {
-        return (double) number_format($numericValue, 2, '.', '');
+    public static function customRound($numericValue)
+    {
+        return (float) number_format($numericValue, 2, '.', '');
     }
 
 

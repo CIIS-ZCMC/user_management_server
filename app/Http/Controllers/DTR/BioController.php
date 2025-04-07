@@ -110,11 +110,12 @@ class BioController extends Controller
             }
 
             foreach ($biometric_id as $key => $value) {
-                if ($this->device->fetchUserDataFromDeviceToDB($dvc, $value)) {
-                    if ($this->device->validateTemplate($dvc, $value)) {
-                        $this->device->deleteDataFromDevice($dvc, $value); //DELETE USER INFO , IF FINGERPRINT DETECTED
-                    }
-                }
+                $this->device->fetchUserDataFromDeviceToDB($dvc, $value);
+                // if ($this->device->fetchUserDataFromDeviceToDB($dvc, $value)) {
+                //     if ($this->device->validateTemplate($dvc, $value)) {
+                //         $this->device->deleteDataFromDevice($dvc, $value); //DELETE USER INFO , IF FINGERPRINT DETECTED
+                //     }
+                // }
             }
 
 
@@ -161,11 +162,13 @@ class BioController extends Controller
     public function fetchBIOToDevice()
     {
         try {
-            $devices = Devices::where('is_registration', 0)->get();
+          
+            $devices = Devices::where('id', 1)->get();
 
+           
             foreach ($devices as $dv) {
                 // $bios = Devices::where('id', $dv)->get();
-                $this->device->fetchAllDataToDevice($dv);
+             return   $this->device->fetchAllDataToDevice($dv);
             }
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
         } catch (\Throwable $th) {

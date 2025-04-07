@@ -103,6 +103,11 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
 // });
 
 
+Route::get('/one-time-password', function () {
+    return view('one_time_password/OneTimePassword');
+});
+
+
 Route::get('/new-account', function () {
     return view('mail/new_account');
 });

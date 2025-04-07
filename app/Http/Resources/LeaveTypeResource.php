@@ -17,8 +17,8 @@ class LeaveTypeResource extends JsonResource
         $file_attached = [];
         $date_added = null;
 
-        foreach( $logs as $log ) {
-            if($date_added === null) $date_added = $log->created_at; 
+        foreach ($logs as $log) {
+            if ($date_added === null) $date_added = $log->created_at;
             $employee = [
                 'id' => $log->id,
                 'action' => $log->action,
@@ -36,32 +36,33 @@ class LeaveTypeResource extends JsonResource
         }
 
         foreach ($this->leaveTypeAttachments as $file) {
-           $files = [
+            $files = [
                 'id' => $file->id,
                 'leave_type_id' => $this->id,
                 'name' => $file->file_name,
-                'path' => env("SERVER_DOMAIN")."/requirements/".$file->path,
+                'path' => env("SERVER_DOMAIN") . "/requirements/" . $file->path,
                 'size' => $file->size,
                 'created_at' => $file->created_at,
                 'updated_at' => $file->updated_at
-           ];
+            ];
 
-           $file_attached[] = $files;
+            $file_attached[] = $files;
         }
-      
+
 
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'republic_act'=>$this->republic_act,
+            'republic_act' => $this->republic_act,
             'description' => $this->description,
-            'period' => (double)$this->period,
+            'period' => (float)$this->period,
             'file_date' => $this->file_date,
             'file_after' => $this->file_after,
             'file_before' => $this->file_before,
             'month_value' => $this->month_value,
-            'annual_credit' => (double)$this->annual_credit,
+            'annual_credit' => (float)$this->annual_credit,
             'is_active' => $this->is_active,
+            'is_other' => $this->is_other,
             'is_special' => $this->is_special,
             'is_country' => $this->is_country,
             'is_illness' => $this->is_illness,
