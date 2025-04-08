@@ -31,6 +31,7 @@ return new class extends Migration
             $table->foreign('supervisor_employee_profile_id')->references('id')->on('employee_profiles');
             $table->unsignedBigInteger('oic_employee_profile_id')->nullable();
             $table->foreign('oic_employee_profile_id')->references('id')->on('employee_profiles');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

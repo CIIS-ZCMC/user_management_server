@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\DepartmentsResource;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notifications;
 use App\Models\Role;
@@ -361,7 +362,20 @@ class DepartmentController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function restore($id, Request $request)
+    {
+        Department::withTrashed()->find($id)->restore();
+
+        return (new DepartmentsResource(Department::find($id)))
+            ->additional([
+                'meta' => [
+                    'methods' => '[GET, POST, PUT, DELETE]'
+                ],
+                'message' => 'Successfully restore.'
+            ]);
+    }
+
+    public function destroy($id, Request $request)
     {
         try {
             $user = $request->user;

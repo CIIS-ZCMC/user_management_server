@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\NotificationResource;
+use App\Http\Resources\UnitsResource;
 use App\Models\Notifications;
 use App\Models\Role;
 use App\Models\Section;
@@ -27,6 +28,7 @@ use App\Http\Requests\UnitAssignHeadRequest;
 use App\Http\Resources\UnitResource;
 use App\Models\Unit;
 use App\Models\EmployeeProfile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class UnitController extends Controller
 {  
@@ -318,6 +320,19 @@ class UnitController extends Controller
         }
     }
     
+    public function restore($id, Request $request): JsonResponse
+    {
+        Unit::withTrashed()->find($id)->restore();
+
+        return (new UnitsResource(Unit::find($id)))
+            ->additional([
+                'meta' => [
+                    'methods' => '[GET, POST, PUT, DELETE]'
+                ],
+                'message' => 'Successfully restore.'
+            ])->response();
+    }
+
     public function destroy($id, Request $request)
     {
         try{

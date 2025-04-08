@@ -686,6 +686,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('department-update/{id}', 'DepartmentController@update');
+            Route::put('department/{id}/restore', 'DepartmentController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -762,6 +763,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('division-update/{id}', 'DivisionController@update');
+            Route::put('division/{id}/restore', 'DivisionController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1537,6 +1539,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('section-update/{id}', 'SectionController@update');
+            Route::put('section/{id}/restore', 'SectionController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1630,6 +1633,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('unit-update/{id}', 'UnitController@update');
+            Route::put('unit/{id}/restore', 'UnitController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\NotificationResource;
+use App\Http\Resources\SectionsResource;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\Notifications;
@@ -394,6 +395,19 @@ class SectionController extends Controller
              Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function restore($id, Request $request)
+    {
+        Section::withTrashed()->find($id)->restore();
+
+        return (new SectionsResource(Section::find($id)))
+            ->additional([
+                'meta' => [
+                    'methods' => '[GET, POST, PUT, DELETE]'
+                ],
+                'message' => 'Successfully restore.'
+            ]);
     }
     
     public function destroy($id, AuthPinApprovalRequest $request)

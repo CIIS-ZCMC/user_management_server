@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\DivisionsResource;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notifications;
 use App\Models\Role;
@@ -13,6 +14,7 @@ use App\Models\SystemRole;
 use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -25,6 +27,7 @@ use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Resources\DivisionResource;
 use App\Models\Division;
 use App\Models\EmployeeProfile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DivisionController extends Controller
 {
@@ -327,7 +330,20 @@ class DivisionController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function restore($id, Request $request): DivisionsResource  
+    {
+        Division::withTrashed()->find($id)->restore();
+
+        return (new DivisionsResource(Division::find($id)))
+            ->additional([
+                'meta' => [
+                    'methods' => '[GET, POST, PUT, DELETE]'
+                ],
+                'message' => 'Successfully restore.'
+            ]);
+    }
+
+    public function destroy($id, Request $request)
     {
         try {
             $user = $request->user;

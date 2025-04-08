@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Http\Resources\HeadUnitTrailResource;
 use App\Http\Resources\OICUnitTrailResource;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Unit extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'units';
 
@@ -31,6 +32,8 @@ class Unit extends Model
     ];
 
     public $timestamps = TRUE;
+    
+    protected $casts = ['deleted_at' => 'datetime'];
 
     public function assignArea()
     {

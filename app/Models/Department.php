@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Http\Resources\HeadDepartmentResource;
 use App\Http\Resources\OICDepartmentResouce;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Department extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'departments';
 
@@ -33,6 +34,8 @@ class Department extends Model
     ];
 
     public $timestamps = TRUE;
+
+    protected $casts = ['deleted_at' => 'datetime'];
 
     public function assignArea()
     {
