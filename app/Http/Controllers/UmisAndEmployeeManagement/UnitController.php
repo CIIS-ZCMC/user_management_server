@@ -319,6 +319,29 @@ class UnitController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function trash(Request $request):JsonResponse
+    {
+        $search = $request->query('search');
+
+        if($search){
+            return UnitsResource::collection(Unit::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+                ->additional([
+                    "meta" => [
+                        "methods" => "[GET, POST, PUT, DELETE]",
+                    ],
+                    "message" => "Successfully retrieve all deleted record."
+                ])->response();
+        }
+
+        return UnitsResource::collection(resource: Unit::onlyTrashed()->get())
+            ->additional([
+                "meta" => [
+                    "methods" => "[GET, POST, PUT, DELETE]",
+                ],
+                "message" => "Successfully retrieve all deleted record."
+            ])->response();
+    }
     
     public function restore($id, Request $request): JsonResponse
     {

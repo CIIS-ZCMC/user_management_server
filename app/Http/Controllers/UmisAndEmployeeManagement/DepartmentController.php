@@ -26,6 +26,7 @@ use App\Http\Resources\DepartmentResource;
 use App\Models\Division;
 use App\Models\Department;
 use App\Models\EmployeeProfile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DepartmentController extends Controller
 {
@@ -360,6 +361,29 @@ class DepartmentController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function trash(Request $request)
+    {
+        $search = $request->query('search');
+
+        if($search){
+            return DepartmentsResource::collection(Department::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+                ->additional([
+                    "meta" => [
+                        "methods" => "[GET, POST, PUT, DELETE]",
+                    ],
+                    "message" => "Successfully retrieve all deleted record."
+                ])->response();
+        }
+
+        return DepartmentsResource::collection(Department::onlyTrashed()->get())
+            ->additional([
+                "meta" => [
+                    "methods" => "[GET, POST, PUT, DELETE]",
+                ],
+                "message" => "Successfully retrieve all deleted record."
+            ])->response();
     }
 
     public function restore($id, Request $request)

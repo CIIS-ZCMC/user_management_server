@@ -330,6 +330,29 @@ class DivisionController extends Controller
         }
     }
 
+    public function trash(Request $request):JsonResponse
+    {
+        $search = $request->query('search');
+
+        if($search){
+            return DivisionsResource::collection(Division::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+                ->additional([
+                    "meta" => [
+                        "methods" => "[GET, POST, PUT, DELETE]",
+                    ],
+                    "message" => "Successfully retrieve all deleted record."
+                ])->response();
+        }
+
+        return DivisionsResource::collection(Division::onlyTrashed()->get())
+            ->additional([
+                "meta" => [
+                    "methods" => "[GET, POST, PUT, DELETE]",
+                ],
+                "message" => "Successfully retrieve all deleted record."
+            ])->response();
+    }
+
     public function restore($id, Request $request): DivisionsResource  
     {
         Division::withTrashed()->find($id)->restore();

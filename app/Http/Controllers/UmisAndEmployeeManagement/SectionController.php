@@ -29,6 +29,7 @@ use App\Http\Requests\SectionAssignOICRequest;
 use App\Http\Resources\SectionResource;
 use App\Models\Section;
 use App\Models\EmployeeProfile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class SectionController extends Controller
 {    
@@ -395,6 +396,29 @@ class SectionController extends Controller
              Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function trash(Request $request): JsonResponse
+    {
+        $search = $request->query('search');
+
+        if($search){
+            return SectionsResource::collection(Section::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+                ->additional([
+                    "meta" => [
+                        "methods" => "[GET, POST, PUT, DELETE]",
+                    ],
+                    "message" => "Successfully retrieve all deleted record."
+                ])->response();
+        }
+
+        return SectionsResource::collection(Section::onlyTrashed()->get())
+            ->additional([
+                "meta" => [
+                    "methods" => "[GET, POST, PUT, DELETE]",
+                ],
+                "message" => "Successfully retrieve all deleted record."
+            ])->response();
     }
 
     public function restore($id, Request $request)
