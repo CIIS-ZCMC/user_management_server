@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\NotificationResource;
+use App\Http\Resources\SectionsResource;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\Notifications;
@@ -28,6 +29,7 @@ use App\Http\Requests\SectionAssignOICRequest;
 use App\Http\Resources\SectionResource;
 use App\Models\Section;
 use App\Models\EmployeeProfile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class SectionController extends Controller
 {    
@@ -102,7 +104,7 @@ class SectionController extends Controller
 
             $section->update($cleanData);
             
-            if($section->code === 'HRMO'){
+            if($section->area_id === 'HOPPS-HRMO-DE-001'){
                 $role = Role::where('code', 'HRMO-HEAD-01')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -394,6 +396,42 @@ class SectionController extends Controller
              Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function trash(Request $request): JsonResponse
+    {
+        $search = $request->query('search');
+
+        if($search){
+            return SectionsResource::collection(Section::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+                ->additional([
+                    "meta" => [
+                        "methods" => "[GET, POST, PUT, DELETE]",
+                    ],
+                    "message" => "Successfully retrieve all deleted record."
+                ])->response();
+        }
+
+        return SectionsResource::collection(Section::onlyTrashed()->get())
+            ->additional([
+                "meta" => [
+                    "methods" => "[GET, POST, PUT, DELETE]",
+                ],
+                "message" => "Successfully retrieve all deleted record."
+            ])->response();
+    }
+
+    public function restore($id, Request $request)
+    {
+        Section::withTrashed()->find($id)->restore();
+
+        return (new SectionsResource(Section::find($id)))
+            ->additional([
+                'meta' => [
+                    'methods' => '[GET, POST, PUT, DELETE]'
+                ],
+                'message' => 'Successfully restore.'
+            ]);
     }
     
     public function destroy($id, AuthPinApprovalRequest $request)

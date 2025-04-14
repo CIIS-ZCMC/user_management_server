@@ -41,6 +41,7 @@ class UnitResource extends JsonResource
                 'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
+                'area_id' => $this->area,
                 'head' => $head,
                 'created_at' => $this->created_at,
                 'updated_at' => $this->updated_at,
@@ -56,6 +57,7 @@ class UnitResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
+            'area_id' => $this->area_id,
             'name' => $this->name,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

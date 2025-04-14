@@ -72,6 +72,7 @@ class DepartmentResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
+            'area_id' => $this->area_id,
             'head' => 'NONE',
             'head_designation' => 'NONE',
             'head_status' => 'NONE',

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
+            $table->uuid('area_id')->unique()->nulalble();
             $table->string('name');
             $table->string('code')->nullable();
             $table->string('department_attachment_url')->nullable();
@@ -45,7 +46,7 @@ return new class extends Migration
             $table->datetime('oic_end_at')->nullable();
             $table->unsignedBigInteger('oic_employee_profile_id')->nullable();
             $table->foreign('oic_employee_profile_id')->references('id')->on('employee_profiles');
-            
+            $table->softDeletes();
             $table->timestamps();
         });
     }
