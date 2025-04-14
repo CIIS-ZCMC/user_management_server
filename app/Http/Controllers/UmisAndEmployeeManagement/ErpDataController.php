@@ -8,6 +8,7 @@ use App\Models\Division;
 use App\Models\Department;
 use App\Models\Section;
 use App\Models\Unit;
+use App\Models\Designation;
 use Illuminate\Http\Response;
 
 class ErpDataController extends Controller
@@ -15,14 +16,14 @@ class ErpDataController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function areas()
     {
         try {
             $divisions = Division::all();
             $departments = Department::all();
             $sections = Section::all();
             $units = Unit::all();
-            
+
             $erp_data = [
                 'divisions' => $divisions->map(function ($item) {
                     return [
@@ -39,7 +40,7 @@ class ErpDataController extends Controller
                         'code' => $item->code,
                         'name' => $item->name,
                         'division_id' => $item->division_id,
-                        'chief_employee_profile_id' => $item->chief_employee_profile_id,
+                        'head_employee_profile_id' => $item->head_employee_profile_id,
                         'oic_employee_profile_id' => $item->oic_employee_profile_id
                     ];
                 }),
@@ -50,7 +51,8 @@ class ErpDataController extends Controller
                         'name' => $item->name,
                         'division_id' => $item->division_id,
                         'department_id' => $item->department_id,
-                        'supervisor_employee_profile_id' => $item->supervisor_employee_profile_id
+                        'supervisor_employee_profile_id' => $item->supervisor_employee_profile_id,
+                        'oic_employee_profile_id' => $item->oic_employee_profile_id
                     ];
                 }),
                 'units' => $units->map(function ($item) {
@@ -59,7 +61,8 @@ class ErpDataController extends Controller
                         'code' => $item->code,
                         'name' => $item->name,
                         'section_id' => $item->section_id,
-                        'unit_head_employee_profile_id' => $item->unit_head_employee_profile_id
+                        'head_employee_profile_id' => $item->head_employee_profile_id,
+                        'oic_employee_profile_id' => $item->oic_employee_profile_id
                     ];
                 })
             ];
@@ -75,6 +78,41 @@ class ErpDataController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
     }
+
+    public function designations()
+    {
+        try {
+            $designations = Designation::all();
+
+            $erp_data = $designations->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'code' => $item->code,
+                    'name' => $item->name,
+                    'probation' => $item->probation
+                ];
+            });
+
+            if (!$designations) {
+                return response()->json([
+                    'message' => 'No designations found.',
+                    'code' => Response::HTTP_NOT_FOUND
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            return response()->json([
+                'data' => $erp_data,
+                'message' => 'Designations retrieved successfully.'
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'message' => $throwable->getMessage(),
+                'code' => $throwable->getCode()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
 
 
     /**
