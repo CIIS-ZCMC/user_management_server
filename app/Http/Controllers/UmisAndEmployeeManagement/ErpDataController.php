@@ -8,7 +8,11 @@ use App\Models\Division;
 use App\Models\Department;
 use App\Models\Section;
 use App\Models\Unit;
+use App\Models\AssignArea;
 use App\Models\Designation;
+use App\Models\EmployeeProfile;
+use App\Http\Resources\ErpUserResource;
+use App\Http\Resources\ErpAssignedAreaResource;
 use Illuminate\Http\Response;
 
 class ErpDataController extends Controller
@@ -104,7 +108,6 @@ class ErpDataController extends Controller
                 'data' => $erp_data,
                 'message' => 'Designations retrieved successfully.'
             ], Response::HTTP_OK);
-
         } catch (\Throwable $throwable) {
             return response()->json([
                 'message' => $throwable->getMessage(),
@@ -112,6 +115,46 @@ class ErpDataController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
     }
+
+    public function users()
+    {
+        try {
+            $users = EmployeeProfile::with([
+                'assignedArea',
+                'assignedArea.designation',
+                'personalInformation'
+            ])->get();
+
+            return response()->json([
+                'data' => ErpUserResource::collection($users),
+                'message' => 'Users retrieved successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'message' => $throwable->getMessage(),
+                'code' => $throwable->getCode()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function assignedAreas()
+    {
+        try {
+            $assignedArea = AssignArea::all();
+
+            return response()->json([
+                'data' => ErpAssignedAreaResource::collection($assignedArea),
+                'message' => 'Assigned areas retrieved successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'message' => $throwable->getMessage(),
+                'code' => $throwable->getCode()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+
 
 
 
