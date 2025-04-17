@@ -93,6 +93,10 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
 
+        Route::namespace("AccessManagement")->group(callback: function() {
+            Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
+        });
+
         Route::namespace("Migration")->group(function () {
             Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
             Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');

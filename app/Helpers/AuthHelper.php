@@ -1,91 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\UmisAndEmployeeManagement;
-
-use App\Http\Controllers\Controller;
+namespace App\Helpers;
 
 use App\Http\Resources\ContactResource;
-use App\Models\AccessToken;
-use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
 use App\Models\PositionSystemRole;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemRole;
-use App\Models\SystemUserSessions;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Str;
-use App\Helpers\Helpers;
-use App\Http\Requests\SystemRequest;
-use App\Http\Resources\SystemResource;
-use App\Models\System;
 
-class SystemController extends Controller
-{   
-    private $CONTROLLER_NAME = 'System';
-    private $PLURAL_MODULE_NAME = 'systems';
-    private $SINGULAR_MODULE_NAME = 'system';
-    
-    public function authenticateUserFromDifferentSystem(Request $request)
-    {
-        $api = $request->api_key;
-        $session_id = $request->query("session_id");
-        
-        $permissions = null;
-        $user_details = null;
-        $session = null;
-        
-        try{
-            if(!$session_id){
-                return response()->json(['message' => "unauthorized"], Response::HTTP_UNAUTHORIZED);
-            }
-    
-            $system_user_sessions = SystemUserSessions::where("session_id", $session_id)->first();
-            
-            if(!$system_user_sessions){
-                return response()->json(['message' => "unauthorized session id is invalid."], Response::HTTP_UNAUTHORIZED);
-            }
-    
-            $employee_profile = EmployeeProfile::find($system_user_sessions['user_id']);
-    
-            $assigned_area = $employee_profile->assignedArea;
-            $system_role_ids = SystemRole::where('system_id', $api['id'])->pluck('id')->toArray();
-            
-            $special_access_roles = SpecialAccessRole::whereIn('system_role_id', $system_role_ids)
-                ->where('employee_profile_id', $employee_profile->id)->get();
-    
-            if ($assigned_area['plantilla_id'] === null) {
-                $designation = $assigned_area->designation;
-            } else {
-                //Employment is plantilla retrieve the plantilla and its designation.
-                $plantilla = $assigned_area->plantilla;
-                $designation = $plantilla->designation;
-            }
-    
-            $permissions = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api['id']);
-            $user_details = $this->generateEmployeeProfileDetails($employee_profile);
-            $session = AccessToken::where("employee_profile_id", $employee_profile->id)->first();
-        }catch(\Throwable $th){
-            Helpers::infoLog("SystemController", "authenticateUserFromDifferentSystem", $th->getMessage());
-            return response()->json([
-                'message' => "Failed to authenticate."
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+class AuthHelper{
 
-        return response()->json([
-            'user_details' => $user_details,
-            'session' => $session,
-            'permissions' => $permissions,
-            'authorization_pin' => $employee_profile->authorization_pin
-        ], 200);
-    }
-
-    public function generateEmployeeProfileDetails($employee_profile)
+    public static function generateEmployeeProfileDetails($employee_profile)
     {
         $personal_information = $employee_profile->personalInformation;
         $assigned_area = $employee_profile->assignedArea;
@@ -211,7 +141,7 @@ class SystemController extends Controller
         ];
     }
     
-    private function buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api_id)
+    public static function buildSidebarDetails($employee_profile, $designation, $special_access_roles, $api_id)
     {
         $sidebar_cache = Cache::forget($designation['name']);
         $sidebar_cache = Cache::get($designation['name']);
@@ -263,7 +193,7 @@ class SystemController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = self::buildSystemDetails($system_role);
                         continue;
                     }
 
@@ -271,7 +201,7 @@ class SystemController extends Controller
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
 
-                            $build_role_details = $this->buildRoleDetails($system_role);
+                            $build_role_details = self::buildRoleDetails($system_role);
 
                             // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
@@ -322,7 +252,7 @@ class SystemController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = self::buildSystemDetails($system_role);
                     }
                 }
 
@@ -372,7 +302,7 @@ class SystemController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = self::buildSystemDetails($system_role);
                         continue;
                     }
                     
@@ -381,7 +311,7 @@ class SystemController extends Controller
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
 
-                            $build_role_details = $this->buildRoleDetails($system_role);
+                            $build_role_details = self::buildRoleDetails($system_role);
 
                             // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
@@ -437,7 +367,7 @@ class SystemController extends Controller
                      * when system is not empty but the target system doesn't exist this will append to it
                      */
                     if (count($side_bar_details['system']) === 0 || !$exists) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                        $side_bar_details['system'][] = self::buildSystemDetails($system_role);
                     }
                 }
 
@@ -468,7 +398,7 @@ class SystemController extends Controller
                             }
 
                             if (!$system_role_exist) {
-                                $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
+                                $reg_system_roles_data = self::buildRoleDetails($reg_system_role);
 
                                 $cacheExpiration = Carbon::now()->addYear();
                                 Cache::put("COMMON-REG", $reg_system_roles_data, $cacheExpiration);
@@ -515,7 +445,7 @@ class SystemController extends Controller
                      * when system is not empty but the target system doesn't exist this will append to it
                      */
                     if (count($side_bar_details['system']) === 0 || !$exists) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
+                        $side_bar_details['system'][] = self::buildSystemDetails($reg_system_role);
                     }
                 }
             }
@@ -550,7 +480,7 @@ class SystemController extends Controller
                                 }
         
                                 if (!$system_role_exist) {
-                                    $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+                                    $jo_system_roles_data = self::buildRoleDetails($jo_system_role);
         
                                     $cacheExpiration = Carbon::now()->addYear();
                                     Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
@@ -598,7 +528,7 @@ class SystemController extends Controller
                     * when system is not empty but the target system doesn't exist this will append to it
                     */
                     if (count($side_bar_details['system']) === 0 || !$exists) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
+                        $side_bar_details['system'][] = self::buildSystemDetails($jo_system_role);
                     }
                 }
             }
@@ -612,7 +542,7 @@ class SystemController extends Controller
             $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
             if(count($side_bar_details['system']) === 0 || !$exists){
-                $side_bar_details['system'][] = $this->buildSystemDetails($public_system_role->systemRole);
+                $side_bar_details['system'][] = self::buildSystemDetails($public_system_role->systemRole);
                 continue;
             }
 
@@ -630,7 +560,7 @@ class SystemController extends Controller
                     }
 
                     if (!$system_role_exist) {
-                        $public_system_roles_data = $this->buildRoleDetails($public_system_role->systemRole);
+                        $public_system_roles_data = self::buildRoleDetails($public_system_role->systemRole);
 
                         $system['roles'][] = [
                             'id' => $public_system_roles_data['id'],
@@ -672,9 +602,9 @@ class SystemController extends Controller
         return $side_bar_details['system'][0];
     }
 
-    private function buildSystemDetails($system_role)
+    private static function buildSystemDetails($system_role)
     {
-        $build_role_details = $this->buildRoleDetails($system_role);
+        $build_role_details = self::buildRoleDetails($system_role);
 
         $role = [
             'id' => $build_role_details['id'],
@@ -691,7 +621,7 @@ class SystemController extends Controller
         ];
     }
 
-    private function buildRoleDetails($system_role)
+    private static function buildRoleDetails($system_role)
     {
         $modules = [];
 
@@ -716,238 +646,5 @@ class SystemController extends Controller
             'name' => $system_role->role->name,
             'modules' => array_values($modules), // Resetting array keys
         ];
-    }
-
-    // In case the env client domain doesn't work
-    public function updateUMISDATA(){
-        $system = System::find(1)->update([
-            'domain' => Crypt::encrypt(env("PORTAL_CLIENT_DOMAIN"))
-        ]); 
-        
-        // System::find(4)->update(['api_key' => Str::random(60)]);
-        return response()->json(['message' => "Success"], 200);
-    }
-
-    public function index(Request $request)
-    {
-        try{
-            $systems = System::all();
-            
-            return response() -> json([
-                'data' => SystemResource::collection($systems),
-                'message' => 'System list retrieved.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function store(SystemRequest $request)
-    {
-        try{
-            $cleanData = [];
-
-            $domain = Crypt::encrypt($request->domain);
-
-            foreach ($request->all() as $key => $value) {
-                if($key === 'domain')
-                {
-                    $cleanData[$key] = $domain;
-                    continue;
-                }
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $check_if_exist =  System::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
-
-            if($check_if_exist !== null){
-                return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
-            }
-
-            $cleanData['api_key'] = Str::random(60);
-            $system = System::create($cleanData);
-            
-            $log = Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response() -> json([
-                'data' => new SystemResource($system),
-                'message' => 'System created successfully.',
-                'logs' => $log
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * GENERATE API KEY
-     * this end point expect for an System ID
-     * The ID will be validated if it is has a record in the system record
-     * if TRUE then the system will generate a API Key that will be encrypted before storing in the System Details Record.
-     */
-    public function generateAPIKey($id, Request $request)
-    {
-        try{
-            $system = System::find($id);
-
-            if(!$system){
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $apiKey = base64_encode(random_bytes(32));
-
-            $encrypted_api_key = Crypt::encrypt($apiKey);
-
-            $system -> api_key = $encrypted_api_key;
-            $system -> updated_at = now();
-            $system -> save();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response() -> json([
-                'data' => new SystemResource($system),
-                'message' => 'System record updated.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * This End Point expect an System ID and The status value in which expect as integer between 0 - 2
-     * Validating the status value will trigger first then
-     * finding a system record according to the ID given and if found
-     * the system status will be updated.
-     */
-    public function updateSystemStatus($id, Request $request)
-    {
-        try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
-
-            $status = $request->input('status');
-
-            if(!is_int($status) || $status < 0 || $status > 2)
-            {
-                return response()->json(['message' => 'Invalid Data.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $system = System::find($id);
-
-            if(!$system){
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $system->update(['status' => $status]);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response() -> json([
-                'data' => new SystemResource($system),
-                'message' => 'System updated successfully.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function show($id, Request $request)
-    {
-        try{
-            $system = System::find($id);
-
-            if(!$system){
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-            
-            return response() -> json([
-                'data' => new SystemResource($system),
-                'message' => 'System record retrieved.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function update($id, Request $request)
-    {
-        try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
-
-            $system = System::find($id);
-            
-            if (!$system) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-            
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if($key === 'domain')
-                {
-                    $cleanData[$key] = Crypt::encrypt($value);
-                    continue;
-                }
-                $cleanData[$key] = strip_tags($value); 
-            }
-
-            $system -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response() -> json([
-                'data' => new SystemResource($system),
-                "message" => 'System record updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function destroy($id, Request $request)
-    {
-        try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
-
-            $system = System::findOrFail($id);
-
-            if(!$system){
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $system_role = $system->systemRoles;
-
-            if(count($system_role) > 0){
-                return response()->json(['message' => "Record is being used by other data."], Response::HTTP_FORBIDDEN);
-            }
-
-            $system -> delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response() -> json(['message' => 'System deleted successfully.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
     }
 }
