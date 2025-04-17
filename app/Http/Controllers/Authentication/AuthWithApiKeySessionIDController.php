@@ -13,7 +13,7 @@ use App\Models\SystemUserSessions;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AuthWithApiKeyController extends Controller
+class AuthWithApiKeySessionIDController extends Controller
 {
     public function store(Request $request)
     {
