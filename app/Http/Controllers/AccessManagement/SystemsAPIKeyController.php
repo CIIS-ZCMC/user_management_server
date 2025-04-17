@@ -18,7 +18,7 @@ class SystemsAPIKeyController extends Controller
      * The ID will be validated if it is has a record in the system record
      * if TRUE then the system will generate a API Key that will be encrypted before storing in the System Details Record.
      */
-    public function store($id, Request $request): SystemResource
+    public function store(Request $request): SystemResource
     {
         $system_id = $request->query('id');
         
@@ -35,15 +35,33 @@ class SystemsAPIKeyController extends Controller
         $system -> updated_at = now();
         $system -> save();
 
-        Helpers::registerSystemLogs($request, $id, true, 'Success in generating API Key.');
-
         return (new SystemResource($system))
             ->additional([
                 'meta' => [
-                    "methods" => '[POST]'
+                    "methods" => '[POST,DELETE]'
                 ],
                 'message' => "Successfully generate API key."
                 ]);
     }
 
+    public function destroy(Request $request)
+    {
+        $system_id = $request->query('id');
+        
+        $system = System::find($system_id);
+
+        if(!$system){
+            return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $system->update(['api_key' => null]);
+
+        return (new SystemResource($system))
+            ->additional([
+                'meta' => [
+                    "methods" => '[POST,DELETE]'
+                ],
+                'message' => "Successfully delete system API key."
+                ]);
+    }
 }

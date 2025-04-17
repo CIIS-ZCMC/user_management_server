@@ -28,9 +28,13 @@ Route::
             Route::get('employees-sample', 'EmployeeProfileController@employeeListSample');
         });
 
-
 Route::
         namespace('App\Http\Controllers')->group(function () {
+            // VERSION 2
+            Route::namespace('Authentication')->group(function(){
+                Route::post('sign-in', 'AuthWithCredentialController@store');
+            });
+
             Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
             Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
             Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
@@ -73,7 +77,7 @@ Route::
 
 Route::
         namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            Route::post('sign-in', 'EmployeeProfileController@signIn');
+            // Route::post('sign-in', 'EmployeeProfileController@signIn');
             Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
             Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
             Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
@@ -92,9 +96,18 @@ Route::
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
-
+        // VERSION 2
         Route::namespace("AccessManagement")->group(callback: function() {
             Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
+
+            // Systems API Key Management
+            Route::post('system-api-keys', "SystemsAPIKeyController@store");
+            Route::delete('system-api-keys', "SystemsAPIKeyController@destroy");
+        });
+
+        // VERSION 2
+        Route::namespace('Authentication')->group(callback: function(){         
+            Route::delete('sign-out', 'AuthWithCredentialController@destroy');
         });
 
         Route::namespace("Migration")->group(function () {
@@ -201,7 +214,7 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
-        Route::delete('signout', 'EmployeeProfileController@signOut');
+        // Route::delete('signout', 'EmployeeProfileController@signOut');
 
         /**
          * Login Trail Module
@@ -2676,9 +2689,25 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            Route::middleware("auth.thirdparty")->group(function () {
-                Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
-            });
+Route::namespace('App\Http\Controllers')->group(function(){
+    Route::middleware('auth.thirdparty')->group(function(){
+        Route::namespace("Authentication")->group(callback: function() {
+
+            // AUTH WITH SESSION ID
+            Route::post('auth-with-session-id', "AuthWithApiKeySessionIDController@store");
+
+            //AUTH WITH CREDENTIAL
+            Route::get('auth-with-crential', "AuthWithApiKeyCredentialController@store");
         });
+    });
+});
+
+// Route::
+//         namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+//             Route::middleware("auth.thirdparty")->group(function () {
+//                 Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+//             });
+//         });
+
+        
+
