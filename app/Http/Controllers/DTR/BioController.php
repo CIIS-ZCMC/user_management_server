@@ -95,6 +95,35 @@ class BioController extends Controller
         }
     }
 
+    /**
+     * Summary of checkUserDataByBiometricID
+     * 
+     * for troubleshooting when checking if user biometric details is registered in
+     * a target device.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function checkUserDataByBiometricID(Request $request)
+    {
+        $biometric_id = $request->biometric_id;
+        $device_name = $request->device_name;
+
+        $device = Devices::where('device_name', operator: $device_name)->first();
+
+        if(!$device){
+            return response()->json(['message' => "Device not found."], \Symfony\Component\HttpFoundation\Response::HTTP_NOT_FOUND);
+        }
+
+        $result = $this->device->checkUserDetailsFromDevice($device, $biometric_id);
+
+        // if(count($result['data']) === 0){
+        //     return response()->json(['message' => $result['message']], \Symfony\Component\HttpFoundation\Response::HTTP_BAD_REQUEST);
+        // }
+
+        return response()->json($result, \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+    }
+
     public function fetchUserFromDevice(Request $request)
     {
         try {
@@ -108,8 +137,9 @@ class BioController extends Controller
             if (!$dvc) {
                 return response()->json(['message' => 'Failed to pull data']);
             }
-
+            
             foreach ($biometric_id as $key => $value) {
+                $this->device->fetchUserDataFromDeviceToDB($dvc, $value);
                 if ($this->device->fetchUserDataFromDeviceToDB($dvc, $value)) {
                     if ($this->device->validateTemplate($dvc, $value)) {
                         $this->device->deleteDataFromDevice($dvc, $value); //DELETE USER INFO , IF FINGERPRINT DETECTED
@@ -158,14 +188,17 @@ class BioController extends Controller
     TO DO --- ip address
     get all the device ID for this function to apply in each devices
     */
+
+    // Push user biometric records to biometric device (Fingerprint)
     public function fetchBIOToDevice()
     {
         try {
-            $devices = Devices::where('is_registration', 0)->get();
+            $devices = Devices::where('id', operator: 9)->get();
 
+            // return response()->json(['message' => $devices], 500);
             foreach ($devices as $dv) {
                 // $bios = Devices::where('id', $dv)->get();
-                $this->device->fetchAllDataToDevice($dv);
+             return   $this->device->fetchAllDataToDevice($dv);
             }
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
         } catch (\Throwable $th) {

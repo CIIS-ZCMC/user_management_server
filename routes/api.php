@@ -1727,6 +1727,18 @@ Route::middleware('auth.cookie')->group(function () {
     });
 
     /**
+     * TROUBLE SHOOT
+     * Daily Time Record Management 
+     * 
+     * VERSION 2
+     */
+    Route::namespace('App\Http\Controllers\DTR')->group(function(){
+        Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
+            Route::post('check-user-data-with-biometric-id', 'BioController@checkUserDataByBiometricID');
+        });
+    });
+
+    /**
      * Daily Time Record Management
      */
     Route::namespace('App\Http\Controllers\DTR')->group(function () {

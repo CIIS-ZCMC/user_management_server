@@ -10,6 +10,16 @@ use App\Helpers\Helpers;
 class BioControl
 {
 
+    /**
+     * Summary of bIO
+     * 
+     * Create and return instance [Time and Attendance Data (TAD)].
+     * This is important  since this instance will be bridge in connection from this
+     * Rest api to Zk Biometric Devices.
+     * 
+     * @param mixed $device
+     * @return bool|\TADPHP\TAD
+     */
     public function bIO($device)
     {
         /* Validate if connected to device or not */
@@ -36,10 +46,15 @@ class BioControl
         } catch (\Throwable $th) {
             Helpers::errorLog("BioControl", 'checkdevice', $th->getMessage());
             if (isset($device['id'])) {
-                Devices::findorFail($device['id'])->update([
-                    'serial_number' => null,
-                    'mac_address' => null,
-                ]);
+                /**
+                 * What is the purpose of this code ?
+                 * May cause problem in a situation that where device cannot access just because it
+                 * was no power and because of this code, it will result to lost access to the device.
+                 */
+                // Devices::findorFail($device['id'])->update([
+                //     'serial_number' => null,
+                //     'mac_address' => null,
+                // ]);
             }
 
             return false;
@@ -159,9 +174,60 @@ class BioControl
         }
     }
 
+    /**
+     * Summary of checkUserDetailsFromDevice
+     * 
+     * Associate with BioController[checkUserDataByBiometricID]
+     * @param mixed $device
+     * @param mixed $biometric_id
+     * @return array{Finger_ID: string, Size: string, Template: string, Valid: string[]|null}
+     */
+    public function checkUserDetailsFromDevice($device, $biometric_id)
+    {
+        $tad = $this->BIO($device);
+
+        // If tad variable has a value
+        if ($tad) {
+            try {
+                $user_temps = $tad->get_all_user_info(['com_key' => 0]);
+                
+                $utemp = simplexml_load_string($user_temps);
+                $BIO_User = [];
+                
+                foreach ($utemp->Row as $user) {
+                    $result = [
+                        'PIN' => (string)$user->PIN,
+                        'Name' => (string)$user->Name,
+                        'Password' => (string)$user->Password,
+                        'Group' => (string)$user->Group,
+                        'Privilege' => (string)$user->Privilege,
+                        'Card' => (string)$user->Card,
+                        // Note: Fingerprint data is not available in get_all_user_info response
+                    ];
+                    $BIO_User[] = $result;
+                }
+            
+                return [
+                    "data" => $BIO_User,
+                    "message" => "Successfully retrieved all user details from the biometric device."
+                ];
+                
+            } catch (\Exception $e) {
+                return [
+                    "data" => null,
+                    "message" => "Error: " . $e->getMessage()
+                ];
+            }
+        }
+
+        return [
+            "data" => [],
+            "message" => "Failed to create TAD instance."
+        ];
+    }
+
     public function fetchUserDataFromDeviceToDB($device, $biometric_id)
     {
-
         if ($tad = $this->BIO($device)) {
 
             $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
@@ -179,7 +245,8 @@ class BioControl
                 ];
                 $BIO_User[] = $result;
             }
-            $Employee_Info[] = $result;
+
+            // $Employee_Info[] = $result;
             $validate = Biometrics::where('biometric_id', $biometric_id);
             if (count($validate->get()) >= 1) {
                 if ($BIO_User[0]['Template']) {
@@ -295,49 +362,67 @@ class BioControl
 
     public function saveUsersToDevices($tad, $emp, $is_Admin)
     {
-        $added =  $tad->set_user_info([
-            'pin' => $emp->biometric_id,
-            'name' => $emp->name,
-            'privilege' => $is_Admin
-        ]);
-        $biometric_Data = json_decode($emp->biometric);
-        if ($added) {
-            if ($biometric_Data !== null) {
-                foreach ($biometric_Data as $row) {
-                    $fingerid = $row->Finger_ID;
-                    $size = $row->Size;
-                    $valid = $row->Valid;
-                    $template = $row->Template;
-                    $tad->set_user_template([
-                        'pin' => $emp->biometric_id,
-                        'finger_id' => $fingerid,
-                        'size' => $size,
-                        'valid' => $valid,
-                        'template' => $template
-                    ]);
+        try {
+        
+            $added =  $tad->set_user_info([
+                'pin' => $emp->biometric_id,
+                'name' => $emp->name,
+                'privilege' => $is_Admin
+            ]);
+
+            $biometric_Data = json_decode($emp->biometric);
+
+            if ($added) {
+                if ($biometric_Data !== null) {
+                    foreach ($biometric_Data as $row) {
+                        $fingerid = $row->Finger_ID;
+                        $size = $row->Size;
+                        $valid = $row->Valid;
+                        $template = $row->Template;
+                        $tad->set_user_template([
+                            'pin' => $emp->biometric_id,
+                            'finger_id' => $fingerid,
+                            'size' => $size,
+                            'valid' => $valid,
+                            'template' => $template
+                        ]);
+                    }
+                    Helpers::infoLog("BioControl", 'saveUSERSTODEVICE', 'PASSED');
                 }
+
+            
             }
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog("BioControl", 'saveUSERSTODEVICE', $th->getMessage());
         }
     }
+
     public function fetchAllDataToDevice($device)
     {
         try {
             if ($tad = $this->bIO($device)) {
-                $data = Biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')->whereNotNull('biometric')->get();
+                $biometrics = Biometrics::where('privilege', 1)->get();
 
-                foreach ($data as $key => $emp) {
-                    if ($emp->privilege) {
-                        $this->saveUsersToDevices($tad, $emp, 14);
-                    } else {
-                        $this->saveUsersToDevices($tad, $emp, 0);
-                    }
+                foreach($biometrics as $biometric){
+                    $this->saveUsersToDevices($tad, $biometric, $biometric->privilege ? 14 : 0);
                 }
-                return true;
+
+                // Biometrics::where('biometric', '!=', 'NOT_YET_REGISTERED')
+                //     ->whereNotNull('biometric')
+                //     ->chunk(20, function ($users) use ($tad) {
+                //         foreach ($users as $emp) {
+                //             $privilege = $emp->privilege ? 14 : 0;
+                //             $this->saveUsersToDevices($tad, $emp, $privilege);
+                //         }
+                //         // Optional: Add a small delay to avoid overloading the device
+                //         sleep(3);
+                //     });
             }
-            return false;
         } catch (\Throwable $th) {
-            return false;
+            Helpers::errorLog("bioControl", 'fetchbiotoallDevices', $th->getMessage());
         }
+        
     }
 
     public function fetchSpecificDataToDevice($device, $biometricIDs)
