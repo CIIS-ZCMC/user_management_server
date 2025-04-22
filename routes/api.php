@@ -1734,7 +1734,11 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace('App\Http\Controllers\DTR')->group(function(){
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
-            Route::post('check-user-data-with-biometric-id', 'BioController@checkUserDataByBiometricID');
+            Route::post('check-device-user-records', 'BioController@checkDeviceUserRecords');
+            Route::get('check-user-biometric-details-from-device', 'BioController@checkUserBiometricDetailsFromDevice');
+            Route::post('populate-user-to-biometric-device', 'BioController@populateBiometricDeviceWithoutOveridingExistingRecords');
+            Route::patch('compose-second-name', "BioController@composeNameWithBiometricIDAndUpdateBiometric");
+            Route::post('register-new-biometric-device', 'BioController@registerBiometricDevice');
         });
     });
 

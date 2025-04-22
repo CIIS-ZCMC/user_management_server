@@ -175,14 +175,13 @@ class BioControl
     }
 
     /**
-     * Summary of checkUserDetailsFromDevice
+     * Summary of checkDeviceUserRecords [VERSION2]
      * 
-     * Associate with BioController[checkUserDataByBiometricID]
+     * Associate with BioController[checkDeviceUserRecords]
      * @param mixed $device
-     * @param mixed $biometric_id
      * @return array{Finger_ID: string, Size: string, Template: string, Valid: string[]|null}
      */
-    public function checkUserDetailsFromDevice($device, $biometric_id)
+    public function checkDeviceUserRecords($device)
     {
         $tad = $this->BIO($device);
 
@@ -197,6 +196,7 @@ class BioControl
                 foreach ($utemp->Row as $user) {
                     $result = [
                         'PIN' => (string)$user->PIN,
+                        'PIN2' => (string)$user->PIN2,
                         'Name' => (string)$user->Name,
                         'Password' => (string)$user->Password,
                         'Group' => (string)$user->Group,
@@ -209,12 +209,13 @@ class BioControl
             
                 return [
                     "data" => $BIO_User,
+                    "total_user" => count($BIO_User),
                     "message" => "Successfully retrieved all user details from the biometric device."
                 ];
                 
             } catch (\Exception $e) {
                 return [
-                    "data" => null,
+                    "data" => [],
                     "message" => "Error: " . $e->getMessage()
                 ];
             }
@@ -226,6 +227,140 @@ class BioControl
         ];
     }
 
+    /**
+     * Summary of findUserBiometricDetailsFromATargetDevice [VERSION2]
+     * 
+     * Associate with BioController[checkUserBiometricDetailsFromDevice]
+     * @param mixed $device
+     * @param mixed $biometric_id
+     * @return array{Finger_ID: string, Size: string, Template: string, Valid: string[]|null}
+     */
+    public function connectAndRetrieveUserDetailsFromDevice($device, $biometric_id)
+    {
+        $tad = $this->BIO($device);
+
+        // If tad variable has a value
+        if ($tad) {
+            try {
+                $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
+                
+                $utemp = simplexml_load_string($user_temp);
+                $BIO_User = [];
+                
+                foreach ($utemp->Row as $user_Cred) {
+                    /* **
+                Here we are attaching the fingerprint data into our database.
+                */
+                    $result = [
+                        'Finger_ID' => (string) $user_Cred->FingerID,
+                        'Size'  => (string) $user_Cred->Size,
+                        'Valid' => (string) $user_Cred->Valid,
+                        'Template' => (string) $user_Cred->Template,
+                    ];
+                    $BIO_User[] = $result;
+                }
+            
+                return [
+                    "data" => $BIO_User,
+                    "message" => "Successfully user details from the biometric device."
+                ];
+                
+            } catch (\Exception $e) {
+                return [
+                    "data" => [],
+                    "message" => "Error: " . $e->getMessage()
+                ];
+            }
+        }
+
+        return [
+            "data" => [],
+            "message" => "Failed to create TAD instance."
+        ];
+    }
+    
+    /**
+     * Summary of populateBiometricDeviceWithEmployeesBiometricRecord
+     * 
+     * Retrieve all employees biometric ids exclude the given ids
+     * and push biometric records to device.
+     * 
+     * @param mixed $device
+     * @return void
+     */
+    public function populateBiometricDeviceWithEmployeesBiometricRecord($device, array $excludeUsers)
+    {
+        $tad = $this->BIO($device);
+
+        try {
+            if ($tad) {
+                $newly_registered_biometrics = [];
+
+                $biometrics = Biometrics::whereNotIn('name_with_biometric', $excludeUsers)
+                    ->whereNot('biometric','NOT_YET_REGISTERED')
+                    ->get()->take(10);
+
+                foreach($biometrics as $biometric){
+                    $privilege = $biometric->privilege ? 14 : 0;
+                    $newly_registered_biometrics[] = $this->pushUserBiometricTemplateToDevice($tad, $biometric, $privilege);
+                }
+
+                return $newly_registered_biometrics;
+            }
+        } catch (\Throwable $th) {
+            Helpers::errorLog("bioControl", 'fetchbiotoallDevices', $th->getMessage());
+        }
+        return [];
+    }
+    
+    /**
+     * Summary of pushUserBiometricTemplateToDevice [VERSION2]
+     * 
+     * This will push user biometric details to device.
+     * 
+     * @param mixed $tad
+     * @param mixed $emp
+     * @param mixed $is_Admin
+     * @return void
+     */
+    public function pushUserBiometricTemplateToDevice($tad, $biometric, $is_Admin)
+    {
+        try {
+            $added =  $tad->set_user_info([
+                'pin' => $biometric->biometric_id,
+                'name' => $biometric->name_with_biometric,
+                'privilege' => $is_Admin
+            ]);
+
+            $biometric_template = $biometric->biometric;
+            $biometric_Data = json_decode($biometric_template);
+
+            if ($added) {
+                if ($biometric_Data !== null) {
+                    foreach ($biometric_Data as $row) {
+                        $fingerid = $row->Finger_ID;
+                        $size = $row->Size;
+                        $valid = $row->Valid;
+                        $template = $row->Template;
+                        $tad->set_user_template([
+                            'pin' => $biometric->biometric_id,
+                            'finger_id' => $fingerid,
+                            'size' => $size,
+                            'valid' => $valid,
+                            'template' => $template
+                        ]);
+                    }
+                    Helpers::infoLog("BioControl", 'saveUSERSTODEVICE', 'PASSED');
+                    return $biometric;
+                }
+            }
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog("BioControl", 'saveUSERSTODEVICE', $th->getMessage());
+            return [];
+        }
+    }
+
     public function fetchUserDataFromDeviceToDB($device, $biometric_id)
     {
         if ($tad = $this->BIO($device)) {
@@ -235,8 +370,8 @@ class BioControl
             $BIO_User = [];
             foreach ($utemp->Row as $user_Cred) {
                 /* **
-            Here we are attaching the fingerprint data into our database.
-            */
+                    Here we are attaching the fingerprint data into our database.
+                */
                 $result = [
                     'Finger_ID' => (string) $user_Cred->FingerID,
                     'Size'  => (string) $user_Cred->Size,
@@ -486,7 +621,15 @@ class BioControl
         }
     }
 
-
+    /**
+     * Summary of deleteDataFromDevice
+     * 
+     * This will delete user bioemtric record from a device
+     * 
+     * @param mixed $device
+     * @param mixed $biometric_id
+     * @return bool
+     */
     public function deleteDataFromDevice($device, $biometric_id)
     {
         try {
