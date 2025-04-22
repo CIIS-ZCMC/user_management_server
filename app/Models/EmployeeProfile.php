@@ -511,7 +511,8 @@ class EmployeeProfile extends Authenticatable
 
                 if (count($departments) === 0) {
                     $department = Department::find($assign_area['details']->id);
-                    $department_employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
+                    // $department_employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
+                    $department_employees = [];
 
                     $employees = $department_employees;
                 } else {
@@ -534,7 +535,8 @@ class EmployeeProfile extends Authenticatable
                 $sections = Section::where('id', $assign_area['details']->id)->where('supervisor_employee_profile_id', $user->id)->get();
                 if (count($sections) === 0) {
                     $section = Section::find($assign_area['details']->id);
-                    $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
+                    // $section_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
+                    $section_employees = [];
 
                     $employees = $section_employees;
                 } else {
