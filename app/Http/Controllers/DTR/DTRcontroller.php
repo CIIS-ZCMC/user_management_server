@@ -292,13 +292,13 @@ class DTRcontroller extends Controller
             ->where('dtr_date', $dtr_date)
             ->get();
 
-        
+
         foreach ($records as $val) {
-          
+
             if (
-                empty($val->first_in) && 
-                empty($val->first_out) && 
-                !empty($val->second_in) && 
+                empty($val->first_in) &&
+                empty($val->first_out) &&
+                !empty($val->second_in) &&
                 !empty($val->second_out)
             ) {
                 $bioEntry = [
@@ -311,13 +311,13 @@ class DTRcontroller extends Controller
                     'date_time'   => !empty($val->first_in) ? $val->first_in : $val->first_out
                 ];
             }
-            
 
-       
+
+
 
             //Get matching Schedule.
             $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
-           
+
             $validate = [
                 (object) [
                     'id' => $val->id,
@@ -328,7 +328,7 @@ class DTRcontroller extends Controller
                 ],
             ];
 
-         
+
 
 
             $this->helper->saveTotalWorkingHours(
@@ -339,8 +339,6 @@ class DTRcontroller extends Controller
                 true
             );
         }
-
-      
     }
     public function RegenerateDTR()
     {
@@ -476,9 +474,7 @@ class DTRcontroller extends Controller
 
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $this->DeviceLog->RegenerateEntry($Entry, $biometric_id, $dtr_date, $Schedule);
-               $this->RecomputeHours($biometric_id, $month, $year, $dtr_date);
-             
-            
+                $this->RecomputeHours($biometric_id, $month, $year, $dtr_date);
             }
         }
 
@@ -919,11 +915,11 @@ class DTRcontroller extends Controller
             $month_of = $request->monthof;
             $year_of = $request->yearof;
             $view = $request->view;
-            $FrontDisplay = $request->fronth;
+            $FrontDisplay = $request->frontview;
             $wholeMonth = $request->whole_month;
             $dtr_sign = $request->dtr_sign;
 
-            $ishalf = 1;
+            $ishalf = $wholeMonth == '0' ? 1 : 0;
             ini_set('max_execution_time', 86400);
 
             /*
@@ -934,37 +930,37 @@ class DTRcontroller extends Controller
             $yrnow = date('Y');
             $mnthnow = date('n');
             $dynow = date('j');
-            if (!$FrontDisplay) {
-                if ($yr <= $yrnow) {
-                    //print 31
+            // if (!$FrontDisplay) {
+            //     if ($yr <= $yrnow) {
+            //         //print 31
 
-                    if ($mnth < $mnthnow) {
+            //         if ($mnth < $mnthnow) {
 
-                        $ishalf = 0;
-                        //print 31
-                    } else if ($mnth == $mnthnow) {
-                        if ($dynow >= 20) {
-                            //print 31
+            //             $ishalf = 0;
+            //             //print 31
+            //         } else if ($mnth == $mnthnow) {
+            //             if ($dynow >= 20) {
+            //                 //print 31
 
-                            $ishalf = 0;
-                        } else {
-                            //print 15
-                            $ishalf = 1;
-                        }
-                    } else {
-                        if ($dynow >= 20) {
-                            //print 31
+            //                 $ishalf = 0;
+            //             } else {
+            //                 //print 15
+            //                 $ishalf = 1;
+            //             }
+            //         } else {
+            //             if ($dynow >= 20) {
+            //                 //print 31
 
-                            $ishalf = 0;
-                        } else {
-                            //print 15
-                            $ishalf = 1;
-                        }
-                    }
-                }
-            } else {
-                $ishalf = 0;
-            }
+            //                 $ishalf = 0;
+            //             } else {
+            //                 //print 15
+            //                 $ishalf = 1;
+            //             }
+            //         }
+            //     }
+            // } else {
+            //     $ishalf = 0;
+            // }
 
 
 
@@ -1138,12 +1134,12 @@ class DTRcontroller extends Controller
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
 
-           
+
 
             $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
             $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
             if ($FrontDisplay) {
-             
+
                 return view('dtr.PrintDTRPDF', [
                     'daysInMonth' => $days_In_Month,
                     'year' => $year_of,
@@ -1820,7 +1816,7 @@ class DTRcontroller extends Controller
                             $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
 
 
-                            
+
                             if (isset($schedule['date'])) {
 
                                 $date_now = date('Y-m-d');
