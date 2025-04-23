@@ -33,12 +33,12 @@ class OvertimeResource extends JsonResource
 
         $oic = null;
 
-        $omccRec = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id);
+        $omccRec = Division::where('area_id', 'OMCC-DI-001')->where('chief_employee_profile_id', $this->employeeProfile->id);
         if ($omccRec->count() >= 1) {
             $isMCC =  $omccRec->first();
         }
 
-        $hrmoRec = Section::where('code', 'HRMO');
+        $hrmoRec = Section::where('area_id', 'HOPPS-HRMO-DE-001');
         if ($hrmoRec->count() >= 1) {
             $hrmo = $hrmoRec->first();
         }

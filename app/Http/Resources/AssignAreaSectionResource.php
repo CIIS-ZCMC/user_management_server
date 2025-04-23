@@ -17,7 +17,8 @@ class AssignAreaSectionResource extends JsonResource
         return [
             "id"=> $this->id,
             'name' => $this->name,
-            'code' => $this->code
+            'code' => $this->code,
+            'area_id' => $this->area
         ];
     }
 }

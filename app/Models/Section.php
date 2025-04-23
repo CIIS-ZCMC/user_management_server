@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Http\Resources\SupervisorSectionResource;
 use App\Http\Resources\OICSectionResource;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Section extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'sections';
 
     public $fillable = [
+        'area_id',
         'name',
         'code',
         'section_attachment_url',
@@ -30,6 +32,8 @@ class Section extends Model
     ];
 
     public $timestamps = TRUE;
+    
+    protected $casts = ['deleted_at' => 'datetime'];
 
     public function employees()
     {

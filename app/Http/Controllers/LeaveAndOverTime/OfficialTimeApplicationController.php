@@ -59,7 +59,7 @@ class OfficialTimeApplicationController extends Controller
                     $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                     $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                     $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                     if ($division_head > 0) {
 
                         if($omcc)
@@ -266,7 +266,7 @@ class OfficialTimeApplicationController extends Controller
                                 $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                                 $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                                 $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                                 if ($division_head > 0) {
 
                                     if($omcc)
@@ -453,7 +453,7 @@ class OfficialTimeApplicationController extends Controller
                         $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                         $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                         $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                        $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                         if ($division_head > 0) {
 
                             if($omcc)
@@ -640,7 +640,7 @@ class OfficialTimeApplicationController extends Controller
                         $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                         $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                         $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                        $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                         if ($division_head > 0) {
 
                             if($omcc)
@@ -829,7 +829,7 @@ class OfficialTimeApplicationController extends Controller
                     $division_head=Division::where('chief_employee_profile_id',$ot_application->employee_profile_id)->count();
                     $section_head=Section::where('supervisor_employee_profile_id',$ot_application->employee_profile_id)->count();
                     $department_head=Department::where('head_employee_profile_id',$ot_application->employee_profile_id)->count();
-                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                     if ($division_head > 0) {
 
                         if($omcc)
@@ -1039,7 +1039,7 @@ class OfficialTimeApplicationController extends Controller
                 }
                 else{
                     $divisions = Division::where('id',$area)->first();
-                    if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+                    if ($divisions->area_id === 'NS-DI-004' || $divisions->area_id === 'MS-DI-002') {
                         $status='for-approval-department-head';
 
                     }
@@ -1096,7 +1096,7 @@ class OfficialTimeApplicationController extends Controller
                     $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                     $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                     $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                     if ($division_head > 0) {
 
                         if($omcc)
@@ -1303,7 +1303,7 @@ class OfficialTimeApplicationController extends Controller
                                         $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                                         $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                                         $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                        $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                                         if ($division_head > 0) {
 
                                             if($omcc)
@@ -1694,7 +1694,7 @@ class OfficialTimeApplicationController extends Controller
                                         $division_head=Division::where('chief_employee_profile_id',$official_time_application->employee_profile_id)->count();
                                         $section_head=Section::where('supervisor_employee_profile_id',$official_time_application->employee_profile_id)->count();
                                         $department_head=Department::where('head_employee_profile_id',$official_time_application->employee_profile_id)->count();
-                                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                        $omcc = Division::with('chief.personalInformation')->where('area_id','OMCC-DI-001')->first();
                                         if ($division_head > 0) {
 
                                             if($omcc)

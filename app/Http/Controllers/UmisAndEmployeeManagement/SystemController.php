@@ -205,6 +205,7 @@ class SystemController extends Controller
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_assigned_code' => $area_assigned['details']->code,
+            'area_assigned_area_id' => $area_assigned['details']->area_id,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id
         ];
@@ -716,6 +717,7 @@ class SystemController extends Controller
             'modules' => array_values($modules), // Resetting array keys
         ];
     }
+
     // In case the env client domain doesn't work
     public function updateUMISDATA(){
         $system = System::find(1)->update([

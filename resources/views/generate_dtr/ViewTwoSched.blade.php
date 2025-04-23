@@ -103,6 +103,11 @@
                             $secondin = true;
                             $previousTimestamp = date('h:i a', strtotime($dtr[0]->first_in));
                         @endphp
+                         @if($dtr[0]->second_in &&  date('a', strtotime($dtr[0]->second_in)) == 'pm')
+                            {{ date('h:i a', strtotime($dtr[0]->second_in)) }}
+                        @endif
+                      
+
                     @endif
 
                 </td>
@@ -120,6 +125,9 @@
                         @php
                             $secondout = true;
                         @endphp
+                             @if($dtr[0]->second_out &&  date('a', strtotime($dtr[0]->second_out)) == 'pm')
+                            {{ date('h:i a', strtotime($dtr[0]->second_out)) }}
+                        @endif
                     @endif
 
                 </td>

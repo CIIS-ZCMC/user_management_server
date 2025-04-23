@@ -13,6 +13,7 @@ use App\Models\Notifications;
 use App\Models\OfficialTime;
 
 use App\Http\Controllers\Controller;
+use App\Imports\OfficialTimeImport;
 use App\Models\UserNotifications;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OfficialTimeController extends Controller
 {
@@ -29,6 +31,19 @@ class OfficialTimeController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:csv,txt',
+        ]);
+
+        Excel::import(new OfficialTimeImport(), $request->file('file'));
+
+        return response()->json([
+            'message' => 'Import Succesfull.'
+        ], Response::HTTP_OK);
+    }
     public function index(Request $request)
     {
         try {
@@ -100,41 +115,39 @@ class OfficialTimeController extends Controller
                     )
                     ->orderBy('created_at', 'desc')
                     ->get();
-            }
-            else{
+            } else {
                 $official_time_application = OfficialTime::select('official_time_applications.*')
-                ->where(function ($query) use ($recommending, $approving, $employeeId) {
-                    $query->whereIn('official_time_applications.status', $recommending)
-                        ->where('official_time_applications.recommending_officer', $employeeId);
-                })
-                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
-                    $query->whereIn('official_time_applications.status', $approving)
-                        ->where('official_time_applications.approving_officer', $employeeId);
-                })
-                ->groupBy(
-                    'id',
-                    'date_from',
-                    'date_to',
-                    'time_from',
-                    'time_to',
-                    'status',
-                    'purpose',
-                    'personal_order_file',
-                    'personal_order_path',
-                    'personal_order_size',
-                    'certificate_of_appearance',
-                    'certificate_of_appearance_path',
-                    'certificate_of_appearance_size',
-                    'recommending_officer',
-                    'approving_officer',
-                    'remarks',
-                    'employee_profile_id',
-                    'created_at',
-                    'updated_at',
-                )
-                ->orderBy('created_at', 'desc')
-                ->get();
-
+                    ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                        $query->whereIn('official_time_applications.status', $recommending)
+                            ->where('official_time_applications.recommending_officer', $employeeId);
+                    })
+                    ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                        $query->whereIn('official_time_applications.status', $approving)
+                            ->where('official_time_applications.approving_officer', $employeeId);
+                    })
+                    ->groupBy(
+                        'id',
+                        'date_from',
+                        'date_to',
+                        'time_from',
+                        'time_to',
+                        'status',
+                        'purpose',
+                        'personal_order_file',
+                        'personal_order_path',
+                        'personal_order_size',
+                        'certificate_of_appearance',
+                        'certificate_of_appearance_path',
+                        'certificate_of_appearance_size',
+                        'recommending_officer',
+                        'approving_officer',
+                        'remarks',
+                        'employee_profile_id',
+                        'created_at',
+                        'updated_at',
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
             }
 
 

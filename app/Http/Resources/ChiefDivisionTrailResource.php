@@ -28,6 +28,7 @@ class ChiefDivisionTrailResource extends JsonResource
             'chief' => $chief,
             'division_name' => $division_name,
             'division_code' => $division_code,
+            'division_area_id' => $division->area_id,
             '$attachment' => $attachment,
             'started_at' => $this->started_at,
             'ended_at' => $this->ended_at

@@ -135,7 +135,7 @@ class TaskSchedules extends Model
                     ]);
                     $this->registerTrail(['section_id' => $section->id]);
 
-                    if($section->code === 'HRMO'){
+                    if($section->area_id === 'HOPPS-HRMO-DE-001'){
                         $role = Role::where('code', 'HRMO-HEAD-01')->first();
                         break;
                     }

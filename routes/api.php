@@ -20,77 +20,101 @@ Route::get('/initialize-storage', function (Request $request) {
     Artisan::call('storage:link');
 });
 
+
 // In case the env client domain doesn't work
-Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function(){
-    Route::get('update-system', 'SystemController@updateUMISDATA');
-});
+Route::
+        namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
+            Route::get('update-system', 'SystemController@updateUMISDATA');
+            Route::get('employees-sample', 'EmployeeProfileController@employeeListSample');
+        });
 
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            // VERSION 2
+            Route::namespace('Authentication')->group(function(){
+                Route::post('sign-in', 'AuthWithCredentialController@store');
+            });
 
-Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
-    Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
-    Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
-});
+            Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
+            Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
+            Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+        });
 
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
-Route::namespace('App\Http\Controllers')->group(function () {
-    // Route::get('test', 'DashboardController@test');
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            // Route::get('test', 'DashboardController@test');
+        
+            // Route::get('announcementslist', 'AnnouncementsController@index');
+            Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+            Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-    // Route::get('announcementslist', 'AnnouncementsController@index');
-    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-    Route::get('announcements/{id}', 'AnnouncementsController@show');
+            Route::get('events', 'EventsController@index');
+            Route::get('events-search', 'EventsController@searchEvents');
+            Route::get('events/{id}', 'EventsController@show');
 
-    Route::get('events', 'EventsController@index');
-    Route::get('events-search', 'EventsController@searchEvents');
-    Route::get('events/{id}', 'EventsController@show');
+            Route::get('memorandums', 'MemorandumsController@index');
+            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+            Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-    Route::get('memorandums', 'MemorandumsController@index');
-    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-    Route::get('memorandums/{id}', 'MemorandumsController@show');
+            Route::get('news', 'NewsController@index');
+            Route::get('news-search', 'NewsController@searchNews');
+            Route::get('news/{id}', 'NewsController@show');
+            Route::get('notification', 'NotificationController@store');
 
-    Route::get('news', 'NewsController@index');
-    Route::get('news-search', 'NewsController@searchNews');
-    Route::get('news/{id}', 'NewsController@show');
-    Route::get('notification', 'NotificationController@store');
 
-    
-    Route::put('account-recovery', 'AccountRecoveryController@update');
-});
+            Route::put('account-recovery', 'AccountRecoveryController@update');
+        });
 
-Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-    Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
-    Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
-    Route::post('getUserInformations', 'SessionController@getUserInfo');
-});
+Route::
+        namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+            Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+            Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
+            Route::post('getUserInformations', 'SessionController@getUserInfo');
+        });
 
-Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::post('sign-in', 'EmployeeProfileController@signIn');
-    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-    Route::post('new-password', 'EmployeeProfileController@newPassword');
-    Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-    Route::get('validate-token', 'CsrfTokenController@validateToken');
-    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-    Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+            // Route::post('sign-in', 'EmployeeProfileController@signIn');
+            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+            Route::post('new-password', 'EmployeeProfileController@newPassword');
+            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+            Route::get('validate-token', 'CsrfTokenController@validateToken');
+            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
 
-    
-    Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
-});
+
+            Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
+        });
 
 Route::middleware('auth.cookie')->group(function () {
-    
-    Route::namespace('App\Http\Controllers')->group(function () {
 
-        Route::namespace("Migration")->group(function(){
+    Route::namespace('App\Http\Controllers')->group(function () {
+        // VERSION 2
+        Route::namespace("AccessManagement")->group(callback: function() {
+            Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
+
+            // Systems API Key Management
+            Route::post('system-api-keys', "SystemsAPIKeyController@store");
+            Route::delete('system-api-keys', "SystemsAPIKeyController@destroy");
+        });
+
+        // VERSION 2
+        Route::namespace('Authentication')->group(callback: function(){         
+            Route::delete('sign-out', 'AuthWithCredentialController@destroy');
+        });
+
+        Route::namespace("Migration")->group(function () {
             Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
             Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
         });
-        
+
         // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
         //     Route::put('account-recovery', 'AccountRecoveryController@update');
         // });
@@ -190,7 +214,7 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
-        Route::delete('signout', 'EmployeeProfileController@signOut');
+        // Route::delete('signout', 'EmployeeProfileController@signOut');
 
         /**
          * Login Trail Module
@@ -655,6 +679,7 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('department-all', 'DepartmentController@index');
+            Route::get('departments/trashbin', 'DepartmentController@trash');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -679,6 +704,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('department-update/{id}', 'DepartmentController@update');
+            Route::put('department/{id}/restore', 'DepartmentController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -735,6 +761,7 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('division-all', 'DivisionController@index');
+            Route::get('divisions/trashbin', 'DivisionController@trash');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -755,6 +782,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('division-update/{id}', 'DivisionController@update');
+            Route::put('division/{id}/restore', 'DivisionController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1510,6 +1538,7 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('section-all', 'SectionController@index');
+            Route::get('sections/trashbin', 'SectionController@trash');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
@@ -1530,6 +1559,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('section-update/{id}', 'SectionController@update');
+            Route::put('section/{id}/restore', 'SectionController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1603,6 +1633,7 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('unit-all', 'UnitController@index');
+            Route::get('units/trashbin', 'UnitController@trash');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
@@ -1623,6 +1654,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('unit-update/{id}', 'UnitController@update');
+            Route::put('unit/{id}/restore', 'UnitController@restore');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1890,6 +1922,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-type-all', 'LeaveTypeController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-type-hrmo', 'LeaveTypeController@hrmoLeaveTypes');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-type/{id}', 'LeaveTypeController@show');
         });
@@ -1904,6 +1941,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-type-select', 'LeaveTypeController@leaveTypeOptionWithEmployeeCreditsRecord');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('leave-type-select-hrmo', 'LeaveTypeController@hrmoLeaveTypeOptionWithEmployeeCreditsRecord');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
@@ -2648,17 +2689,34 @@ Route::middleware('auth.cookie')->group(function () {
 
 /**
  * Third party system end points
- * 
+ *
  * Authentication of server api will be done here
  * While user authorization verification will be done on requester server
  * only if the permission is intended for that server
- * 
+ *
  * Upon user load on the other client then the server api will request for user permission details from the umis
  * then store the data in the database of the server api
  */
 
- Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::middleware("auth.thirdparty")->group(function(){
-        Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
-     });
- });
+Route::namespace('App\Http\Controllers')->group(function(){
+    Route::middleware('auth.thirdparty')->group(function(){
+        Route::namespace("Authentication")->group(callback: function() {
+
+            // AUTH WITH SESSION ID
+            Route::post('auth-with-session-id', "AuthWithApiKeySessionIDController@store");
+
+            //AUTH WITH CREDENTIAL
+            Route::get('auth-with-crential', "AuthWithApiKeyCredentialController@store");
+        });
+    });
+});
+
+// Route::
+//         namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+//             Route::middleware("auth.thirdparty")->group(function () {
+//                 Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+//             });
+//         });
+
+        
+
