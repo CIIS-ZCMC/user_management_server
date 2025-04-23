@@ -43,7 +43,7 @@ class EmployeeScheduleController extends Controller
             $page = $request->input('page', 1);
             $perPage = $request->input('per_page', 10);
 
-            $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
+            $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['area_id'] === 'HOPPS-HRMO-DE-001';
 
             $query = EmployeeProfile::with([
                 'personalInformation',

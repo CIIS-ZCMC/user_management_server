@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Division extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'divisions';
 
     public $fillable = [
+        'area_id',
         'code',
         'name',
         'division_attachment_url',
@@ -26,6 +28,8 @@ class Division extends Model
 
     public $timestamps = TRUE;
 
+    protected $casts = ['deleted_at' => 'datetime'];
+
     public function employees()
     {
         return $this->belongsToMany(AssignArea::class, EmployeeProfile::class, 'employee_profile_id', 'id', 'division_id', 'id');
@@ -34,6 +38,11 @@ class Division extends Model
     public function assignArea()
     {
         return $this->hasMany(AssignArea::class);
+    }
+
+    public function assignAreaTrails()
+    {
+        return $this->hasMany(related: AssignAreaTrail::class);
     }
 
     public function departments()
@@ -74,5 +83,10 @@ class Division extends Model
     public function units()
     {
         return $this->hasMany(Unit::class);
+    }
+
+    public function plantillaAssignAreas()
+    {
+        return $this->hasMany(PlantillaAssignedArea::class);
     }
 }

@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Http\Resources\SupervisorSectionResource;
 use App\Http\Resources\OICSectionResource;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Section extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'sections';
 
     public $fillable = [
+        'area_id',
         'name',
         'code',
         'section_attachment_url',
@@ -30,6 +32,8 @@ class Section extends Model
     ];
 
     public $timestamps = TRUE;
+    
+    protected $casts = ['deleted_at' => 'datetime'];
 
     public function employees()
     {
@@ -41,6 +45,10 @@ class Section extends Model
         return $this->hasMany(AssignArea::class);
     }
 
+    public function assignAreaTrails()
+    {
+        return $this->hasMany(AssignAreaTrail::class);
+    }
 
     public function division()
     {
@@ -80,5 +88,10 @@ class Section extends Model
     public function units()
     {
         return $this->hasMany(Unit::class);
+    }
+
+    public function plantillaAssignAreas()
+    {
+        return $this->hasMany(PlantillaAssignedArea::class);
     }
 }

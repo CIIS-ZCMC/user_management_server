@@ -25,6 +25,7 @@ class PlantillaAssignAreaResource extends JsonResource
                 'id' => $this->id,
                 'name' => $division->name,
                 'code' => $division->code,
+                'area_id' => $division->area_id
             ];
         }
 
@@ -36,6 +37,7 @@ class PlantillaAssignAreaResource extends JsonResource
                 'id' => $this->id,
                 'name' => $department->name,
                 'code' => $department->code,
+                'area_id' => $department->area_id
             ];
         }
 
@@ -47,6 +49,7 @@ class PlantillaAssignAreaResource extends JsonResource
                 'id' => $this->id,
                 'name' => $section->name,
                 'code' => $section->code,
+                'area_id' => $section->area
             ];
         }
 
@@ -58,6 +61,7 @@ class PlantillaAssignAreaResource extends JsonResource
                 'id' => $this->id,
                 'name' => $unit->name,
                 'code' => $unit->code,
+                'area_id' => $unit->area_id
             ];
         }
 

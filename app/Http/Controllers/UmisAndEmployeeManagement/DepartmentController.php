@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\DepartmentsResource;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notifications;
 use App\Models\Role;
@@ -25,6 +26,7 @@ use App\Http\Resources\DepartmentResource;
 use App\Models\Division;
 use App\Models\Department;
 use App\Models\EmployeeProfile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DepartmentController extends Controller
 {
@@ -361,7 +363,43 @@ class DepartmentController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function trash(Request $request)
+    {
+        $search = $request->query('search');
+
+        if($search){
+            return DepartmentsResource::collection(Department::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+                ->additional([
+                    "meta" => [
+                        "methods" => "[GET, POST, PUT, DELETE]",
+                    ],
+                    "message" => "Successfully retrieve all deleted record."
+                ])->response();
+        }
+
+        return DepartmentsResource::collection(Department::onlyTrashed()->get())
+            ->additional([
+                "meta" => [
+                    "methods" => "[GET, POST, PUT, DELETE]",
+                ],
+                "message" => "Successfully retrieve all deleted record."
+            ])->response();
+    }
+
+    public function restore($id, Request $request)
+    {
+        Department::withTrashed()->find($id)->restore();
+
+        return (new DepartmentsResource(Department::find($id)))
+            ->additional([
+                'meta' => [
+                    'methods' => '[GET, POST, PUT, DELETE]'
+                ],
+                'message' => 'Successfully restore.'
+            ]);
+    }
+
+    public function destroy($id, Request $request)
     {
         try {
             $user = $request->user;

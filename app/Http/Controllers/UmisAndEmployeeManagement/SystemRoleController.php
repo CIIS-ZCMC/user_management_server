@@ -17,7 +17,6 @@ use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemModule;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Helpers\Helpers;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
@@ -27,6 +26,7 @@ use App\Models\ModulePermission;
 use App\Models\SystemRole;
 use App\Models\System;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 class SystemRoleController extends Controller
 {
@@ -151,52 +151,33 @@ class SystemRoleController extends Controller
         return [
             'id' => $system_role->id,
             'name' => $system_role->role->name,
-            'modules' => array_values($modules), // Resetting array keys
+            'modules' => array_values($modules),
         ];
     }
 
     public function employeesWithSpecialAccess(Request $request)
     {
-        try {
-            $current_page = $request->query("currentPage");
-            $limit = $request->query("limit");
-            $search = $request->query('search');
-            $offset = ($current_page  - 1) * $limit;
+        $per_page = $request->query('per_page') ?? 10;
+        $page = $request->query('page') ?? 1;
+        $search = $request->query('search');
 
-            if($search){
-                $employees = EmployeeProfile::whereHas('specialAccessRole')
-                    ->whereHas('personalInformation', function ($query) use ($search) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('last_name', 'like', "$search%")
-                            ->orWhere('first_name', 'like', "$search%")
-                            ->orWhere('middle_name', 'like', "$search%");
-                        });
-                    })
-                    ->limit($limit)
-                    ->offset($offset)
-                    ->get();
-                
-                return response()->json([
-                    'total_page_count' => $employees->count() < 10 ? 1 : ceil($employees->count()/10),
-                    'offset' => $offset,
-                    'data' => EmployeeWithSpecialAccessResource::collection($employees),
-                    'message' => 'Search Special access role assign successfully.'
-                ], Response::HTTP_OK);
-            }
+        $employees = EmployeeProfile::whereNotNull('employee_id')
+        ->whereHas("specialAccessRole")
+        ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
+        ->when($search, function ($q) use ($search) {
+            $q->whereHas('personalInformation', function ($q) use ($search) {
+                $q->where('last_name', 'like', "$search%")
+                ->orWhere('first_name', 'like', "$search%");
+            });
+        })->paginate(perPage:$per_page, page: $page);
 
-            $total_page = EmployeeProfile::whereHas('specialAccessRole')->count();
-            $employees = EmployeeProfile::whereHas('specialAccessRole')->limit(value: $limit)->offset(value: $offset)->get();
-
-            return response()->json([
-                'total_page_count' => $total_page < 10 ? 1: ceil($total_page/10),
-                'offset' => $offset,
-                'data' => EmployeeWithSpecialAccessResource::collection($employees),
-                'message' => 'Special access role assign successfully.'
-            ], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'addSpecialAccessRole', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return response()->json([
+            "data" => $employees,
+            "meta" => [
+                "methods" => "[GET, POST, PUT, DELETE]"
+            ],
+            "message" => "Successfully retrieve list of employees with special access role."
+        ], Response::HTTP_OK);
     }
 
     public function employeeWithSpecialAccess($id, Request $request)

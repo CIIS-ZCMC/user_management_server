@@ -58,9 +58,40 @@ class AuthenticateWithCookie
 
             $user = $hasAccessToken->employeeProfile;
 
+            // Check if the token will expire in 5 minutes
+            $fiveMinutesFromNow = Carbon::now()->addMinutes(5);
+            $shouldExtendExpiration = $tokenExpTime->lessThanOrEqualTo($fiveMinutesFromNow);
+
+            if($shouldExtendExpiration){
+                $hasAccessToken->update(['token_expiration' => Carbon::now()->addMinutes(30)]);
+            }
+
             $request->merge(['user' => $user]);
 
-            return $next($request);
+            /**
+             * @next Process the next request, which will validate authorization, 
+             * then to the controller if the user is authorized. The response of the controller 
+             * will be received by the authorization middleware, then it will return the response
+             * where this middleware will receive it and store in variable $response.
+             */
+            $response = $next($request);
+
+            /**
+             *  Extend expiration only when the cookie will about to expire in 5 mins 
+             * To prevent unnecessary process
+             */
+            if ($shouldExtendExpiration) {
+                return $response->cookie(
+                    config('app.cookie_name'), // The cookie name
+                    $cookieValue, // Encrypted token as the value
+                    30, // Extend for another 30 minutes
+                    '/', // Path
+                    config('app.session_domain'), // Domain from config
+                    false // HTTPS secure flag
+                );
+            }
+
+            return $response;
         } catch (\Throwable $th) {
             Helpers::errorLog("Authentication Validation", 'validateSession', $th->getMessage());
             return response()->json(['message' => "Un able to process your request.", "error" => $th->getMessage()], Response::HTTP_BAD_REQUEST);

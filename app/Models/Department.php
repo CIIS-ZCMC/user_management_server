@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Http\Resources\HeadDepartmentResource;
 use App\Http\Resources\OICDepartmentResouce;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Department extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'departments';
 
     public $fillable = [
+        'area_id',
         'name',
         'code',
         'department_attachment_url',
@@ -33,9 +35,16 @@ class Department extends Model
 
     public $timestamps = TRUE;
 
+    protected $casts = ['deleted_at' => 'datetime'];
+
     public function assignArea()
     {
         return $this->hasMany(AssignArea::class);
+    }
+
+    public function assignAreaTrails()
+    {
+        return $this->hasMany(AssignAreaTrail::class, 'department_id');
     }
 
     public function division()
@@ -76,5 +85,10 @@ class Department extends Model
     public function sections()
     {
         return $this->hasMany(Section::class);
+    }
+
+    public function plantillaAssignAreas()
+    {
+        return $this->hasMany(PlantillaAssignedArea::class);
     }
 }

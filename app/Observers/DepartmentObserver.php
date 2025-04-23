@@ -14,6 +14,14 @@ class DepartmentObserver
      */
     public function created(Department $department): void
     {
+        $code = $department->code;
+        $sector = "DE";
+        $total_departments = Department::count();
+
+        $area_id = sprintf("%s-%s-%03d", $code, $sector, $total_departments);
+
+        $department->update(['area_id' => $area_id]);
+        
         Cache::forget($this->CACHE_KEY);
     }
 

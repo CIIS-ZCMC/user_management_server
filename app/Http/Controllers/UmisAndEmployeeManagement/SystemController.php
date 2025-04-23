@@ -143,6 +143,7 @@ class SystemController extends Controller
 
   
         $employee = [
+            'head' => $employee_profile->employeeHeadOfficer(),
             'profile_url' => $profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,
@@ -206,6 +207,7 @@ class SystemController extends Controller
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_assigned_code' => $area_assigned['details']->code,
+            'area_assigned_area_id' => $area_assigned['details']->area_id,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id,
         ];
@@ -247,6 +249,7 @@ class SystemController extends Controller
             })
             ->where('designation_id', $designation['id'])
             ->get();
+
 
             if (count($position_system_roles) !== 0) {
                 /**
@@ -602,6 +605,71 @@ class SystemController extends Controller
                 }
             }
         }
+        
+        $public_system_roles = PositionSystemRole::where('is_public', 1)->get();
+
+        foreach($public_system_roles as $public_system_role)
+        {
+            $system_role_value = $public_system_role->systemRole;
+            $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
+
+            if(count($side_bar_details['system']) === 0 || !$exists){
+                $side_bar_details['system'][] = $this->buildSystemDetails($public_system_role->systemRole);
+                continue;
+            }
+
+            foreach ($side_bar_details['system'] as &$system) {
+                if ($system['id'] === $system_role_value->system_id) {
+                    $system_role_exist = false;
+                    $role = $system_role_value->role;
+
+                    // Check if role exist in the system
+                    foreach ($system['roles'] as $value) {
+                        if ($value['name'] === $role->name) {
+                            $system_role_exist = true;
+                            break; // No need to continue checking once the role is found
+                        }
+                    }
+
+                    if (!$system_role_exist) {
+                        $public_system_roles_data = $this->buildRoleDetails($public_system_role->systemRole);
+
+                        $system['roles'][] = [
+                            'id' => $public_system_roles_data['id'],
+                            'name' => $public_system_roles_data['name']
+                        ];
+
+                        // Convert the array of objects to a collection
+                        $modulesCollection = collect($system['modules']);
+
+                        foreach ($public_system_roles_data['modules'] as $role_module) {
+                            // Check if the module with the code exists in the collection
+                            $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                return $module['code'] === $role_module['code'];
+                            });
+
+                            if ($existingModuleIndex !== false) {
+                                // If the module exists, modify its permissions
+                                $existingModule = $modulesCollection->get($existingModuleIndex);
+                                foreach ($role_module['permissions'] as $permission) {
+                                    // If permission doesn't exist in the current module then it will be added to the module permissions.
+                                    if (!in_array($permission, $existingModule['permissions'])) {
+                                        $existingModule['permissions'][] = $permission;
+                                    }
+                                }
+                                $modulesCollection->put($existingModuleIndex, $existingModule);
+                            } else {
+                                // If the module doesn't exist, add it to the collection
+                                $modulesCollection->push($role_module);
+                            }
+                        }
+
+                        // Assign back the modified modules collection to the system
+                        $system['modules'] = $modulesCollection->toArray();
+                    }
+                }
+            }
+        }
 
         return $side_bar_details['system'][0];
     }
@@ -651,6 +719,7 @@ class SystemController extends Controller
             'modules' => array_values($modules), // Resetting array keys
         ];
     }
+
     // In case the env client domain doesn't work
     public function updateUMISDATA(){
         $system = System::find(1)->update([

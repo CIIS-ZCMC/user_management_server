@@ -479,8 +479,8 @@ class MonetizationApplicationController extends Controller
             }
 
             $hrmo_officer = Helpers::getHrmoOfficer();
-            $recommending_officer = Division::where('code', 'HOPSS')->first();
-            $approving_officer = Division::where('code', 'OMCC')->first();
+            $recommending_officer = Division::where('area_id', 'HOPSS-DI-003')->first();
+            $approving_officer = Division::where('area_id', 'OMCC-DI-001')->first();
 
 
             if($recommending_officer === null || $approving_officer === null || $hrmo_officer === null){
@@ -869,7 +869,7 @@ class MonetizationApplicationController extends Controller
             // return $data;
             $leave_type = MonetizationApplicationResource::collection(LeaveType::all());
             $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
-            $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
+            $hrmo_officer = Section::with(['supervisor'])->where('area_id', 'HOPPS-HRMO-DE-001')->first();
 
             // $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
             //     ->where('employee_profile_id', $data->employee_profile_id)
@@ -888,7 +888,7 @@ class MonetizationApplicationController extends Controller
 
              $document_details = [];
 
-             $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $data->employee_profile_id)->first();
+             $isMCC = Division::where('area_id', 'OMCC-DI-001')->where('chief_employee_profile_id', $data->employee_profile_id)->first();
 
              if (!$isMCC) {
                  //GET DIV ID FIRST

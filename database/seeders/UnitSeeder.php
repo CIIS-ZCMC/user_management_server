@@ -14,7 +14,7 @@ class UnitSeeder extends Seeder
      */
     public function run(): void
     {
-        $section = Section::where('code', 'EFM')->first();
+        $section = Section::where('code', 'HOPSS-EFM')->first();
 
         Unit::create([
             'name' => 'Housekeeping Unit',

@@ -271,17 +271,24 @@ class Helpers
 
     public function getBreakSchedule($biometric_id, $schedule)
     {
-
-        if (isset($schedule[0]['third_entry'])) {
-            return  [
-                'break1' => $this->extractBreakSchedule($schedule[0]['second_entry'], false),
-                'break2' => $this->extractBreakSchedule($schedule[0]['second_entry'], true),
-                'otherout' => $this->extractBreakSchedule($schedule[0]['last_entry'], true),
-                'adminOut' => $this->extractBreakSchedule($schedule[0]['last_entry'], false),
+        
+        if (isset($schedule[0]) && is_array($schedule[0])) {
+            $schedule = $schedule[0]; 
+        }
+    
+        // Ensure necessary keys exist before processing
+        if (!empty($schedule['third_entry'])) {
+            return [
+                'break1' => $this->extractBreakSchedule($schedule['second_entry'] ?? null, false),
+                'break2' => $this->extractBreakSchedule($schedule['second_entry'] ?? null, true),
+                'otherout' => $this->extractBreakSchedule($schedule['last_entry'] ?? null, true),
+                'adminOut' => $this->extractBreakSchedule($schedule['last_entry'] ?? null, false),
             ];
         }
+    
         return [];
     }
+    
 
     public function isNurseOrDoctor($biometric_id)
     {
@@ -533,18 +540,45 @@ class Helpers
         return $total_rendered >= 1 ? $total_rendered : 0;
     }
 
+    // public function settingDateSchedule($entry, $sched)
+    // {
+    //     $date = date('Y-m-d', strtotime($entry));
+    //     $pattern = '/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/';
+    //     if (!isset($entry)) {
+    //         return null;
+    //     }
+    //     if (preg_match($pattern, $sched)) {
+    //         return "{$date} {$sched}";
+    //     }
+    //     return null;
+    // }
+
     public function settingDateSchedule($entry, $sched)
-    {
-        $date = date('Y-m-d', strtotime($entry));
-        $pattern = '/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/';
-        if (!isset($entry)) {
-            return null;
-        }
-        if (preg_match($pattern, $sched)) {
-            return "{$date} {$sched}";
-        }
+{
+    if (empty($entry) || empty($sched)) {
         return null;
     }
+
+    // Validate sched format (HH:MM:SS)
+    $pattern = '/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/';
+    if (!preg_match($pattern, $sched)) {
+        return null;
+    }
+
+    $date = date('Y-m-d', strtotime($entry));
+    $entryTime = strtotime($entry); // Convert entry to timestamp
+    $schedTime = strtotime("{$date} {$sched}"); // Convert sched to timestamp
+
+    // Check if $sched is within ±3 hours of $entryTime
+    if ($schedTime >= strtotime('-3 hours', $entryTime) && $schedTime <= strtotime('+3 hours', $entryTime)) {
+        if (preg_match($pattern, $sched)) { // Ensure the format is correct before returning
+            return "{$date} {$sched}";
+        }
+    }
+
+    return null;
+}
+
 
     public function validateSchedule($time_stamps_req)
     {
@@ -599,16 +633,16 @@ class Helpers
 
 
             if (!$check_for_generate) {
-                if ($f1_entry && !$f2_entry) {
+                if (!empty($f1_entry) && empty($f2_entry)) {
                     $f2_entry = $sc['date_time'];
                 } else {
 
-                    if (!$f1_entry  && !$f2_entry && $f3_entry) {
+                    if (empty($f1_entry)  && empty($f2_entry) && !empty($f3_entry)) {
                         $f4_entry = $sc['date_time'];
                     }
                 }
             }
-            if (isset($validate->second_in) || isset($validate->second_out)) {
+            if (!empty($validate->second_in) || !empty($validate->second_out)) {
                 $f3entry = $validate->second_in;
                 $f4entry = $validate->second_out;
             }
@@ -638,7 +672,7 @@ class Helpers
                 $f2_entry_Time_stamp = strtotime($f2_entry);
                 $s2_Time_stamp = strtotime($s2);
                 if ($f3_entry && $f4_entry) {
-                    if (isset($s3) && isset($s4)) {
+                    if (!empty($s3) && !empty($s4)) {
                         $f3_entry_Time_stamp = strtotime($f3entry);
                         $s3_Time_stamp = strtotime($s3);
                         $f4_entry_Time_stamp = strtotime($f4entry);
@@ -653,7 +687,7 @@ class Helpers
                     $undertime_4th_entry = max(0, $s4_Time_stamp - $f4_entry_Time_stamp);
                     $overtime_4th_entry = max(0, $f4_entry_Time_stamp - $s4_Time_stamp);
                 }
-                $undertime_Minutes_1st_entry = $undertime_1st_entry / 60;
+                $undertime_Minutes_1st_entry =( $undertime_1st_entry / 60);
                 $undertime_Minutes_2nd_entry = $undertime_2nd_entry / 60;
                 $overtime_2nd_entry = $overtime_2nd_entry / 60;
                 if ($f3_entry && $f4_entry) {
@@ -663,7 +697,7 @@ class Helpers
                 }
 
                 $undertime = $undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry;
-
+                
 
                 if ($f3_entry && $f4_entry) {
                     $overtime = $overtime_4th_entry;
@@ -671,7 +705,8 @@ class Helpers
                     $overtime = $overtime_2nd_entry;
                     //return ;
 
-                    if (isset($time_stamps_req['third_entry']) && isset($time_stamps_req['last_entry'])) {
+                    if (!empty($time_stamps_req['third_entry']) && !empty($time_stamps_req['last_entry'])) {
+
 
                         $fent = date('Y-m-d', strtotime($f1_entry));
                         $second_Sched_secondin = $time_stamps_req['third_entry'];
@@ -750,7 +785,7 @@ class Helpers
             // echo "Fourth Entry:" . $f4_entry . "\n\n\n";
             // echo "Bio Entry_ :" . $sc['date_time'] . "\n";
 
-            if (!isset($s1) && !isset($s2)) {
+            if (empty($s1) && empty($s2)) {
                 $underTime_inWords = null;
                 $overTime_inWords = null;
                 $totalWH_words = null;
@@ -794,7 +829,11 @@ class Helpers
         }
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
 
-        if ($f1_entry && !$f2_entry || !$f1_entry && !$f2_entry && $f3_entry && !$f4_entry) {
+        if (
+            ($f1_entry && empty($f2_entry)) || 
+            (empty($f1_entry) && empty($f2_entry) && !empty($f3_entry) && empty($f4_entry))
+        ) {
+        
             if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
             $first_Sched_firstin =  $time_stamps_req['first_entry'];
             $first_Sched_firstout =$time_stamps_req['second_entry'];
@@ -813,19 +852,23 @@ class Helpers
         }
 
 
-        if (!$f1_entry && !$f2_entry && $f3_entry && $f4_entry) {
-            if(isset($value->biometric_id) && count($this->getBreakSchedule($value->biometric_id,$time_stamps_req))>=1){
-                if(isset($time_stamps_req) && array_key_exists("first_entry",$time_stamps_req) && array_key_exists("second_entry",$time_stamps_req)){
-                $first_Sched_firstin = $time_stamps_req['first_entry'];
-                $first_Sched_firstout = $time_stamps_req['second_entry'];
-                $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
-                $s_1 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstin"));
-                $s_2 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_firstout"));
-                $s1_Time_stamp_ = strtotime($s_1);
-                $s2_Time_stamp_ = strtotime($s_2);
-                $differenceInSeconds = $s2_Time_stamp_ - $s1_Time_stamp_;
+        if (empty($f1_entry) && empty($f2_entry) && !empty($f3_entry) && !empty($f4_entry)) {
 
-                $isonhalfPm = $differenceInSeconds / 60;
+            if(isset($value->biometric_id) && count($this->getBreakSchedule($value->biometric_id,$time_stamps_req))>=1){
+                if(isset($time_stamps_req) && array_key_exists("third_entry",$time_stamps_req) && array_key_exists("last_entry",$time_stamps_req)){
+                $first_Sched_secondin = $time_stamps_req['third_entry'];
+                $first_Sched_secondout = $time_stamps_req['last_entry'];
+                $fent = date('Y-m-d', strtotime($f1_entry ?? $f3_entry));
+                $s_3 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_secondin"));
+                $s_4 = date("Y-m-d H:i:s", strtotime("$fent $first_Sched_secondout"));
+                $s3_Time_stamp_ = strtotime($s_3);
+                $s4_Time_stamp_ = strtotime($s_4);
+                $differenceInSeconds = $s4_Time_stamp_ - $s3_Time_stamp_;
+
+                
+
+                $isonhalfPm = ($differenceInSeconds / 60);
+
                 }
             }
         }
@@ -844,7 +887,7 @@ class Helpers
             'overTime_Minutes' => $overTime_Minutes
         ];
 
-        if (isset($f3_entry) && isset($f4_entry)) {
+        if (empty($f1_entry) && empty($f2_entry) && !empty($f3_entry) && !empty($f4_entry)) {
             $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'second_out');
         } else {
             if ($f1_entry && $f2_entry && $f3_entry && !$f4_entry) {
