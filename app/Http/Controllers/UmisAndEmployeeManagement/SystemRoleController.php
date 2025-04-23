@@ -157,91 +157,27 @@ class SystemRoleController extends Controller
 
     public function employeesWithSpecialAccess(Request $request)
     {
-        try {
-            $current_page = $request->query("currentPage", 1);
-            $limit = $request->query("limit", 10);
-            $search = $request->query('search');
-            $sortColumn = $request->query('sortColumn', 'id'); 
-            $sortOrder = $request->query('sortOrder', 'asc'); 
-            
-            $offset = ($current_page - 1) * $limit;
+        $per_page = $request->query('per_page') ?? 10;
+        $page = $request->query('page') ?? 1;
+        $search = $request->query('search');
 
-            /**
-             * Priorities search if has value retrieve all employee that has personal_information last name related to the search value use like
-             * second priorities sort column (asc/desc) base on given value in sortOrder
-             * third use the offset and limit
-             */
+        $employees = EmployeeProfile::whereNotNull('employee_id')
+        ->whereHas("specialAccessRole")
+        ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
+        ->when($search, function ($q) use ($search) {
+            $q->whereHas('personalInformation', function ($q) use ($search) {
+                $q->where('last_name', 'like', "$search%")
+                ->orWhere('first_name', 'like', "$search%");
+            });
+        })->paginate(perPage:$per_page, page: $page);
 
-            $allowedSortColumns = ['id', 'name', 'job_position', 'area', 'special_access_role', 'effective_at'];
-
-            if (!in_array($sortColumn, $allowedSortColumns)) {
-                return response()->json([
-                    'message' => 'Invalid sorting column.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
-            $query = EmployeeProfile::whereNotNull('employee_id')
-                ->whereHas("specialAccessRole")
-                ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
-                ->when($search, function ($q) use ($search) {
-                    $q->whereHas('personalInformation', function ($q) use ($search) {
-                        $q->where('last_name', 'like', "$search%");
-                    });
-                })
-                ->when($sortColumn, function ($q) use ($sortColumn, $sortOrder) {
-                    switch ($sortColumn) {
-                        case 'name':
-                            $q->leftJoin('personal_informations', 'employee_profiles.personal_information_id', '=', 'personal_informations.id')
-                                ->orderBy("personal_informations.last_name", $sortOrder);
-                            break;
-            
-                        case 'job_position':
-                            $q->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
-                                ->leftJoin('designations', 'assigned_areas.designation_id', '=', 'designations.id')
-                                ->orderBy("designations.name", $sortOrder);
-                            break;
-            
-                        case 'area':
-                            $q->leftJoin('assigned_areas', 'employee_profiles.id', '=', 'assigned_areas.employee_profile_id')
-                                ->orderBy("assigned_areas.unit_id", $sortOrder);
-                            break;
-            
-                        case 'special_access_role':
-                            $q->leftJoin('special_access_roles', 'employee_profiles.id', '=', 'special_access_roles.employee_profile_id')
-                                ->orderBy("special_access_roles.system_role_id", $sortOrder);
-                            break;
-            
-                        case 'effective_at':
-                            $q->leftJoin('special_access_roles', 'employee_profiles.id', '=', 'special_access_roles.employee_profile_id')
-                                ->orderBy("special_access_roles.effective_at", $sortOrder);
-                            break;
-            
-                        default:
-                            $q->orderBy($sortColumn, $sortOrder);
-                            break;
-                    }
-                });
-
-            $total_count = $query->count();
-
-            $employees = $query->limit($limit)->offset($offset)->get();
-
-            // Filter out null assigned_area and empty special_access_role
-            // $filteredEmployees = $employees->filter(function ($employee) {
-            //     return is_null($employee->assigned_area);
-            // })->values(); // Reset array keys after filtering
-
-            return response()->json([
-                'total_page_count' => $total_count < $limit ? 1 : ceil($total_count / $limit),
-                'offset' => $offset,
-                'data' => $employees,
-                'message' => 'Special access role data retrieved successfully.',
-            ], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesWithSpecialAccess', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return response()->json([
+            "data" => $employees,
+            "meta" => [
+                "methods" => "[GET, POST, PUT, DELETE]"
+            ],
+            "message" => "Successfully retrieve list of employees with special access role."
+        ], Response::HTTP_OK);
     }
 
     public function employeeWithSpecialAccess($id, Request $request)
