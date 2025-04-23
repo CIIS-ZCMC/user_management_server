@@ -78,12 +78,12 @@ class Helpers
     }
     public static function getHrmoOfficer()
     {
-        return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+        return Section::where('area_id', 'HOPPS-HRMO-DE-001')->first()->supervisor_employee_profile_id;
     }
 
     public static function getChiefOfficer()
     {
-        return Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
+        return Division::where('area_id', 'OMCC-DI-001')->first()->chief_employee_profile_id;
     }
 
     public static function getDivHead($user_area)
@@ -175,7 +175,7 @@ class Helpers
             case 'Division':
                 // If employee is not Division head
                 if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $employee_profile_id) {
-                    $chief_officer = Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
+                    $chief_officer = Division::where('area_id', 'OMCC-DI-001')->first()->chief_employee_profile_id;
                     return [
                         "recommending_officer" => $chief_officer,
                         "approving_officer" => $chief_officer
@@ -203,7 +203,7 @@ class Helpers
                 }
 
                 $departmentHead = $department->head_employee_profile_id;
-                $omccDivision = Division::where('code', 'OMCC')->first();
+                $omccDivision = Division::where('area_id', 'OMCC-DI-001')->first();
 
                 return [
                     "recommending_officer" => $departmentHead,
@@ -270,7 +270,7 @@ class Helpers
         $position = $employee_profile->position();
 
         if ($position !== null) {
-            if (isset($position['area']) && $position['area']->code === 'OMCC') {
+            if (isset($position['area']) && $position['area']->area_id === 'OMCC-DI-001') {
                 return [
                     'id' => null,
                     'name' => null
@@ -279,7 +279,7 @@ class Helpers
 
             switch ($assigned_area['sector']) {
                 case "Division":
-                    $omcc = Division::where('code', 'OMCC')->first();
+                    $omcc = Division::where('area_id', 'OMCC-DI-001')->first();
                     return [
                         'id' => $omcc->chief->biometric,
                         'name' => $omcc->chief->personalInformation->name()

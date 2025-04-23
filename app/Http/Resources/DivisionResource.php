@@ -60,6 +60,7 @@ class DivisionResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
+            'area_id' => $this->area_id,
             'chief' => 'NONE',  
             'chief_profile_url' => 'NONE',
             'chief_designation' => 'NONE',

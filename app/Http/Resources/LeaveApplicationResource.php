@@ -24,8 +24,8 @@ class LeaveApplicationResource extends JsonResource
         $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
         $oic = null;
 
-        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
-        $hrmo = Section::where('code', 'HRMO')->first();
+        $isMCC = Division::where('area_id', 'OMCC-DI-001')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
+        $hrmo = Section::where('area_id', 'HOPPS-HRMO-DE-001')->first();
 
         if ($this->employee_oic_id  !== null) {
             switch ($area['sector']) {

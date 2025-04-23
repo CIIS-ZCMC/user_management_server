@@ -36,12 +36,12 @@ class TaskSchedules extends Model
 
     public function start()
     {
-        if($this->action === 'OIC'){
+        if ($this->action === 'OIC') {
             $head = $this->employee;
             $assigned_area = $head->findDetails();
             $candidate = $this->candidate;
 
-            switch($assigned_area['sector']){
+            switch ($assigned_area['sector']) {
                 case "Division":
                     $division = Division::find($assigned_area['details']->id);
                     if (!$this->end_at->isSameAs(Carbon::now())) {
@@ -98,13 +98,13 @@ class TaskSchedules extends Model
 
     public function end()
     {
-        if($this->action === 'OIC'){
+        if ($this->action === 'OIC') {
             $head = $this->employee;
             $assigned_area = $head->findDetails();
             $candidate = $this->candidate;
             $role = null;
 
-            switch($assigned_area['sector']){
+            switch ($assigned_area['sector']) {
                 case "Division":
                     $division = Division::find($assigned_area['details']->id);
                     $division->update([
@@ -123,7 +123,7 @@ class TaskSchedules extends Model
                         'oic_end_at' => null
                     ]);
                     $this->registerTrail(['department_id' => $department->id]);
-                    
+
                     $role = Role::where('code', 'DEPT-HEAD-01')->first();
                     break;
                 case "Section":
@@ -135,7 +135,7 @@ class TaskSchedules extends Model
                     ]);
                     $this->registerTrail(['section_id' => $section->id]);
 
-                    if($section->code === 'HRMO'){
+                    if ($section->area_id === 'HOPPS-HRMO-DE-001') {
                         $role = Role::where('code', 'HRMO-HEAD-01')->first();
                         break;
                     }
@@ -153,11 +153,11 @@ class TaskSchedules extends Model
                     $role = Role::where('code', 'UNIT-HEAD-01')->first();
                     break;
             }
-            
+
             $system_role = SystemRole::where('role_id', $role->id)->first();
             $special_access = SpecialAccessRole::where('system_role_id', $system_role->id)
                 ->where('employee_profile_id', $candidate->id)->first();
-            
+
             $special_access->delete();
             return true;
         }
@@ -165,7 +165,8 @@ class TaskSchedules extends Model
         return false;
     }
 
-    public function registerTrail($area){
+    public function registerTrail($area)
+    {
         OfficerInChargeTrail::create([
             'employee_profile_id' => $this->candidate_employee,
             ...$area,

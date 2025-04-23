@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->id();
+            $table->uuid('area_id')->unique()->nulalble();
             $table->string('name');
             $table->string('code')->nullable();
             $table->string('unit_attachment_url')->nullable();
@@ -28,6 +29,7 @@ return new class extends Migration
             $table->foreign('head_employee_profile_id')->references('id')->on('employee_profiles');
             $table->unsignedBigInteger('oic_employee_profile_id')->nullable();
             $table->foreign('oic_employee_profile_id')->references('id')->on('employee_profiles');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

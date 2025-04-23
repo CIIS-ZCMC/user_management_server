@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Division extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'divisions';
 
     public $fillable = [
+        'area_id',
         'code',
         'name',
         'division_attachment_url',
@@ -25,6 +27,8 @@ class Division extends Model
     ];
 
     public $timestamps = TRUE;
+
+    protected $casts = ['deleted_at' => 'datetime'];
 
     public function employees()
     {
