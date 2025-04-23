@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 namespace App\Http\Controllers;
 
@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Log;
 use App\Helpers\Helpers;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\DigitalSignatureResources\DigitalSignedDtrResource;
 use App\Http\Resources\DigitalSignatureResources\DigitalSignedDtrShowResource;
 
