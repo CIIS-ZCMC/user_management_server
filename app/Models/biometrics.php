@@ -14,6 +14,12 @@ class Biometrics extends Model
         'biometric_id',
         'name',
         'privilege',
-        'biometric'
+        'biometric',
+        'name_with_biometric'
     ];
+    
+    public function employeeProfile()
+    {
+        return $this->hasOne(EmployeeProfile::class, 'biometric_id', 'biometric_id');
+    }
 }
