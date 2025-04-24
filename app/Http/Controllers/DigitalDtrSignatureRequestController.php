@@ -48,13 +48,13 @@ class DigitalDtrSignatureRequestController extends Controller
             $query->with([
                 'digitalDtrSignatureRequestFile',
                 'employeeProfile.personalInformation',
-                'employeeHeadProfile.personalInformation'       
+                'employeeHeadProfile.personalInformation'
             ])
-            ->where(function($query) use ($user) {
-                $query->where('employee_head_profile_id', $user->id)
-                      ->orWhere('employee_profile_id', $user->id);
-            })
-            ->where('status', '!=', 'for_owner');
+                ->where(function ($query) use ($user) {
+                    $query->where('employee_head_profile_id', $user->id)
+                        ->orWhere('employee_profile_id', $user->id);
+                })
+                ->where('status', '!=', 'for_owner');
 
 
             if ($request->has('dtr_date')) {
@@ -199,14 +199,31 @@ class DigitalDtrSignatureRequestController extends Controller
             $employee = EmployeeProfile::with('personalInformation')->where('id', $user->id)->first();
             $employee_name = $employee->personalInformation->employeeName();
 
+            DB::beginTransaction();
+
             $signature_request = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')->where('id', $request->signature_request_id)
                 ->where('employee_head_profile_id', $user->id)
                 ->first();
 
-            if (!$signature_request) {
+            if (empty($signature_request)) {
+                DB::rollBack();
                 return response()->json(['message' => 'Digital DTR signature request not found'], Response::HTTP_NOT_FOUND);
             }
 
+            // Validate that the signature_request has the required employee_head_profile_id matching the current user
+            if ($signature_request->employee_head_profile_id !== $user->id) {
+                DB::rollBack();
+                return response()->json(['message' => 'You are not authorized to approve this signature request'], Response::HTTP_FORBIDDEN);
+            }
+
+            // Get the digital certificate for the employee head and will check if it exists
+            $certificate_incharge = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signature_request->employee_head_profile_id)->first();
+            if (!$certificate_incharge) {
+                DB::rollBack();
+                return response()->json(['message' => 'Digital certificate not found for the employee head. Please ensure a valid certificate is registered before approving signature requests.'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Update the status of the signature request
             $signature_request->status = 'Approved';
             $signature_request->remarks = 'Approved by: ' . $employee->id . ' - ' . $employee_name;
             $signature_request->approved_at = now();
@@ -219,18 +236,14 @@ class DigitalDtrSignatureRequestController extends Controller
                 'DTR Signature Request is ' . strtolower($signature_request->status) . ' by ' . $employee_name,
             );
 
-            $certificate_incharge = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signature_request->employee_head_profile_id)->first();
-            if (!$certificate_incharge) {
-                return response()->json(['message' => 'Digital certificate not found'], Response::HTTP_NOT_FOUND);
-            }
-
             // Get the signed DTR from the request file
             $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $signature_request->id)->first();
-    
+
             $disk_name = 'private';
             $file_path = $signedDtr->file_path;
 
             if (!Storage::disk($disk_name)->exists($file_path)) {
+                DB::rollBack();
                 return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);
             }
 
@@ -249,30 +262,45 @@ class DigitalDtrSignatureRequestController extends Controller
                 true
             );
 
-            
             // SIGN DTR INCHARGE                                                    
-            $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $signature_request->whole_month, $signature_request->id);
+            $this->dtrSigningService->processInchargeSigning(
+                [$signature_request->id], // document IDs array
+                $certificate_incharge,     // digital certificate
+                $signature_request->whole_month, // whole month flag
+                $signature_request->id     // signature request ID
+            );
 
-            $notification = Notifications::create([
-                'title' => $employee_name . ' has approved and signed your DTR',
-                'description' => 'Approval of Digital DTR Signature Request',
-                'module_path' => 'dtremployee',
-            ]);
+            // Try to send notification, but continue if notification fails
+            try {
+                $notification = Notifications::create([
+                    'title' => $employee_name . ' has approved and signed your DTR',
+                    'description' => 'Approval of Digital DTR Signature Request',
+                    'module_path' => 'dtremployee',
+                ]);
 
-            $user_notification = UserNotifications::create([
-                'notification_id' => $notification->id,
-                'employee_profile_id' => $certificate_incharge->employee_profile_id,
-            ]);
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $certificate_incharge->employee_profile_id,
+                ]);
 
-            Helpers::sendNotification([
-                'id' => $certificate_incharge->employee_profile_id,
-                'data' => new NotificationResource($user_notification),
-            ]);
+                Helpers::sendNotification([
+                    'id' => $certificate_incharge->employee_profile_id,
+                    'data' => new NotificationResource($user_notification),
+                ]);
+            } catch (\Exception $e) {
+                // Log notification error but don't fail the whole transaction
+                Helpers::errorLog($this->CONTROLLER_NAME, 'approveSignatureRequest - Notification', $e->getMessage());
+                // Continue with the main process, notification failure shouldn't prevent approval
+            }
 
+            // Commit the transaction regardless of notification success/failure
+            DB::commit();
+            
             return response()->json([
                 'message' => 'Signature request ' . strtolower($signature_request->status) . ' successfully',
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'approveSignatureRequest', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -298,16 +326,24 @@ class DigitalDtrSignatureRequestController extends Controller
             $results = [];
 
             foreach ($request->signature_requests as $request_data) {
+                // Find the signature request
                 $signature_request = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile')
                     ->where('id', $request_data['id'])
                     ->where('employee_head_profile_id', $user->id)
                     ->first();
 
-                if (!$signature_request) {
+                if (empty($signature_request)) {
                     $results[] = ['id' => $request_data['id'], 'status' => 'error', 'message' => 'Signature request not found'];
                     continue;
                 }
 
+                // Validate that the signature_request has the required employee_head_profile_id matching the current user
+                if ($signature_request->employee_head_profile_id !== $user->id) {
+                    $results[] = ['id' => $request_data['id'], 'status' => 'error', 'message' => 'You are not authorized to approve this signature request'];
+                    continue;
+                }
+
+                // Update signature request status
                 $signature_request->status = $request_data['approved'] ? 'Approved' : 'Rejected';
                 $signature_request->remarks = $request_data['remarks'];
                 $signature_request->approved_at = now();
@@ -320,20 +356,23 @@ class DigitalDtrSignatureRequestController extends Controller
                     'DTR Signature Request is ' . strtolower($signature_request->status) . ' by ' . $employee_name
                 );
 
+                // Get certificates for both owner and in-charge
                 $certificate_owner = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signature_request->employee_profile_id)->first();
                 $certificate_incharge = DigitalCertificate::with('digitalCertificateFile')->where('employee_profile_id', $signature_request->employee_head_profile_id)->first();
 
                 if (!$certificate_owner || !$certificate_incharge) {
-                    $results[] = ['id' => $request_data['id'], 'status' => 'error', 'message' => 'Digital certificate not found'];
+                    $results[] = ['id' => $request_data['id'], 'status' => 'error', 'message' => 'Digital certificate not found for owner or in-charge. Please ensure valid certificates are registered.'];
                     continue;
                 }
 
+                // Check if the file exists
                 $file_path = $signature_request->digitalDtrSignatureRequestFile->file_path;
                 if (!Storage::disk('private')->exists($file_path)) {
                     $results[] = ['id' => $request_data['id'], 'status' => 'error', 'message' => 'File not found'];
                     continue;
                 }
 
+                // Prepare file for signing
                 $file_content = Storage::disk('private')->get($file_path);
                 $mime_type = Storage::disk('private')->mimeType($file_path);
                 $filename = basename($file_path);
@@ -349,24 +388,37 @@ class DigitalDtrSignatureRequestController extends Controller
                     true
                 );
 
-                $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request_data['whole_month']);
-                $this->dtrSigningService->processInchargeSigning([$signature_request->id], $certificate_incharge, $request_data['whole_month']);
+                // Process signing
+                $this->dtrSigningService->processOwnerSigning($uploaded_file, $certificate_owner, $request_data['whole_month'], $signature_request->id);
+                $this->dtrSigningService->processInchargeSigning(
+                    [$signature_request->id],   // document IDs array
+                    $certificate_incharge,       // digital certificate
+                    $request_data['whole_month'],// whole month flag
+                    $signature_request->id       // signature request ID
+                );
 
-                $notification = Notifications::create([
-                    'title' => $employee_name . ' has approved and signed your DTR',
-                    'description' => 'Approval of Digital DTR Signature Request',
-                    'module_path' => 'approve-dtr',
-                ]);
+                // Try to send notification, but continue if notification fails
+                try {
+                    $notification = Notifications::create([
+                        'title' => $employee_name . ' has ' . strtolower($signature_request->status) . ' and signed your DTR',
+                        'description' => ucfirst(strtolower($signature_request->status)) . ' of Digital DTR Signature Request',
+                        'module_path' => 'approve-dtr',
+                    ]);
 
-                $user_notification = UserNotifications::create([
-                    'notification_id' => $notification->id,
-                    'employee_profile_id' => $certificate_owner->employee_profile_id,
-                ]);
+                    $user_notification = UserNotifications::create([
+                        'notification_id' => $notification->id,
+                        'employee_profile_id' => $certificate_owner->employee_profile_id,
+                    ]);
 
-                Helpers::sendNotification([
-                    'id' => $certificate_owner->employee_profile_id,
-                    'data' => new NotificationResource($user_notification),
-                ]);
+                    Helpers::sendNotification([
+                        'id' => $certificate_owner->employee_profile_id,
+                        'data' => new NotificationResource($user_notification),
+                    ]);
+                } catch (\Exception $e) {
+                    // Log notification error but don't fail the whole transaction
+                    Helpers::errorLog($this->CONTROLLER_NAME, 'approveBatchSignatureRequests - Notification', $e->getMessage());
+                    // Continue with the main process, notification failure shouldn't prevent approval
+                }
 
                 $results[] = ['id' => $request_data['id'], 'status' => 'success', 'message' => 'Signature request processed successfully'];
             }
@@ -379,7 +431,7 @@ class DigitalDtrSignatureRequestController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             DB::rollBack();
-            Helpers::errorLog($this->CONTROLLER_NAME, 'approveMultipleSignatureRequests', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approveBatchSignatureRequests', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

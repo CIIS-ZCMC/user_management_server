@@ -1212,11 +1212,11 @@ class DTRcontroller extends Controller
 
                 $dompdf->setPaper('Letter', 'portrait');
                 $dompdf->render();
-                $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
-                $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
+                $monthName = date('F', strtotime("$year_of-" . sprintf('%02d', $month_of) . "-01"));
+                $sanitizedEmployeeName = preg_replace('/[^a-zA-Z0-9\s]/', '', $emp_Details['Employee_Name'] ?? '');
+                $filename = trim($sanitizedEmployeeName) . "_DTR_{$monthName}_{$year_of}.pdf";
                 $fileContent = $dompdf->output();
                 $dtrDate =  date('Y-m-d', strtotime("$year_of-$month_of-01"));
-
 
                 $saveResult = null;
 
@@ -1232,6 +1232,7 @@ class DTRcontroller extends Controller
                     }
 
                     // FETCH AND GET THE SIGNED DTR
+
                     $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $saveResult['request_id'])->first();
 
                     if (!$signedDtr) {
@@ -2479,6 +2480,7 @@ class DTRcontroller extends Controller
 
             // Save the file
             $file_extension = 'pdf';
+            // Sanitize filename to remove invalid characters
             $sanitized_filename = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $filename);
             $unique_filename = $sanitized_filename;
             $file_path = 'dtr_files/';
