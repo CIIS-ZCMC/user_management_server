@@ -84,7 +84,7 @@ class DigitalDtrSignatureRequestController extends Controller
         }
     }
 
-    public function viewOrDownloadDTR(Request $request, $type, $id)
+    public function viewOrDownloadDTR(Request $request, $id)
     {
         try {
             // Check if the signature request exists
@@ -94,7 +94,7 @@ class DigitalDtrSignatureRequestController extends Controller
             }
 
             // Find the signed DTR associated with the request
-            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $id)->where('signer_type', $type)->latest()->first();
+            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $id)->latest()->first();
             if (empty($signedDtr)) {
                 return response()->json(['message' => 'Signed DTR not found for this request'], Response::HTTP_NOT_FOUND);
             }
