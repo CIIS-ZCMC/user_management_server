@@ -84,16 +84,27 @@ class DigitalDtrSignatureRequestController extends Controller
         }
     }
 
-    public function viewOrDownloadDTR(Request $request, $id)
+    public function viewOrDownloadDTR(Request $request, $type, $id)
     {
         try {
-            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $id)
-                ->first();
-
-            if (!Storage::disk('private')->exists($signedDtr->file_path)) {
-                return response()->json(['message' => 'File not found'], Response::HTTP_NOT_FOUND);
+            // Check if the signature request exists
+            $signatureRequest = DigitalDtrSignatureRequest::where('id', $id)->first();
+            if (empty($signatureRequest)) {
+                return response()->json(['message' => 'Digital DTR signature request not found'], Response::HTTP_NOT_FOUND);
             }
 
+            // Find the signed DTR associated with the request
+            $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $id)->where('signer_type', $type)->latest()->first();
+            if (empty($signedDtr)) {
+                return response()->json(['message' => 'Signed DTR not found for this request'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Check if the file exists in storage
+            if (!Storage::disk('private')->exists($signedDtr->file_path)) {
+                return response()->json(['message' => 'DTR file not found in storage'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Check if download parameter is provided
             if ($request->query('download', false)) {
                 return Storage::disk('private')->download(
                     $signedDtr->file_path,
@@ -119,17 +130,25 @@ class DigitalDtrSignatureRequestController extends Controller
     public function viewAllOrDownloadDTR(Request $request)
     {
         try {
+            // Get the employee head ID from the authenticated user
             $employeeHeadId = $request->user->id;
+            if (empty($employeeHeadId)) {
+                return response()->json(['message' => 'User information not found'], Response::HTTP_BAD_REQUEST);
+            }
 
+            // Build the query for DTR signature requests
             $query = DigitalDtrSignatureRequest::with('digitalDtrSignatureRequestFile', 'employeeProfile')
                 ->where('employee_head_profile_id', $employeeHeadId);
 
+            // Apply status filter if provided
             if ($request->has('status')) {
                 $query->where('status', $request->input('status'));
             }
 
+            // Fetch the signature requests
             $signatureRequests = $query->orderBy('created_at', 'desc')->get();
 
+            // Return early if no requests found
             if ($signatureRequests->isEmpty()) {
                 return response()->json([
                     'message' => 'No DTR signature requests found',
@@ -137,29 +156,57 @@ class DigitalDtrSignatureRequestController extends Controller
                 ], Response::HTTP_NOT_FOUND);
             }
 
+            // Handle download request
             if ($request->query('download', false)) {
+                // Prepare for zip creation
                 $zip = new \ZipArchive();
                 $zipFileName = 'dtr_files_' . now()->format('Y-m-d_H-i-s') . '.zip';
-                $zipFilePath = storage_path('app/temp/' . $zipFileName);
+                $tempDir = storage_path('app/temp/');
+                
+                // Ensure temp directory exists
+                if (!file_exists($tempDir)) {
+                    mkdir($tempDir, 0755, true);
+                }
+                
+                $zipFilePath = $tempDir . $zipFileName;
 
+                // Create the zip file
                 if ($zip->open($zipFilePath, \ZipArchive::CREATE) === TRUE) {
-                    foreach ($signatureRequests as $request) {
-                        $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $request->id)
+                    $fileCount = 0;
+                    
+                    foreach ($signatureRequests as $signatureRequest) {
+                        // Get the latest signed DTR for this request
+                        $signedDtr = DigitalSignedDtr::where('digital_dtr_signature_request_id', $signatureRequest->id)
                             ->where('signer_type', 'incharge')
+                            ->latest()
                             ->first();
 
-                        if ($signedDtr && Storage::disk('private')->exists($signedDtr->file_path)) {
-                            $zip->addFile(storage_path('app/private/' . $signedDtr->file_path), $signedDtr->file_name);
+                        // Add file to zip if it exists
+                        if (!empty($signedDtr) && Storage::disk('private')->exists($signedDtr->file_path)) {
+                            $fullPath = storage_path('app/private/' . $signedDtr->file_path);
+                            $zip->addFile($fullPath, $signedDtr->file_name);
+                            $fileCount++;
                         }
                     }
+                    
                     $zip->close();
 
-                    return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+                    // Check if any files were added to the zip
+                    if ($fileCount > 0) {
+                        return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+                    } else {
+                        // Delete empty zip file
+                        if (file_exists($zipFilePath)) {
+                            unlink($zipFilePath);
+                        }
+                        return response()->json(['message' => 'No files available for download'], Response::HTTP_NOT_FOUND);
+                    }
                 } else {
                     return response()->json(['message' => 'Unable to create zip file'], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
             }
 
+            // Return JSON response with the signature requests
             return response()->json([
                 'message' => 'Retrieved all DTR signature requests',
                 'data' => DigitalDtrSignatureRequestResource::collection($signatureRequests)
