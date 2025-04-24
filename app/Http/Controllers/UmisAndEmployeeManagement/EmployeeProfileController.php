@@ -102,6 +102,7 @@ use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\EmployeesAssignedAreaResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Models\DigitalCertificate;
 use App\Models\LeaveApplication;
 
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -1137,6 +1138,7 @@ class EmployeeProfileController extends Controller
             }
         }
 
+        $is_digisig_registered = DigitalCertificate::where('employee_profile_id', $employee_profile->id)->exists();
 
         return [
             'personal_information_id' => $personal_information->id,
@@ -1180,7 +1182,8 @@ class EmployeeProfileController extends Controller
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id,
-            'side_bar_details' => $side_bar_details
+            'side_bar_details' => $side_bar_details,
+            'is_digisig_registered' => $is_digisig_registered
         ];
     }
 
@@ -5967,5 +5970,43 @@ class EmployeeProfileController extends Controller
         DB::commit();
 
         return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
+    }   
+    
+    
+    public function exportEmployeeList(Request $request)
+    {
+            try {
+                $employee_profiles = EmployeeProfile::with(['personalInformation', 'assignedArea'])
+                    ->whereNull('deactivated_at')
+                    ->where('id', '!=', 1)
+                    ->get()
+                    ->map(function($employee) {
+                        $assigned_area = $employee->assignedArea;
+                        $area_details = $assigned_area ? $assigned_area->findDetails() : null;
+                        $area = $area_details['details']['name'];
+                        $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
+                        $designation_name = $designation->name;
+
+                        return [
+                            'employee_id' => $employee->employee_id,
+                            'name' => $employee->personalInformation->name(),
+                            'designation' => $designation_name ?? 'No Designation',
+                            'area_assigned' => $area ?? 'No Area Assigned'
+                        ];
+                    })
+                    ->sortBy('name')
+                    ->values();
+
+                return response()->json([
+                    'count' => $employee_profiles->count(),
+                    'data' => $employee_profiles,
+                    'message' => 'Employee list retrieved successfully'
+                ], Response::HTTP_OK);
+
+            } catch (\Throwable $th) {
+                Helpers::errorLog($this->CONTROLLER_NAME, 'exportEmployeeList', $th->getMessage());
+                return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        
     }    
 }

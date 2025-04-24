@@ -73,9 +73,9 @@
 
 <div id="po">
 
-    <button id="btnExport"
+    {{-- <button id="btnExport"
         onclick="window.open('{{ url('/') . '/api/dtr-generate?biometric_id=[' . $biometric_id . ']&monthof=' . $month . '&yearof=' . $year . '&view=0&frontview=0' }}', '_blank')">Export
-        DTR</button>
+        DTR</button> --}}
 
 
     <table id="tabledate">
