@@ -258,7 +258,7 @@ class DtrSigningService
      */
     protected function getValidOwnerSignedDocuments(array $documentIds): \Illuminate\Database\Eloquent\Collection
     {
-        $documents = DigitalSignedDtr::whereIn('id', $documentIds)
+        $documents = DigitalSignedDtr::whereIn('digital_dtr_signature_request_id', $documentIds)
             ->where('signer_type', 'owner')
             ->where('status', 'signed')
             ->get();
