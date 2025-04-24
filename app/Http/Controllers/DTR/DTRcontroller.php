@@ -915,11 +915,11 @@ class DTRcontroller extends Controller
             $month_of = $request->monthof;
             $year_of = $request->yearof;
             $view = $request->view;
-            $FrontDisplay = $request->fronth;
+            $FrontDisplay = $request->frontview;
             $wholeMonth = $request->whole_month;
             $dtr_sign = $request->dtr_sign;
 
-            $ishalf = 1;
+            $ishalf = $wholeMonth == '0' ? 1 : 0;
             ini_set('max_execution_time', 86400);
 
             /*
@@ -930,37 +930,37 @@ class DTRcontroller extends Controller
             $yrnow = date('Y');
             $mnthnow = date('n');
             $dynow = date('j');
-            if (!$FrontDisplay) {
-                if ($yr <= $yrnow) {
-                    //print 31
+            // if (!$FrontDisplay) {
+            //     if ($yr <= $yrnow) {
+            //         //print 31
 
-                    if ($mnth < $mnthnow) {
+            //         if ($mnth < $mnthnow) {
 
-                        $ishalf = 0;
-                        //print 31
-                    } else if ($mnth == $mnthnow) {
-                        if ($dynow >= 20) {
-                            //print 31
+            //             $ishalf = 0;
+            //             //print 31
+            //         } else if ($mnth == $mnthnow) {
+            //             if ($dynow >= 20) {
+            //                 //print 31
 
-                            $ishalf = 0;
-                        } else {
-                            //print 15
-                            $ishalf = 1;
-                        }
-                    } else {
-                        if ($dynow >= 20) {
-                            //print 31
+            //                 $ishalf = 0;
+            //             } else {
+            //                 //print 15
+            //                 $ishalf = 1;
+            //             }
+            //         } else {
+            //             if ($dynow >= 20) {
+            //                 //print 31
 
-                            $ishalf = 0;
-                        } else {
-                            //print 15
-                            $ishalf = 1;
-                        }
-                    }
-                }
-            } else {
-                $ishalf = 0;
-            }
+            //                 $ishalf = 0;
+            //             } else {
+            //                 //print 15
+            //                 $ishalf = 1;
+            //             }
+            //         }
+            //     }
+            // } else {
+            //     $ishalf = 0;
+            // }
 
 
 
