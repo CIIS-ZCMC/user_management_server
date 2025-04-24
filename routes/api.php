@@ -2702,6 +2702,10 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
+ Route::post('test', function(){
+    return response()->json(['data' => 'PASSED', 'message' => "Test passed"], 200);
+ });
+
 Route::namespace('App\Http\Controllers')->group(function(){
     Route::middleware('auth.thirdparty')->group(function(){
         Route::namespace("Authentication")->group(callback: function() {
@@ -2709,8 +2713,8 @@ Route::namespace('App\Http\Controllers')->group(function(){
             // AUTH WITH SESSION ID
             Route::post('auth-with-session-id', "AuthWithApiKeySessionIDController@store");
 
-            //AUTH WITH CREDENTIAL
-            Route::get('auth-with-crential', "AuthWithApiKeyCredentialController@store");
+            //AUTH WITH API KEY CREDENTIAL
+            Route::post('auth-with-api-key-credential', "AuthWithApiKeyCredentialController@store");
         });
 
         Route::namespace("UmisAndEmployeeManagement")->group(function(){

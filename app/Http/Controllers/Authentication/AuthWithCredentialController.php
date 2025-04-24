@@ -46,25 +46,12 @@ class AuthWithCredentialController extends Controller
              * Fields Needed:
              *  employee_id
              *  password
-             *  persist_password: for reuse of password
              */
-            $cleanData = [];
+            $credentials = $request->all();
 
-            foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $employee_profile = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
-
-            /**
-             * For Persist password even when it expired for set months of expiration.
-             */
-            if ($request->persist_password !== null && (int) $request->persist_password === 1) {
-                $fortyDaysFromNow = Carbon::now()->addDays(90);
-                $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
-
-                $employee_profile->update(['password_expiration_at' => $fortyDaysExpiration]);
-            }
+            $employee_profile = EmployeeProfile::where('employee_id', $credentials['employee_id'])->first();
+            $profile = $employee_profile->personalInformation;
+            $contact = $profile->contact;
 
             if (!$employee_profile) {
                 FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Employee id or password incorrect."]);
@@ -78,7 +65,7 @@ class AuthWithCredentialController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . config("app.salt_value"), $decryptedPassword)) {
+            if (!Hash::check($credentials['password'] . config("app.salt_value"), $decryptedPassword)) {
                 FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Employee id or password incorrect."]);
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
@@ -121,8 +108,8 @@ class AuthWithCredentialController extends Controller
                     $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
-                return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
-                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY);
+                // ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -169,8 +156,8 @@ class AuthWithCredentialController extends Controller
 
                 SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+                return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND);
+                    // ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
             }
 
             $token = $employee_profile->createToken();
@@ -214,6 +201,7 @@ class AuthWithCredentialController extends Controller
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
             $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
+            $data['email'] = $contact->email_address;
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -228,8 +216,8 @@ class AuthWithCredentialController extends Controller
             Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
 
             return response()
-                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
+                // ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             // FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
             Helpers::errorLog(self::class, 'signIn', $th->getMessage());
