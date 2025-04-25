@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('employee_profile_id')->constrained('employee_profiles')->onDelete('cascade');
             $table->foreignId('digital_certificate_id')->constrained('digital_certificates')->onDelete('cascade');
             $table->foreignId('digital_dtr_signature_request_id')->constrained('digital_dtr_signature_requests')->onDelete('cascade');
+            $table->string('tracking_code')->unique();
             $table->string('file_name');
             $table->string('file_path');
             $table->string('signer_type'); // owner or in-charge
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->index('signer_type');
             $table->index('digital_certificate_id');
             $table->index('digital_dtr_signature_request_id');
+            $table->index('tracking_code');
         });
     }
 

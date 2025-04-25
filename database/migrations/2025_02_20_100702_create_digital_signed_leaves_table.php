@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('leave_attachment_id')->constrained('leave_attachments')->onDelete('cascade');
             $table->foreignId('leave_application_id')->constrained('leave_applications')->onDelete('cascade');
             $table->foreignId('previous_signed_id')->nullable()->constrained('digital_signed_leaves')->onDelete('set null');
+            $table->string('tracking_code')->unique();
             $table->string('file_name');
             $table->string('file_path');
             $table->string('signer_type'); // owner, head, sao or head
@@ -32,6 +33,7 @@ return new class extends Migration
             $table->index('digital_certificate_id');
             $table->index('leave_attachment_id');
             $table->index('leave_application_id');
+            $table->index('tracking_code');
             $table->index('signer_type');
             $table->index('status');
             $table->index('signed_at');
