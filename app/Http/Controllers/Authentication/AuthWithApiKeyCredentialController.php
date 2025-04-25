@@ -6,17 +6,7 @@ use App\Helpers\AuthHelper;
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 
-use App\Http\Resources\ChildResource;
-use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\ContactResource;
-use App\Http\Resources\EducationalBackgroundResource;
-use App\Http\Resources\EmployeeRedcapModulesResource;
-use App\Http\Resources\FamilyBackGroundResource;
-use App\Http\Resources\IdentificationNumberResource;
-use App\Http\Resources\OtherInformationResource;
-use App\Http\Resources\TrainingResource;
-use App\Http\Resources\VoluntaryWorkResource;
-use App\Http\Resources\WorkExperienceResource;
 use App\Jobs\SendEmailJob;
 use App\Models\AccessToken;
 use App\Models\EmployeeProfile;

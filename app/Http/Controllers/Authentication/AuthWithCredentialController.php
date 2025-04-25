@@ -216,8 +216,8 @@ class AuthWithCredentialController extends Controller
             Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
 
             return response()
-                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
-                // ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             // FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: " . $th->getMessage()]);
             Helpers::errorLog(self::class, 'signIn', $th->getMessage());
