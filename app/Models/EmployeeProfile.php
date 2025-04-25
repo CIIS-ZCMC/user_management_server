@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use App\Models\AssignedArea;
 
 use App\Models\Schedule;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EmployeeProfile extends Authenticatable
 {
@@ -262,8 +263,16 @@ class EmployeeProfile extends Authenticatable
     public function findDesignation()
     {
         $assign_area = $this->assignedArea;
-        $designation = !isset($assign_area->plantilla_id) ? $assign_area->designation ?? "" : $assign_area->plantilla->designation ?? "";
-        return $designation;
+        
+        if (!$assign_area) {
+            return null;
+        }
+
+        if (!isset($assign_area->plantilla_id)) {
+            return $assign_area->designation ?? null;
+        }
+
+        return $assign_area->plantilla->designation ?? null;
     }
 
     public function getBiometricLog($date)
@@ -689,5 +698,25 @@ class EmployeeProfile extends Authenticatable
     public function dailyTimeRecords()
     {
         return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id');
+    }
+
+    public function digitalSignedLeaves(): HasMany
+    {
+        return $this->hasMany(DigitalSignedLeave::class);
+    }
+
+    public function digitalSignedDtrs(): HasMany
+    {
+        return $this->hasMany(DigitalSignedDtr::class);
+    }
+
+    public function digitalCertificateLog(): HasMany
+    {
+        return $this->hasMany(DigitalCertificateLog::class);
+    }
+
+    public function digitalCertificate(): HasMany
+    {
+        return $this->hasMany(DigitalCertificate::class);
     }
 }
