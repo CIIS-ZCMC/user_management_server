@@ -1222,13 +1222,30 @@ class DTRcontroller extends Controller
 
                 if ($dtr_sign === 'for_owner') {
                     $saveResult = $this->saveSignedDtrFileOwner($employee, $filename, $fileContent, $dtrDate, $wholeMonth);
+                    if (!$saveResult) {
+                        Log::error('Failed to save DTR for signature request', [
+                            'employee_id' => $employee->id,
+                            'filename' => $filename,
+                            'date' => $dtrDate,
+                            'saveResult' => $saveResult
+                        ]);
+                        return response()->json([
+                            'message' => $saveResult['message']
+                        ], 500);
+                    }
+
+                    if (!isset($saveResult['request_id'])) {
+                        Log::error('Missing request_id in save result', [
+                            'employee_id' => $employee->id,
+                            'saveResult' => $saveResult
+                        ]);
+                        return response()->json([
+                            'message' => $saveResult['message']
+                        ], 500);
+                    }
 
                     if ($dtr_sign !== 'for_owner' && $dtr_sign !== 'for_incharge') {
                         return;
-                    }
-
-                    if (!$saveResult) {
-                        throw new \Exception($saveResult['message']);
                     }
 
                     // FETCH AND GET THE SIGNED DTR
@@ -1256,6 +1273,29 @@ class DTRcontroller extends Controller
                     return $response;
                 } else if ($dtr_sign === 'for_incharge') {
                     $saveResult = $this->saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtrDate, $wholeMonth);
+                        
+                    if (!$saveResult) {
+                        Log::error('Failed to save DTR for signature request', [
+                            'employee_id' => $employee->id,
+                            'filename' => $filename,
+                            'date' => $dtrDate,
+                            'saveResult' => $saveResult
+                        ]);
+                        return response()->json([
+                            'message' => $saveResult['message']
+                        ], 500);
+                    }
+
+                    if (!isset($saveResult['request_id'])) {
+                        Log::error('Missing request_id in save result', [
+                            'employee_id' => $employee->id,
+                            'saveResult' => $saveResult
+                        ]);
+                        return response()->json([
+                            'message' => $saveResult['message']
+                        ], 500);
+                    }
+
                     return response()->json([
                         'message' => 'DTR saved for signature request',
                         'data' => $saveResult['request_id']
@@ -1265,7 +1305,6 @@ class DTRcontroller extends Controller
                 }
             }
         } catch (\Throwable $th) {
-            return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
