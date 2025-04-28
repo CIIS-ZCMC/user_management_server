@@ -22,12 +22,12 @@ class PositionSystemRoleResource extends JsonResource
         $designation_code = $designation['code'];
         $system_role_name = $system_role['name'];
         $system_role_code = $system_role['code'];
-        $status = $this->deactivated_at === null? 'Deactivated': 'Active';
+        $status = $this->deactivated_at === null ? 'Deactivated' : 'Active';
 
         $role_module_permissions = $system_role->roleModulePermission;
         $permissions = [];
 
-        if(count($role_module_permissions) > 0){
+        if (count($role_module_permissions) > 0) {
             $permissions = PositionSystemRolePermissionResource::collection($role_module_permissions);
         }
 

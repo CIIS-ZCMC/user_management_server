@@ -48,14 +48,14 @@ class SystemRoleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /** API [system-roles-rights/{id}] */
     public function systemRoleAccessRights($id, Request $request)
     {
         try {
             $systemRoles = SystemRole::find($id);
 
-            if(!$systemRoles){
+            if (!$systemRoles) {
                 return response()->json(['message' => "No record found."], Response::HTTP_NOT_FOUND);
             }
 
@@ -68,14 +68,14 @@ class SystemRoleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /** API [system-roles-rights/{id}]  UPDATE System role access rights */
     public function systemRoleAccessRightsUpdate($id, Request $request)
     {
         try {
             $system_roles = SystemRole::find($id);
 
-            if(!$system_roles){
+            if (!$system_roles) {
                 return response()->json(['message' => "No record found."], Response::HTTP_NOT_FOUND);
             }
 
@@ -83,20 +83,20 @@ class SystemRoleController extends Controller
 
             $failed = [];
 
-            foreach($request->modules as $module){
-                foreach($module['permissions'] as $permission){
+            foreach ($request->modules as $module) {
+                foreach ($module['permissions'] as $permission) {
                     $module_permission = ModulePermission::where('system_module_id', $module['module_id'])
                         ->where('permission_id', $permission)->first();
 
-                    if(!$module_permission){
+                    if (!$module_permission) {
                         $failed[] = [
                             'module_id' => $module['module_id'],
                             'permission_id' => $permission,
-                            'reason' => "Failed module permission doesn't exist." 
+                            'reason' => "Failed module permission doesn't exist."
                         ];
                         continue;
                     }
-                    
+
                     RoleModulePermission::create([
                         'system_role_id' => $id,
                         'module_permission_id' => $module_permission->id
@@ -104,12 +104,12 @@ class SystemRoleController extends Controller
                 }
             }
 
-            if(count($failed) > 0){
+            if (count($failed) > 0) {
                 return response()->json([
                     "data" => $this->buildRoleDetails($system_roles),
                     "failed" => $failed,
                     "message" => "System role rights has been successfully updated some had failed."
-                ],Response::HTTP_OK);
+                ], Response::HTTP_OK);
             }
 
             return response()->json([
@@ -121,7 +121,7 @@ class SystemRoleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     private function buildRoleDetails($system_role)
     {
         $modules = [];
@@ -136,7 +136,7 @@ class SystemRoleController extends Controller
             $permission = $role_module_permission->modulePermission->permission;
 
             if (!isset($modules[$module_name])) {
-                $modules[$module_name] = ['id' => $module_id,'name' => $module_name, 'code' => $module_code, 'permissions' => []];
+                $modules[$module_name] = ['id' => $module_id, 'name' => $module_name, 'code' => $module_code, 'permissions' => []];
             }
 
             if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
@@ -162,14 +162,14 @@ class SystemRoleController extends Controller
         $search = $request->query('search');
 
         $employees = EmployeeProfile::whereNotNull('employee_id')
-        ->whereHas("specialAccessRole")
-        ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
-        ->when($search, function ($q) use ($search) {
-            $q->whereHas('personalInformation', function ($q) use ($search) {
-                $q->where('last_name', 'like', "$search%")
-                ->orWhere('first_name', 'like', "$search%");
-            });
-        })->paginate(perPage:$per_page, page: $page);
+            ->whereHas("specialAccessRole")
+            ->with(['personalInformation', 'assignedArea.designation', 'specialAccessRole'])
+            ->when($search, function ($q) use ($search) {
+                $q->whereHas('personalInformation', function ($q) use ($search) {
+                    $q->where('last_name', 'like', "$search%")
+                        ->orWhere('first_name', 'like', "$search%");
+                });
+            })->paginate(perPage: $per_page, page: $page);
 
         return response()->json([
             "data" => $employees,
@@ -220,7 +220,7 @@ class SystemRoleController extends Controller
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-            
+
             $system = System::find($id);
 
             if (!$system) {
@@ -236,7 +236,7 @@ class SystemRoleController extends Controller
 
             $check_if_exist =  System::where('role_id', $cleanData['role_id'])->where('system_id', $cleanData['system_id'])->first();
 
-            if($check_if_exist !== null){
+            if ($check_if_exist !== null) {
                 return response()->json(['message' => 'System role already exist.'], Response::HTTP_FORBIDDEN);
             }
 
@@ -303,7 +303,13 @@ class SystemRoleController extends Controller
     public function registerNewRoleAndItsPermission($id, NewRolePermissionRequest $request)
     {
         try {
+            $user = $request->user;
             $success_data = [];
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
 
             DB::beginTransaction();
             $system = System::find($id);
@@ -327,7 +333,7 @@ class SystemRoleController extends Controller
 
                 foreach ($role_value['modules'] as $module_value) {
                     foreach ($module_value['permissions'] as $permission_value) {
-                        $module_permission = null; 
+                        $module_permission = null;
                         $permission_id = $permission_value;
 
                         // Check if the existing module and permission has relation
@@ -335,21 +341,21 @@ class SystemRoleController extends Controller
                             ->where('permission_id', $permission_id)->first();
 
                         // If does not exist register a new module permission data
-                        if (!$is_exist){
+                        if (!$is_exist) {
                             $module = SystemModule::find($module_value['module_id']);
                             $permission = Permission::find($permission_id);
 
                             $module_permission = ModulePermission::create([
                                 "active" => 1,
-                                "code" => $module['code']." ".$permission['action'],
+                                "code" => $module['code'] . " " . $permission['action'],
                                 "system_module_id" => $module['id'],
                                 "permission_id" => $permission['id']
                             ]);
-                        }else{
+                        } else {
                             // Assign the existing module permission on variable to be use
                             $module_permission = $is_exist;
                         }
-                        
+
                         $role_module_permission = RoleModulePermission::create([
                             'module_permission_id' => $module_permission['id'],
                             'system_role_id' => $system_role->id
@@ -550,8 +556,10 @@ class SystemRoleController extends Controller
 
             $role_module_permission = $systemRole->roleModulePermissions;
 
-            if (count($role_module_permission) > 0) {
-                return response()->json(['message' => "Some data is using the system role deletion is prohibited."], Response::HTTP_BAD_REQUEST);
+            if ($role_module_permission->isNotEmpty()) {
+                return response()->json([
+                    'message' => 'Deletion is prohibited as the system role is associated with existing permissions.'
+                ], Response::HTTP_BAD_REQUEST);
             }
 
             $systemRole->delete();

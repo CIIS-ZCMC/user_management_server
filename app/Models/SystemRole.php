@@ -29,6 +29,7 @@ class SystemRole extends Model
         return $this->belongsTo(System::class);
     }
 
+
     public function specialAccessRights()
     {
         return $this->hasMany(SpecialAccessRole::class);
@@ -44,4 +45,3 @@ class SystemRole extends Model
         return $this->hasManyThrough(PositionSystemRole::class, Designation::class);
     }
 }
-    

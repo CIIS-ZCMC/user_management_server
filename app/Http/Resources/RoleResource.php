@@ -20,7 +20,14 @@ class RoleResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'system_roles' => count($system_roles)
+            'system_roles' => count($system_roles),
+            'system' => $this->systemRoles->map(function ($role) {
+                return [
+                    'id' => $role->system?->id,
+                    'name' => $role->system?->name,
+                    'code' => $role->system?->code
+                ];
+            }),
         ];
     }
 }

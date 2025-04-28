@@ -17,28 +17,29 @@ use Illuminate\Support\Facades\Hash;
 
 
 class RoleController extends Controller
-{ private $CONTROLLER_NAME = 'Permission Module';
+{
+    private $CONTROLLER_NAME = 'Permission Module';
     private $PLURAL_MODULE_NAME = 'role modules';
     private $SINGULAR_MODULE_NAME = 'role module';
 
     public function index(Request $request)
     {
-        try{
+        try {
             $roles = Role::all();
 
             return response()->json([
                 'data' => RoleResource::collection($roles),
                 'message' => 'Role list retrieved. '
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function store(RoleRequest $request)
     {
-        try{
+        try {
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -47,31 +48,30 @@ class RoleController extends Controller
 
             $check_if_exist =  Role::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
 
-            if($check_if_exist !== null){
+            if ($check_if_exist !== null) {
                 return response()->json(['message' => 'Role already exist.'], Response::HTTP_FORBIDDEN);
             }
 
             $role = Role::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $role['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => new RoleResource($role),
                 'message' => 'Role created successfully.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function show($id, Request $request)
     {
-        try{
+        try {
             $role = Role::findOrFail($id);
 
-            if(!$role)
-            {
+            if (!$role) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -79,15 +79,15 @@ class RoleController extends Controller
                 'data' => new RoleResource($role),
                 'message' => 'Role record retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, RoleRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -97,8 +97,7 @@ class RoleController extends Controller
 
             $role = Role::find($id);
 
-            if(!$role)
-            {
+            if (!$role) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -110,21 +109,22 @@ class RoleController extends Controller
 
             $role->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => new RoleResource($role),
                 'message' => 'Role updated successfully.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, Request $request)
     {
-        try{
+        try {
+
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -134,18 +134,17 @@ class RoleController extends Controller
 
             $role = Role::findOrFail($id);
 
-            if(!$role)
-            {
+            if (!$role) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $role->delete();
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Role deleted successfully.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
