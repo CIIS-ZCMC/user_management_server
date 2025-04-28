@@ -91,6 +91,20 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
+        // VERSION 2
+        Route::namespace("AccessManagement")->group(callback: function () {
+            Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
+
+            // Systems API Key Management
+            Route::post('system-api-keys', "SystemsAPIKeyController@store");
+            Route::delete('system-api-keys', "SystemsAPIKeyController@destroy");
+        });
+
+        // VERSION 2
+        Route::namespace('Authentication')->group(callback: function () {
+            Route::delete('sign-out', 'AuthWithCredentialController@destroy');
+        });
+
         Route::namespace("Migration")->group(function () {
             Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
             Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
@@ -191,29 +205,12 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('human-resources', 'DashboardController@humanResource');
         });
-
-        /**
-         * Digital Signature
-         */
-        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
-            Route::post('digital-signature', 'DigitalCertificateController@store');
-            Route::post('sign-dtr', 'DigitalCertificateController@signDtr');
-            Route::apiResource('signed-dtr', 'DigitalSignedDtrController');
-            Route::apiResource('signed-leaves', 'DigitalSignedLeaveController');
-
-            // Digital DTR Signature Requests
-            Route::apiResource('dtr-sig-requests', 'DigitalDtrSignatureRequestController');
-            Route::post('approve-dtr', 'DigitalDtrSignatureRequestController@approveSignatureRequest');
-            Route::post('approve-dtr-batch', 'DigitalDtrSignatureRequestController@approveBatchSignatureRequests');
-            Route::get('view-dtr/{id}', 'DigitalDtrSignatureRequestController@viewOrDownloadDTR');
-            Route::get('view-all-dtr', 'DigitalDtrSignatureRequestController@viewAllOrDownloadDTR');
-        });
     });
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-        Route::delete('signout', 'EmployeeProfileController@signOut');
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         // Route::delete('signout', 'EmployeeProfileController@signOut');
+
         /**
          * Login Trail Module
          */
@@ -2702,6 +2699,10 @@ Route::middleware('auth.cookie')->group(function () {
  * Upon user load on the other client then the server api will request for user permission details from the umis
  * then store the data in the database of the server api
  */
+
+Route::post('test', function () {
+    return response()->json(['data' => 'PASSED', 'message' => "Test passed"], 200);
+});
 
 Route::namespace('App\Http\Controllers')->group(function () {
     Route::middleware('auth.thirdparty')->group(function () {
