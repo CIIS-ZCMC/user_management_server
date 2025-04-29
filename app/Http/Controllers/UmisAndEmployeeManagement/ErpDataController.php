@@ -126,6 +126,7 @@ class ErpDataController extends Controller
             ])->get();
 
             return response()->json([
+                'count' => $users->count(),
                 'data' => ErpUserResource::collection($users),
                 'message' => 'Users retrieved successfully.'
             ], Response::HTTP_OK);
@@ -143,6 +144,7 @@ class ErpDataController extends Controller
             $assignedArea = AssignArea::all();
 
             return response()->json([
+                'count' => $assignedArea->count(),
                 'data' => ErpAssignedAreaResource::collection($assignedArea),
                 'message' => 'Assigned areas retrieved successfully.'
             ], Response::HTTP_OK);

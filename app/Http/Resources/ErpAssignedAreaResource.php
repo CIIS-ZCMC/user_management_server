@@ -15,6 +15,7 @@ class ErpAssignedAreaResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'employee_profile_id' => $this->employee_profile_id,
             'designation_id' => $this->designation_id ?? null,
             'division_id' => $this->division_id ?? null,
