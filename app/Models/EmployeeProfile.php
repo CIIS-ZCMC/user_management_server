@@ -644,17 +644,19 @@ class EmployeeProfile extends Authenticatable
         $assigned_area = $this->assignedArea->findDetails();
 
         $model = "App\\Models\\$assigned_area[sector]";
+
+    
         $sector_head = $model::where('id', $assigned_area['details']->id)->first();
 
         switch ($assigned_area['sector']) {
-            case 'Division':
+            case 'Division': case 'division':
                 return $sector_head->chief_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->divisionHead) : null;
-            case 'Department':
+            case 'Department': case 'department':
                 return $sector_head->head_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->departmentHead) : null;
-            case 'Section':
-                return $sector_head->supervisor_id !== null ? new EmployeeHeadResource($sector_head->supervisor) : null;
-            case 'Unit':
-                return $sector_head->head_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->head) : null;
+            case 'Section': case 'section':
+                return $sector_head->supervisor_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->supervisor) : null;
+            case 'Unit': case 'unit':
+                return $sector_head->head_employee_profile_id !== null ? new EmployeeHeadResource($sector_head->unitHead) : null;
             default:
                 return null;
         }
