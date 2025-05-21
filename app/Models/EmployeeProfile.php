@@ -264,7 +264,7 @@ class EmployeeProfile extends Authenticatable
     public function findDesignation()
     {
         $assign_area = $this->assignedArea;
-        
+
         if (!$assign_area) {
             return null;
         }
@@ -743,5 +743,91 @@ class EmployeeProfile extends Authenticatable
     public function digitalCertificate(): HasMany
     {
         return $this->hasMany(DigitalCertificate::class);
+    }
+
+    //For Payroll Hooks
+    public function employeeDtr()
+    {
+        return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id');
+    }
+
+    public function approvedCTO()
+    {
+        return $this->hasMany(CtoApplication::class)->where('status', 'approved');
+    }
+
+    public function approvedOB()
+    {
+        return $this->hasMany(OfficialBusiness::class)->where('status', 'approved');
+    }
+
+    public function approvedOT()
+    {
+        return $this->hasMany(OfficialTime::class)->where('status', 'approved');
+    }
+
+    public function receivedLeave()
+    {
+        return $this->hasMany(LeaveApplication::class)->where('status', 'received');
+    }
+
+    public function dtrInvalidEntry()
+    {
+        return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id')
+            ->whereNull('first_out')
+            ->whereNull('second_in')
+            ->whereNull('second_out');
+    }
+
+    public function nigthDuties()
+    {
+        return $this->hasMany(DailyTimeRecords::class, 'biometric_id', 'biometric_id')
+            ->whereTime('first_in', '>=', '18:00') // Check if first_in is 6:00 PM or later
+            ->whereTime('first_out', '>=', '06:00') // Check if first_out is 6:00 AM or earlier
+            ->orWhere(function ($query) {
+                $query->whereTime('second_in', '>=', '18:00') // Check second_in for 6 PM
+                    ->whereTime('second_out', '>=', '06:00'); // Check second_out for 6 AM
+            });
+    }
+
+    // In App\Models\EmployeeProfile.php
+
+    public function getAbsentDates($year, $month)
+    {
+        $generateDateRange = function ($from, $to) {
+            $start = Carbon::parse($from);
+            $end = Carbon::parse($to);
+            $dates = [];
+            while ($start->lte($end)) {
+                $dates[] = $start->format('Y-m-d');
+                $start->addDay();
+            }
+            return $dates;
+        };
+
+        $schedule_dates = $this->schedule->map(fn($s) => Carbon::parse($s->date)->format('Y-m-d'))->unique();
+
+        $leave_dates = collect($this->leaveApplications)
+            ->where('status', 'received')
+            ->flatMap(fn($l) => $generateDateRange($l->date_from, $l->date_to))
+            ->unique();
+
+        $ob_dates = collect($this->approvedOB)
+            ->flatMap(fn($ob) => $generateDateRange($ob->date_from, $ob->date_to))
+            ->unique();
+
+        $ot_dates = collect($this->approvedOT)
+            ->flatMap(fn($ot) => $generateDateRange($ot->date_from, $ot->date_to))
+            ->unique();
+
+        $dtr_dates = $this->employeeDtr->pluck('dtr_date')->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))->unique();
+
+        $covered_dates = $leave_dates
+            ->merge($ob_dates)
+            ->merge($ot_dates)
+            ->merge($dtr_dates)
+            ->unique();
+
+        return $schedule_dates->reject(fn($d) => $covered_dates->contains($d))->values();
     }
 }
