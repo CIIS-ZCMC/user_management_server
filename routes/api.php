@@ -22,94 +22,75 @@ Route::get('/initialize-storage', function (Request $request) {
 
 
 // In case the env client domain doesn't work
-Route::
-        namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
-            Route::get('update-system', 'SystemController@updateUMISDATA');
-            Route::get('employees-sample', 'EmployeeProfileController@employeeListSample');
-        });
+Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
+    Route::get('update-system', 'SystemController@updateUMISDATA');
+    Route::get('employees-sample', 'EmployeeProfileController@employeeListSample');
+});
 
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            // VERSION 2
-            Route::namespace('Authentication')->group(function(){
-                Route::post('sign-in', 'AuthWithCredentialController@store');
-            });
+Route::namespace('App\Http\Controllers')->group(function () {
+    // VERSION 2
+    Route::namespace('Authentication')->group(function () {
+        Route::post('sign-in', 'AuthWithCredentialController@store');
+    });
 
-            Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
-            Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
-            Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
-        });
+    Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
+    Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
+    Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+});
 
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            // Route::get('test', 'DashboardController@test');
-        
-            // Route::get('announcementslist', 'AnnouncementsController@index');
-            Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-            Route::get('announcements/{id}', 'AnnouncementsController@show');
+Route::namespace('App\Http\Controllers')->group(function () {
+    // Route::get('test', 'DashboardController@test');
 
-            Route::get('events', 'EventsController@index');
-            Route::get('events-search', 'EventsController@searchEvents');
-            Route::get('events/{id}', 'EventsController@show');
+    // Route::get('announcementslist', 'AnnouncementsController@index');
+    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+    Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-            Route::get('memorandums', 'MemorandumsController@index');
-            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-            Route::get('memorandums/{id}', 'MemorandumsController@show');
+    Route::get('events', 'EventsController@index');
+    Route::get('events-search', 'EventsController@searchEvents');
+    Route::get('events/{id}', 'EventsController@show');
 
-            Route::get('news', 'NewsController@index');
-            Route::get('news-search', 'NewsController@searchNews');
-            Route::get('news/{id}', 'NewsController@show');
-            Route::get('notification', 'NotificationController@store');
+    Route::get('memorandums', 'MemorandumsController@index');
+    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+    Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-
-            Route::put('account-recovery', 'AccountRecoveryController@update');
-        });
-
-Route::
-        namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-            Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
-            Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
-            Route::post('getUserInformations', 'SessionController@getUserInfo');
-        });
-
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            // Route::post('sign-in', 'EmployeeProfileController@signIn');
-            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-            Route::post('new-password', 'EmployeeProfileController@newPassword');
-            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-            Route::get('validate-token', 'CsrfTokenController@validateToken');
-            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+    Route::get('news', 'NewsController@index');
+    Route::get('news-search', 'NewsController@searchNews');
+    Route::get('news/{id}', 'NewsController@show');
+    Route::get('notification', 'NotificationController@store');
 
 
-            Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
-        });
+    Route::put('account-recovery', 'AccountRecoveryController@update');
+});
+
+Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
+    Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+    Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
+    Route::post('getUserInformations', 'SessionController@getUserInfo');
+});
+
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    // Route::post('sign-in', 'EmployeeProfileController@signIn');
+    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
+    Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+    Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+    Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+
+
+    Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
+});
 
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
-        // VERSION 2
-        Route::namespace("AccessManagement")->group(callback: function() {
-            Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
-
-            // Systems API Key Management
-            Route::post('system-api-keys', "SystemsAPIKeyController@store");
-            Route::delete('system-api-keys', "SystemsAPIKeyController@destroy");
-        });
-
-        // VERSION 2
-        Route::namespace('Authentication')->group(callback: function(){         
-            Route::delete('sign-out', 'AuthWithCredentialController@destroy');
-        });
-
         Route::namespace("Migration")->group(function () {
             Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
             Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
@@ -210,12 +191,29 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('human-resources', 'DashboardController@humanResource');
         });
+
+        /**
+         * Digital Signature
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::post('digital-signature', 'DigitalCertificateController@store');
+            Route::post('sign-dtr', 'DigitalCertificateController@signDtr');
+            Route::apiResource('signed-dtr', 'DigitalSignedDtrController');
+            Route::apiResource('signed-leaves', 'DigitalSignedLeaveController');
+
+            // Digital DTR Signature Requests
+            Route::apiResource('dtr-sig-requests', 'DigitalDtrSignatureRequestController');
+            Route::post('approve-dtr', 'DigitalDtrSignatureRequestController@approveSignatureRequest');
+            Route::post('approve-dtr-batch', 'DigitalDtrSignatureRequestController@approveBatchSignatureRequests');
+            Route::get('view-dtr/{id}', 'DigitalDtrSignatureRequestController@viewOrDownloadDTR');
+            Route::get('view-all-dtr', 'DigitalDtrSignatureRequestController@viewAllOrDownloadDTR');
+        });
     });
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+        Route::delete('signout', 'EmployeeProfileController@signOut');
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         // Route::delete('signout', 'EmployeeProfileController@signOut');
-
         /**
          * Login Trail Module
          */
@@ -1757,6 +1755,22 @@ Route::middleware('auth.cookie')->group(function () {
     });
 
     /**
+     * TROUBLE SHOOT
+     * Daily Time Record Management 
+     * 
+     * VERSION 2
+     */
+    Route::namespace('App\Http\Controllers\DTR')->group(function () {
+        Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
+            Route::post('check-device-user-records', 'BioController@checkDeviceUserRecords');
+            Route::get('check-user-biometric-details-from-device', 'BioController@checkUserBiometricDetailsFromDevice');
+            Route::post('populate-user-to-biometric-device', 'BioController@populateBiometricDeviceWithoutOveridingExistingRecords');
+            Route::patch('compose-second-name', "BioController@composeNameWithBiometricIDAndUpdateBiometric");
+            Route::post('register-new-biometric-device', 'BioController@registerBiometricDevice');
+        });
+    });
+
+    /**
      * Daily Time Record Management
      */
     Route::namespace('App\Http\Controllers\DTR')->group(function () {
@@ -2689,25 +2703,23 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
-Route::namespace('App\Http\Controllers')->group(function(){
-    Route::middleware('auth.thirdparty')->group(function(){
-        Route::namespace("Authentication")->group(callback: function() {
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::middleware('auth.thirdparty')->group(function () {
+        Route::namespace("Authentication")->group(callback: function () {
 
             // AUTH WITH SESSION ID
             Route::post('auth-with-session-id', "AuthWithApiKeySessionIDController@store");
 
-            //AUTH WITH CREDENTIAL
-            Route::get('auth-with-crential', "AuthWithApiKeyCredentialController@store");
+            //AUTH WITH API KEY CREDENTIAL
+            Route::post('auth-with-api-key-credential', "AuthWithApiKeyCredentialController@store");
+        });
+
+        Route::namespace("UmisAndEmployeeManagement")->group(function () {
+            Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
+            Route::get('erp-data-areas', 'ErpDataController@areas');
+            Route::get('erp-data-designations', 'ErpDataController@designations');
+            Route::get('erp-data-users', 'ErpDataController@users');
+            Route::get('erp-data-assigned-areas', 'ErpDataController@assignedAreas');
         });
     });
 });
-
-// Route::
-//         namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-//             Route::middleware("auth.thirdparty")->group(function () {
-//                 Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
-//             });
-//         });
-
-        
-

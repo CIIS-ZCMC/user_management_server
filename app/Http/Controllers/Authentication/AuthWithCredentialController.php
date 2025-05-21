@@ -19,6 +19,7 @@ use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
 use App\Jobs\SendEmailJob;
 use App\Models\AccessToken;
+use App\Models\DigitalCertificate;
 use App\Models\EmployeeProfile;
 use App\Models\FailedLoginTrail;
 use App\Models\LoginTrail;
@@ -46,25 +47,12 @@ class AuthWithCredentialController extends Controller
              * Fields Needed:
              *  employee_id
              *  password
-             *  persist_password: for reuse of password
              */
-            $cleanData = [];
+            $credentials = $request->all();
 
-            foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $employee_profile = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
-
-            /**
-             * For Persist password even when it expired for set months of expiration.
-             */
-            if ($request->persist_password !== null && (int) $request->persist_password === 1) {
-                $fortyDaysFromNow = Carbon::now()->addDays(90);
-                $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
-
-                $employee_profile->update(['password_expiration_at' => $fortyDaysExpiration]);
-            }
+            $employee_profile = EmployeeProfile::where('employee_id', $credentials['employee_id'])->first();
+            $profile = $employee_profile->personalInformation;
+            $contact = $profile->contact;
 
             if (!$employee_profile) {
                 FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Employee id or password incorrect."]);
@@ -78,7 +66,7 @@ class AuthWithCredentialController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . config("app.salt_value"), $decryptedPassword)) {
+            if (!Hash::check($credentials['password'] . config("app.salt_value"), $decryptedPassword)) {
                 FailedLoginTrail::create(['employee_id' => $employee_profile->employee_id, 'employee_profile_id' => $employee_profile->id, 'message' => "[signIn]: Employee id or password incorrect."]);
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
@@ -115,14 +103,14 @@ class AuthWithCredentialController extends Controller
 
                 $message = null;
 
-                if($currentYear > $passwordYear){
+                if ($currentYear > $passwordYear) {
                     $message = "Your account password has expired, it is mandatory to change the password.";
-                }else{
+                } else {
                     $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
                 return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
-                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -169,8 +157,8 @@ class AuthWithCredentialController extends Controller
 
                 SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+                return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND);
+                    // ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
             }
 
             $token = $employee_profile->createToken();
@@ -214,6 +202,7 @@ class AuthWithCredentialController extends Controller
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
             $data['redcap_forms'] = $this->employeeRedcapModules($employee_profile);
+            $data['email'] = $contact->email_address;
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -254,7 +243,7 @@ class AuthWithCredentialController extends Controller
 
         return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(config('app.cookie_name'), '', -1);
     }
-    
+
     // PRIVATE FUNCTIONS
     private function employeeRedcapModules($employee)
     {
@@ -310,7 +299,7 @@ class AuthWithCredentialController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                         continue;
                     }
 
@@ -369,7 +358,7 @@ class AuthWithCredentialController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                     }
                 }
 
@@ -379,7 +368,7 @@ class AuthWithCredentialController extends Controller
         } else {
             $side_bar_details = $sidebar_cache;
         }
-        
+
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -413,7 +402,7 @@ class AuthWithCredentialController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                         continue;
                     }
 
@@ -477,7 +466,7 @@ class AuthWithCredentialController extends Controller
                      * when system is not empty but the target system doesn't exist this will append to it
                      */
                     if (count($side_bar_details['system']) === 0 || !$exists) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                     }
                 }
 
@@ -554,7 +543,7 @@ class AuthWithCredentialController extends Controller
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $reg_system_role);
                 }
             }
 
@@ -571,11 +560,11 @@ class AuthWithCredentialController extends Controller
 
                 $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-                if($exists){
+                if ($exists) {
                     foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $jo_system_role->system_id) {
                             $system_role_exist = false;
-    
+
                             // Check if role exist in the system
                             foreach ($system['roles'] as $value) {
                                 if ($value['name'] === $role->name) {
@@ -583,27 +572,27 @@ class AuthWithCredentialController extends Controller
                                     break; // No need to continue checking once the role is found
                                 }
                             }
-    
+
                             if (!$system_role_exist) {
                                 $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-    
+
                                 $cacheExpiration = Carbon::now()->addYear();
                                 Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-    
+
                                 $system['roles'][] = [
                                     'id' => $jo_system_roles_data['id'],
                                     'name' => $jo_system_roles_data['name']
                                 ];
-    
+
                                 // Convert the array of objects to a collection
                                 $modulesCollection = collect($system['modules']);
-    
+
                                 foreach ($jo_system_roles_data['modules'] as $role_module) {
                                     // Check if the module with the code exists in the collection
                                     $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                         return $module['code'] === $role_module['code'];
                                     });
-    
+
                                     if ($existingModuleIndex !== false) {
                                         // If the module exists, modify its permissions
                                         $existingModule = $modulesCollection->get($existingModuleIndex);
@@ -619,7 +608,7 @@ class AuthWithCredentialController extends Controller
                                         $modulesCollection->push($role_module);
                                     }
                                 }
-    
+
                                 // Assign back the modified modules collection to the system
                                 $system['modules'] = $modulesCollection->toArray();
                             }
@@ -633,7 +622,7 @@ class AuthWithCredentialController extends Controller
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $jo_system_role);
                 }
             }
         }
@@ -641,13 +630,12 @@ class AuthWithCredentialController extends Controller
         $public_system_roles = PositionSystemRole::where('is_public', 1)->get();
 
 
-        foreach($public_system_roles as $public_system_role)
-        {
+        foreach ($public_system_roles as $public_system_role) {
             $system_role_value = $public_system_role->systemRole;
             $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-            if(count($side_bar_details['system']) === 0 || !$exists){
-                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$public_system_role->systemRole);
+            if (count($side_bar_details['system']) === 0 || !$exists) {
+                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $public_system_role->systemRole);
                 continue;
             }
 
@@ -711,7 +699,7 @@ class AuthWithCredentialController extends Controller
     private function generateSystemSessionID($user_id, $system)
     {
         $sessionId = Str::uuid();
-                
+
         SystemUserSessions::create([
             'user_id' => $user_id,
             'system_code' => $system['code'],
@@ -720,11 +708,11 @@ class AuthWithCredentialController extends Controller
 
         $domain =  Crypt::decrypt($system['domain']);
 
-        if($system['code'] === 'UMIS'){
+        if ($system['code'] === 'UMIS') {
             return $domain;
         }
 
-        return $domain."/signing-in/".$sessionId;
+        return $domain . "/signing-in/" . $sessionId;
     }
 
     private function buildSystemDetails($user_id, $system_role)
@@ -734,7 +722,7 @@ class AuthWithCredentialController extends Controller
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name']
-        ];        
+        ];
 
         return [
             'id' => $system_role->system['id'],
@@ -907,6 +895,8 @@ class AuthWithCredentialController extends Controller
             }
         }
 
+        $is_digisig_registered = DigitalCertificate::where('employee_profile_id', $employee_profile->id)->exists();
+
         return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
@@ -949,7 +939,8 @@ class AuthWithCredentialController extends Controller
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
             'area_id' => $area_assigned['details']->id,
-            'side_bar_details' => $side_bar_details
+            'side_bar_details' => $side_bar_details,
+            'is_digisig_registered' => $is_digisig_registered
         ];
     }
 }

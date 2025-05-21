@@ -95,6 +95,254 @@ class BioController extends Controller
         }
     }
 
+    /**
+     * Summary of registerBiometricDevice [VERSION2]
+     * 
+     * Register biometric device
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function registerBiometricDevice(Request $request)
+    {
+        $device_name = $request->device_name;
+        $ip_address = $request->ip_address;
+        $com_key = 0;
+        $soap_port = 80;
+        $udp_port = 4370;
+        $serial_number = $request->serial_number;
+        $mac_address = $request->mac_address;
+
+        $device_exist = Devices::where('ip_address', $ip_address)->where('device_name', $device_name)->first();
+
+        if($device_exist){
+            return response()->json(['message' => "Device already exist or IP already in used."], Response::HTTP_BAD_REQUEST);
+        }
+
+        $new_biometric = Devices::create([
+            'device_name' => $device_name,
+            'ip_address' => $ip_address,
+            'com_key' => $com_key,
+            'soap_port' => $soap_port,
+            'udp_port' => $udp_port,
+            'serial_number' => $serial_number,
+            'mac_address' => $mac_address
+        ]);
+
+        return response()->json([
+            'data' => $new_biometric,
+            'message' => "Successfully registered biometric device."
+        ], \Symfony\Component\HttpFoundation\Response::HTTP_CREATED);
+    }
+
+    /**
+     * Summary of composeNameWithBiometricIDAndUpdateBiometric [VERSION2]
+     * 
+     * This will modify the existing biometric record to have a second name
+     * that will be use for phase2 of testing
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function composeNameWithBiometricIDAndUpdateBiometric(Request $request)
+    {
+        DB::beginTransaction();
+
+        $biometrics = Biometrics::whereNull('name_with_biometric')->get();
+
+        try{
+            foreach($biometrics as $biometric){
+                $employee = EmployeeProfile::where('biometric_id', $biometric->biometric_id)->first();
+
+                if(!$employee){
+                    continue;
+                }
+
+                $personal_information = $employee->personalInformation;
+                $name_with_biometric = $employee->employee_id.'-'.$personal_information->last_name;
+                $biometric->update(['name_with_biometric' => $name_with_biometric]);
+            }
+        }catch(\Throwable $th){
+            DB::rollBack();
+            return response()->json([
+                'data' => $th->getMessage(),
+                'message' => "Failed to patch records."
+            ], \Symfony\Component\HttpFoundation\Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'data' => Biometrics::all(),
+            'message' => "Successfully update records"
+        ], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+    }
+
+    /**
+     * Summary of checkUserDataByBiometricID [VERSION2]
+     * 
+     * for troubleshooting when checking device user records
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function checkDeviceUserRecords(Request $request)
+    {
+        $biometric_id = $request->biometric_id;
+        $device_name = $request->device_name;
+
+        $device = Devices::where('device_name', operator: $device_name)->first();
+
+        if(!$device){
+            return response()->json(['message' => "Device not found."], \Symfony\Component\HttpFoundation\Response::HTTP_NOT_FOUND);
+        }
+
+        $result = $this->device->checkDeviceUserRecords($device);
+
+        if(count($result['data']) === 0){
+            return response()->json(['message' => $result['message']], \Symfony\Component\HttpFoundation\Response::HTTP_BAD_REQUEST);
+        }
+
+        return response()->json($result, \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+    }
+
+    /**
+     * Summary of checkUserDataByBiometricID [VERSION2]
+     * 
+     * for troubleshooting when checking if user biometric details is registered in
+     * a target device.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function checkUserBiometricDetailsFromDevice(Request $request)
+    {
+        $biometric_id = $request->query('biometric_id');
+        $device_id = $request->query('device_id');
+
+        $device = Devices::find($device_id);
+
+        if(!$device){
+            return response()->json(['message' => "Device not found."], \Symfony\Component\HttpFoundation\Response::HTTP_NOT_FOUND);
+        }
+
+        $result = $this->device->connectAndRetrieveUserDetailsFromDevice($device, $biometric_id);
+
+        if(count($result['data']) === 0){
+            return response()->json(['message' => $result['message']], \Symfony\Component\HttpFoundation\Response::HTTP_BAD_REQUEST);
+        }
+
+        return response()->json($result, \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+    }
+
+    /**
+     * Summary of extractFieldsFromJsonWithGivenFieldKey [VERSION2]
+     * 
+     * @param mixed $device_user_records
+     * @param mixed $targetField
+     * @return array
+     */
+    private function extractFieldsFromJsonWithGivenFieldKey($device_user_records, $targetField)
+    {
+        $extracted_data = array_column($device_user_records, $targetField);
+
+        return $extracted_data;
+    }
+
+    /**
+     * Summary of countNumberNameFormatEntries
+     * 
+     * This will check the total number of entries with proper name format
+     * @param array $data
+     * @return int
+     */
+    private function countNumberNameFormatEntries(array $data): int
+    {
+        $count = 0;
+        
+        foreach ($data as $entry) {
+            if (isset($entry['Name']) && is_string($entry['Name'])) {
+                $name = trim($entry['Name']);
+                
+                // Updated pattern to handle:
+                // 1. Numbers at start
+                // 2. Multiple hyphens
+                // 3. Special characters (ñ, etc.)
+                // 4. Apostrophes and other name characters
+                if (preg_match('/^\d+(-\s*[\p{L}\s\'\-]+)+$/u', $name)) {
+                    $count++;
+                } 
+                // else {
+                //     // For debugging:
+                //     echo "Non-matching name: '$name'\n";
+                // }
+            }
+        }
+        
+        return $count;
+    }
+
+    private function retrieveTotalBiometricRecords()
+    {
+        return Biometrics::whereNotNull('name_with_biometric')
+            ->whereNot('biometric', 'NOT_YET_REGISTERED')
+            ->whereExists(function($query) {
+                $query->select(DB::raw(1))
+                    ->from('employee_profiles')
+                    ->whereColumn('employee_profiles.biometric_id', 'biometrics.biometric_id')
+                    ->whereNotNull('employee_profiles.employee_id');
+            })
+            ->count();
+    }
+
+    /**
+     * Summary of populateBiometricDeviceWithoutOveridingExistingRecords [VERSION2]
+     * 
+     * Check if device exist, then check if it has existing user details registered
+     * and populate the device with non-existing record
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function populateBiometricDeviceWithoutOveridingExistingRecords(Request $request)
+    {
+        try {
+            $start = microtime(true);
+            $device_id = $request->query('device_id');
+            $biometric_device = Devices::where('id', operator: $device_id)->first();
+            $extracted_user_names = [];
+            
+            $existing_users_of_the_device = $this->device->checkDeviceUserRecords($biometric_device);
+
+            if(count($existing_users_of_the_device['data']) > 0){
+                $extracted_user_names = $this->extractFieldsFromJsonWithGivenFieldKey($existing_users_of_the_device['data'], 'Name');
+            }
+
+            $result = $this->device->populateBiometricDeviceWithEmployeesBiometricRecord($biometric_device, $extracted_user_names);
+
+            $latest_device_record = $this->device->checkDeviceUserRecords($biometric_device);
+            $total_success_entries = $this->countNumberNameFormatEntries($latest_device_record['data']);
+            $total_biometric_records = $this->retrieveTotalBiometricRecords();
+
+            // return response()->json(['message' => $this->$total_success_entries], 500);
+
+            return response()->json([
+                'data' => $result,
+                'message' => 'Successfully populate device.',
+                'meta' => [
+                    "total_success_entries" => $total_success_entries,
+                    "total_biometric_records" => $total_biometric_records,
+                    "percentage_uploaded" => number_format(($total_success_entries / $total_biometric_records) * 100, 2) . "%",
+                    "device_name" => $biometric_device->device_name,
+                    "duration(milliseconds)" => round((microtime(true) - $start) * 1000),
+                ]
+            ], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'populateBiometricDeviceWithoutOveridingExistingRecords', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
     public function fetchUserFromDevice(Request $request)
     {
         try {
@@ -108,16 +356,15 @@ class BioController extends Controller
             if (!$dvc) {
                 return response()->json(['message' => 'Failed to pull data']);
             }
-
+            
             foreach ($biometric_id as $key => $value) {
                 $this->device->fetchUserDataFromDeviceToDB($dvc, $value);
-                // if ($this->device->fetchUserDataFromDeviceToDB($dvc, $value)) {
-                //     if ($this->device->validateTemplate($dvc, $value)) {
-                //         $this->device->deleteDataFromDevice($dvc, $value); //DELETE USER INFO , IF FINGERPRINT DETECTED
-                //     }
-                // }
+                if ($this->device->fetchUserDataFromDeviceToDB($dvc, $value)) {
+                    if ($this->device->validateTemplate($dvc, $value)) {
+                        $this->device->deleteDataFromDevice($dvc, $value); //DELETE USER INFO , IF FINGERPRINT DETECTED
+                    }
+                }
             }
-
 
             return response()->json(['message' => 'User Data from Device has been pulled successfully!']);
         } catch (\Throwable $th) {
@@ -159,17 +406,19 @@ class BioController extends Controller
     TO DO --- ip address
     get all the device ID for this function to apply in each devices
     */
+
+    // Push user biometric records to biometric device (Fingerprint)
     public function fetchBIOToDevice()
     {
         try {
           
             $devices = Devices::where('id', 1)->get();
-
            
             foreach ($devices as $dv) {
                 // $bios = Devices::where('id', $dv)->get();
              return   $this->device->fetchAllDataToDevice($dv);
             }
+
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'fetchBIOToDevice', $th->getMessage());
