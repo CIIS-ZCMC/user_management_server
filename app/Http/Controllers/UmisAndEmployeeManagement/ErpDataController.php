@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Division;
 use App\Models\Department;
@@ -32,6 +33,7 @@ class ErpDataController extends Controller
                 'divisions' => $divisions->map(function ($item) {
                     return [
                         'id' => $item->id,
+                        'area_id' => $item->area_id,
                         'code' => $item->code,
                         'name' => $item->name,
                         'chief_employee_profile_id' => $item->chief_employee_profile_id,
@@ -41,6 +43,7 @@ class ErpDataController extends Controller
                 'departments' => $departments->map(function ($item) {
                     return [
                         'id' => $item->id,
+                        'area_id' => $item->area_id,
                         'code' => $item->code,
                         'name' => $item->name,
                         'division_id' => $item->division_id,
@@ -51,6 +54,7 @@ class ErpDataController extends Controller
                 'sections' => $sections->map(function ($item) {
                     return [
                         'id' => $item->id,
+                        'area_id' => $item->area_id,
                         'code' => $item->code,
                         'name' => $item->name,
                         'division_id' => $item->division_id,
@@ -62,6 +66,7 @@ class ErpDataController extends Controller
                 'units' => $units->map(function ($item) {
                     return [
                         'id' => $item->id,
+                        'area_id' => $item->area_id,
                         'code' => $item->code,
                         'name' => $item->name,
                         'section_id' => $item->section_id,
