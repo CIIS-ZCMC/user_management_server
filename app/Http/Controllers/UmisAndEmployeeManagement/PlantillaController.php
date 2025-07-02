@@ -41,9 +41,8 @@ class PlantillaController extends Controller
     {
         try {
             $search = $request->query('search');
-            $current_page = $request->query('currentPage');
+            $current_page = $request->query('currentPage') ?? 1;  
             $limit = $request->query("limit");
-            $offset = $current_page === 1 ? 0 : $current_page * $limit;
             $salary_grade = $request->query('salaryGrade');
             $area_name = $request->query('areaName');
 
@@ -55,8 +54,7 @@ class PlantillaController extends Controller
                     return $query->whereHas('plantilla.designation.salaryGrade', function ($query) use ($salary_grade) {
                         $query->where('salary_grade_number', $salary_grade);
                     });
-                })
-                ->get();
+                })->paginate($limit, ['*'], 'page', $current_page);
 
             if($area_name) {
                 $filteredPlantillas = $plantillas->filter(function ($plantilla) use ($area_name) {
@@ -64,17 +62,18 @@ class PlantillaController extends Controller
                     return strpos(strtolower($areaDetails['name']), strtolower($area_name)) !== false;
                 });
 
-                return response()->json([
-                    'data' => PlantillaNumberAllResource::collection($filteredPlantillas),
-                    'total_page_count' => $filteredPlantillas < $limit? 1 : ceil(count($filteredPlantillas) / $limit),
-                    'message' => 'Area Plantilla list retrieved.'
-                ], Response::HTTP_OK);
+                return PlantillaNumberAllResource::collection($filteredPlantillas)
+                    ->additional([
+                        'meta' => [],
+                        'message' => 'Plantilla list retrieved.'
+                    ]);
             }
 
-            return response()->json([
-                'data' => PlantillaNumberAllResource::collection($plantillas),
-                'message' => 'Plantilla list retrieved.'
-            ], Response::HTTP_OK);
+            return PlantillaNumberAllResource::collection($plantillas)
+              ->additional([
+                  'meta' => [],
+                  'message' => 'Plantilla list retrieved.'
+              ]);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
