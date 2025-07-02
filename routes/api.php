@@ -254,7 +254,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
-            Route::put('system-generate-key/{id}', 'SystemController@generateAPIKey');
+            Route::put('system-generate-key/{system}', 'SystemController@generateAPIKey');
         });
 
         Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {

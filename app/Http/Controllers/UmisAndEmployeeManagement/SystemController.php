@@ -765,8 +765,8 @@ class SystemController extends Controller
                 return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
             }
 
-            $cleanData['api_key'] = Str::random(60);
-            $system = System::create($cleanData);
+            // $cleanData['api_key'] = Str::random(60);
+            $system = System::create(attributes: $cleanData);
             
             $log = Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
@@ -787,33 +787,19 @@ class SystemController extends Controller
      * The ID will be validated if it is has a record in the system record
      * if TRUE then the system will generate a API Key that will be encrypted before storing in the System Details Record.
      */
-    public function generateAPIKey($id, Request $request)
+    public function generateAPIKey(Request $request, System $system)            
     {
-        try{
-            $system = System::find($id);
+        $apiKey = base64_encode(random_bytes(32));
 
-            if(!$system){
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
+        $encrypted_api_key = Crypt::encrypt($apiKey);
+        $system->update(['api_key' => $encrypted_api_key]);
 
-            $apiKey = base64_encode(random_bytes(32));
-
-            $encrypted_api_key = Crypt::encrypt($apiKey);
-
-            $system -> api_key = $encrypted_api_key;
-            $system -> updated_at = now();
-            $system -> save();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response() -> json([
-                'data' => new SystemResource($system),
-                'message' => 'System record updated.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        Helpers::registerSystemLogs($request, $system->id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
+        
+        return (new SystemResource($system))
+          ->additional([
+            'message' => 'System record updated.'
+          ]);
     }
 
     /**
