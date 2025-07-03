@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'umis' => [
+        'secret' => env('UMIS_SECRET'),
+        'erp_url' => env('ERP_URL'),
+    ],
+
 ];

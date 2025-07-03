@@ -103,7 +103,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         // VERSION 2
-        Route::namespace('Authentication')->group(callback: function(){         
+        Route::namespace('Authentication')->group(callback: function(){
             Route::delete('sign-out', 'AuthWithCredentialController@destroy');
         });
 
@@ -1755,8 +1755,8 @@ Route::middleware('auth.cookie')->group(function () {
 
     /**
      * TROUBLE SHOOT
-     * Daily Time Record Management 
-     * 
+     * Daily Time Record Management
+     *
      * VERSION 2
      */
     Route::namespace('App\Http\Controllers\DTR')->group(function(){
