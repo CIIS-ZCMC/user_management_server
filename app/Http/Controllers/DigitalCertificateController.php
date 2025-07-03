@@ -22,8 +22,8 @@ class DigitalCertificateController extends Controller
     use DigitalCertificateLoggable;
 
     private string $CONTROLLER_NAME = 'DigitalCertificateController';
-    protected $signatureService;
-    protected $dtrSigningService;
+    protected DigitalSignatureService $signatureService;
+    protected DtrSigningService $dtrSigningService;
 
     public function __construct(
         DigitalSignatureService $signatureService,
@@ -56,16 +56,8 @@ class DigitalCertificateController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return response()->json(['message' => 'Method not allowed'], Response::HTTP_METHOD_NOT_ALLOWED);
-    }
-
-    /**
      * Store a newly created resource in storage.
-     * Registration of the users to upload their digital certificates 
+     * Registration of the users to upload their digital certificates
      */
     public function store(Request $request): JsonResponse
     {
@@ -112,7 +104,7 @@ class DigitalCertificateController extends Controller
             // Validate certificate password
             $cert_file = $request->file('cert_file');
             $cert_content = file_get_contents($cert_file->path());
-            
+
             if (!$this->validateCertificatePassword($cert_content, $request->cert_password)) {
                 DB::rollBack();
                 return response()->json(['message' => 'Invalid certificate password.'], Response::HTTP_BAD_REQUEST);
@@ -801,5 +793,5 @@ class DigitalCertificateController extends Controller
         }
     }
 
-   
+
 }
