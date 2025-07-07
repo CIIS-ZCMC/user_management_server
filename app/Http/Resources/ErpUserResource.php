@@ -25,6 +25,7 @@ class ErpUserResource extends JsonResource
             'name' => $this->personalInformation->employeeName(),
             'email' => $this->personalInformation->contact->email_address ?? null,
             'profile_url' => $this->profile_url ?? null,
+            'authorization_pin' => $this->authorization_pin ?? null,
         ];
     }
 }

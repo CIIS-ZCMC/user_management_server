@@ -260,7 +260,7 @@ class SectionController extends Controller
             }
 
             $section = Section::create($cleanData);
-            ErpNotifier::notifyImportTrigger();
+            ErpNotifier::notifySectionImport();
             Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
