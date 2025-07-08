@@ -381,7 +381,7 @@ class SectionController extends Controller
             // }
 
             $section->update($cleanData);
-
+            ErpNotifier::notifySectionImport();
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
@@ -447,6 +447,7 @@ class SectionController extends Controller
             }
 
             $section->delete();
+            ErpNotifier::notifySectionImport();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
 
