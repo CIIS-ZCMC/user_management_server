@@ -102,6 +102,7 @@ class SectionController extends Controller
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
             $section->update($cleanData);
+            ErpNotifier::notifySectionImport();
 
             if ($section->area_id === 'HOPPS-HRMO-DE-001') {
                 $role = Role::where('code', 'HRMO-HEAD-01')->first();
@@ -211,6 +212,7 @@ class SectionController extends Controller
             $cleanData['oic_end_at'] = strip_tags($request->end_at);
 
             $section->update($cleanData);
+            ErpNotifier::notifySectionImport();
 
             Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of " . $section->name . " division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge ' . $this->PLURAL_MODULE_NAME . '.');
