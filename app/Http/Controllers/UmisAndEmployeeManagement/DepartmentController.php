@@ -285,7 +285,9 @@ class DepartmentController extends Controller
             }
 
             $department = Department::create($cleanData);
+
             ErpNotifier::notifyDepartmentImport();
+            \Log::info('📌 dePARTMENT right before import', $department->toArray());
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 

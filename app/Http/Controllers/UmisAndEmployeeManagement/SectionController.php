@@ -263,6 +263,7 @@ class SectionController extends Controller
 
             $section = Section::create($cleanData);
             ErpNotifier::notifySectionImport();
+            \Log::info('📌 Section right before import', $section->toArray());
             Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
