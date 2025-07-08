@@ -26,6 +26,7 @@ use App\Http\Resources\DepartmentResource;
 use App\Models\Division;
 use App\Models\Department;
 use App\Models\EmployeeProfile;
+use App\Services\ErpNotifier;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DepartmentController extends Controller
@@ -97,6 +98,7 @@ class DepartmentController extends Controller
             $cleanData['head_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
+            ErpNotifier::notifyDepartmentImport();
 
             $role = Role::where('code', 'DEPT-HEAD-01')->first();
             $system_role = SystemRole::where('role_id', $role->id)->first();
@@ -183,6 +185,7 @@ class DepartmentController extends Controller
             $cleanData['training_officer_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
+            ErpNotifier::notifyDepartmentImport();
 
             Helpers::notifications($employee_profile->id, "You been assigned as training officer of " . $department->name . " department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head' . $this->PLURAL_MODULE_NAME . '.');
@@ -235,6 +238,7 @@ class DepartmentController extends Controller
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
             $department->update($cleanData);
+            ErpNotifier::notifyDepartmentImport();
 
             Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of " . $department->name . " department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge ' . $this->PLURAL_MODULE_NAME . '.');
@@ -281,6 +285,7 @@ class DepartmentController extends Controller
             }
 
             $department = Department::create($cleanData);
+            ErpNotifier::notifyDepartmentImport();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
@@ -350,6 +355,7 @@ class DepartmentController extends Controller
             }
 
             $department->update($cleanData);
+            ErpNotifier::notifyDepartmentImport();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
@@ -367,8 +373,8 @@ class DepartmentController extends Controller
     {
         $search = $request->query('search');
 
-        if($search){
-            return DepartmentsResource::collection(Department::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+        if ($search) {
+            return DepartmentsResource::collection(Department::onlyTrashed()->where('name', 'like', '%' . $search . '%')->get())
                 ->additional([
                     "meta" => [
                         "methods" => "[GET, POST, PUT, DELETE]",
@@ -416,6 +422,7 @@ class DepartmentController extends Controller
             }
 
             $department->delete();
+            ErpNotifier::notifyDepartmentImport();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
 
