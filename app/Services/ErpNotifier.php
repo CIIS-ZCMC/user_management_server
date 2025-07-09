@@ -74,4 +74,27 @@ class ErpNotifier
             return false;
         }
     }
+
+    public static function notifyDivisionImport(): bool
+    {
+        try {
+            \Log::info('🔄 UMIS is triggering ERP division import');
+
+            $response = Http::withHeaders([
+                'X-UMIS-SECRET' => config('services.umis.secret'),
+            ])->post(config('services.umis.erp_url') . '/api/trigger-imports', [
+                'type' => 'divisions',
+            ]);
+
+            \Log::info('📬 ERP response', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return $response->successful();
+        } catch (\Throwable $e) {
+            \Log::error('❌ Failed to notify ERP system (divisions)', ['error' => $e->getMessage()]);
+            return false;
+        }
+    }
 }

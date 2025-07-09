@@ -27,6 +27,7 @@ use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Resources\DivisionResource;
 use App\Models\Division;
 use App\Models\EmployeeProfile;
+use App\Services\ErpNotifier;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DivisionController extends Controller
@@ -101,6 +102,9 @@ class DivisionController extends Controller
             $cleanData['chief_effective_at'] = Carbon::now();
 
             $division->update($cleanData);
+            ErpNotifier::notifyDivisionImport();
+            \Log::info('📌 Division right before import', $division->toArray());
+
 
             if ($division->area_id === 'OMCC-DI-001') {
                 $role = Role::where('code', 'OMCC-01')->first();
@@ -213,6 +217,7 @@ class DivisionController extends Controller
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
             $division->update($cleanData);
+            ErpNotifier::notifyDivisionImport();
 
             // Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of " . $division->name . " division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief ' . $this->PLURAL_MODULE_NAME . '.');
@@ -252,7 +257,7 @@ class DivisionController extends Controller
             }
 
             $division = Division::create($cleanData);
-
+            ErpNotifier::notifyDivisionImport();
             Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
 
@@ -317,7 +322,7 @@ class DivisionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
             $division->update($cleanData);
-
+            ErpNotifier::notifyDivisionImport();
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
@@ -330,12 +335,12 @@ class DivisionController extends Controller
         }
     }
 
-    public function trash(Request $request):JsonResponse
+    public function trash(Request $request): JsonResponse
     {
         $search = $request->query('search');
 
-        if($search){
-            return DivisionsResource::collection(Division::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+        if ($search) {
+            return DivisionsResource::collection(Division::onlyTrashed()->where('name', 'like', '%' . $search . '%')->get())
                 ->additional([
                     "meta" => [
                         "methods" => "[GET, POST, PUT, DELETE]",
@@ -353,7 +358,7 @@ class DivisionController extends Controller
             ])->response();
     }
 
-    public function restore($id, Request $request): DivisionsResource  
+    public function restore($id, Request $request): DivisionsResource
     {
         Division::withTrashed()->find($id)->restore();
 
