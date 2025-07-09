@@ -97,4 +97,27 @@ class ErpNotifier
             return false;
         }
     }
+
+    public static function notifyUnitImport(): bool
+    {
+        try {
+            \Log::info('🔄 UMIS is triggering ERP unit import');
+
+            $response = Http::withHeaders([
+                'X-UMIS-SECRET' => config('services.umis.secret'),
+            ])->post(config('services.umis.erp_url') . '/api/trigger-imports', [
+                'type' => 'units',
+            ]);
+
+            \Log::info('📬 ERP response', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return $response->successful();
+        } catch (\Throwable $e) {
+            \Log::error('❌ Failed to notify ERP system (units)', ['error' => $e->getMessage()]);
+            return false;
+        }
+    }
 }

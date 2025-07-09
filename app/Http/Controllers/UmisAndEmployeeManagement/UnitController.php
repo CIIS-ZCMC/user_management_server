@@ -28,10 +28,11 @@ use App\Http\Requests\UnitAssignHeadRequest;
 use App\Http\Resources\UnitResource;
 use App\Models\Unit;
 use App\Models\EmployeeProfile;
+use App\Services\ErpNotifier;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class UnitController extends Controller
-{  
+{
     private $CONTROLLER_NAME = 'Unit';
     private $PLURAL_MODULE_NAME = 'units';
     private $SINGULAR_MODULE_NAME = 'unit';
@@ -45,10 +46,10 @@ class UnitController extends Controller
 
     public function index(Request $request)
     {
-        try{
+        try {
             $cacheExpiration = Carbon::now()->addDay();
 
-            $units = Cache::remember('units', $cacheExpiration, function(){
+            $units = Cache::remember('units', $cacheExpiration, function () {
                 return Unit::all();
             });
 
@@ -56,19 +57,19 @@ class UnitController extends Controller
                 'data' => UnitResource::collection($units),
                 'message' => 'Unit list retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
      * Assign Supervisor
      * This must be in unit
      */
     public function assignHeadByEmployeeID($id, UnitAssignHeadRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $previous_head = null;
             $system_role = null;
@@ -80,29 +81,27 @@ class UnitController extends Controller
 
             $unit = Unit::find($id);
 
-            if(!$unit)
-            {
+            if (!$unit) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }  
+            }
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
 
-            if(!$employee_profile)
-            {
+            if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            } 
+            }
 
-            if($unit->head_employee_profile_id !== null){
+            if ($unit->head_employee_profile_id !== null) {
                 $previous_head = $unit->head_employee_profile_id;
             }
 
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
-            $cleanData['head_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
+            $cleanData['head_attachment_url'] = $request->attachment === null ? 'NONE' : $this->file_validation_and_upload->check_save_file($request, "unit/files");
             $cleanData['head_effective_at'] = Carbon::now();
 
             $unit->update($cleanData);
-            
+            ErpNotifier::notifyUnitImport();
             $role = Role::where('code', 'UNIT-HEAD-01')->first();
             $system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -114,16 +113,16 @@ class UnitController extends Controller
             /**
              * Revoke Previous Head rights as Division Head
              */
-            if($previous_head !== null){
+            if ($previous_head !== null) {
                 $access_right = SpecialAccessRole::where('employee_profile_id', $previous_head)->where('system_role_id', $system_role->id)->first();
                 $access_right->delete();
             }
 
-              
+
             $title = "Congratulations!";
             $description = "You have been assigned as unit head of " . $unit->name;
-            
-            
+
+
             $notification = Notifications::create([
                 "title" => $title,
                 "description" => $description,
@@ -142,14 +141,14 @@ class UnitController extends Controller
 
 
             // Helpers::notifications($employee_profile->id, "You been assigned as unit head of ".$unit->name." unit.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
-                'data' => new UnitResource($unit), 
+                'data' => new UnitResource($unit),
                 'message' => 'New unit head assigned.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -161,7 +160,7 @@ class UnitController extends Controller
      */
     public function assignOICByEmployeeID($id, UnitAssignOICRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -171,59 +170,55 @@ class UnitController extends Controller
 
             $unit = Unit::find($id);
 
-            if(!$unit)
-            {
+            if (!$unit) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }  
+            }
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
 
-            if(!$employee_profile)
-            {
+            if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            } 
+            }
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
+            $cleanData['oic_attachment_url'] = $request->attachment === null ? 'NONE' : $this->file_validation_and_upload->check_save_file($request, "unit/files");
             $cleanData['oic_effective_at'] = strip_tags($request->effective_at);
             $cleanData['oic_end_at'] = strip_tags($request->end_at);
 
             $unit->update($cleanData);
-
-            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$unit->name." unit.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
+            ErpNotifier::notifyUnitImport();
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of " . $unit->name . " unit.");
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => new UnitResource($unit),
                 'message' => 'Officer incharge assigned to unit'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function store(UnitRequest $request)
     {
-        try{
+        try {
             $cleanData = [];
 
             $section = Section::find($request->section_id);
 
-            if(!$section){
+            if (!$section) {
                 return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
             }
-            
+
             foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                if($key === 'attachment')
-                {
-                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request,'unit/files');
+                if ($key === 'attachment') {
+                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'unit/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -231,45 +226,44 @@ class UnitController extends Controller
 
             $check_if_exist =  Unit::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
 
-            if($check_if_exist !== null){
+            if ($check_if_exist !== null) {
                 return response()->json(['message' => 'Unit already exist.'], Response::HTTP_FORBIDDEN);
             }
 
             $unit = Unit::create($cleanData);
-
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            ErpNotifier::notifyUnitImport();
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' =>  new UnitResource($unit),
                 'message' => 'Unit created successfully.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function show($id, Request $request)
     {
-        try{
+        try {
             $unit = Unit::find($id);
 
-            if(!$unit)
-            {
+            if (!$unit) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             return response()->json(['data' => new UnitResource($unit), 'message' => 'Unit record found.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-             Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, UnitRequest $request)
     {
 
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -279,53 +273,50 @@ class UnitController extends Controller
 
             $unit = Unit::find($id);
 
-            if(!$unit)
-            {
+            if (!$unit) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $section = Section::find($request->section_id);
 
-            if(!$section){
+            if (!$section) {
                 return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
             }
 
             $cleanData = [];
-            
+
             foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                if($key === 'attachment')
-                {
-                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request,'unit/files');
+                if ($key === 'attachment') {
+                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'unit/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $unit -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $unit->update($cleanData);
+            ErpNotifier::notifyUnitImport();
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' =>  new UnitResource($unit),
                 'message' => 'Unit updated successfully'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function trash(Request $request):JsonResponse
+    public function trash(Request $request): JsonResponse
     {
         $search = $request->query('search');
 
-        if($search){
-            return UnitsResource::collection(Unit::onlyTrashed()->where('name', 'like', '%'.$search.'%')->get())
+        if ($search) {
+            return UnitsResource::collection(Unit::onlyTrashed()->where('name', 'like', '%' . $search . '%')->get())
                 ->additional([
                     "meta" => [
                         "methods" => "[GET, POST, PUT, DELETE]",
@@ -342,7 +333,7 @@ class UnitController extends Controller
                 "message" => "Successfully retrieve all deleted record."
             ])->response();
     }
-    
+
     public function restore($id, Request $request): JsonResponse
     {
         Unit::withTrashed()->find($id)->restore();
@@ -358,7 +349,7 @@ class UnitController extends Controller
 
     public function destroy($id, Request $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -368,18 +359,17 @@ class UnitController extends Controller
 
             $unit = Unit::findOrFail($id);
 
-            if(!$unit)
-            {
+            if (!$unit) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $unit -> delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $unit->delete();
+            ErpNotifier::notifyUnitImport();
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json(['message' => 'Unit deleted successfully.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
