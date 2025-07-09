@@ -267,14 +267,15 @@ class DepartmentController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if ($value === null) {
-                    $cleanData[$key] = $value;
+                if ($value === null && !in_array($key, ['head_employee_profile_id', 'oic_employee_profile_id'])) {
                     continue;
                 }
+
                 if ($key === 'attachment') {
                     $cleanData['department_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'department/files');
                     continue;
                 }
+
                 $cleanData[$key] = strip_tags($value);
             }
 

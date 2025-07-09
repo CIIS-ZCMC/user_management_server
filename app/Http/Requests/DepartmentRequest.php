@@ -26,6 +26,8 @@ class DepartmentRequest extends FormRequest
             'code' => 'required|string|max:255',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
             'division_id' => 'required|integer',
+            // 'head_employee_profile_id' => 'nullable|integer|exists:users,id',
+            // 'oic_employee_profile_id' => 'nullable|integer|exists:users,id',
             // 'password' => 'required|string|max:255'
         ];
     }
