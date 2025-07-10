@@ -4269,6 +4269,7 @@ class EmployeeProfileController extends Controller
 
     public function store(EmployeeProfileNewResource $request)
     {
+
         try {
             $personal_information_value = json_decode($request->personal_information);
             DB::beginTransaction();
@@ -4580,6 +4581,8 @@ class EmployeeProfileController extends Controller
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
             AssignArea::create($cleanData);
+
+            ErpNotifier::notifyAssignedAreaImport();
 
             if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
