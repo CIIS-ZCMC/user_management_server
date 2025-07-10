@@ -103,7 +103,7 @@ use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\EmployeesAssignedAreaResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
 use App\Models\LeaveApplication;
-
+use App\Services\ErpNotifier;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use PhpParser\Node\Expr\Assign;
@@ -364,14 +364,14 @@ class EmployeeProfileController extends Controller
 
                 $message = null;
 
-                if($currentYear > $passwordYear){
+                if ($currentYear > $passwordYear) {
                     $message = "Your account password has expired, it is mandatory to change the password.";
-                }else{
+                } else {
                     $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
                 return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
-                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -540,7 +540,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                         continue;
                     }
 
@@ -599,7 +599,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                     }
                 }
 
@@ -609,7 +609,7 @@ class EmployeeProfileController extends Controller
         } else {
             $side_bar_details = $sidebar_cache;
         }
-        
+
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -643,7 +643,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                         continue;
                     }
 
@@ -701,13 +701,13 @@ class EmployeeProfileController extends Controller
                         }
                     }
 
-                    /** 
+                    /**
                      * On empty system this will direct insert the system
                      * Or
                      * when system is not empty but the target system doesn't exist this will append to it
                      */
                     if (count($side_bar_details['system']) === 0 || !$exists) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                     }
                 }
 
@@ -778,13 +778,13 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                /** 
+                /**
                  * On empty system this will direct insert the system
                  * Or
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $reg_system_role);
                 }
             }
 
@@ -801,11 +801,11 @@ class EmployeeProfileController extends Controller
 
                 $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-                if($exists){
+                if ($exists) {
                     foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $jo_system_role->system_id) {
                             $system_role_exist = false;
-    
+
                             // Check if role exist in the system
                             foreach ($system['roles'] as $value) {
                                 if ($value['name'] === $role->name) {
@@ -813,27 +813,27 @@ class EmployeeProfileController extends Controller
                                     break; // No need to continue checking once the role is found
                                 }
                             }
-    
+
                             if (!$system_role_exist) {
                                 $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-    
+
                                 $cacheExpiration = Carbon::now()->addYear();
                                 Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-    
+
                                 $system['roles'][] = [
                                     'id' => $jo_system_roles_data['id'],
                                     'name' => $jo_system_roles_data['name']
                                 ];
-    
+
                                 // Convert the array of objects to a collection
                                 $modulesCollection = collect($system['modules']);
-    
+
                                 foreach ($jo_system_roles_data['modules'] as $role_module) {
                                     // Check if the module with the code exists in the collection
                                     $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                         return $module['code'] === $role_module['code'];
                                     });
-    
+
                                     if ($existingModuleIndex !== false) {
                                         // If the module exists, modify its permissions
                                         $existingModule = $modulesCollection->get($existingModuleIndex);
@@ -849,7 +849,7 @@ class EmployeeProfileController extends Controller
                                         $modulesCollection->push($role_module);
                                     }
                                 }
-    
+
                                 // Assign back the modified modules collection to the system
                                 $system['modules'] = $modulesCollection->toArray();
                             }
@@ -857,13 +857,13 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                /** 
+                /**
                  * On empty system this will direct insert the system
                  * Or
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $jo_system_role);
                 }
             }
         }
@@ -871,13 +871,12 @@ class EmployeeProfileController extends Controller
         $public_system_roles = PositionSystemRole::where('is_public', 1)->get();
 
 
-        foreach($public_system_roles as $public_system_role)
-        {
+        foreach ($public_system_roles as $public_system_role) {
             $system_role_value = $public_system_role->systemRole;
             $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-            if(count($side_bar_details['system']) === 0 || !$exists){
-                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$public_system_role->systemRole);
+            if (count($side_bar_details['system']) === 0 || !$exists) {
+                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $public_system_role->systemRole);
                 continue;
             }
 
@@ -941,7 +940,7 @@ class EmployeeProfileController extends Controller
     private function generateSystemSessionID($user_id, $system)
     {
         $sessionId = Str::uuid();
-                
+
         SystemUserSessions::create([
             'user_id' => $user_id,
             'system_code' => $system['code'],
@@ -950,11 +949,11 @@ class EmployeeProfileController extends Controller
 
         $domain =  Crypt::decrypt($system['domain']);
 
-        if($system['code'] === 'UMIS'){
+        if ($system['code'] === 'UMIS') {
             return $domain;
         }
 
-        return $domain."/signing-in/".$sessionId;
+        return $domain . "/signing-in/" . $sessionId;
     }
 
     private function buildSystemDetails($user_id, $system_role)
@@ -964,7 +963,7 @@ class EmployeeProfileController extends Controller
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name']
-        ];        
+        ];
 
         return [
             'id' => $system_role->system['id'],
@@ -1351,7 +1350,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
-            
+
             Helpers::infoLog("Test", 'wasp', "Test");
 
             return response()
@@ -4577,6 +4576,7 @@ class EmployeeProfileController extends Controller
             }
 
             $employee_profile = EmployeeProfile::create($cleanData);
+            ErpNotifier::notifyUserImport();
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
             AssignArea::create($cleanData);
@@ -5363,7 +5363,7 @@ class EmployeeProfileController extends Controller
             }
 
             $assign_area = $employee_profile->assignedArea;
-            
+
             $areas = [
                 'division_id' => $assign_area['division_id'],
                 'department_id' => $assign_area['department_id'],
@@ -5841,18 +5841,17 @@ class EmployeeProfileController extends Controller
     {
         $remarks = $request->remarks;
 
-        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%".$remarks."%")->get();
+        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%" . $remarks . "%")->get();
 
         DB::beginTransaction();
 
-        try{
-            foreach($in_active_employees as $in_active_employee)
-            {
+        try {
+            foreach ($in_active_employees as $in_active_employee) {
                 $employee_profile = EmployeeProfile::find($in_active_employee->employee_profile_id);
-    
+
                 $assign_area = AssignArea::where('employee_profile_id', $employee_profile->id)->first();
                 $assign_area_trail = AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->get();
-                
+
                 $personal_information = PersonalInformation::find($employee_profile->personal_information_id);
                 $addresses = Address::where('personal_information_id', $personal_information->id)->get();
                 $contact = Contact::where('personal_information_id', $personal_information->id)->first();
@@ -5871,101 +5870,101 @@ class EmployeeProfileController extends Controller
                 $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
                 $failed_login_trails = FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->get();
                 $employee_redcap_modules = EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->get();
-    
-                if($contact !== null){
+
+                if ($contact !== null) {
                     $contact->delete();
                 }
-    
-                if(count($addresses) > 0){
+
+                if (count($addresses) > 0) {
                     Address::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($childs) > 0){
+
+                if (count($childs) > 0) {
                     Child::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($civil_service_eligibilities) > 0){
+
+                if (count($civil_service_eligibilities) > 0) {
                     CivilServiceEligibility::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($education_backgrounds) > 0){
+
+                if (count($education_backgrounds) > 0) {
                     EducationalBackground::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($family_backgrounds) > 0){
-                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();    
+
+                if (count($family_backgrounds) > 0) {
+                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($identification_numbers) > 0){
+
+                if (count($identification_numbers) > 0) {
                     IdentificationNumber::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if($issuance_information !== null){
+
+                if ($issuance_information !== null) {
                     $issuance_information->delete();
                 }
-    
-                if(count($legal_informations) > 0){
+
+                if (count($legal_informations) > 0) {
                     LegalInformation::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($other_informations) > 0){
+
+                if (count($other_informations) > 0) {
                     OtherInformation::where("personal_information_id", $personal_information->id)->delete();
                 }
-    
-                if(count($references) > 0){
+
+                if (count($references) > 0) {
                     Reference::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($trainings) > 0){
+
+                if (count($trainings) > 0) {
                     Training::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($special_access_roles) > 0){
+
+                if (count($special_access_roles) > 0) {
                     SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->delete();
                 }
-    
-                if(count($assign_area_trail) > 0){
+
+                if (count($assign_area_trail) > 0) {
                     AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
                 }
-    
-                if($assign_area !== null){
+
+                if ($assign_area !== null) {
                     $assign_area->delete();
                 }
 
-                if(count($assign_area_trail) > 0){
+                if (count($assign_area_trail) > 0) {
                     AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
                 }
 
-                if(count($employee_leave_credits) > 0){
+                if (count($employee_leave_credits) > 0) {
                     EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->delete();
                 }
 
-                if(count($employee_overtime_credits) > 0){
-                    foreach($employee_overtime_credits as $employee_overtime_credit){
+                if (count($employee_overtime_credits) > 0) {
+                    foreach ($employee_overtime_credits as $employee_overtime_credit) {
                         EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_overtime_credit->id)->delete();
                         $employee_overtime_credit->delete();
                     }
                 }
 
-                if(count($failed_login_trails) > 0){
+                if (count($failed_login_trails) > 0) {
                     FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
                 }
 
-                if(count($employee_redcap_modules) > 0){
+                if (count($employee_redcap_modules) > 0) {
                     EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->delete();
                 }
-    
+
                 $in_active_employee->delete();
                 $employee_profile->delete();
                 $personal_information->delete();
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. ".$th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. " . $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         DB::commit();
 
-        return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
-    }    
+        return response()->json(['message' => "Successfully deleted in active employee with related remarks of " . $remarks . " ."], Response::HTTP_OK);
+    }
 }
