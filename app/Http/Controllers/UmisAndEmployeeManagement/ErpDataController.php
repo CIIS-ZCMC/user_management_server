@@ -13,6 +13,8 @@ use App\Models\Designation;
 use App\Models\EmployeeProfile;
 use App\Http\Resources\ErpUserResource;
 use App\Http\Resources\ErpAssignedAreaResource;
+use App\Http\Resources\ErpHolidayResource;
+use App\Models\Holiday;
 use Illuminate\Http\Response;
 
 class ErpDataController extends Controller
@@ -154,6 +156,22 @@ class ErpDataController extends Controller
         }
     }
 
+    public function holidays()
+    {
+        try {
+            $holidays = Holiday::all();
+
+            return response()->json([
+                'data' => ErpHolidayResource::collection($holidays),
+                'message' => 'Holidays retrieved successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'message' => $throwable->getMessage(),
+                'code' => $throwable->getCode()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
 
 
 

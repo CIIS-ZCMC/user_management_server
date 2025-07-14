@@ -2721,7 +2721,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
             Route::get('erp-data-designations', 'ErpDataController@designations');
             Route::get('erp-data-users', 'ErpDataController@users');
             Route::get('erp-data-assigned-areas', 'ErpDataController@assignedAreas');
-            
+            Route::get('pr-holidays', 'ErpDataController@holidays');
         });
     });
 });
