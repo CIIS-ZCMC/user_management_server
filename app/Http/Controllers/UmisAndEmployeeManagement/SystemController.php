@@ -540,7 +540,7 @@ class SystemController extends Controller
 
                     if ($exists) {
                         foreach ($side_bar_details['system'] as &$system) {
-                            if ($system['id'] === $jo_system_role->system_id  && $system['id'] === $api_id) {
+                            if ($system['id'] === $jo_system_role->system_id && $system['id'] === $api_id) {
                                 $system_role_exist = false;
 
                                 // Check if role exist in the system
@@ -760,7 +760,7 @@ class SystemController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $check_if_exist =  System::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+            $check_if_exist = System::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
 
             if ($check_if_exist !== null) {
                 return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
@@ -829,7 +829,7 @@ class SystemController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -884,7 +884,7 @@ class SystemController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -924,7 +924,7 @@ class SystemController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
