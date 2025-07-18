@@ -8,17 +8,25 @@ use App\Methods\BioControl;
 use App\Models\Devices;
 use App\Methods\Helpers;
 use App\Models\Biometrics;
+use App\Http\Controllers\DTR\DTRcontroller;
+use App\Models\Attendance;
+use App\Models\Attendance_Information;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 class AttendanceController extends Controller
 {
     protected $device;
     protected $helper;
+
+    protected $dtr;
     public function __construct() {
         $this->device = new BioControl();
         $this->helper = new Helpers();
+        $this->dtr = new DTRcontroller();
     }
     public function fetchAttendance(Request $request){
         $devices =  Devices::whereNotNull("for_attendance")->where("for_attendance",">=",1)->get();
-        
         $title = $request->title ?? "";
         foreach ($devices as $device) {
             if ($tad = $this->device->bIO($device)) { 
@@ -49,23 +57,7 @@ class AttendanceController extends Controller
                     $filtered = array_filter($attendance_Logs, function ($row) use ($biometric_id) {
                         return $row['biometric_id'] == $biometric_id;
                     });
-                    // foreach ($filtered as $att) {  
-                    //     $UserAttendance[] = array_merge(
-                    //         [...$emp],
-                    //         ["area"=> isset($details) ? $details['name'] : '',
-                    //         "areacode"=>isset($details)? $details['code'] :''
-                    //         ],
-                    //         ["name"=>$profile->name()],
-                    //         ['sector' => $sector],
-                    //         ['date_time' => $att['date_time']],
-                    //         ['title'=>$title]
-                    //     );
-                        
-                    // }
-
                     $nameEntries = [];
-
-                // Group entries by profile name
                 foreach ($filtered as $att) {
                     $profileName = $profile->name();
 
@@ -74,23 +66,16 @@ class AttendanceController extends Controller
                     }
                     $nameEntries[$profileName][] = $att;
                 }
-                // For each name, sort by date_time and get first & last
-                foreach ($nameEntries as $name => $entries) {
-                    // Sort by 'date_time' ascending
+                foreach ($nameEntries as $name => $entries) {  
                     usort($entries, function ($a, $b) {
                         return strtotime($a['date_time']) <=> strtotime($b['date_time']);
-                    });
-
-                    // Get first and last after sort
+                    });   
                     $first = $entries[0];
                     $last = end($entries);
-
-                    // Prevent duplication if only one entry exists
                     $selected = [$first];
                     if ($first !== $last) {
                         $selected[] = $last;
                     }
-
                     foreach ($selected as $att) {
                         $UserAttendance[] = array_merge(
                             [...$emp],
@@ -105,19 +90,75 @@ class AttendanceController extends Controller
                         );
                     }
                 }
-
                    }
-                }        
-              
-                return $UserAttendance;
+                }          
+                $attendance = [];
+           foreach ($UserAttendance as $row) {
+                $title_key = $row['title']."-".date("Ymd",strtotime($row['date_time']));
+                $row['first_entry'] = $row['date_time'];
+                unset($row['title'],$row['date_time']);
+                $attendance = Attendance::firstOrCreate(["title"=>$title_key]);
+                $row['attendances_id'] = $attendance->id;
+                $attendanceInfo = Attendance_Information::where('biometric_id', $row['biometric_id'])
+                ->whereDate('created_at', date('Y-m-d', strtotime($row['first_entry'])))
+                ->where("attendances_id",$attendance->id)
+                ->first();
+                  if ($attendanceInfo) {
+                    $row['last_entry'] = $row['first_entry'];
+                    $row = array_intersect_key($row, array_flip(['last_entry']));
+                    if(!$attendanceInfo->last_entry){
+                        $attendanceInfo->update($row);
+                    }
+                    } else {
+                        $attendanceInfo = Attendance_Information::create($row);
+                    }             
+            }
+
+            return $this->GenerateToExcel($attendance); 
             }else {
                 return response()->json([
                     "message"=>"offline"
                 ]);
             }
-        
-
-          
         }
+    }
+
+    public function GenerateToExcel($attendance){
+        $title = substr($attendance->title, 0, strrpos($attendance->title, '-'));
+        
+        $data = array_map(function($row){
+            return [
+                "Name"=>$row['name'],
+                "Area"=>$row['area'],
+                "Area-Code"=>$row['areacode'],
+                "Sector"=>$row['sector'],
+                "First_entry"=>$row['first_entry'],
+                "Last_entry"=>$row['last_entry']
+            ];
+        },$attendance->logs->toArray()) ;
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $headers = array_keys($data[0]);
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $row = 2;
+        foreach ($data as $record) {
+            $col = 'A';
+            foreach ($record as $value) {
+                $sheet->setCellValue($col . $row, $value);
+                $col++;
+            }
+            $row++;
+        }
+        $writer = new Xlsx($spreadsheet);
+        $filename = $title . '_attendance.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment;filename=\"$filename\"");
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit;
     }
 }

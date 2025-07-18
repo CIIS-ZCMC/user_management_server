@@ -12,4 +12,8 @@ class Attendance extends Model
     protected $fillable = [
         'title'
     ];  
+
+     public function logs(){
+        return $this->hasMany(Attendance_Information::class,"attendances_id","id");
+    }
 }

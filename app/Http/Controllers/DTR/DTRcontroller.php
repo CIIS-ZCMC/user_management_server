@@ -241,11 +241,19 @@ class DTRcontroller extends Controller
 
     public function deleteDeviceLogs()
     {
-        foreach ($this->devices as $device) {
-            if ($tad = $this->device->bIO($device)) {
-                $tad->delete_data(['value' => 3]);
+       try {
+          foreach ($this->devices as $device) {
+            $tad = $this->device->bIO($device);
+            if ($tad) {
+                    $tad->delete_data(['value' => 3]); 
+            } else {  
+                Helpersv2::errorLog($this->CONTROLLER_NAME, 'deleteDeviceLogs', "Failed to connect or method not found for device: " . json_encode($device));
             }
         }
+        } catch (\Exception $e) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'deleteDeviceLogs', $e->getMessage());
+        }
+       
     }
 
     function getvalidatedData($bioEntry)

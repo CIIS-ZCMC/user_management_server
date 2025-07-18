@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('serial_number')->nullable();
             $table->string('mac_address')->nullable();
             $table->integer('is_registration')->default(0)->comment('1 = For Registration');
+            $table->integer("is_stable")->default(0);
+            $table->integer("for_attendance")->nullable();
             $table->timestamps();
         });
     }

@@ -19,5 +19,7 @@ class Devices extends Model
         'serial_number',
         'mac_address',
         'is_registration'
+        'is_stable',
+        'for_attendance',
     ];
 }

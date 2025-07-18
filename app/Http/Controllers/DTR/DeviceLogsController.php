@@ -24,7 +24,7 @@ class DeviceLogsController extends Controller
         $this->helper = new Helpers();
     }
 
-     public function ClearDeviceLogs($startDate = null)
+    public function ClearDeviceLogs($startDate = null)
     {
         $startDateTime = $startDate ? Carbon::parse($startDate) : Carbon::today();
         $thresholdDate = $startDateTime->copy()->subMonths(6)->format('Y-m-d');
