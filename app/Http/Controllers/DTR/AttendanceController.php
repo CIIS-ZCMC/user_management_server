@@ -117,7 +117,7 @@ class AttendanceController extends Controller
                     }             
             }
 
-            if($request->clear_device){
+            if($request->clear_device && $request->clear_device == 1){
                 $tad->delete_data(['value'=>3]);
             }
             $AttendanceData[] = $this->GenerateData($attendance); 
@@ -129,11 +129,20 @@ class AttendanceController extends Controller
         }
 
         $attd_data =  array_merge(...$AttendanceData) ;
+       
+        if(count($attd_data) == 0){
+            return response()->json([
+                'message'=>"No data found"
+            ]);
+        }
 
         return $this->GenerateToExcel($attd_data,$title);
     }
 
     public function GenerateData($attendance){
+        if(!$attendance){
+            return [];
+        }
         $title = substr($attendance->title, 0, strrpos($attendance->title, '-'));
         
       return  $data = array_map(function($row){
