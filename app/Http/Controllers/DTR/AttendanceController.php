@@ -122,14 +122,20 @@ class AttendanceController extends Controller
             }
             $AttendanceData[] = $this->GenerateData($attendance); 
             }else {
-                // return response()->json([
-                //     "message"=>"offline"
-                // ]);
+               
             }
         }
-
-        $attd_data =  array_merge(...$AttendanceData) ;
-       
+        $merged =  array_merge(...$AttendanceData) ;
+        $uniqueNames = [];
+        $attd_data=[];
+        foreach ($merged as $entry) {
+            if (!is_array($entry) || !isset($entry['Name'])) continue;
+            $name = strtoupper(trim($entry['Name'])); 
+            if (!isset($uniqueNames[$name])) {
+                $uniqueNames[$name] = true;
+                $attd_data[] = $entry;
+            }
+        }
         if(count($attd_data) == 0){
             return response()->json([
                 'message'=>"No data found"
