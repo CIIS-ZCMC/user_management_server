@@ -121,9 +121,6 @@ class AttendanceController extends Controller
                 $tad->delete_data(['value'=>3]);
             }
             $AttendanceData[] = $this->GenerateData($attendance); 
-            }else {
-               
-            }
         }
         $merged =  array_merge(...$AttendanceData) ;
         $uniqueNames = [];
