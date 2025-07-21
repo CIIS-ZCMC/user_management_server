@@ -28,6 +28,8 @@ class AttendanceController extends Controller
     public function fetchAttendance(Request $request){
         $devices =  Devices::whereNotNull("for_attendance")->where("for_attendance",">=",1)->get();
         $title = $request->title ?? "";
+
+        $AttendanceData = [];
         foreach ($devices as $device) {
             if ($tad = $this->device->bIO($device)) { 
                 $logs = $tad->get_att_log();
@@ -93,6 +95,7 @@ class AttendanceController extends Controller
                    }
                 }          
                 $attendance = [];
+                
            foreach ($UserAttendance as $row) {
                 $title_key = $row['title']."-".date("Ymd",strtotime($row['date_time']));
                 $row['first_entry'] = $row['date_time'];
@@ -114,19 +117,26 @@ class AttendanceController extends Controller
                     }             
             }
 
-            return $this->GenerateToExcel($attendance); 
+            if($request->clear_device){
+                $tad->delete_data(['value'=>3]);
+            }
+            $AttendanceData[] = $this->GenerateData($attendance); 
             }else {
-                return response()->json([
-                    "message"=>"offline"
-                ]);
+                // return response()->json([
+                //     "message"=>"offline"
+                // ]);
             }
         }
+
+        $attd_data =  array_merge(...$AttendanceData) ;
+
+        return $this->GenerateToExcel($attd_data,$title);
     }
 
-    public function GenerateToExcel($attendance){
+    public function GenerateData($attendance){
         $title = substr($attendance->title, 0, strrpos($attendance->title, '-'));
         
-        $data = array_map(function($row){
+      return  $data = array_map(function($row){
             return [
                 "Name"=>$row['name'],
                 "Area"=>$row['area'],
@@ -136,7 +146,11 @@ class AttendanceController extends Controller
                 "Last_entry"=>$row['last_entry']
             ];
         },$attendance->logs->toArray()) ;
-        $spreadsheet = new Spreadsheet();
+    
+    }
+
+    public function GenerateToExcel($data,$title){
+            $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $headers = array_keys($data[0]);
         $col = 'A';
