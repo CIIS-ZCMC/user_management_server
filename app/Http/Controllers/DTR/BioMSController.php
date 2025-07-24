@@ -68,10 +68,10 @@ class BioMSController extends Controller
         }
     }
 
-    public function operatingDevice()
+  public function operatingDevice()
     {
         try {
-            $data = Devices::where('is_registration', 0)->get();
+            $data = Devices::where('is_registration', 0)->where("for_attendance",0)->get();
 
             return response()->json([
                 'data' => $data ?? []
@@ -85,7 +85,7 @@ class BioMSController extends Controller
     public function registrationDevice()
     {
         try {
-            $data = Devices::where('is_registration', 1)->get();
+            $data = Devices::where('is_registration', 1)->where("for_attendance",0)->get();
 
             return response()->json([
                 'data' => $data

@@ -61,7 +61,7 @@ class BioController extends Controller
             
     }
 
-    /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
+    /* ----------------------- ------ THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
     public function registerBio(Request $request)
     {
         try {
