@@ -2397,7 +2397,7 @@ class EmployeeProfileController extends Controller
                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
                             if (!empty($search)) {
                                 $q->where('first_name', 'LIKE', '%' . $search . '%')
-                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%')->orWhere('employee_id', 'LIKE', '%' . $search . '%');
                             }
                         });
                     })->when($designation_id, function ($query) use ($designation_id) {
@@ -5968,4 +5968,38 @@ class EmployeeProfileController extends Controller
 
         return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
     }    
+
+
+    public function updateEmployeeProfileData(Request $request)
+    {
+        try {
+            // Validate the incoming request
+            $request->validate([
+                'id' => 'required|integer',
+                'shifting' => 'required|string',
+                'date_hired' => 'required|date',
+                'employee_id' => 'required|string',
+            ]);
+
+            // Find the employee profile by its ID
+            $id = $request->id;
+            $employeeProfile = EmployeeProfile::findOrFail($id);
+
+            // Update the shifting status
+            $employeeProfile->shifting = $request->shifting;
+            $employeeProfile->date_hired = $request->date_hired;$employeeProfile->employee_id = $request->employee_id;
+            $employeeProfile->save();
+
+            return response()->json(
+                [
+                    'data' => $employeeProfile,
+                    'message' => 'Employee profile data updated.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeProfileData', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

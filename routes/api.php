@@ -935,6 +935,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
+            Route::post('employee-profile-update-data', 'EmployeeProfileController@updateEmployeeProfileData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
             Route::post('employee-profile-by-area', 'EmployeeProfileController@employeesByArea');
         });
 
