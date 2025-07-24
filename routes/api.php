@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
-
+use App\Http\Controllers\DTR\BioController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,6 +19,9 @@ use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 Route::get('/initialize-storage', function (Request $request) {
     Artisan::call('storage:link');
 });
+
+//BLIZMIGRATION
+Route::post('/savebiometric', [BioController::class, 'SaveBiometric']);
 
 
 // In case the env client domain doesn't work

@@ -41,6 +41,26 @@ class BioController extends Controller
         $this->mailer = new MailController();
     }
 
+
+    public function SaveBiometric(Request $request){
+        $employeeID = $request->employee_no;
+        $template = $request->template;
+        $name = $request->name;
+
+        $employeeProfile = EmployeeProfile::where("employee_id",$employeeID)->first();
+        $biometricID = $employeeProfile->biometric_id;
+
+        Biometrics::firstOrCreate(['biometric_id'=>$biometricID],[
+        'name' => $name,
+        'privilege'=>0,
+        'biometric'=>$template,
+        'name_with_biometric'=>null
+        ]);
+          return response()->json(['message' =>
+                'User biometric template has been registered successfully']);
+            
+    }
+
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
     public function registerBio(Request $request)
     {
