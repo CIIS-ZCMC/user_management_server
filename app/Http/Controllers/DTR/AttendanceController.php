@@ -74,8 +74,8 @@ class AttendanceController extends Controller
                                   }
                                   $datenow = date("Y-m-d");
                        $employeeLogs = array_values(array_filter($attendanceLogs, function($log) use ($datenow, $biometricId) {
-                                      return $log['biometric_id'] == $biometricId && date("Y-m-d", strtotime($log['date_time'])) == $datenow;
-                          }));
+                                      return $log['biometric_id'] == $biometricId  && date("Y-m-d", strtotime($log['date_time'])) == $datenow;
+                          }));        
                           if(!$employeeLogs){continue;}
                                   
                     usort($employeeLogs, fn($a, $b) => 
