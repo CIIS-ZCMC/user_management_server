@@ -24,18 +24,19 @@ class BioControl
     {
         /* Validate if connected to device or not */
         try {
+           
             $options = [
-                'ip' => $device['ip_address'],
-                'internal_id' => 1,
-                'com_key' => $device['com_key'],
+                'ip' =>(string)$device['ip_address'],
+                'com_key' => (int)$device['com_key'],
                 'description' => 'TAD1',
-                'soap_port' => $device['soap_port'],
-                'udp_port' => $device['udp_port'],
+                'soap_port' => (int)$device['soap_port'],
+                'udp_port' => (int)$device['udp_port'],
                 'encoding' => 'utf-8'
             ];
             $tad_factory = new TADFactory($options);
             $tad = $tad_factory->get_instance();
-            if ($tad->get_date()) {
+            if ($tad->is_alive()) {
+               
                 $getsnmc = json_decode($this->getSNMAC($tad)->getContent(), true);
                 Devices::findorFail($device['id'])->update([
                     'serial_number' => $getsnmc['serialnumber'],
@@ -44,6 +45,7 @@ class BioControl
                 return $tad;
             }
         } catch (\Throwable $th) {
+        
             Helpers::errorLog("BioControl", 'checkdevice', $th->getMessage());
             if (isset($device['id'])) {
                 /**
@@ -56,10 +58,51 @@ class BioControl
                 //     'mac_address' => null,
                 // ]);
             }
-
+            Devices::findorFail($device['id'])->update([
+                'serial_number' => null,
+                'mac_address' => null,
+            ]);
             return false;
         }
     }
+
+    public function getUserInformation($attendance_Logs, $tad)
+{
+    // Extract unique biometric IDs
+    $biometricIds = array_reduce($attendance_Logs, function ($carry, $item) {
+        $carry[] = $item['biometric_id'];
+        return $carry;
+    }, []);
+    
+    $uniqueBios = array_values(array_unique($biometricIds));
+    $userInfoList = [];
+
+    foreach ($uniqueBios as $PIN) {
+        try {
+            // Get raw XML response (bypass TAD's auto-parsing if needed)
+            $response = $tad->get_user_info(['pin' => $PIN]);
+            
+            // Handle raw response if parsing fails
+            $xmlString = is_object($response) ? $response->get_response_body() : $response;
+            
+            // Clean invalid XML characters
+            $xmlString = mb_convert_encoding($xmlString, 'UTF-8', 'UTF-8');
+            $xmlString = preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $xmlString);
+            
+            // Parse XML
+            $userInfo = simplexml_load_string($xmlString);
+            if ($userInfo !== false) {
+                $userInfoList[] = $userInfo;
+            } else {
+                \Log::error("Failed to parse XML for PIN {$PIN}: " . print_r($xmlString, true));
+            }
+        } catch (\Exception $e) {
+            \Log::error("Error fetching user info for PIN {$PIN}: " . $e->getMessage());
+        }
+    }
+
+    return $userInfoList; // Array of SimpleXMLElement objects
+}
 
     public function getSNMAC($tad)
     {
