@@ -124,6 +124,9 @@ class AttendanceController extends Controller
 
 
      $data = array_values($mergedAttendance);
+       usort($data, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
+    });
      $this->SavetoDb($data);
    
    return $this->GenerateToExcel($data, $title);
