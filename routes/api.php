@@ -91,6 +91,12 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
         Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
     });
 
+
+    Route::namespace("Migration")->group(function () {
+        Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
+        Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+    });
+
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
@@ -106,11 +112,6 @@ Route::middleware('auth.cookie')->group(function () {
         // VERSION 2
         Route::namespace('Authentication')->group(callback: function () {
             Route::delete('sign-out', 'AuthWithCredentialController@destroy');
-        });
-
-        Route::namespace("Migration")->group(function () {
-            Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
-            Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
         });
 
         // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {

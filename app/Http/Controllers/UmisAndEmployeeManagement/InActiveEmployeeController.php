@@ -428,7 +428,7 @@ class InActiveEmployeeController extends Controller
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
 
-            $employee_data['employee_id'] = $new_employee_id;
+            $employee_data['employee_id'] = strip_tags($request->personal_information->employee_id);
             $employee_data['biometric_id'] = $new_biometric_id;
             $employee_data['employment_type_id'] = strip_tags($request->employment_type_id);
 
