@@ -25,81 +25,118 @@ class AttendanceController extends Controller
         $this->helper = new Helpers();
         $this->dtr = new DTRcontroller();
     }
-    public function fetchAttendance(Request $request){
-        $devices =  Devices::whereNotNull("for_attendance")->where("for_attendance",">=",1)->get();
-        $title = $request->title ?? "";
+    public function fetchAttendance(Request $request)
+{
+    $devices = Devices::whereNotNull("for_attendance")->where("for_attendance", ">=", 1)->get();
+    $title = $request->title ?? "";
+    set_time_limit(0); 
+    
+    $mergedAttendance = []; 
 
-        $AttendanceData = [];
-        foreach ($devices as $device) {
-            if ($tad = $this->device->bIO($device)) { 
+    foreach ($devices as $device) {
+        try {
+            // Connect to device
+            if ($tad = $this->device->bIO($device)) {
+                // Get raw attendance logs
                 $logs = $tad->get_att_log();
-                $all_user_info = $tad->get_all_user_info();
                 $attendance = simplexml_load_string($logs);
-                $user_Inf = simplexml_load_string($all_user_info);
-                $attendance_Logs = $this->helper->getAttendance($attendance);
-                $Employee_Info = $this->helper->getEmployee($user_Inf);
-                $UserAttendance = [];
-                foreach ($Employee_Info as $emp) {
-                    $biometric_id = $emp['biometric_id'];
-                    $user = Biometrics::join('employee_profiles', 'biometrics.biometric_id', '=', 'employee_profiles.biometric_id')
-                   ->where('biometrics.biometric_id', $biometric_id)
-                   ->select('biometrics.*')
-                   ->first();
-                   if($user){
-                    $details = null;
-                    $sector = null;
-                    $profile = $user->employeeProfile ?? null;
-                    $assignedArea = $profile?->assignedArea ?? null;
-                    $info = $assignedArea?->findDetails() ?? null;
-                    if($info){
-                        $details = $info['details']->toArray(request()) ?? "";
-                        $sector =  $info['sector'] ?? "";
-                     
-                    }
-                    $filtered = array_filter($attendance_Logs, function ($row) use ($biometric_id) {
-                        return $row['biometric_id'] == $biometric_id;
-                    });
-                    $nameEntries = [];
-                foreach ($filtered as $att) {
-                    $profileName = $profile->name();
-
-                    if (!isset($nameEntries[$profileName])) {
-                        $nameEntries[$profileName] = [];
-                    }
-                    $nameEntries[$profileName][] = $att;
+                
+                if (!$attendance) {
+                    \Log::error("Failed to parse XML from device: " . $device->ip_address);
+                    continue;
                 }
-                foreach ($nameEntries as $name => $entries) {  
-                    usort($entries, function ($a, $b) {
-                        return strtotime($a['date_time']) <=> strtotime($b['date_time']);
-                    });   
-                    $first = $entries[0];
-                    $last = end($entries);
-                    $selected = [$first];
-                    if ($first !== $last) {
-                        $selected[] = $last;
-                    }
-                    foreach ($selected as $att) {
-                        $UserAttendance[] = array_merge(
-                            [...$emp],
-                            [
-                                "area" => isset($details) ? $details['name'] : '',
-                                "areacode" => isset($details) ? $details['code'] : ''
-                            ],
-                            ["name" => $name],
-                            ['sector' => $sector],
-                            ['date_time' => $att['date_time']],
-                            ['title' => $title]
+
+                $attendanceLogs = $this->helper->getAttendance($attendance);
+                $userInfo = $this->device->getUserInformation($attendanceLogs, $tad);
+                $employeeInfo = $this->helper->getEmployee($userInfo);
+
+                foreach ($employeeInfo as $employee) {
+                    $biometricId = $employee['biometric_id'];
+                  
+                 $user = Biometrics::join('employee_profiles', 'biometrics.biometric_id', '=', 'employee_profiles.biometric_id')
+                                   ->where('biometrics.biometric_id', $biometricId)
+                                   ->select('biometrics.*')
+                                   ->first();
+                    if (!$user) continue;
+
+                  
+                    $profile = $user->employeeProfile;
+                    $area = $profile->assignedArea->details ?? null;
+                    $details = null;
+                                    $sector = null;
+                                    $profile = $user->employeeProfile ?? null;
+                                    $assignedArea = $profile?->assignedArea ?? null;
+                                    $info = $assignedArea?->findDetails() ?? null;
+                                    if($info){
+                                      $details = $info['details']->toArray(request()) ?? "";
+                                      $sector =  $info['sector'] ?? "";
+                                                         
+                                  }
+                                  $datenow = date("Y-m-d");
+                       $employeeLogs = array_values(array_filter($attendanceLogs, function($log) use ($datenow, $biometricId) {
+                                      return $log['biometric_id'] == $biometricId  && date("Y-m-d", strtotime($log['date_time'])) == $datenow;
+                          }));        
+                          if(!$employeeLogs){continue;}
+                                  
+                    usort($employeeLogs, fn($a, $b) => 
+                        strtotime(datetime: $a['date_time']) <=> strtotime($b['date_time'])
+                    );     
+                    $dateKey = date('Y-m-d', strtotime($employeeLogs[0]['date_time']));
+                    $mergeKey = "{$biometricId}_{$dateKey}";
+
+                    $firstEntry = $employeeLogs[0]['date_time'];
+                    $lastEntry = end($employeeLogs)['date_time'];
+
+                    if (!isset($mergedAttendance[$mergeKey])) {
+                        $mergedAttendance[$mergeKey] = [
+                            'name' => $profile->name(),
+                            'biometric_id' => $biometricId,
+                            "area" => isset($details) ? $details['name'] : '',
+                             "areacode" => isset($details) ? $details['code'] : '',
+                            'sector' => $sector ?? '',
+                            'first_entry' => $firstEntry,
+                            'last_entry' => $lastEntry,
+                            'title' => $title,
+                            'deviceIP' => $device->ip_address
+                        ];
+                    } else { 
+                        $mergedAttendance[$mergeKey]['first_entry'] = min(
+                            $mergedAttendance[$mergeKey]['first_entry'],
+                            $firstEntry
+                        );
+                        $mergedAttendance[$mergeKey]['last_entry'] = max(
+                            $mergedAttendance[$mergeKey]['last_entry'],
+                            $lastEntry
                         );
                     }
                 }
-                   }
-                }          
-                $attendance = [];
-                
-           foreach ($UserAttendance as $row) {
-                $title_key = $row['title']."-".date("Ymd",strtotime($row['date_time']));
-                $row['first_entry'] = $row['date_time'];
-                unset($row['title'],$row['date_time']);
+
+           
+                if ($request->clear_device == 1) {
+                    $tad->delete_data(['value' => 3]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("Device {$device->ip_address} failed: " . $e->getMessage());
+            continue;
+        }
+    }
+
+
+     $data = array_values($mergedAttendance);
+       usort($data, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
+    });
+     $this->SavetoDb($data);
+   
+   return $this->GenerateToExcel($data, $title);
+}
+  
+    
+    public function SavetoDb($data){
+    foreach ($data as $row) {
+      
+                $title_key = $row['title'];
                 $attendance = Attendance::firstOrCreate(["title"=>$title_key]);
                 $row['attendances_id'] = $attendance->id;
                 $attendanceInfo = Attendance_Information::where('biometric_id', $row['biometric_id'])
@@ -116,51 +153,8 @@ class AttendanceController extends Controller
                         $attendanceInfo = Attendance_Information::create($row);
                     }             
             }
-
-            if($request->clear_device && $request->clear_device == 1){
-                $tad->delete_data(['value'=>3]);
-            }
-            $AttendanceData[] = $this->GenerateData($attendance); 
-        }
-        $merged =  array_merge(...$AttendanceData) ;
-        $uniqueNames = [];
-        $attd_data=[];
-        foreach ($merged as $entry) {
-            if (!is_array($entry) || !isset($entry['Name'])) continue;
-            $name = strtoupper(trim($entry['Name'])); 
-            if (!isset($uniqueNames[$name])) {
-                $uniqueNames[$name] = true;
-                $attd_data[] = $entry;
-            }
-        }
-        if(count($attd_data) == 0){
-            return response()->json([
-                'message'=>"No data found"
-            ]);
-        }
-
-        return $this->GenerateToExcel($attd_data,$title);
     }
-
-    public function GenerateData($attendance){
-        if(!$attendance){
-            return [];
-        }
-        $title = substr($attendance->title, 0, strrpos($attendance->title, '-'));
-        
-      return  $data = array_map(function($row){
-            return [
-                "Name"=>$row['name'],
-                "Area"=>$row['area'],
-                "Area-Code"=>$row['areacode'],
-                "Sector"=>$row['sector'],
-                "First_entry"=>$row['first_entry'],
-                "Last_entry"=>$row['last_entry']
-            ];
-        },$attendance->logs->toArray()) ;
     
-    }
-
     public function GenerateToExcel($data,$title){
             $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

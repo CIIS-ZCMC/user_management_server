@@ -1304,19 +1304,25 @@ class Helpers
         return $attendance_Logs;
     }
 
-    public function getEmployee($user_Inf)
+ 
+
+      public function getEmployee($user_Inf)
     {
         $Employee_Info = [];
-        foreach ($user_Inf->Row as $row) {
-            $result = [
-                'biometric_id' => (string) $row->PIN2,
-                'name' => (string) $row->Name,
+    
+        foreach ($user_Inf as $item) {
+            // If it's object, use ->Row; if array, use ['Row']
+            $row = is_object($item) ? $item->Row : $item['Row'];
+    
+            $Employee_Info[] = [
+                'biometric_id' => isset($row->PIN2) ? (string)$row->PIN2 : (isset($row['PIN2']) ? $row['PIN2'] : null),
+                'name' => isset($row->Name) ? (string)$row->Name : (isset($row['Name']) ? $row['Name'] : null),
             ];
-            $Employee_Info[] = $result;
         }
+    
         return $Employee_Info;
     }
-
+    
     public  function getLatestEntry($mapdtr)
     {
         //CHECK-IN
