@@ -91,6 +91,6 @@ class EmployeesReportByStatusController extends Controller
         });
 
         $pdf = PDF::loadView('report.employees_list_by_status', compact('employees', 'employees_no_biometric', 'employees_no_login'));
-        return $pdf->download('active_employees_list.pdf');
+        return $pdf->download('Employee Biometric Enrollment Status Report.pdf');
     }
 }
