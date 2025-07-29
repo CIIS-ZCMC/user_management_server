@@ -15,7 +15,7 @@ class EmployeeProfileResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $biometric = $this->biometric_id;
+        $biometric = $this->biometric;
 
         $personal_information = $this->personalInformation;
         $name = $personal_information->employeeName();
