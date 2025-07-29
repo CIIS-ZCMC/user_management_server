@@ -47,7 +47,7 @@ class EmployeeProfileResource extends JsonResource
             'account_status' => $account_status,
             'renewal_date' => $this->renewal === null? "N/A": $this->renewal,
             'is_active' => $this->isAccountActive(),
-            'has_biometric' =>  $biometric == null? false: $biometric->biometric == 'NOT_YET_REGISTERED' ? false : true,
+            'has_biometric' =>  $biometric == null || $biometric->biometric == 'NOT_YET_REGISTERED',
         ];
     }
 }
