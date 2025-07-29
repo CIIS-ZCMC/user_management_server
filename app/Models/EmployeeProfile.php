@@ -451,6 +451,13 @@ class EmployeeProfile extends Authenticatable
         return $this->personalInformation;
     }
 
+    public function isAccountActive()
+    {
+        $login_trails = $this->loginTrails();
+
+        return $login_trails->count() > 0 && $this->authorization_pin !== null;
+    }
+
     public function retrieveEmployees($employees, $key, $id, $myId)
     {
 
