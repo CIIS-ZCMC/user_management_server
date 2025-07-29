@@ -12,11 +12,11 @@ class BioControl
 
     /**
      * Summary of bIO
-     * 
+     *
      * Create and return instance [Time and Attendance Data (TAD)].
      * This is important  since this instance will be bridge in connection from this
      * Rest api to Zk Biometric Devices.
-     * 
+     *
      * @param mixed $device
      * @return bool|\TADPHP\TAD
      */
@@ -24,9 +24,9 @@ class BioControl
     {
         /* Validate if connected to device or not */
         try {
-           
+
             $options = [
-                'ip' =>(string)$device['ip_address'],
+                'ip' => (string)$device['ip_address'],
                 'com_key' => (int)$device['com_key'],
                 'description' => 'TAD1',
                 'soap_port' => (int)$device['soap_port'],
@@ -36,7 +36,7 @@ class BioControl
             $tad_factory = new TADFactory($options);
             $tad = $tad_factory->get_instance();
             if ($tad->is_alive()) {
-               
+
                 $getsnmc = json_decode($this->getSNMAC($tad)->getContent(), true);
                 Devices::findorFail($device['id'])->update([
                     'serial_number' => $getsnmc['serialnumber'],
@@ -45,7 +45,7 @@ class BioControl
                 return $tad;
             }
         } catch (\Throwable $th) {
-        
+
             Helpers::errorLog("BioControl", 'checkdevice', $th->getMessage());
             if (isset($device['id'])) {
                 /**
@@ -67,42 +67,42 @@ class BioControl
     }
 
     public function getUserInformation($attendance_Logs, $tad)
-{
-    // Extract unique biometric IDs
-    $biometricIds = array_reduce($attendance_Logs, function ($carry, $item) {
-        $carry[] = $item['biometric_id'];
-        return $carry;
-    }, []);
-    
-    $uniqueBios = array_values(array_unique($biometricIds));
-    $userInfoList = [];
+    {
+        // Extract unique biometric IDs
+        $biometricIds = array_reduce($attendance_Logs, function ($carry, $item) {
+            $carry[] = $item['biometric_id'];
+            return $carry;
+        }, []);
 
-    foreach ($uniqueBios as $PIN) {
-        try {
-            // Get raw XML response (bypass TAD's auto-parsing if needed)
-            $response = $tad->get_user_info(['pin' => $PIN]);
-            
-            // Handle raw response if parsing fails
-            $xmlString = is_object($response) ? $response->get_response_body() : $response;
-            
-            // Clean invalid XML characters
-            $xmlString = mb_convert_encoding($xmlString, 'UTF-8', 'UTF-8');
-            $xmlString = preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $xmlString);
-            
-            // Parse XML
-            $userInfo = simplexml_load_string($xmlString);
-            if ($userInfo !== false) {
-                $userInfoList[] = $userInfo;
-            } else {
-                \Log::error("Failed to parse XML for PIN {$PIN}: " . print_r($xmlString, true));
+        $uniqueBios = array_values(array_unique($biometricIds));
+        $userInfoList = [];
+
+        foreach ($uniqueBios as $PIN) {
+            try {
+                // Get raw XML response (bypass TAD's auto-parsing if needed)
+                $response = $tad->get_user_info(['pin' => $PIN]);
+
+                // Handle raw response if parsing fails
+                $xmlString = is_object($response) ? $response->get_response_body() : $response;
+
+                // Clean invalid XML characters
+                $xmlString = mb_convert_encoding($xmlString, 'UTF-8', 'UTF-8');
+                $xmlString = preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $xmlString);
+
+                // Parse XML
+                $userInfo = simplexml_load_string($xmlString);
+                if ($userInfo !== false) {
+                    $userInfoList[] = $userInfo;
+                } else {
+                    \Log::error("Failed to parse XML for PIN {$PIN}: " . print_r($xmlString, true));
+                }
+            } catch (\Exception $e) {
+                \Log::error("Error fetching user info for PIN {$PIN}: " . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error("Error fetching user info for PIN {$PIN}: " . $e->getMessage());
         }
-    }
 
-    return $userInfoList; // Array of SimpleXMLElement objects
-}
+        return $userInfoList; // Array of SimpleXMLElement objects
+    }
 
     public function getSNMAC($tad)
     {
@@ -129,7 +129,7 @@ class BioControl
 
         if ($tad = $this->bIO($device)) {
 
-            // 
+            //
 
             function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
             {
@@ -219,7 +219,7 @@ class BioControl
 
     /**
      * Summary of checkDeviceUserRecords [VERSION2]
-     * 
+     *
      * Associate with BioController[checkDeviceUserRecords]
      * @param mixed $device
      * @return array{Finger_ID: string, Size: string, Template: string, Valid: string[]|null}
@@ -232,10 +232,10 @@ class BioControl
         if ($tad) {
             try {
                 $user_temps = $tad->get_all_user_info(['com_key' => 0]);
-                
+
                 $utemp = simplexml_load_string($user_temps);
                 $BIO_User = [];
-                
+
                 foreach ($utemp->Row as $user) {
                     $result = [
                         'PIN' => (string)$user->PIN,
@@ -249,13 +249,12 @@ class BioControl
                     ];
                     $BIO_User[] = $result;
                 }
-            
+
                 return [
                     "data" => $BIO_User,
                     "total_user" => count($BIO_User),
                     "message" => "Successfully retrieved all user details from the biometric device."
                 ];
-                
             } catch (\Exception $e) {
                 return [
                     "data" => [],
@@ -272,7 +271,7 @@ class BioControl
 
     /**
      * Summary of findUserBiometricDetailsFromATargetDevice [VERSION2]
-     * 
+     *
      * Associate with BioController[checkUserBiometricDetailsFromDevice]
      * @param mixed $device
      * @param mixed $biometric_id
@@ -286,10 +285,10 @@ class BioControl
         if ($tad) {
             try {
                 $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
-                
+
                 $utemp = simplexml_load_string($user_temp);
                 $BIO_User = [];
-                
+
                 foreach ($utemp->Row as $user_Cred) {
                     /* **
                 Here we are attaching the fingerprint data into our database.
@@ -302,12 +301,11 @@ class BioControl
                     ];
                     $BIO_User[] = $result;
                 }
-            
+
                 return [
                     "data" => $BIO_User,
                     "message" => "Successfully user details from the biometric device."
                 ];
-                
             } catch (\Exception $e) {
                 return [
                     "data" => [],
@@ -321,13 +319,13 @@ class BioControl
             "message" => "Failed to create TAD instance."
         ];
     }
-    
+
     /**
      * Summary of populateBiometricDeviceWithEmployeesBiometricRecord
-     * 
+     *
      * Retrieve all employees biometric ids exclude the given ids
      * and push biometric records to device.
-     * 
+     *
      * @param mixed $device
      * @return void
      */
@@ -340,10 +338,10 @@ class BioControl
                 $newly_registered_biometrics = [];
 
                 $biometrics = Biometrics::whereNotIn('name_with_biometric', $excludeUsers)
-                    ->whereNot('biometric','NOT_YET_REGISTERED')
+                    ->whereNot('biometric', 'NOT_YET_REGISTERED')
                     ->get()->take(10);
 
-                foreach($biometrics as $biometric){
+                foreach ($biometrics as $biometric) {
                     $privilege = $biometric->privilege ? 14 : 0;
                     $newly_registered_biometrics[] = $this->pushUserBiometricTemplateToDevice($tad, $biometric, $privilege);
                 }
@@ -355,12 +353,12 @@ class BioControl
         }
         return [];
     }
-    
+
     /**
      * Summary of pushUserBiometricTemplateToDevice [VERSION2]
-     * 
+     *
      * This will push user biometric details to device.
-     * 
+     *
      * @param mixed $tad
      * @param mixed $emp
      * @param mixed $is_Admin
@@ -397,7 +395,6 @@ class BioControl
                     return $biometric;
                 }
             }
-
         } catch (\Throwable $th) {
             Helpers::errorLog("BioControl", 'saveUSERSTODEVICE', $th->getMessage());
             return [];
@@ -461,7 +458,7 @@ class BioControl
                 $utemp = simplexml_load_string($user_temp);
                 $BIO_User = [];
                 foreach ($utemp->Row as $user_Cred) {
-                    /***  
+                    /***
                 Here we are attaching the fingerprint data into our database.
                      */
                     $result = [
@@ -482,8 +479,8 @@ class BioControl
         }
     }
     /**
-     * 
-     * 
+     *
+     *
      *  Fetch user wth none bio data to device. for fingerprint registration */
     public function fetchDataToDeviceForNewFPRegistration($device, $biometric_id, $name)
     {
@@ -498,8 +495,8 @@ class BioControl
     }
 
     /**
-     * 
-     * 
+     *
+     *
      *  Fetching Selected employee
      *  */
 
@@ -541,7 +538,7 @@ class BioControl
     public function saveUsersToDevices($tad, $emp, $is_Admin)
     {
         try {
-        
+
             $added =  $tad->set_user_info([
                 'pin' => $emp->biometric_id,
                 'name' => $emp->name,
@@ -567,10 +564,7 @@ class BioControl
                     }
                     Helpers::infoLog("BioControl", 'saveUSERSTODEVICE', 'PASSED');
                 }
-
-            
             }
-
         } catch (\Throwable $th) {
             Helpers::errorLog("BioControl", 'saveUSERSTODEVICE', $th->getMessage());
         }
@@ -582,7 +576,7 @@ class BioControl
             if ($tad = $this->bIO($device)) {
                 $biometrics = Biometrics::where('privilege', 1)->get();
 
-                foreach($biometrics as $biometric){
+                foreach ($biometrics as $biometric) {
                     $this->saveUsersToDevices($tad, $biometric, $biometric->privilege ? 14 : 0);
                 }
 
@@ -600,7 +594,6 @@ class BioControl
         } catch (\Throwable $th) {
             Helpers::errorLog("bioControl", 'fetchbiotoallDevices', $th->getMessage());
         }
-        
     }
 
     public function fetchSpecificDataToDevice($device, $biometricIDs)
@@ -666,9 +659,9 @@ class BioControl
 
     /**
      * Summary of deleteDataFromDevice
-     * 
+     *
      * This will delete user bioemtric record from a device
-     * 
+     *
      * @param mixed $device
      * @param mixed $biometric_id
      * @return bool

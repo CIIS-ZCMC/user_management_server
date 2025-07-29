@@ -26,68 +26,66 @@ Route::post('/savebiometric', [BioController::class, 'SaveBiometric']);
 
 // In case the env client domain doesn't work
 Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(function () {
-        Route::get('update-system', 'SystemController@updateUMISDATA');
-        Route::get('employees-sample', 'EmployeeProfileController@employeeListSample');
-    });
+    Route::get('update-system', 'SystemController@updateUMISDATA');
+    Route::get('employees-sample', 'EmployeeProfileController@employeeListSample');
+});
 
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            // VERSION 2
-            Route::namespace('Authentication')->group(function(){
-                Route::post('sign-in', 'AuthWithCredentialController@store');
-            });
-
-            Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
-            Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
-            Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+Route::namespace('App\Http\Controllers')->group(function () {
+        // VERSION 2
+        Route::namespace('Authentication')->group(function () {
+            Route::post('sign-in', 'AuthWithCredentialController@store');
         });
+
+        Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
+        Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
+        Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+    });
 
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
-        // Route::get('test', 'DashboardController@test');
+    // Route::get('test', 'DashboardController@test');
 
-        // Route::get('announcementslist', 'AnnouncementsController@index');
-        Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-        Route::get('announcements/{id}', 'AnnouncementsController@show');
+    // Route::get('announcementslist', 'AnnouncementsController@index');
+    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+    Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-        Route::get('events', 'EventsController@index');
-        Route::get('events-search', 'EventsController@searchEvents');
-        Route::get('events/{id}', 'EventsController@show');
+    Route::get('events', 'EventsController@index');
+    Route::get('events-search', 'EventsController@searchEvents');
+    Route::get('events/{id}', 'EventsController@show');
 
-        Route::get('memorandums', 'MemorandumsController@index');
-        Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-        Route::get('memorandums/{id}', 'MemorandumsController@show');
+    Route::get('memorandums', 'MemorandumsController@index');
+    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+    Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-        Route::get('news', 'NewsController@index');
-        Route::get('news-search', 'NewsController@searchNews');
-        Route::get('news/{id}', 'NewsController@show');
-        Route::get('notification', 'NotificationController@store');
+    Route::get('news', 'NewsController@index');
+    Route::get('news-search', 'NewsController@searchNews');
+    Route::get('news/{id}', 'NewsController@show');
+    Route::get('notification', 'NotificationController@store');
 
 
-        Route::put('account-recovery', 'AccountRecoveryController@update');
-    });
+    Route::put('account-recovery', 'AccountRecoveryController@update');
+});
 
 Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-        Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
-        Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
-        Route::post('getUserInformations', 'SessionController@getUserInfo');
-    });
+    Route::get('testgenerate', 'GenerateReportController@GenerateDataReport');
+    Route::get('getUserNightDifferentials', 'GenerateReportController@GenerateDataNightDiffReport');
+    Route::post('getUserInformations', 'SessionController@getUserInfo');
+});
 
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            // Route::post('sign-in', 'EmployeeProfileController@signIn');
-            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-            Route::post('new-password', 'EmployeeProfileController@newPassword');
-            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-            Route::get('validate-token', 'CsrfTokenController@validateToken');
-            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-            Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+        // Route::post('sign-in', 'EmployeeProfileController@signIn');
+        Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+        Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+        Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+        Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+        Route::post('new-password', 'EmployeeProfileController@newPassword');
+        Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+        Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+        Route::get('validate-token', 'CsrfTokenController@validateToken');
+        Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+        Route::get('generate-pds', 'PersonalInformationController@generatePDS');
 
 
         Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
@@ -97,7 +95,7 @@ Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
         // VERSION 2
-        Route::namespace("AccessManagement")->group(callback: function() {
+        Route::namespace("AccessManagement")->group(callback: function () {
             Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
 
             // Systems API Key Management
@@ -106,7 +104,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         // VERSION 2
-        Route::namespace('Authentication')->group(callback: function(){         
+        Route::namespace('Authentication')->group(callback: function () {
             Route::delete('sign-out', 'AuthWithCredentialController@destroy');
         });
 
@@ -1762,11 +1760,11 @@ Route::middleware('auth.cookie')->group(function () {
 
     /**
      * TROUBLE SHOOT
-     * Daily Time Record Management 
-     * 
+     * Daily Time Record Management
+     *
      * VERSION 2
      */
-    Route::namespace('App\Http\Controllers\DTR')->group(function(){
+    Route::namespace('App\Http\Controllers\DTR')->group(function () {
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::post('check-device-user-records', 'BioController@checkDeviceUserRecords');
             Route::get('check-user-biometric-details-from-device', 'BioController@checkUserBiometricDetailsFromDevice');
@@ -1783,6 +1781,7 @@ Route::middleware('auth.cookie')->group(function () {
         /** APPLY CODE HERE */
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::get('dtr-device-devices', 'BioMSController@index');
+            Route::get("dtr-registering-devices", "BioController@fetchRegisteringDevices");
             Route::post('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
             Route::post('dtr-pulluser-from-devices', 'BioController@fetchUserFromDevice');
             Route::post('dtr-pushuser-to-opdevices', 'BioController@fetchUserToOPDevice');
@@ -2709,13 +2708,13 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
- Route::post('test', function(){
+Route::post('test', function () {
     return response()->json(['data' => 'PASSED', 'message' => "Test passed"], 200);
- });
+});
 
-Route::namespace('App\Http\Controllers')->group(function(){
-    Route::middleware('auth.thirdparty')->group(function(){
-        Route::namespace("Authentication")->group(callback: function() {
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::middleware('auth.thirdparty')->group(function () {
+        Route::namespace("Authentication")->group(callback: function () {
 
             // AUTH WITH SESSION ID
             Route::post('auth-with-session-id', "AuthWithApiKeySessionIDController@store");
@@ -2724,7 +2723,7 @@ Route::namespace('App\Http\Controllers')->group(function(){
             Route::post('auth-with-api-key-credential', "AuthWithApiKeyCredentialController@store");
         });
 
-        Route::namespace("UmisAndEmployeeManagement")->group(function(){
+        Route::namespace("UmisAndEmployeeManagement")->group(function () {
             Route::get('authenticate-user-session', 'SystemController@authenticateUserFromDifferentSystem');
             Route::get('erp-data-areas', 'ErpDataController@areas');
             Route::get('erp-data-designations', 'ErpDataController@designations');
