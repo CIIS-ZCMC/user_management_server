@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use App\Http\Controllers\DTR\BioController;
+use App\Http\Controllers\HR\EmployeesReportByStatusController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -22,6 +23,11 @@ Route::get('/initialize-storage', function (Request $request) {
 
 //BLIZMIGRATION
 Route::post('/savebiometric', [BioController::class, 'SaveBiometric']);
+
+Route::get('employees/report-pdf-with-active-employees', [EmployeesReportByStatusController::class, 'activeEmployees']);
+Route::get('employees/report-pdf-with-employees-with-no-biometric', [EmployeesReportByStatusController::class, 'employeesWithNoBiometric']);
+Route::get('employees/report-pdf-with-employees-with-no-login-transaction', [EmployeesReportByStatusController::class, 'employeesWithNoLoginTransaction']);
+Route::get('employees/report-total-number-of-employees-per-status', [EmployeesReportByStatusController::class, 'totalNumberOfEmployeesPerStatus']);
 
 
 // In case the env client domain doesn't work
