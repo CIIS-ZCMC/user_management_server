@@ -28,6 +28,7 @@ Route::get('employees/report-pdf-with-active-employees', [EmployeesReportByStatu
 Route::get('employees/report-pdf-with-employees-with-no-biometric', [EmployeesReportByStatusController::class, 'employeesWithNoBiometric']);
 Route::get('employees/report-pdf-with-employees-with-no-login-transaction', [EmployeesReportByStatusController::class, 'employeesWithNoLoginTransaction']);
 Route::get('employees/report-total-number-of-employees-per-status', [EmployeesReportByStatusController::class, 'totalNumberOfEmployeesPerStatus']);
+Route::get('employees/download-pdf-with-active-employees', [EmployeesReportByStatusController::class, 'downloadPdf']);
 
 
 // In case the env client domain doesn't work

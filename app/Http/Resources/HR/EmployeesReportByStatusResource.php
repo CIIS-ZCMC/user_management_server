@@ -14,10 +14,18 @@ class EmployeesReportByStatusResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $area = null;
+
+        if($this->assignedArea) {
+            $area = $this->assignedArea->findDetails()['details']['name'];
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name(),
             'email' => $this->personalInformation->contact->email_address,
+            'date_hired' => $this->date_hired,
+            'area' => $area,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

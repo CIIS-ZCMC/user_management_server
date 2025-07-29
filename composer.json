@@ -10,6 +10,7 @@
     "require": {
         "php": "^8.1",
         "ext-gd": "*",
+        "barryvdh/laravel-dompdf": "^3.1",
         "batang-it/tad-php": "0.4.3",
         "guzzlehttp/guzzle": "^7.2",
         "hkvstore/dompdf": "^2.0",
@@ -19,9 +20,9 @@
         "laravel/tinker": "^2.8",
         "league/csv": "9.0",
         "league/oauth2-google": "^4.0",
+        "maatwebsite/excel": "^3.1",
         "phpmailer/phpmailer": "^6.8",
-        "torann/geoip": "^3.0",
-        "maatwebsite/excel": "^3.1"
+        "torann/geoip": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
