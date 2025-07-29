@@ -155,7 +155,7 @@ class BioController extends Controller
                 $ipreg = $this->ip_registration;
             }
 
-            if (isset($request->deviceName)) {
+            if (isset($request->deviceName) && $request->deviceName !== null) {
                 $ipreg = array_filter($this->ip_registration, function ($row) use ($request) {
                     return $row['device_name'] == $request->deviceName;
                 });
@@ -477,7 +477,7 @@ class BioController extends Controller
             $biometric_ids = $request->biometricIDs; // Array of biometric IDs to process
             $devices = $this->ip_registration ?? []; // Get registered devices
 
-            if (isset($request->deviceName)) {
+            if (isset($request->deviceName) && $request->deviceName !== null) {
                 $devices = array_filter($this->ip_registration, function ($row) use ($request) {
                     return $row['device_name'] == $request->deviceName;
                 });
