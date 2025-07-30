@@ -10,8 +10,8 @@ class EmployeesWithNoBiometricService
         private EmployeeRepository $employeeRepository
     ){}
 
-    public function getEmployeesWithNoBiometric()
+    public function getEmployeesWithNoBiometric($regularOnly)
     {
-        return $this->employeeRepository->getEmployeesWithNoBiometric();
+        return $this->employeeRepository->getEmployeesWithNoBiometric($regularOnly);
     }
 }

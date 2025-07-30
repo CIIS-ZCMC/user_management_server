@@ -10,8 +10,8 @@ class ActiveEmployeesService
         private EmployeeRepository $employeeRepository
     ){}
 
-    public function getActiveEmployees()
+    public function getActiveEmployees($regularOnly)
     {
-        return $this->employeeRepository->getActiveEmployees();
+        return $this->employeeRepository->getActiveEmployees($regularOnly);
     }
 }

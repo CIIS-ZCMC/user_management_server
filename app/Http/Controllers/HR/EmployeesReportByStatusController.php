@@ -7,6 +7,7 @@ use App\Services\HR\ActiveEmployeesService;
 use App\Services\HR\EmployeesWithNoBiometricService;
 use App\Services\HR\EmployeesWithNoLoginTransactionService;
 use App\Http\Resources\HR\EmployeesReportByStatusResource;
+use Illuminate\Http\Request;
 use PDF;
 
 ini_set('memory_limit', config('app.memory_limit'));
@@ -19,46 +20,46 @@ class EmployeesReportByStatusController extends Controller
         private EmployeesWithNoLoginTransactionService $employeesWithNoLoginTransactionService
     ){}
 
-    public function activeEmployees()
+    public function activeEmployees(Request $request)
     {
-        return EmployeesReportByStatusResource::collection($this->activeEmployeesService->getActiveEmployees())
+        return EmployeesReportByStatusResource::collection($this->activeEmployeesService->getActiveEmployees($request->regularOnly))
             ->additional([
                 'message' => "Successfully retrieved active employees"
             ]);
     }
 
-    public function employeesWithNoBiometric()
+    public function employeesWithNoBiometric(Request $request)
     {
-        return EmployeesReportByStatusResource::collection($this->employeesWithNoBiometricService->getEmployeesWithNoBiometric())
+        return EmployeesReportByStatusResource::collection($this->employeesWithNoBiometricService->getEmployeesWithNoBiometric($request->regularOnly))
             ->additional([
                 'message' => "Successfully retrieved employees with no biometric"
             ]);
     }
 
-    public function employeesWithNoLoginTransaction()
+    public function employeesWithNoLoginTransaction(Request $request)
     {
-        return EmployeesReportByStatusResource::collection($this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction())
+        return EmployeesReportByStatusResource::collection($this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction($request->regularOnly))
             ->additional([
                 'message' => "Successfully retrieved employees with no login transaction"
             ]);
     }
 
-    public function totalNumberOfEmployeesPerStatus()
+    public function totalNumberOfEmployeesPerStatus(Request $request)
     {
         return response()->json([
-            'active' => $this->activeEmployeesService->getActiveEmployees()->count(),
-            'employees_with_no_biometric' => $this->employeesWithNoBiometricService->getEmployeesWithNoBiometric()->count(),
-            'employees_with_no_login_transaction' => $this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction()->count()
+            'active' => $this->activeEmployeesService->getActiveEmployees($request->regularOnly)->count(),
+            'employees_with_no_biometric' => $this->employeesWithNoBiometricService->getEmployeesWithNoBiometric($request->regularOnly)->count(),
+            'employees_with_no_login_transaction' => $this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction($request->regularOnly)->count()
         ]);
     }
 
-    public function downloadPdf()
+    public function downloadPdf(Request $request)
     {
-        $activeEmployees = $this->activeEmployeesService->getActiveEmployees();
+        $activeEmployees = $this->activeEmployeesService->getActiveEmployees($request->regularOnly);
 
         $employees = count($activeEmployees);
 
-        $employeesNoBiometric = $this->employeesWithNoBiometricService->getEmployeesWithNoBiometric();
+        $employeesNoBiometric = $this->employeesWithNoBiometricService->getEmployeesWithNoBiometric($request->regularOnly);
 
         $employees_no_biometric = [];
 
@@ -74,7 +75,7 @@ class EmployeesReportByStatusController extends Controller
             ];
         });
 
-        $employeesNoLogin = $this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction();
+        $employeesNoLogin = $this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction($request->regularOnly);
 
         $employees_no_login = [];
 
