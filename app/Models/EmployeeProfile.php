@@ -170,6 +170,10 @@ class EmployeeProfile extends Authenticatable
 
         return $fullName;
     }
+    public function getNameAttribute()
+    {
+        return $this->personalInformation['first_name'] . ' ' . $this->personalInformation['last_name'];
+    }
 
     public function lastNameTofirstName()
     {

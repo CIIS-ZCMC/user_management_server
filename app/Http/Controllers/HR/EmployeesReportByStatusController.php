@@ -7,6 +7,7 @@ use App\Services\HR\ActiveEmployeesService;
 use App\Services\HR\EmployeesWithNoBiometricService;
 use App\Services\HR\EmployeesWithNoLoginTransactionService;
 use App\Http\Resources\HR\EmployeesReportByStatusResource;
+use App\Services\HR\EmployeeSummaryReportService;
 use Illuminate\Http\Request;
 use PDF;
 
@@ -17,7 +18,8 @@ class EmployeesReportByStatusController extends Controller
     public function __construct(
         private ActiveEmployeesService $activeEmployeesService,
         private EmployeesWithNoBiometricService $employeesWithNoBiometricService,
-        private EmployeesWithNoLoginTransactionService $employeesWithNoLoginTransactionService
+        private EmployeesWithNoLoginTransactionService $employeesWithNoLoginTransactionService,
+        private EmployeeSummaryReportService $employeeSummaryReportService
     ){}
 
     public function activeEmployees(Request $request)
@@ -55,43 +57,6 @@ class EmployeesReportByStatusController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $activeEmployees = $this->activeEmployeesService->getActiveEmployees($request->regularOnly);
-
-        $employees = count($activeEmployees);
-
-        $employeesNoBiometric = $this->employeesWithNoBiometricService->getEmployeesWithNoBiometric($request->regularOnly);
-
-        $employees_no_biometric = [];
-
-        $employeesNoBiometric->each(function ($employee) use (&$employees_no_biometric) {
-            $employees_no_biometric[] = [
-                'employee_id' => $employee->employee_id,
-                'name' => $employee->name(),
-                'email' => $employee->personalInformation->contact->email_address,
-                'date_hired' => $employee->date_hired,
-                'area' => $employee->assignedArea?->findDetails()['details']['name'] ?? 'Not Assigned',
-                'created_at' => $employee->created_at,
-                'updated_at' => $employee->updated_at,
-            ];
-        });
-
-        $employeesNoLogin = $this->employeesWithNoLoginTransactionService->getEmployeesWithNoLoginTransaction($request->regularOnly);
-
-        $employees_no_login = [];
-
-        $employeesNoLogin->each(function ($employee) use (&$employees_no_login) {
-            $employees_no_login[] = [
-                'employee_id' => $employee->employee_id,
-                'name' => $employee->name(),
-                'email' => $employee->personalInformation->contact->email_address,
-                'date_hired' => $employee->date_hired,
-                'area' => $employee->assignedArea?->findDetails()['details']['name'] ?? 'Not Assigned',
-                'created_at' => $employee->created_at,
-                'updated_at' => $employee->updated_at,
-            ];
-        });
-
-        $pdf = PDF::loadView('report.employees_list_by_status', compact('employees', 'employees_no_biometric', 'employees_no_login'));
-        return $pdf->download('Employee Biometric Enrollment Status Report.pdf');
+        return $this->employeeSummaryReportService->handle($request);
     }
 }

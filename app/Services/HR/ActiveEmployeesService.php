@@ -10,8 +10,8 @@ class ActiveEmployeesService
         private EmployeeRepository $employeeRepository
     ){}
 
-    public function getActiveEmployees($regularOnly)
+    public function getActiveEmployees($filter = null)
     {
-        return $this->employeeRepository->getActiveEmployees($regularOnly);
+        return $this->employeeRepository->getEmployeesWithBiometric($filter);
     }
 }
