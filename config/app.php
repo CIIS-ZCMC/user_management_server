@@ -17,7 +17,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
-    'memory_limit' => env('MEMORY_LIMIT', '128M'),
+    'memory_limit' => env('MEMORY_LIMIT', '512M'),
 
     /*
     |--------------------------------------------------------------------------

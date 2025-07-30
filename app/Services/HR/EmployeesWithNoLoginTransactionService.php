@@ -10,8 +10,8 @@ class EmployeesWithNoLoginTransactionService
         private EmployeeRepository $employeeRepository
     ){}
 
-    public function getEmployeesWithNoLoginTransaction()
+    public function getEmployeesWithNoLoginTransaction($regularOnly)
     {
-        return $this->employeeRepository->getEmployeesWithNoLoginTransaction();
+        return $this->employeeRepository->getEmployeesWithNoLoginTransaction($regularOnly);
     }
 }
