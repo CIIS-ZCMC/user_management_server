@@ -104,6 +104,17 @@ return [
             'level' => 'error',
         ],
 
+        'registration-log' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/registration.log'),
+            'level' => 'info',
+        ],
+        'registration-log-error' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/registration.log'),
+            'level' => 'error',
+        ],
+
 
         'slack' => [
             'driver' => 'slack',

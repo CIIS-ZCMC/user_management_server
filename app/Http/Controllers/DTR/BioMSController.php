@@ -30,12 +30,17 @@ class BioMSController extends Controller
             $data = [];
             $status = "Offline";
             foreach ($bios as $row) {
-
-                if (!$this->device->BIO($row)) {
+                
+                if($row->is_active){
+                      if (!$this->device->BIO($row)) {
                     $status = "Offline";
                 } else {
                     $status = "Online";
                 }
+                }else {
+                    $status = "Offline";
+                }
+              
 
                 $item = [
                     "id" => $row->id,
@@ -48,6 +53,9 @@ class BioMSController extends Controller
                     "mac_address" => $row->mac_address,
                     "is_registration" => $row->is_registration,
                     "device_status" => $status,
+                    "is_active"=>$row->is_active,
+                    "for_attendance"=>$row->for_attendance,
+                    "receiver_by_default"=>$row->receiver_by_default,
                     "created_at" => $row->created_at,
                     "updated_at" => $row->updated_at
                 ];
@@ -64,6 +72,20 @@ class BioMSController extends Controller
             ]);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateDeviceStatus(Request $request)
+    {
+        try {
+            $device = Devices::find($request->id);
+            $device->update([
+                $request->field => $request->value
+            ]);
+            return response()->json(['message' => 'Device status updated successfully']);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateDeviceStatus', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -238,7 +260,7 @@ class BioMSController extends Controller
     {
         try {
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
 
 

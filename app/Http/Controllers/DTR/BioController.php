@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Response;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
-
+use Illuminate\Support\Facades\Log;
 
 class BioController extends Controller
 {
@@ -509,7 +509,27 @@ class BioController extends Controller
                                 $this->device->deleteDataFromDevice($deleteDevice, $biometric_id);
                                 $deletedCount++;
                             }
-                            break; // Move to next biometric ID
+                            //Do the fetching auto. // ONLY ONE DEVICE
+                            $preselectedDevice = Devices::where("receiver_by_default",1);
+                            if($preselectedDevice->exists()){
+                                $preselectedDevices = $preselectedDevice->get();
+                                foreach ($preselectedDevices as $key => $opDevices) {
+                                    try {
+                                        $pushedtoDevice = $this->device->fetchDataToDevice(
+                                            $opDevices,
+                                            $biometric_id);
+                                        if($pushedtoDevice){
+                                            Log::channel("registration-log")->info("BIO SUCCESSFULLY FETCHED : ".$biometric_id);
+                                        }else {
+                                            Log::channel("registration-log-error")->error("FAILED TO PUSH : ".$biometric_id);
+                                        }   
+                                    } catch (\Throwable $th) {
+                                        Log::channel("registration-log-error")->error("FAILED TO FETCH USER DATA FROM DEVICE : ".$biometric_id);
+                                        Log::channel("registration-log-error")->error($th->getMessage());
+                                    }   
+                                }    
+                            }
+                            break;
                         }
                     }
                 }

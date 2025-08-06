@@ -23,6 +23,8 @@ return new class extends Migration
             $table->integer('is_registration')->default(0)->comment('1 = For Registration');
             $table->integer("is_stable")->default(0);
             $table->integer("for_attendance")->nullable();
+            $table->integer("receiver_by_default")->default(0);
+            $table->integer("is_active")->default(0);
             $table->timestamps();
         });
     }

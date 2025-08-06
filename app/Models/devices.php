@@ -21,5 +21,7 @@ class Devices extends Model
         'is_registration',
         'is_stable',
         'for_attendance',
+        'receiver_by_default',
+        'is_active'
     ];
 }
