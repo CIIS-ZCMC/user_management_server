@@ -42,7 +42,7 @@ class BioMSController extends Controller
                 }
               
 
-                $item = [
+             $item = [
                     "id" => $row->id,
                     "device_name" => $row->device_name,
                     "ip_address" => $row->ip_address,
