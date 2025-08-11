@@ -27,29 +27,46 @@ class AttendanceController extends Controller
     }
     public function fetchAttendance(Request $request)
 {
-    $devices = Devices::whereNotNull("for_attendance")->where("for_attendance", ">=", 1)->get();
+    $devices = Devices::whereNotNull("for_attendance")->where("for_attendance", ">=", 1)
+    ->where("ip_address","192.168.5.183")
+    ->get();
     $title = $request->title ?? "";
     set_time_limit(0); 
+    ini_set('max_execution_time', 10600);
+
+   
+    $dateRequest = date("Y-m-d");
+
+   
+    if(isset($request->dateRequest)){
+        $dateRequest = date("Y-m-d",strtotime($request->dateRequest));
+    }
     
     $mergedAttendance = []; 
 
     foreach ($devices as $device) {
         try {
             // Connect to device
+           
             if ($tad = $this->device->bIO($device)) {
                 // Get raw attendance logs
                 $logs = $tad->get_att_log();
                 $attendance = simplexml_load_string($logs);
-                
                 if (!$attendance) {
                     \Log::error("Failed to parse XML from device: " . $device->ip_address);
                     continue;
                 }
-
                 $attendanceLogs = $this->helper->getAttendance($attendance);
                 $userInfo = $this->device->getUserInformation($attendanceLogs, $tad);
                 $employeeInfo = $this->helper->getEmployee($userInfo);
 
+
+                $attendanceLogs = array_values(array_filter($attendanceLogs,function($row) use($dateRequest) {
+                        return date("Y-m-d",strtotime($row['date_time'])) == $dateRequest;
+                }));
+
+             
+               
                 foreach ($employeeInfo as $employee) {
                     $biometricId = $employee['biometric_id'];
                   
@@ -58,6 +75,8 @@ class AttendanceController extends Controller
                                    ->select('biometrics.*')
                                    ->first();
                     if (!$user) continue;
+
+                    
 
                   
                     $profile = $user->employeeProfile;
@@ -72,11 +91,14 @@ class AttendanceController extends Controller
                                       $sector =  $info['sector'] ?? "";
                                                          
                                   }
-                                  $datenow = date("Y-m-d");
-                       $employeeLogs = array_values(array_filter($attendanceLogs, function($log) use ($datenow, $biometricId) {
-                                      return $log['biometric_id'] == $biometricId  && date("Y-m-d", strtotime($log['date_time'])) == $datenow;
+                              
+                       $employeeLogs = array_values(array_filter($attendanceLogs, function($log) use ($dateRequest, $biometricId) {
+                                      return $log['biometric_id'] == $biometricId  && date("Y-m-d", strtotime($log['date_time'])) == $dateRequest;
                           }));        
                           if(!$employeeLogs){continue;}
+
+                         
+                        
                                   
                     usort($employeeLogs, fn($a, $b) => 
                         strtotime(datetime: $a['date_time']) <=> strtotime($b['date_time'])
@@ -111,12 +133,13 @@ class AttendanceController extends Controller
                     }
                 }
 
-           
                 if ($request->clear_device == 1) {
                     $tad->delete_data(['value' => 3]);
                 }
             }
+            
         } catch (\Exception $e) {
+            return "offline";
             \Log::error("Device {$device->ip_address} failed: " . $e->getMessage());
             continue;
         }
@@ -124,11 +147,15 @@ class AttendanceController extends Controller
 
 
      $data = array_values($mergedAttendance);
-       usort($data, function($a, $b) {
+     usort($data, function($a, $b) {
         return strcmp($a['name'], $b['name']);
     });
-     $this->SavetoDb($data);
-   
+    $this->SavetoDb($data);
+    if(!count($data)) {
+        return response()->json([
+            'message'=>"No data found on request date : ".$dateRequest
+        ]);
+    }
    return $this->GenerateToExcel($data, $title);
 }
   
@@ -140,7 +167,7 @@ class AttendanceController extends Controller
                 $attendance = Attendance::firstOrCreate(["title"=>$title_key]);
                 $row['attendances_id'] = $attendance->id;
                 $attendanceInfo = Attendance_Information::where('biometric_id', $row['biometric_id'])
-                ->whereDate('created_at', date('Y-m-d', strtotime($row['first_entry'])))
+                ->whereDate('first_entry', date('Y-m-d', strtotime($row['first_entry'])))
                 ->where("attendances_id",$attendance->id)
                 ->first();
                   if ($attendanceInfo) {
