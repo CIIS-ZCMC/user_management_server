@@ -26,9 +26,9 @@ class AttendanceController extends Controller
         $this->dtr = new DTRcontroller();
     }
     public function fetchAttendance(Request $request)
-{
+    {
     $devices = Devices::whereNotNull("for_attendance")->where("for_attendance", ">=", 1)
-    ->where("ip_address","192.168.5.183")
+    ->where("ip_address",$request->ip_address)
     ->get();
     $title = $request->title ?? "";
     set_time_limit(0); 
@@ -153,10 +153,16 @@ class AttendanceController extends Controller
     $this->SavetoDb($data);
     if(!count($data)) {
         return response()->json([
-            'message'=>"No data found on request date : ".$dateRequest
-        ]);
+            'message'=>"No data found on request date : ".$dateRequest,
+            'data'=>[]
+        ],204);
     }
-   return $this->GenerateToExcel($data, $title);
+
+    return response()->json([
+        'data'=>$data,
+        'message'=>"Data found on request date : ".$dateRequest
+    ]);
+//    return $this->GenerateToExcel($data, $title);
 }
   
     

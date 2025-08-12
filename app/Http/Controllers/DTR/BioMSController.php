@@ -11,11 +11,12 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Response;
 use App\Models\Biometrics;
+use App\Http\Controllers\DTR\AttendanceController;
 
 class BioMSController extends Controller
 {
     protected $device;
-
+    
     private $CONTROLLER_NAME = "BioMSController";
 
     public function __construct()
@@ -72,6 +73,65 @@ class BioMSController extends Controller
             ]);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function fetchAttendanceDevices(Request $request)
+    {
+        try {
+            $data = Devices::where('for_attendance', 1)
+            ->where("is_active",1)
+            ->get();
+            foreach ($data as $row) {
+                if (!$this->device->BIO($row)) {
+                    $status = "Offline";
+                } else {
+                    $status = "Online";
+                }
+                $row->device_status = $status;
+            }
+            return response()->json([
+                'data' => $data
+            ]);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceDevices', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function fetchAttendanceDataFromDevice(Request $request){
+        try {
+            $dateRequest = $request->dateRequest;
+            $device_id = $request->device_id;
+            $title = $request->title;
+            $device = Devices::find($device_id);
+            if (!$device) {
+                return response()->json(['message' => 'Device not found'], Response::HTTP_NOT_FOUND);
+            }
+            $attendanceController = new AttendanceController();
+            $data =  $attendanceController->fetchAttendance(new Request([
+                'dateRequest' => $dateRequest,
+                'ip_address' => $device->ip_address,
+                'title' => $title
+            ]));
+
+            $data = json_decode($data->getContent(),true)['data'];
+            return response()->json([
+                "message"=>"list retrieved successfully",
+                'data'=>$data,
+                
+            ]);
+
+        //     
+        //     if (!$device) {
+        //         return response()->json(['message' => 'Device not found'], Response::HTTP_NOT_FOUND);
+        //     }
+
+        //    return $device;
+           // return $this->attendanceController
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceDataFromDevice', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
