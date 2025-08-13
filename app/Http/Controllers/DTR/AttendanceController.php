@@ -13,18 +13,70 @@ use App\Models\Attendance;
 use App\Models\Attendance_Information;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Http\Response;
 
 class AttendanceController extends Controller
 {
     protected $device;
     protected $helper;
-
+    protected $CONTROLLER_NAME = "AttendanceController";
     protected $dtr;
     public function __construct() {
         $this->device = new BioControl();
         $this->helper = new Helpers();
         $this->dtr = new DTRcontroller();
     }
+
+
+    public function fetchAttendanceList(Request $request){
+        try {
+            return response()->json([
+                'message'=>"list retrieved successfully",
+                'data' =>  Attendance::with('logs')->get()
+            ]);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceList', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function fetchAttendanceDataFromDevice(Request $request){
+        try {
+            $dateRequest = $request->dateRequest;
+            $device_id = $request->device_id;
+            $title = $request->title;
+            $device = Devices::find($device_id);
+            if (!$device) {
+                return response()->json(['message' => 'Device not found'], Response::HTTP_NOT_FOUND);
+            }
+            $attendanceController = new AttendanceController();
+            $data =  $attendanceController->fetchAttendance(new Request([
+                'dateRequest' => $dateRequest,
+                'ip_address' => $device->ip_address,
+                'title' => $title
+            ]));
+
+            $data = json_decode($data->getContent(),true)['data'];
+            return response()->json([
+                "message"=>"list retrieved successfully",
+                'data'=>$data,
+                
+            ]);
+
+        //     
+        //     if (!$device) {
+        //         return response()->json(['message' => 'Device not found'], Response::HTTP_NOT_FOUND);
+        //     }
+
+        //    return $device;
+           // return $this->attendanceController
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceDataFromDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     public function fetchAttendance(Request $request)
     {
     $devices = Devices::whereNotNull("for_attendance")->where("for_attendance", ">=", 1)
@@ -187,11 +239,42 @@ class AttendanceController extends Controller
                     }             
             }
     }
+
+
+    public function exportToexcel($id){
+        try {
+            $attendance = Attendance::find($id);
+            $logs = $attendance->logs;
+            $excluded = [
+                'attendances_id',
+                'biometric_id',
+                'id',
+                'created_at',
+                'updated_at'
+            ];
+            $logs->map(function($log) use ($excluded){
+                foreach ($excluded as $key) {
+                    unset($log->$key);
+                }
+                return $log;
+            });
+
+            $logs = $attendance->logs->sortBy(function($log) {
+                return strtolower($log->name);
+            });
+         
+            return $this->GenerateToExcel($logs->toArray(),$attendance->title);
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
     
     public function GenerateToExcel($data,$title){
-            $spreadsheet = new Spreadsheet();
+        
+      
+        $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $headers = array_keys($data[0]);
+         $headers = array_keys($data[0]);
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '1', $header);

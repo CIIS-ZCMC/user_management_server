@@ -65,6 +65,29 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function fetchLogs(Request $request){
+        $date = $request->date;
+        $employee = $request->employee_id;
+
+        $biometric_id = $employee['biometric_id'];
+        $dtrlogs = DailyTimeRecordLogs::where('biometric_id', $biometric_id)->where('dtr_date', $date)->first();
+        if($dtrlogs){
+         
+            $logs = json_decode($dtrlogs->json_logs);
+            $CleanLog = collect($logs)->filter(function($row) use($biometric_id,$date){
+                return $row->biometric_id == $biometric_id && date('Y-m-d', strtotime($row->date_time)) == $date;
+            });
+            return response()->json([
+                'message'=>"list retrieved successfully",
+                'data' => $CleanLog
+            ]);
+        }
+        return response()->json([
+            'message'=>"list retrieved successfully",
+            'data' => []
+        ]);
+    }
+
     public function printDtrLogs(Request $request)
     {
         $user = $request->user;
@@ -2316,7 +2339,7 @@ class DTRcontroller extends Controller
 
             foreach ($biometric_ids as $ids) {
                 $emp = EmployeeProfile::where('biometric_id', $ids->biometric_id)->first();
-                $dtrlogs = DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
+               return $dtrlogs = DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
 
                 $latestDate = null;
                 $logs = [];
@@ -2324,6 +2347,9 @@ class DTRcontroller extends Controller
                 $date = '';
 
                 $dtrstatus = '';
+                if($dtrlogs->isEmpty()){
+                    continue;
+                }
                 foreach ($dtrlogs as $dtr) {
                     $date = $dtr->dtr_date;
 
@@ -2369,8 +2395,8 @@ class DTRcontroller extends Controller
             }
             return $data;
         } catch (\Throwable $th) {
-
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
+            
+            // Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
             return $th;
         }
     }

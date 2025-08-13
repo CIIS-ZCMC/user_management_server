@@ -1789,8 +1789,12 @@ Route::middleware('auth.cookie')->group(function () {
         /** APPLY CODE HERE */
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::get('dtr-device-devices', 'BioMSController@index');
+            Route::post('dtr-device-deletedatafromdevice', 'BioMSController@deletedatafromdevice');
             Route::get('dtr-device-attendances', 'BioMSController@fetchAttendanceDevices');
-            Route::post('dtr-device-attendanceData', 'BioMSController@fetchAttendanceDataFromDevice');
+            Route::get('dtr-device-attendancelist', 'AttendanceController@fetchAttendanceList');
+            Route::post('dtr-device-attendanceData', 'AttendanceController@fetchAttendanceDataFromDevice');
+            
+            Route::post('dtr-device-logs', 'DTRcontroller@fetchLogs');
             Route::post("dtr-device-updatedevicestatus", "BioMSController@updateDeviceStatus");
             Route::get("dtr-registering-devices", "BioController@fetchRegisteringDevices");
             Route::post('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
