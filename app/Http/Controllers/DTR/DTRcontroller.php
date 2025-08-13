@@ -94,6 +94,9 @@ class DTRcontroller extends Controller
         $biometric_id = $user->biometric_id; //$user->biometric_id;
         $date = $request->requestDate;
         $dtr = $this->getUserDeviceLogs($biometric_id, $date);
+        if(!$dtr){
+            return redirect("/NoLogsDataFound");
+        }
         $emp = EmployeeProfile::where('biometric_id', $biometric_id)->first();
         $Name = $emp->personalInformation->name();
         $designation = $emp->findDesignation();
@@ -166,7 +169,9 @@ class DTRcontroller extends Controller
             return DailyTimeRecordLogs::where('biometric_id', $biometric_id)->get();
         }
         $log = DailyTimeRecordLogs::where('biometric_id', $biometric_id)->where('dtr_date', $filterDate)->first();
-
+        if(!$log){
+            return [];
+        }
         return [
             'dtr_date' => $log->dtr_date,
             'logs' => json_decode($log->json_logs),
