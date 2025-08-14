@@ -1096,11 +1096,204 @@ class Helpers
         return array_values($unique_entries);
     }
 
+    // public function saveDTRLogs($check_Records, $validate, $device, $yesterdate)
+    // {
+    //     $new_timing = 0;
+    //     $unique_Employee_IDs = [];
+    //     $date = date('Y-m-d');
+    //     foreach ($check_Records as $record) {
+    //         $employee_ID = $record['biometric_id'];
+    //         if (!in_array($employee_ID, $unique_Employee_IDs)) {
+    //             $unique_Employee_IDs[] = $employee_ID;
+    //         }
+    //         if ($yesterdate) {
+    //             $date = date('Y-m-d', strtotime($record['date_time']));
+    //         }
+    //     }
+    //     foreach ($unique_Employee_IDs as $id) {
+    //         $employee_Records = array_filter($check_Records, function ($att) use ($id) {
+    //             return $att['biometric_id'] == $id;
+    //         });
+    //         foreach ($employee_Records as $kk => $new) {
+    //             $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+    //             $entry = "Logged";
+    //             if ($rec) {
+    //                 $f1 = $rec->first_in;
+    //                 $f2 = $rec->first_out;
+    //                 $f3 = $rec->second_in;
+    //                 $f4 = $rec->second_out;
+
+    //                 if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+    //                     $entry = "Daily Time Recorded";
+    //                 }
+    //             }
+    //             $new_Rec[] = [
+    //                 'timing' => $new_timing,
+    //                 'biometric_id' => $new['biometric_id'],
+    //                 'name' => $new['name'],
+    //                 'date_time' => $new['date_time'],
+    //                 'status' => $new['status'],
+    //                 'status_description' => $new['status_description'],
+    //                 'entry_status' =>  $entry,
+    //                 'datepull' => date('Y-m-d H:i:s')
+    //             ];
+    //             $new_timing++;
+    //         }
+    //         // /* Checking if DTR logs for the day is generated */
+    //         $check_DTR_Logs = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 1);
+
+
+    //         if (count($check_DTR_Logs->get()) >= 1) {
+    //             // /* Counting logs data */
+    //             $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
+    //             $log_data_Array = json_decode($log_Data, true);
+    //             $OldRecord = json_decode($log_Data, true);
+    //             // /* Saving individually to user-attendance jsonLogs */
+
+
+    //             $log_data_Array =  $this->merge_unique_entries($log_data_Array, $new_Rec);
+
+    //             $ndata = [];
+    //             foreach ($log_data_Array as $n) {
+    //                 if ($n['biometric_id'] == $id) {
+    //                     $ndata[] = $n;
+    //                 }
+    //             }
+
+    //             $newt = 0;
+    //             $nr = [];
+
+    //             foreach ($ndata as $new) {
+
+
+    //                 $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+    //                 $entry = "Logged";
+
+    //                 if ($rec) {
+    //                     $f1 = $rec->first_in;
+    //                     $f2 = $rec->first_out;
+    //                     $f3 = $rec->second_in;
+    //                     $f4 = $rec->second_out;
+
+    //                     if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+    //                         $entry = "Daily Time Recorded";
+    //                     }
+    //                 }
+    //                 $devID = $device['id'];
+    //                 $devName = $this->getDeviceName($device['id']);
+
+    //                 $datepull =  date('Y-m-d H:i:s');
+    //                 if (isset($new['device_id'])) {
+
+    //                     $devID = $new['device_id'];
+    //                     $devName = $this->getDeviceName($new['device_id']);
+    //                     $datepull = $new['datepull'];
+    //                 }
+    //                 /* extract Data here */
+
+    //                 $nr[] = [
+    //                     'timing' => $newt,
+    //                     'biometric_id' => $new['biometric_id'],
+    //                     'name' => $new['name'],
+    //                     'date_time' => $new['date_time'],
+    //                     'status' => $new['status'],
+    //                     'status_description' => $new['status_description'],
+    //                     'device_id' => $devID,
+    //                     'device_name' => $devName,
+    //                     'entry_status' =>  $entry,
+    //                     'datepull' => $datepull
+    //                 ];
+
+    //                 $newt++;
+    //             }
+
+    //             $check_DTR_Logs->update([
+    //                 'json_logs' => json_encode($nr)
+    //             ]);
+    //         } else {
+    //             $ndata = [];
+    //             foreach ($new_Rec as $n) {
+    //                 if ($n['biometric_id'] == $id) {
+    //                     $ndata[] = $n;
+    //                 }
+    //             }
+    //             $newt = 0;
+    //             $nr = [];
+
+
+    //             foreach ($ndata as $new) {
+    //                 $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+    //                 $entry = "Logged";
+    //                 if ($rec) {
+    //                     $f1 = $rec->first_in;
+    //                     $f2 = $rec->first_out;
+    //                     $f3 = $rec->second_in;
+    //                     $f4 = $rec->second_out;
+
+    //                     if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+    //                         $entry = "Daily Time Recorded";
+    //                     }
+    //                 }
+
+    //                 $devID = $device['id'];
+    //                 $devName = $this->getDeviceName($device['id']);
+    //                 $nr[] = [
+    //                     'timing' => $newt,
+    //                     'biometric_id' => $new['biometric_id'],
+    //                     'name' => $new['name'],
+    //                     'date_time' => $new['date_time'],
+    //                     'status' => $new['status'],
+    //                     'status_description' => $new['status_description'],
+    //                     'device_id' => $devID,
+    //                     'device_name' =>  $devName,
+    //                     'entry_status' =>  $entry,
+    //                     'datepull' => date('Y-m-d H:i:s')
+    //                 ];
+    //                 $newt++;
+    //             }
+
+    //             $chec_kDTR = DailyTimeRecords::whereDate('dtr_date', $date)->where('biometric_id', $id);
+    //             if (count($chec_kDTR->get()) >= 1) {
+    //                 DailyTimeRecordlogs::create([
+    //                     'biometric_id' => $id,
+    //                     'dtr_id' => $chec_kDTR->get()[0]->id,
+    //                     'json_logs' => json_encode($nr),
+    //                     'validated' => $validate,
+    //                     'dtr_date' => $date
+    //                 ]);
+    //             } else {
+    //                 $check_DTR_Logs_Invalid = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 0)->get();
+    //                 if (count($check_DTR_Logs_Invalid) == 0) {
+    //                     DailyTimeRecordlogs::create([
+    //                         'biometric_id' => $id,
+    //                         'dtr_id' => 0,
+    //                         'json_logs' => json_encode($nr),
+    //                         'validated' => $validate,
+    //                         'dtr_date' => $date
+    //                     ]);
+    //                 } else {
+    //                     if ($validate == 0) {
+    //                         $log_Inv = count($check_DTR_Logs_Invalid) >= 1 ? $check_DTR_Logs_Invalid[0]->json_logs : '';
+    //                         $log_data_Array_inv = json_decode($log_Inv, true);
+    //                         // /* Saving individually to user-attendance jsonLogs */
+    //                         $log_data_Array_inv = array_merge($log_data_Array_inv, $nr);
+    //                         DailyTimeRecordlogs::where('id', $check_DTR_Logs_Invalid[0]->id)->update([
+    //                             'json_logs' => json_encode($log_data_Array_inv),
+    //                         ]);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
     public function saveDTRLogs($check_Records, $validate, $device, $yesterdate)
     {
         $new_timing = 0;
         $unique_Employee_IDs = [];
         $date = date('Y-m-d');
+        
+        // Get unique employee IDs and determine date
         foreach ($check_Records as $record) {
             $employee_ID = $record['biometric_id'];
             if (!in_array($employee_ID, $unique_Employee_IDs)) {
@@ -1110,184 +1303,99 @@ class Helpers
                 $date = date('Y-m-d', strtotime($record['date_time']));
             }
         }
+    
         foreach ($unique_Employee_IDs as $id) {
             $employee_Records = array_filter($check_Records, function ($att) use ($id) {
                 return $att['biometric_id'] == $id;
             });
-            foreach ($employee_Records as $kk => $new) {
-                $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+    
+            // Prepare new records
+            $new_Rec = [];
+            foreach ($employee_Records as $record) {
+                $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($record['date_time'])))
+                    ->where('biometric_id', $record['biometric_id'])
+                    ->first();
+                
                 $entry = "Logged";
                 if ($rec) {
-                    $f1 = $rec->first_in;
-                    $f2 = $rec->first_out;
-                    $f3 = $rec->second_in;
-                    $f4 = $rec->second_out;
-
-                    if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+                    $timeFields = [$rec->first_in, $rec->first_out, $rec->second_in, $rec->second_out];
+                    if (in_array($record['date_time'], $timeFields)) {
                         $entry = "Daily Time Recorded";
                     }
                 }
+    
                 $new_Rec[] = [
-                    'timing' => $new_timing,
-                    'biometric_id' => $new['biometric_id'],
-                    'name' => $new['name'],
-                    'date_time' => $new['date_time'],
-                    'status' => $new['status'],
-                    'status_description' => $new['status_description'],
-                    'entry_status' =>  $entry,
+                    'timing' => $new_timing++,
+                    'biometric_id' => $record['biometric_id'],
+                    'name' => $record['name'],
+                    'date_time' => $record['date_time'],
+                    'status' => $record['status'],
+                    'status_description' => $record['status_description'],
+                    'device_id' => $device['id'],
+                    'device_name' => $this->getDeviceName($device['id']),
+                    'entry_status' => $entry,
                     'datepull' => date('Y-m-d H:i:s')
                 ];
-                $new_timing++;
             }
-            // /* Checking if DTR logs for the day is generated */
-            $check_DTR_Logs = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 1);
-
-
-            if (count($check_DTR_Logs->get()) >= 1) {
-                // /* Counting logs data */
-                $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
-                $log_data_Array = json_decode($log_Data, true);
-                $OldRecord = json_decode($log_Data, true);
-                // /* Saving individually to user-attendance jsonLogs */
-
-
-                $log_data_Array =  $this->merge_unique_entries($log_data_Array, $new_Rec);
-
-                $ndata = [];
-                foreach ($log_data_Array as $n) {
-                    if ($n['biometric_id'] == $id) {
-                        $ndata[] = $n;
-                    }
-                }
-
-                $newt = 0;
-                $nr = [];
-
-                foreach ($ndata as $new) {
-
-
-                    $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
-                    $entry = "Logged";
-
-                    if ($rec) {
-                        $f1 = $rec->first_in;
-                        $f2 = $rec->first_out;
-                        $f3 = $rec->second_in;
-                        $f4 = $rec->second_out;
-
-                        if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
-                            $entry = "Daily Time Recorded";
-                        }
-                    }
-                    $devID = $device['id'];
-                    $devName = $this->getDeviceName($device['id']);
-
-                    $datepull =  date('Y-m-d H:i:s');
-                    if (isset($new['device_id'])) {
-
-                        $devID = $new['device_id'];
-                        $devName = $this->getDeviceName($new['device_id']);
-                        $datepull = $new['datepull'];
-                    }
-                    /* extract Data here */
-
-                    $nr[] = [
-                        'timing' => $newt,
-                        'biometric_id' => $new['biometric_id'],
-                        'name' => $new['name'],
-                        'date_time' => $new['date_time'],
-                        'status' => $new['status'],
-                        'status_description' => $new['status_description'],
-                        'device_id' => $devID,
-                        'device_name' => $devName,
-                        'entry_status' =>  $entry,
-                        'datepull' => $datepull
-                    ];
-
-                    $newt++;
-                }
-
-                $check_DTR_Logs->update([
-                    'json_logs' => json_encode($nr)
+    
+            // Check for existing logs (both validated and non-validated)
+            $existingLogs = DailyTimeRecordlogs::whereDate('dtr_date', $date)
+                ->where('biometric_id', $id)
+                ->first();
+    
+            if ($existingLogs) {
+                // Merge with existing logs
+                $existingData = json_decode($existingLogs->json_logs, true) ?: [];
+                $mergedData = $this->mergeAndDeduplicateRecords($existingData, $new_Rec);
+                
+                $existingLogs->update([
+                    'json_logs' => json_encode($mergedData),
+                    'validated' => $validate // Update validation status
                 ]);
             } else {
-                $ndata = [];
-                foreach ($new_Rec as $n) {
-                    if ($n['biometric_id'] == $id) {
-                        $ndata[] = $n;
-                    }
-                }
-                $newt = 0;
-                $nr = [];
-
-
-                foreach ($ndata as $new) {
-                    $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
-                    $entry = "Logged";
-                    if ($rec) {
-                        $f1 = $rec->first_in;
-                        $f2 = $rec->first_out;
-                        $f3 = $rec->second_in;
-                        $f4 = $rec->second_out;
-
-                        if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
-                            $entry = "Daily Time Recorded";
-                        }
-                    }
-
-                    $devID = $device['id'];
-                    $devName = $this->getDeviceName($device['id']);
-                    $nr[] = [
-                        'timing' => $newt,
-                        'biometric_id' => $new['biometric_id'],
-                        'name' => $new['name'],
-                        'date_time' => $new['date_time'],
-                        'status' => $new['status'],
-                        'status_description' => $new['status_description'],
-                        'device_id' => $devID,
-                        'device_name' =>  $devName,
-                        'entry_status' =>  $entry,
-                        'datepull' => date('Y-m-d H:i:s')
-                    ];
-                    $newt++;
-                }
-
-                $chec_kDTR = DailyTimeRecords::whereDate('dtr_date', $date)->where('biometric_id', $id);
-                if (count($chec_kDTR->get()) >= 1) {
-                    DailyTimeRecordlogs::create([
-                        'biometric_id' => $id,
-                        'dtr_id' => $chec_kDTR->get()[0]->id,
-                        'json_logs' => json_encode($nr),
-                        'validated' => $validate,
-                        'dtr_date' => $date
-                    ]);
-                } else {
-                    $check_DTR_Logs_Invalid = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 0)->get();
-                    if (count($check_DTR_Logs_Invalid) == 0) {
-                        DailyTimeRecordlogs::create([
-                            'biometric_id' => $id,
-                            'dtr_id' => 0,
-                            'json_logs' => json_encode($nr),
-                            'validated' => $validate,
-                            'dtr_date' => $date
-                        ]);
-                    } else {
-                        if ($validate == 0) {
-                            $log_Inv = count($check_DTR_Logs_Invalid) >= 1 ? $check_DTR_Logs_Invalid[0]->json_logs : '';
-                            $log_data_Array_inv = json_decode($log_Inv, true);
-                            // /* Saving individually to user-attendance jsonLogs */
-                            $log_data_Array_inv = array_merge($log_data_Array_inv, $nr);
-                            DailyTimeRecordlogs::where('id', $check_DTR_Logs_Invalid[0]->id)->update([
-                                'json_logs' => json_encode($log_data_Array_inv),
-                            ]);
-                        }
-                    }
-                }
+                // Check for DTR record
+                $dtrRecord = DailyTimeRecords::whereDate('dtr_date', $date)
+                    ->where('biometric_id', $id)
+                    ->first();
+    
+                $logData = [
+                    'biometric_id' => $id,
+                    'dtr_id' => $dtrRecord ? $dtrRecord->id : 0,
+                    'json_logs' => json_encode($new_Rec),
+                    'validated' => $validate,
+                    'dtr_date' => $date
+                ];
+    
+                DailyTimeRecordlogs::create($logData);
             }
         }
     }
-
-
+    
+    protected function mergeAndDeduplicateRecords($existingData, $newData)
+    {
+        // Create a unique key for each record to identify duplicates
+        $existingKeys = [];
+        foreach ($existingData as $item) {
+            $key = $item['biometric_id'] . '|' . $item['date_time'] . '|' . $item['status'];
+            $existingKeys[$key] = true;
+        }
+    
+        // Add new records that don't already exist
+        foreach ($newData as $item) {
+            $key = $item['biometric_id'] . '|' . $item['date_time'] . '|' . $item['status'];
+            if (!isset($existingKeys[$key])) {
+                $existingData[] = $item;
+            }
+        }
+    
+        // Reset timing values sequentially
+        foreach ($existingData as $index => &$item) {
+            $item['timing'] = $index;
+        }
+    
+        return $existingData;
+    }
+/////////////////////////////////////////////////////////////
     public function getAttendance($attendance)
     {
         $attendance_Logs = [];
