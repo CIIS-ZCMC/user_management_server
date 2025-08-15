@@ -175,7 +175,7 @@ class DTRcontroller extends Controller
 
         $jsonLogs = json_decode($log->json_logs);
         $logs = array_filter($jsonLogs,function($row) use($filterDate){
-            return date("Y-m-d") == $filterDate;
+           return date("Y-m-d",strtotime($row->date_time)) == $filterDate;
         });
         return [
             'dtr_date' => $log->dtr_date,
