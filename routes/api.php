@@ -1793,7 +1793,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('dtr-device-attendances', 'BioMSController@fetchAttendanceDevices');
             Route::get('dtr-device-attendancelist', 'AttendanceController@fetchAttendanceList');
             Route::post('dtr-device-attendanceData', 'AttendanceController@fetchAttendanceDataFromDevice');
-            
+            Route::get('dtr-device-attendancerequest', 'AttendanceController@fetchAttendanceRequest');
             Route::post('dtr-device-logs', 'DTRcontroller@fetchLogs');
             Route::post("dtr-device-updatedevicestatus", "BioMSController@updateDeviceStatus");
             Route::get("dtr-registering-devices", "BioController@fetchRegisteringDevices");

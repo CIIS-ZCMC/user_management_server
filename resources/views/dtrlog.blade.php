@@ -305,9 +305,13 @@
     <h4 style="margin-top:70px;text-align:center">
         DTR Logs
     <br>
-    <span style="font-size:11px;color:#656f74">Device Daily Time Records </span>
-    <br>
-    <span style="font-size:11px;color:#656f74">User Management Information System</span>
+    <span style="font-size:11px;color:#656f74">
+        Device Daily Time Records
+        <br>
+        User Management Information System
+        <br>
+       <span style="font-size:15px;color:#0B60B0"> {{date('F j, Y',strtotime($dtr['dtr_date']))}}</span>
+    </span>
     </h4>
 
 
@@ -327,14 +331,13 @@
 
     <table id="tabledate">
         <tr id="headertop">
-            <th style="text-align: center;padding-top:20px;width:100px" >
-                <h3>
-                  
-                    {{date('F j, Y',strtotime($dtr['dtr_date']))}}
-                </h3>
-            </th>
+           
             <th  style="text-align: center">
-             Time Registered
+            
+          LOG
+            <br>
+            <span style="font-size:9px">Time Registered</span>
+             
             </th>
             <th  style="text-align: center;width:140px">
                Pulled
@@ -342,8 +345,7 @@
             <span style="font-size:9px">Time Pulled by Device</span>
             </th>
             <th style="text-align: center;width:150px">Device Name</th>
-            <th style="text-align: center" >Punch State</th>
-            <th style="text-align: center" >Status</th>
+          
         </tr>
 
         {{-- {{print_r($dtrRecords)}} --}}
@@ -355,32 +357,13 @@
 
                 @foreach ($dtr['logs'] as $item)
                 <tr >
-                    <td  >
-                    
-                        @if ($item->entry_status == "Logged")
-                        <span style="font-size:12px">0</span>
-                        @else 
-                        <span style="font-size:12px">DTR</span>
-                        @endif
-                       
-                   
-                    </td>
+                  
                     <td  style="text-align: center; font-weight:bold">
                         <span style="font-weight: bold">{{date('h:i a',strtotime($item->date_time))}}</span>
                     </td>
                     <td  style="text-align: center;font-weight:bold">{{date('h:i a',strtotime($item->datepull))}}</td>
                     <td style="text-align: center">{{$item->device_name}}</td>
-                    <td style="text-align: center" >
-                        @if ($item->status == 255)
-                        Global State
-                        @elseif($item->status == 0)
-                        Check in
-                        @elseif($item->status == 1)
-                            Check out
-                        @endif
-
-                    </td>
-                    <td style="text-align: center" >{{$item->entry_status}}</td>
+                  
                 </tr>
                 @endforeach
           

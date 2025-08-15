@@ -40,6 +40,29 @@ class AttendanceController extends Controller
         }
     }
 
+    public function fetchAttendanceRequest(Request $request){
+        try {
+
+            $dateRequest = $request->requestDate;
+            $user = $request->user;
+            $biometric_id = $user->biometric_id;
+            $attendance = Attendance::whereHas('logs', function($query) use ($biometric_id, $dateRequest) {
+                $query->where("biometric_id", $biometric_id)
+                ->whereDate("first_entry", $dateRequest);
+            })->with('logs', function($query) use ($biometric_id){
+                $query->where("biometric_id", $biometric_id);
+            })->get();
+
+            return response()->json([
+                'message'=>"list retrieved successfully",
+                'data' =>  $attendance
+            ]);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceRequest', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function fetchAttendanceDataFromDevice(Request $request){
         try {
             $dateRequest = $request->dateRequest;
