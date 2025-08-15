@@ -102,6 +102,7 @@ class DTRcontroller extends Controller
         $designation = $emp->findDesignation();
         $empID = $emp->employee_id;
 
+        
 
         $options = new Options();
         $options->set('isPhpEnabled', true);
@@ -163,7 +164,7 @@ class DTRcontroller extends Controller
         }
     }
 
-  public function getUserDeviceLogs($biometric_id, $filterDate)
+    public function getUserDeviceLogs($biometric_id, $filterDate)
     {
         if (!$filterDate) {
             return DailyTimeRecordLogs::where('biometric_id', $biometric_id)->get();
@@ -175,7 +176,7 @@ class DTRcontroller extends Controller
 
         $jsonLogs = json_decode($log->json_logs);
         $logs = array_filter($jsonLogs,function($row) use($filterDate){
-           return date("Y-m-d",strtotime($row->date_time)) == $filterDate;
+            return date("Y-m-d",strtotime($row->date_time)) == $filterDate;
         });
         return [
             'dtr_date' => $log->dtr_date,
@@ -748,7 +749,7 @@ class DTRcontroller extends Controller
                 }
             }
         } catch (\Throwable $th) {
-            Log::channel("registration-log")->info("fetchDTRFromDevice: ".$th->getMessage());
+            Log::channel("custom-dtr-log")->info("fetchDTRFromDevice: ".$th->getMessage());
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
             return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
@@ -2430,21 +2431,21 @@ class DTRcontroller extends Controller
         $today = now()->format('Y-m-d');
         $fileName = 'biometricLogV2_' . $today . '.txt';
         
-        Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Starting processing for date: {$today}");
+      //  Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Starting processing for date: {$today}");
     
         // Prepare headers
         $header = " -- Biometric Logs for: " . $today . " (Strict Date Match)" . PHP_EOL;
-        $header2 = "biometric_id | date_time | Status | Employee | Punch State | Device Name | Ip-Address" . PHP_EOL;
+        $header2 = "biometric_id | date_time | Status | Employee | Device Name | Ip-Address" . PHP_EOL;
         $separator = str_repeat('-', 100) . PHP_EOL;
     
         // Read existing content if file exists
         $existingContent = '';
         if (Storage::disk('local')->exists($fileName)) {
             $existingContent = Storage::disk('local')->get($fileName);
-            Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Found existing log file: {$fileName}");
+       //     Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Found existing log file: {$fileName}");
         } else {
             $existingContent = $header . $separator . $header2 . $separator;
-            Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Creating new log file: {$fileName}");
+          //  Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Creating new log file: {$fileName}");
         }
     
         $newContent = '';
@@ -2464,7 +2465,7 @@ class DTRcontroller extends Controller
                 // Strict check if log is between today 00:00:00 and tomorrow 00:00:00
                 if ($logDateTime < $todayStart || $logDateTime >= $todayEnd) {
                     $recordsSkipped++;
-                    Log::channel("custom-dtr-log")->debug("SaveLogsLocal :: Skipped record - date mismatch: {$value['date_time']}");
+                 //   Log::channel("custom-dtr-log")->debug("SaveLogsLocal :: Skipped record - date mismatch: {$value['date_time']}");
                     continue;
                 }
     
@@ -2474,7 +2475,6 @@ class DTRcontroller extends Controller
                     $value['date_time'],
                     $value['status'],
                     $value['name'],
-                    $value['status_description']['description'] ?? 'N/A',
                     $device['device_name'],
                     $device['ip_address']
                 );
@@ -2483,9 +2483,9 @@ class DTRcontroller extends Controller
                 if (strpos($existingContent, $dataString) === false) {
                     $newContent .= $dataString . PHP_EOL;
                     $recordsAdded++;
-                    Log::channel("custom-dtr-log")->debug("SaveLogsLocal :: Adding new record: {$dataString}");
+             //       Log::channel("custom-dtr-log")->debug("SaveLogsLocal :: Adding new record: {$dataString}");
                 } else {
-                    Log::channel("custom-dtr-log")->debug("SaveLogsLocal :: Duplicate record skipped: {$dataString}");
+               //     Log::channel("custom-dtr-log")->debug("SaveLogsLocal :: Duplicate record skipped: {$dataString}");
                 }
             } catch (Exception $e) {
                 $recordsSkipped++;
