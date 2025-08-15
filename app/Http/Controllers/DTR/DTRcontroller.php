@@ -163,7 +163,7 @@ class DTRcontroller extends Controller
         }
     }
 
-    public function getUserDeviceLogs($biometric_id, $filterDate)
+  public function getUserDeviceLogs($biometric_id, $filterDate)
     {
         if (!$filterDate) {
             return DailyTimeRecordLogs::where('biometric_id', $biometric_id)->get();
@@ -172,9 +172,14 @@ class DTRcontroller extends Controller
         if(!$log){
             return [];
         }
+
+        $jsonLogs = json_decode($log->json_logs);
+        $logs = array_filter($jsonLogs,function($row) use($filterDate){
+           return date("Y-m-d",strtotime($row->date_time)) == $filterDate;
+        });
         return [
             'dtr_date' => $log->dtr_date,
-            'logs' => json_decode($log->json_logs),
+            'logs' => $logs,
             'created_at' => $log->created_at,
             'updated_at' => $log->updated_at
         ];

@@ -331,15 +331,40 @@ class Helpers
             $entry = date('Y-m-d', strtotime($value['first_in']));
             $entryTime = date('H:i', strtotime($value['first_in']));
         }
-
-        // $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
-        //     return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
-        //         date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) ||
-        //         date('Y-m-d', strtotime($row['scheduleDate'])) === $entry  &&
-        //         date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours'));
-        // }));
-
+        
         $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
+            $entryDateTime = strtotime("$entry $entryTime");
+        
+            // Check if the schedule date matches
+            if (date('Y-m-d', strtotime($row['scheduleDate'])) !== $entry) {
+                return false;
+            }
+            // List of schedule entry points
+            $entryPoints = [
+                $row['first_entry'],
+                $row['second_entry'],
+                $row['third_entry'],
+                $row['last_entry']
+            ];
+        
+            foreach ($entryPoints as $point) {
+                if (empty($point)) continue; // Skip empty times
+        
+                $scheduleTime = strtotime($row['scheduleDate'] . ' ' . $point);
+                $minTime = $scheduleTime - (4 * 3600); // -4 hours
+                $maxTime = $scheduleTime + (4 * 3600); // +4 hours
+        
+                if ($entryDateTime >= $minTime && $entryDateTime <= $maxTime) {
+                    return true;
+                }
+            }
+        
+            return false;
+        }));
+        
+
+
+       /* $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
             $entryDateTime = strtotime($entry . ' ' . $entryTime);
 
             return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
@@ -354,7 +379,7 @@ class Helpers
                         date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' -4 hours')))
                 );
         }));
-
+*/
 
 
 
