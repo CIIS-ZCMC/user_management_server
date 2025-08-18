@@ -512,24 +512,19 @@ class BioController extends Controller
                             //Do the fetching auto. // ONLY ONE DEVICE
                             $preselectedDevice = Devices::where("receiver_by_default",1);
                             if($preselectedDevice->exists()){
-                                $preselectedDevices = $preselectedDevice->get();
-                                foreach ($preselectedDevices as $key => $opDevices) {
-                                    try {
-                                        $pushedtoDevice = $this->device->fetchDataToDevice(
-                                            $opDevices,
-                                            $biometric_id);
-                                        if($pushedtoDevice){
-                                            Log::channel("registration-log")->info("BIO SUCCESSFULLY FETCHED : ".$biometric_id);
-                                        }else {
-                                            Log::channel("registration-log-error")->error("FAILED TO PUSH : ".$biometric_id);
-                                        }   
-                                    } catch (\Throwable $th) {
-                                        Log::channel("registration-log-error")->error("FAILED TO FETCH USER DATA FROM DEVICE : ".$biometric_id);
-                                        Log::channel("registration-log-error")->error($th->getMessage());
+                                foreach ($preselectedDevice->get() as $key => $receiverDevice) {
+                                    $pushedtoDevice = $this->device->fetchDataToDevice(
+                                        $receiverDevice,
+                                        $biometric_id);
+                                    if($pushedtoDevice){
+                                        Log::channel("registration-log")->info("BIO SUCCESSFULLY FETCHED : ".$biometric_id);
+                                    }else {
+                                        Log::channel("registration-log-error")->error("FAILED TO PUSH : ".$biometric_id);
                                     }   
-                                }    
+                                }
                             }
-                            break;
+                         
+                            break; // Move to next biometric ID
                         }
                     }
                 }
