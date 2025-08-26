@@ -14,7 +14,7 @@ use App\Models\Attendance_Information;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\Response;
-
+use Illuminate\Support\Facades\Cache;
 class AttendanceController extends Controller
 {
     protected $device;
@@ -28,18 +28,25 @@ class AttendanceController extends Controller
     }
 
 
-    public function fetchAttendanceList(Request $request){
+    public function fetchAttendanceList(Request $request)
+    {
         try {
+            $data = Cache::remember('attendance_list', now()->addMinutes(5), function () {
+                return Attendance::with('logs')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            });
+    
             return response()->json([
-                'message'=>"list retrieved successfully",
-                'data' =>  Attendance::with('logs')->get()
+                'message' => "List retrieved successfully",
+                'data' => $data
             ]);
+    
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceList', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function fetchAttendanceRequest(Request $request){
         try {
 
