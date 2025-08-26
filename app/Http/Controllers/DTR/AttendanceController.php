@@ -34,8 +34,20 @@ class AttendanceController extends Controller
             $data = Cache::remember('attendance_list', now()->addMinutes(5), function () {
                 return Attendance::with('logs')
                     ->orderBy('created_at', 'desc')
+                    ->limit(10)
                     ->get();
             });
+
+            if($request->search && $request->search != ""){
+                $data = Attendance::with('logs')
+                    ->where('title', 'like', "%{$request->search}%")
+                    ->orWhereHas('logs', function ($q) use ($request) {
+                        $q->where('first_entry', 'like', "%{$request->search}%");
+                    })
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+            }
     
             return response()->json([
                 'message' => "List retrieved successfully",
