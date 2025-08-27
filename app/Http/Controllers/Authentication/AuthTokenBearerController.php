@@ -25,9 +25,12 @@ class AuthTokenBearerController extends Controller
              */
             $credentials = $request->only(['employee_id', 'password']);
 
-            $token = $this->loginService->handle($credentials);
+            $data = $this->loginService->handle($credentials);
 
-            return response()->json(['token' => $token]);
+            return response()->json([
+                'data' => $data,
+                'message' => 'Login successful.'
+            ]);
         } catch (InvalidCredentialException $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_FORBIDDEN);
         }

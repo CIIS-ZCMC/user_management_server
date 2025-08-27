@@ -29,6 +29,7 @@ class Authorization
 
         $user = $request->user;
 
+
         $employe_designation = $user->findDesignation();
         $employment_type = $user->employmentType;
 
@@ -55,8 +56,6 @@ class Authorization
         }
 
         $permissions = Cache::get($user->employee_id);
-
-
 
         if($permissions && !$has_rights){
             try{

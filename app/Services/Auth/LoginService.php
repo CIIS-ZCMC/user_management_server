@@ -25,10 +25,10 @@ class LoginService
 
         $token = $employee_profile->generateSession();
 
-        return [
-            'token' => $token,
-            'user' => $this->composeUserDetails($employee_profile)
-        ];
+        $employee_details = $this->composeUserDetails($employee_profile);
+        $employee_details['token'] = $token;
+
+        return $employee_details;
     }
 
     protected function composeUserDetails($employee_profile): array

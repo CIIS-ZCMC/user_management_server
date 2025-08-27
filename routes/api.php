@@ -5,6 +5,7 @@ use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use App\Http\Controllers\DTR\BioController;
 use App\Http\Controllers\HR\EmployeesReportByStatusController;
 use App\Http\Controllers\Authentication\AuthTokenBearerController;
+use App\Http\Controllers\v2\DailyTimeRecord\DailyTimeRecordController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -27,6 +28,15 @@ Route::post('/savebiometric', [BioController::class, 'SaveBiometric']);
 
 Route::prefix('auth')->group(function () {
     Route::post('sign-in', [AuthTokenBearerController::class, 'store']);
+});
+
+Route::middleware('auth.cookie')->group(function () {
+    
+    Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+        Route::prefix('v2')->group(function () {
+            Route::get('daily-time-records', [DailyTimeRecordController::class, 'index']);
+        });
+    });
 });
 
 Route::get('employees/report-pdf-with-active-employees', [EmployeesReportByStatusController::class, 'activeEmployees']);
