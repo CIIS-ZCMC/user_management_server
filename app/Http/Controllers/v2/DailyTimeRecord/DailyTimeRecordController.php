@@ -5,6 +5,7 @@ namespace App\Http\Controllers\v2\DailyTimeRecord;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+use App\Http\Resources\v2\DailyTimeRecordResource;
 use App\Contracts\DailyTimeRecord\DailyTimeRecordRepositoryInterface;
 
 class DailyTimeRecordController extends Controller
@@ -16,14 +17,17 @@ class DailyTimeRecordController extends Controller
     public function index(Request $request)
     {
         try {
-            return $this->dailyTimeRecordRepository->index($request);
+            $dailyTimeRecords = $this->dailyTimeRecordRepository->index($request);
 
-            return response()->json([
-                'message' => 'Daily Time Record retrieved successfully',
-                'data' => $this->dailyTimeRecordRepository->index($request)
-            ]);
+            return DailyTimeRecordResource::collection($dailyTimeRecords)
+                ->additional([
+                    'message' => 'Daily Time Record retrieved successfully'
+                ]);
         } catch (\Throwable $th) {
-            //throw $th;
+            return response()->json([
+                'message' => 'Failed to retrieve Daily Time Record',
+                'error' => $th->getMessage()
+            ], 500);
         }
     }
 }
