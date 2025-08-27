@@ -18,7 +18,7 @@ class DailyTimeRecordResource extends JsonResource
         return [
             'id' => $this->id,
             'biometric_id' => $this->biometric_id,
-            'dtr_date' => $this->dtr_date,
+            'date' => $this->dtr_date,
             'time_in' => $this->first_in ? $this->extractTime($this->first_in) : null,
             'break_out' => $this->first_out ? $this->extractTime($this->first_out) : null,
             'break_in' => $this->second_in ? $this->extractTime($this->second_in) : null,
