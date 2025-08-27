@@ -32,13 +32,17 @@ class BioController extends Controller
 
     public function __construct()
     {
-        $this->device = new BioControl();
-        $this->bioms = new BioMSController();
-        $this->device_ids = [
-            2
-        ];
-        $this->ip_registration = json_decode($this->bioms->registrationDevice()->getContent(), true)['data'];
-        $this->mailer = new MailController();
+        try{
+            $this->device = new BioControl();
+            $this->bioms = new BioMSController();
+            $this->device_ids = [
+                12
+            ];
+            $this->ip_registration = json_decode($this->bioms->registrationDevice()->getContent(), true)['data'];
+            $this->mailer = new MailController();
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, '__construct', $th->getMessage());
+        }
     }
 
     // public function SaveBiometric(Request $request){

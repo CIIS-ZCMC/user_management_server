@@ -163,6 +163,25 @@ class EmployeeProfile extends Authenticatable
         return $encryptedToken;
     }
 
+    public function generateSession()
+    {
+        AccessToken::where('employee_profile_id', $this->id)->delete();
+
+
+        $token = hash('sha256', Str::random(40));
+        $token_exp = Carbon::now()->addHour();
+
+        $accessToken = AccessToken::create([
+            'employee_profile_id' => $this->id,
+            'public_key' => 'NONE',
+            'token' => $token,
+            'token_exp' => $token_exp
+        ]);
+
+        return $token;
+
+    }
+
     public function name()
     {
         $personal_information = $this->personalInformation;

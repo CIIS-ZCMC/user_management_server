@@ -26,6 +26,41 @@ class AuthenticateWithCookie
     public function handle(Request $request, Closure $next, ...$access)
     {
         try {
+            if($request->hasHeader('Authorization')){
+                $token = $request->header('Authorization');
+                $token = str_replace('Bearer ', '', $token);
+                $hasAccessToken = AccessToken::where('token', $token)->first();
+
+                if (!$hasAccessToken) {
+                    return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
+                }
+
+                $tokenExpTime = Carbon::parse($hasAccessToken->token_exp);
+
+                $isTokenExpired = $tokenExpTime->isPast();
+
+                if ($isTokenExpired) {
+                    return response()->json(['error' => 'Access token has expired'], Response::HTTP_UNAUTHORIZED);
+                }
+
+                $my_token = AccessToken::where('token', $token)->first();
+                $my_token->update(['token_exp' => Carbon::now()->addHour()]);
+
+                $user = $hasAccessToken->employeeProfile;
+
+                // Check if the token will expire in 5 minutes
+                $fiveMinutesFromNow = Carbon::now()->addMinutes(5);
+                $shouldExtendExpiration = $tokenExpTime->lessThanOrEqualTo($fiveMinutesFromNow);
+
+                if($shouldExtendExpiration){
+                    $hasAccessToken->update(['token_expiration' => Carbon::now()->addMinutes(30)]);
+                }
+
+                $request->merge(['user' => $user]);
+
+                return $next($request);
+            }
+
             $cookieValue = $request->cookie(config("app.cookie_name"));
 
             if (is_array($cookieValue)) {
