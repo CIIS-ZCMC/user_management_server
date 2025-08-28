@@ -6,6 +6,8 @@ use App\Http\Controllers\DTR\BioController;
 use App\Http\Controllers\HR\EmployeesReportByStatusController;
 use App\Http\Controllers\Authentication\AuthTokenBearerController;
 use App\Http\Controllers\v2\DailyTimeRecord\DailyTimeRecordController;
+use App\Http\Controllers\v2\Schedule\ScheduleController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -35,6 +37,8 @@ Route::middleware('auth.cookie')->group(function () {
     Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
         Route::prefix('v2')->group(function () {
             Route::get('daily-time-records', [DailyTimeRecordController::class, 'index']);
+
+            Route::get('schedules', [ScheduleController::class, 'index']);
 
             Route::delete('sign-out', [AuthTokenBearerController::class, 'delete']);
         });
