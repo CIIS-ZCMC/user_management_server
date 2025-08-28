@@ -38,4 +38,14 @@ class AuthTokenBearerController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_FORBIDDEN);
         }
     }
+
+    public function delete(Request $request)
+    {
+        $user = $request->user;
+        $user->accessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout successful.'
+        ]);
+    }
 }   

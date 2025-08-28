@@ -35,6 +35,8 @@ Route::middleware('auth.cookie')->group(function () {
     Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
         Route::prefix('v2')->group(function () {
             Route::get('daily-time-records', [DailyTimeRecordController::class, 'index']);
+
+            Route::delete('sign-out', [AuthTokenBearerController::class, 'delete']);
         });
     });
 });
