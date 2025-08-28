@@ -13,15 +13,21 @@ class ScheduleRepository implements ScheduleRepositoryInterface
     public function index($user): Collection
     {
         $currentYear = Carbon::now()->year;
-
-        return EmployeeSchedule::with(['schedule' => function($query) use ($currentYear) {
-                $query->where('date', 'LIKE', $currentYear . '-%')
+        $currentMonth = Carbon::now()->month;
+        $monthPattern = str_pad($currentMonth, 2, '0', STR_PAD_LEFT);
+        
+        return EmployeeSchedule::with(['schedule' => function($query) use ($currentYear, $monthPattern) {
+                $query->where('date', 'LIKE', $currentYear . '-' . $monthPattern . '-%')
                       ->with('timeShift');
             }])
             ->where('employee_profile_id', $user->id)
-            ->whereHas('schedule', function($query) use ($currentYear) {
-                $query->where('date', 'LIKE', $currentYear . '-%');
+            ->whereHas('schedule', function($query) use ($currentYear, $monthPattern) {
+                $query->where('date', 'LIKE', $currentYear . '-' . $monthPattern . '-%');
             })
-            ->get();
+            ->get()
+            ->sortByDesc(function($employeeSchedule) {
+                return $employeeSchedule->schedule->date;
+            })
+            ->values();
     }
 }

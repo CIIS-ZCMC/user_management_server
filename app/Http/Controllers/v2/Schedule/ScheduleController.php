@@ -5,7 +5,7 @@ namespace App\Http\Controllers\v2\Schedule;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\v2\PersonalScheduleResource;
 use App\Contracts\Schedule\ScheduleRepositoryInterface;
 
 class ScheduleController extends Controller
@@ -19,9 +19,7 @@ class ScheduleController extends Controller
         $user = $request->user;
         $schedules = $this->scheduleRepository->index($user);
 
-        return response()->json(['data' => $schedules]);
-
-        return (new EmployeeScheduleResource($schedules))
+        return PersonalScheduleResource::collection($schedules) 
             ->additional([
                 'message' => 'Success retrieving personal schedule.'
             ]);
