@@ -365,14 +365,14 @@ class EmployeeProfileController extends Controller
 
                 $message = null;
 
-                if($currentYear > $passwordYear){
+                if ($currentYear > $passwordYear) {
                     $message = "Your account password has expired, it is mandatory to change the password.";
-                }else{
+                } else {
                     $message = 'Your account password has reach 3 month olds, you can keep the same password by clicking signin anyway or better change password for your account security.';
                 }
 
                 return response()->json(['message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY)
-                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -414,7 +414,7 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((bool)$employee_profile->is_2fa) {
+            if ((bool) $employee_profile->is_2fa) {
                 $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
                 SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
@@ -449,7 +449,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -541,7 +542,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                         continue;
                     }
 
@@ -600,7 +601,7 @@ class EmployeeProfileController extends Controller
                     }
 
                     if (!$system_exist) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                     }
                 }
 
@@ -610,7 +611,7 @@ class EmployeeProfileController extends Controller
         } else {
             $side_bar_details = $sidebar_cache;
         }
-        
+
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -644,7 +645,7 @@ class EmployeeProfileController extends Controller
                      * If side bar details system array is empty
                      */
                     if (!$side_bar_details['system']) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                         continue;
                     }
 
@@ -708,7 +709,7 @@ class EmployeeProfileController extends Controller
                      * when system is not empty but the target system doesn't exist this will append to it
                      */
                     if (count($side_bar_details['system']) === 0 || !$exists) {
-                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$system_role);
+                        $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $system_role);
                     }
                 }
 
@@ -785,7 +786,7 @@ class EmployeeProfileController extends Controller
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$reg_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $reg_system_role);
                 }
             }
 
@@ -802,11 +803,11 @@ class EmployeeProfileController extends Controller
 
                 $exists = array_search($jo_system_role->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-                if($exists){
+                if ($exists) {
                     foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $jo_system_role->system_id) {
                             $system_role_exist = false;
-    
+
                             // Check if role exist in the system
                             foreach ($system['roles'] as $value) {
                                 if ($value['name'] === $role->name) {
@@ -814,27 +815,27 @@ class EmployeeProfileController extends Controller
                                     break; // No need to continue checking once the role is found
                                 }
                             }
-    
+
                             if (!$system_role_exist) {
                                 $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-    
+
                                 $cacheExpiration = Carbon::now()->addYear();
                                 Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
-    
+
                                 $system['roles'][] = [
                                     'id' => $jo_system_roles_data['id'],
                                     'name' => $jo_system_roles_data['name']
                                 ];
-    
+
                                 // Convert the array of objects to a collection
                                 $modulesCollection = collect($system['modules']);
-    
+
                                 foreach ($jo_system_roles_data['modules'] as $role_module) {
                                     // Check if the module with the code exists in the collection
                                     $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                         return $module['code'] === $role_module['code'];
                                     });
-    
+
                                     if ($existingModuleIndex !== false) {
                                         // If the module exists, modify its permissions
                                         $existingModule = $modulesCollection->get($existingModuleIndex);
@@ -850,7 +851,7 @@ class EmployeeProfileController extends Controller
                                         $modulesCollection->push($role_module);
                                     }
                                 }
-    
+
                                 // Assign back the modified modules collection to the system
                                 $system['modules'] = $modulesCollection->toArray();
                             }
@@ -864,7 +865,7 @@ class EmployeeProfileController extends Controller
                  * when system is not empty but the target system doesn't exist this will append to it
                  */
                 if (count($side_bar_details['system']) === 0 || !$exists) {
-                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$jo_system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $jo_system_role);
                 }
             }
         }
@@ -872,13 +873,12 @@ class EmployeeProfileController extends Controller
         $public_system_roles = PositionSystemRole::where('is_public', 1)->get();
 
 
-        foreach($public_system_roles as $public_system_role)
-        {
+        foreach ($public_system_roles as $public_system_role) {
             $system_role_value = $public_system_role->systemRole;
             $exists = array_search($system_role_value->system_id, array_column($side_bar_details['system'], 'id')) !== false;
 
-            if(count($side_bar_details['system']) === 0 || !$exists){
-                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'],$public_system_role->systemRole);
+            if (count($side_bar_details['system']) === 0 || !$exists) {
+                $side_bar_details['system'][] = $this->buildSystemDetails($employee_profile['id'], $public_system_role->systemRole);
                 continue;
             }
 
@@ -942,20 +942,20 @@ class EmployeeProfileController extends Controller
     private function generateSystemSessionID($user_id, $system)
     {
         $sessionId = Str::uuid();
-                
+
         SystemUserSessions::create([
             'user_id' => $user_id,
             'system_code' => $system['code'],
             'session_id' => $sessionId
         ]);
 
-        $domain =  Crypt::decrypt($system['domain']);
+        $domain = Crypt::decrypt($system['domain']);
 
-        if($system['code'] === 'UMIS'){
+        if ($system['code'] === 'UMIS') {
             return $domain;
         }
 
-        return $domain."/signing-in/".$sessionId;
+        return $domain . "/signing-in/" . $sessionId;
     }
 
     private function buildSystemDetails($user_id, $system_role)
@@ -965,7 +965,7 @@ class EmployeeProfileController extends Controller
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name']
-        ];        
+        ];
 
         return [
             'id' => $system_role->system['id'],
@@ -1208,7 +1208,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
             }
 
-            if ((int)$otp !== $employee_profile->otp) {
+            if ((int) $otp !== $employee_profile->otp) {
                 return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
             }
 
@@ -1254,7 +1254,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1330,7 +1331,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1354,7 +1356,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
-            
+
             Helpers::infoLog("Test", 'wasp', "Test");
 
             return response()
@@ -1401,9 +1403,12 @@ class EmployeeProfileController extends Controller
             $employee = $contact->personalInformation->employeeProfile;
 
             if ($employee->authorization_pin === null || $employee->authorization_pin === '') {
-                return response()->json(['message' => "Your account password cannot be recovered as there has been no login activity recorded.
-                "], Response::HTTP_FORBIDDEN);
-            };
+                return response()->json([
+                    'message' => "Your account password cannot be recovered as there has been no login activity recorded.
+                "
+                ], Response::HTTP_FORBIDDEN);
+            }
+            ;
 
             $my_employee_details = Helpers::generateMyOTPDetails($employee);
 
@@ -1472,7 +1477,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1756,7 +1762,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1885,28 +1892,28 @@ class EmployeeProfileController extends Controller
 
                 switch ($sector) {
                     case "division":
-                        $area_details = Division::find((int)$area);
+                        $area_details = Division::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for division with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
                     case "department":
-                        $area_details = Department::find((int)$area);
+                        $area_details = Department::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for department with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
                     case "section":
-                        $area_details = Section::find((int)$area);
+                        $area_details = Section::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for section with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
                     case "unit":
-                        $area_details = Unit::find((int)$area);
+                        $area_details = Unit::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for unit with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
@@ -2042,7 +2049,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -2392,15 +2400,18 @@ class EmployeeProfileController extends Controller
             }
 
             if (!$sector && !$area_id) {
-                $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                    $query->whereNull('deactivated_at');
-                }])
+                $employees = AssignArea::with([
+                    'employeeProfile.personalInformation',
+                    'employeeProfile' => function ($query) {
+                        $query->whereNull('deactivated_at');
+                    }
+                ])
                     ->where('employee_profile_id', '<>', 1)
                     ->when($search, function ($query) use ($search) {
                         $query->whereHas('employeeProfile.personalInformation', function ($q) use ($search) {
                             if (!empty($search)) {
                                 $q->where('first_name', 'LIKE', '%' . $search . '%')
-                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%');
+                                    ->orWhere('last_name', 'LIKE', '%' . $search . '%')->orWhere('employee_id', 'LIKE', '%' . $search . '%');
                             }
                         });
                     })->when($designation_id, function ($query) use ($designation_id) {
@@ -2415,9 +2426,12 @@ class EmployeeProfileController extends Controller
                 switch ($sector) {
                     case 'division':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -2440,9 +2454,12 @@ class EmployeeProfileController extends Controller
                         $departments = Department::where('division_id', $area_id)->get();
                         foreach ($departments as $department) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -2465,9 +2482,12 @@ class EmployeeProfileController extends Controller
                             $sections = Section::where('department_id', $department->id)->get();
                             foreach ($sections as $section) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                        $query->whereNull('deactivated_at');
-                                    }])
+                                    AssignArea::with([
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }
+                                    ])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($search, function ($query) use ($search) {
@@ -2490,9 +2510,12 @@ class EmployeeProfileController extends Controller
                                 $units = Unit::where('section_id', $section->id)->get();
                                 foreach ($units as $unit) {
                                     $employees = $employees->merge(
-                                        AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                            $query->whereNull('deactivated_at');
-                                        }])
+                                        AssignArea::with([
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile' => function ($query) {
+                                                $query->whereNull('deactivated_at');
+                                            }
+                                        ])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($search, function ($query) use ($search) {
@@ -2519,9 +2542,12 @@ class EmployeeProfileController extends Controller
                         $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -2544,9 +2570,12 @@ class EmployeeProfileController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                        $query->whereNull('deactivated_at');
-                                    }])
+                                    AssignArea::with([
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }
+                                    ])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($search, function ($query) use ($search) {
@@ -2571,9 +2600,12 @@ class EmployeeProfileController extends Controller
 
                     case 'department':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -2596,9 +2628,12 @@ class EmployeeProfileController extends Controller
                         $sections = Section::where('department_id', $area_id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -2621,9 +2656,12 @@ class EmployeeProfileController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                        $query->whereNull('deactivated_at');
-                                    }])
+                                    AssignArea::with([
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }
+                                    ])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($search, function ($query) use ($search) {
@@ -2648,9 +2686,12 @@ class EmployeeProfileController extends Controller
 
                     case 'section':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -2673,9 +2714,12 @@ class EmployeeProfileController extends Controller
                         $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -2699,9 +2743,12 @@ class EmployeeProfileController extends Controller
 
                     case 'unit':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -2929,9 +2976,12 @@ class EmployeeProfileController extends Controller
                 switch ($sector) {
                     case 'division':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('division_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -2948,9 +2998,12 @@ class EmployeeProfileController extends Controller
                         $departments = Department::where('division_id', $area_id)->get();
                         foreach ($departments as $department) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('department_id', $department->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -2967,9 +3020,12 @@ class EmployeeProfileController extends Controller
                             $sections = Section::where('department_id', $department->id)->get();
                             foreach ($sections as $section) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                        $query->whereNull('deactivated_at');
-                                    }])
+                                    AssignArea::with([
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }
+                                    ])
                                         ->where('section_id', $section->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($search, function ($query) use ($search) {
@@ -2986,9 +3042,12 @@ class EmployeeProfileController extends Controller
                                 $units = Unit::where('section_id', $section->id)->get();
                                 foreach ($units as $unit) {
                                     $employees = $employees->merge(
-                                        AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                            $query->whereNull('deactivated_at');
-                                        }])
+                                        AssignArea::with([
+                                            'employeeProfile.personalInformation',
+                                            'employeeProfile' => function ($query) {
+                                                $query->whereNull('deactivated_at');
+                                            }
+                                        ])
                                             ->where('unit_id', $unit->id)
                                             ->where('employee_profile_id', '<>', 1)
                                             ->when($search, function ($query) use ($search) {
@@ -3009,9 +3068,12 @@ class EmployeeProfileController extends Controller
                         $sections = Section::where('division_id', $area_id)->whereNull('department_id')->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -3028,9 +3090,12 @@ class EmployeeProfileController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                        $query->whereNull('deactivated_at');
-                                    }])
+                                    AssignArea::with([
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }
+                                    ])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($search, function ($query) use ($search) {
@@ -3049,9 +3114,12 @@ class EmployeeProfileController extends Controller
 
                     case 'department':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('department_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -3068,9 +3136,12 @@ class EmployeeProfileController extends Controller
                         $sections = Section::where('department_id', $area_id)->get();
                         foreach ($sections as $section) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('section_id', $section->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -3087,9 +3158,12 @@ class EmployeeProfileController extends Controller
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
                                 $employees = $employees->merge(
-                                    AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                        $query->whereNull('deactivated_at');
-                                    }])
+                                    AssignArea::with([
+                                        'employeeProfile.personalInformation',
+                                        'employeeProfile' => function ($query) {
+                                            $query->whereNull('deactivated_at');
+                                        }
+                                    ])
                                         ->where('unit_id', $unit->id)
                                         ->where('employee_profile_id', '<>', 1)
                                         ->when($search, function ($query) use ($search) {
@@ -3108,9 +3182,12 @@ class EmployeeProfileController extends Controller
 
                     case 'section':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('section_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -3127,9 +3204,12 @@ class EmployeeProfileController extends Controller
                         $units = Unit::where('section_id', $area_id)->get();
                         foreach ($units as $unit) {
                             $employees = $employees->merge(
-                                AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                    $query->whereNull('deactivated_at');
-                                }])
+                                AssignArea::with([
+                                    'employeeProfile.personalInformation',
+                                    'employeeProfile' => function ($query) {
+                                        $query->whereNull('deactivated_at');
+                                    }
+                                ])
                                     ->where('unit_id', $unit->id)
                                     ->where('employee_profile_id', '<>', 1)
                                     ->when($search, function ($query) use ($search) {
@@ -3147,9 +3227,12 @@ class EmployeeProfileController extends Controller
 
                     case 'unit':
                         $employees = $employees->merge(
-                            AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                                $query->whereNull('deactivated_at');
-                            }])
+                            AssignArea::with([
+                                'employeeProfile.personalInformation',
+                                'employeeProfile' => function ($query) {
+                                    $query->whereNull('deactivated_at');
+                                }
+                            ])
                                 ->where('unit_id', $area_id)
                                 ->where('employee_profile_id', '<>', 1)
                                 ->when($search, function ($query) use ($search) {
@@ -3170,9 +3253,12 @@ class EmployeeProfileController extends Controller
                 // Existing sector-specific logic
                 switch ($sector) {
                     case 'division':
-                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                            $query->whereNull('deactivated_at');
-                        }])
+                        $employees = AssignArea::with([
+                            'employeeProfile.personalInformation',
+                            'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }
+                        ])
                             ->where('division_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
@@ -3187,9 +3273,12 @@ class EmployeeProfileController extends Controller
                         break;
 
                     case 'department':
-                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                            $query->whereNull('deactivated_at');
-                        }])
+                        $employees = AssignArea::with([
+                            'employeeProfile.personalInformation',
+                            'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }
+                        ])
                             ->where('department_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
@@ -3204,9 +3293,12 @@ class EmployeeProfileController extends Controller
                         break;
 
                     case 'section':
-                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                            $query->whereNull('deactivated_at');
-                        }])
+                        $employees = AssignArea::with([
+                            'employeeProfile.personalInformation',
+                            'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }
+                        ])
                             ->where('section_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
@@ -3221,9 +3313,12 @@ class EmployeeProfileController extends Controller
                         break;
 
                     case 'unit':
-                        $employees = AssignArea::with(['employeeProfile.personalInformation', 'employeeProfile' => function ($query) {
-                            $query->whereNull('deactivated_at');
-                        }])
+                        $employees = AssignArea::with([
+                            'employeeProfile.personalInformation',
+                            'employeeProfile' => function ($query) {
+                                $query->whereNull('deactivated_at');
+                            }
+                        ])
                             ->where('unit_id', $area_id)
                             ->where('employee_profile_id', '<>', 1)
                             ->when($search, function ($query) use ($search) {
@@ -4285,7 +4380,8 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [];
 
             foreach ($personal_information_json as $key => $value) {
-                if (Str::contains($key, "_value")) continue;
+                if (Str::contains($key, "_value"))
+                    continue;
                 $personal_information_data[$key] = $value;
             }
 
@@ -4565,7 +4661,8 @@ class EmployeeProfileController extends Controller
                 $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
 
                 foreach ($key_list as $value) {
-                    if ($value === $key) continue;
+                    if ($value === $key)
+                        continue;
                     $cleanData[$value] = null;
                 }
 
@@ -4762,7 +4859,7 @@ class EmployeeProfileController extends Controller
              * get the excess data it has, example if employee ID is 2023061152 the excess data is 52
              * then increment it with 1 to use to new employee as part of employee ID
              */
-            $last_employee_id_registered_by_date = (int)substr($list_of_employee_by_date_hired, 8);
+            $last_employee_id_registered_by_date = (int) substr($list_of_employee_by_date_hired, 8);
             $employee_id = $date_hired_in_string . $last_employee_id_registered_by_date++;
 
             /**
@@ -5366,7 +5463,7 @@ class EmployeeProfileController extends Controller
             }
 
             $assign_area = $employee_profile->assignedArea;
-            
+
             $areas = [
                 'division_id' => $assign_area['division_id'],
                 'department_id' => $assign_area['department_id'],
@@ -5844,18 +5941,17 @@ class EmployeeProfileController extends Controller
     {
         $remarks = $request->remarks;
 
-        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%".$remarks."%")->get();
+        $in_active_employees = InActiveEmployee::where('remarks', 'like', "%" . $remarks . "%")->get();
 
         DB::beginTransaction();
 
-        try{
-            foreach($in_active_employees as $in_active_employee)
-            {
+        try {
+            foreach ($in_active_employees as $in_active_employee) {
                 $employee_profile = EmployeeProfile::find($in_active_employee->employee_profile_id);
-    
+
                 $assign_area = AssignArea::where('employee_profile_id', $employee_profile->id)->first();
                 $assign_area_trail = AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->get();
-                
+
                 $personal_information = PersonalInformation::find($employee_profile->personal_information_id);
                 $addresses = Address::where('personal_information_id', $personal_information->id)->get();
                 $contact = Contact::where('personal_information_id', $personal_information->id)->first();
@@ -5874,139 +5970,136 @@ class EmployeeProfileController extends Controller
                 $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
                 $failed_login_trails = FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->get();
                 $employee_redcap_modules = EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->get();
-    
-                if($contact !== null){
+
+                if ($contact !== null) {
                     $contact->delete();
                 }
-    
-                if(count($addresses) > 0){
+
+                if (count($addresses) > 0) {
                     Address::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($childs) > 0){
+
+                if (count($childs) > 0) {
                     Child::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($civil_service_eligibilities) > 0){
+
+                if (count($civil_service_eligibilities) > 0) {
                     CivilServiceEligibility::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($education_backgrounds) > 0){
+
+                if (count($education_backgrounds) > 0) {
                     EducationalBackground::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($family_backgrounds) > 0){
-                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();    
+
+                if (count($family_backgrounds) > 0) {
+                    FamilyBackground::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($identification_numbers) > 0){
+
+                if (count($identification_numbers) > 0) {
                     IdentificationNumber::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if($issuance_information !== null){
+
+                if ($issuance_information !== null) {
                     $issuance_information->delete();
                 }
-    
-                if(count($legal_informations) > 0){
+
+                if (count($legal_informations) > 0) {
                     LegalInformation::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($other_informations) > 0){
+
+                if (count($other_informations) > 0) {
                     OtherInformation::where("personal_information_id", $personal_information->id)->delete();
                 }
-    
-                if(count($references) > 0){
+
+                if (count($references) > 0) {
                     Reference::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($trainings) > 0){
+
+                if (count($trainings) > 0) {
                     Training::where('personal_information_id', $personal_information->id)->delete();
                 }
-    
-                if(count($special_access_roles) > 0){
+
+                if (count($special_access_roles) > 0) {
                     SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->delete();
                 }
-    
-                if(count($assign_area_trail) > 0){
+
+                if (count($assign_area_trail) > 0) {
                     AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
                 }
-    
-                if($assign_area !== null){
+
+                if ($assign_area !== null) {
                     $assign_area->delete();
                 }
 
-                if(count($assign_area_trail) > 0){
+                if (count($assign_area_trail) > 0) {
                     AssignAreaTrail::where('employee_profile_id', $employee_profile->id)->delete();
                 }
 
-                if(count($employee_leave_credits) > 0){
+                if (count($employee_leave_credits) > 0) {
                     EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->delete();
                 }
 
-                if(count($employee_overtime_credits) > 0){
-                    foreach($employee_overtime_credits as $employee_overtime_credit){
+                if (count($employee_overtime_credits) > 0) {
+                    foreach ($employee_overtime_credits as $employee_overtime_credit) {
                         EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_overtime_credit->id)->delete();
                         $employee_overtime_credit->delete();
                     }
                 }
 
-                if(count($failed_login_trails) > 0){
+                if (count($failed_login_trails) > 0) {
                     FailedLoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
                 }
 
-                if(count($employee_redcap_modules) > 0){
+                if (count($employee_redcap_modules) > 0) {
                     EmployeeRedcapModules::where('employee_profile_id', $employee_profile->id)->delete();
                 }
-    
+
                 $in_active_employee->delete();
                 $employee_profile->delete();
                 $personal_information->delete();
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. ".$th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => "Failed to delete duplicate entry on 'InActiveEmployee' record. " . $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         DB::commit();
 
-        return response()->json(['message' => "Successfully deleted in active employee with related remarks of ".$remarks." ."], Response::HTTP_OK);
-    }   
-    
-    
-    public function exportEmployeeList(Request $request)
+        return response()->json(['message' => "Successfully deleted in active employee with related remarks of " . $remarks . " ."], Response::HTTP_OK);
+    }
+
+
+    public function updateEmployeeProfileData(Request $request)
     {
-            try {
-                $employee_profiles = EmployeeProfile::with(['personalInformation', 'assignedArea'])
-                    ->whereNull('deactivated_at')
-                    ->where('id', '!=', 1)
-                    ->get()
-                    ->map(function($employee) {
-                        $assigned_area = $employee->assignedArea;
-                        $area_details = $assigned_area ? $assigned_area->findDetails() : null;
-                        $area = $area_details['details']['name'];
-                        $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
-                        $designation_name = $designation->name;
+        try {
+            // Validate the incoming request
+            $request->validate([
+                'id' => 'required|integer',
+                'shifting' => 'required|string',
+                'date_hired' => 'required|date',
+                'employee_id' => 'required|string',
+            ]);
 
-                        return [
-                            'employee_id' => $employee->employee_id,
-                            'name' => $employee->personalInformation->name(),
-                            'designation' => $designation_name ?? 'No Designation',
-                            'area_assigned' => $area ?? 'No Area Assigned'
-                        ];
-                    })
-                    ->sortBy('name')
-                    ->values();
+            // Find the employee profile by its ID
+            $id = $request->id;
+            $employeeProfile = EmployeeProfile::findOrFail($id);
 
-                return response()->json([
-                    'count' => $employee_profiles->count(),
-                    'data' => $employee_profiles,
-                    'message' => 'Employee list retrieved successfully'
-                ], Response::HTTP_OK);
+            // Update the shifting status
+            $employeeProfile->shifting = $request->shifting;
+            $employeeProfile->date_hired = $request->date_hired;
+            $employeeProfile->employee_id = $request->employee_id;
+            $employeeProfile->save();
 
-            } catch (\Throwable $th) {
-                Helpers::errorLog($this->CONTROLLER_NAME, 'exportEmployeeList', $th->getMessage());
-                return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-        
-    }    
+            return response()->json(
+                [
+                    'data' => $employeeProfile,
+                    'message' => 'Employee profile data updated.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeProfileData', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

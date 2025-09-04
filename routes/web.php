@@ -23,6 +23,13 @@ Route::controller(App\Http\Controllers\DTR\LogCheckerController::class)->group(
     }
 );
 
+Route::controller(App\Http\Controllers\DTR\AttendanceController::class)->group(
+    function () {
+        Route::get('/fetchAttendance/{id}', 'exportToexcel');
+    }
+);
+
+
 
 
 

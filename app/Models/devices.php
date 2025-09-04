@@ -18,6 +18,10 @@ class Devices extends Model
         'udp_port',
         'serial_number',
         'mac_address',
-        'is_registration'
+        'is_registration',
+        'is_stable',
+        'for_attendance',
+        'receiver_by_default',
+        'is_active'
     ];
 }

@@ -11,11 +11,12 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Response;
 use App\Models\Biometrics;
-
+use App\Http\Controllers\DTR\AttendanceController;
+use App\Models\Attendance;
 class BioMSController extends Controller
 {
     protected $device;
-
+    
     private $CONTROLLER_NAME = "BioMSController";
 
     public function __construct()
@@ -30,14 +31,19 @@ class BioMSController extends Controller
             $data = [];
             $status = "Offline";
             foreach ($bios as $row) {
-
-                if (!$this->device->BIO($row)) {
+                
+                if($row->is_active){
+                      if (!$this->device->BIO($row)) {
                     $status = "Offline";
                 } else {
                     $status = "Online";
                 }
+                }else {
+                    $status = "Offline";
+                }
+              
 
-                $item = [
+             $item = [
                     "id" => $row->id,
                     "device_name" => $row->device_name,
                     "ip_address" => $row->ip_address,
@@ -48,6 +54,9 @@ class BioMSController extends Controller
                     "mac_address" => $row->mac_address,
                     "is_registration" => $row->is_registration,
                     "device_status" => $status,
+                    "is_active"=>$row->is_active,
+                    "for_attendance"=>$row->for_attendance,
+                    "receiver_by_default"=>$row->receiver_by_default,
                     "created_at" => $row->created_at,
                     "updated_at" => $row->updated_at
                 ];
@@ -68,10 +77,74 @@ class BioMSController extends Controller
         }
     }
 
-    public function operatingDevice()
+
+
+    public function deletedatafromdevice(Request $request)
     {
         try {
-            $data = Devices::where('is_registration', 0)->get();
+            if($tad = $this->device->BIO($request->all())){
+               $tad->delete_data(['value' => 3]);
+               return response()->json([
+                "status"=>"OK",
+                'message' => 'Device data deleted successfully'], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                "status"=>"ERROR",
+                'message' => 'Device Offline'], Response::HTTP_FORBIDDEN);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'deletedatafromdevice', $th->getMessage());
+            return response()->json([
+                "status"=>"ERROR",
+                'message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function fetchAttendanceDevices(Request $request)
+    {
+        try {
+            $data = Devices::where('for_attendance', 1)
+            ->where("is_active",1)
+            ->get();
+            foreach ($data as $row) {
+                if (!$this->device->BIO($row)) {
+                    $status = "Offline";
+                } else {
+                    $status = "Online";
+                }
+                $row->device_status = $status;
+            }
+            return response()->json([
+                'data' => $data
+            ]);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceDevices', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
+    public function updateDeviceStatus(Request $request)
+    {
+        try {
+            $device = Devices::find($request->id);
+            $device->update([
+                $request->field => $request->value
+            ]);
+            return response()->json(['message' => 'Device status updated successfully']);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateDeviceStatus', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+  public function operatingDevice()
+    {
+        try {
+            $data = Devices::where('is_registration', 0)->where("for_attendance",0)
+            ->where("is_active",1)
+            ->get();
 
             return response()->json([
                 'data' => $data ?? []
@@ -85,7 +158,9 @@ class BioMSController extends Controller
     public function registrationDevice()
     {
         try {
-            $data = Devices::where('is_registration', 1)->get();
+            $data = Devices::where('is_registration', 1)->where("for_attendance",0)
+            ->where("is_active",1)
+            ->get();
 
             return response()->json([
                 'data' => $data
@@ -238,7 +313,7 @@ class BioMSController extends Controller
     {
         try {
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
 
 

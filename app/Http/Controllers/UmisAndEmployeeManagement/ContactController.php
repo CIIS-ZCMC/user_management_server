@@ -112,7 +112,7 @@ class ContactController extends Controller
                 }
             }
 
-            $contact = Contact::where('personal_information_id', $id)->first();
+            $contact = Contact::find($id);
 
             if (!$contact) {
                 return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
@@ -120,9 +120,23 @@ class ContactController extends Controller
 
             $cleanData = [];
 
+            if(isset($request->contact)){
+                foreach ($request->contact as $key => $value) {
+                    if ($value === null || $key === 'password') {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = $value;
+                }
+    
+                $contact->update($cleanData);
+    
+                return $contact;
+            }
 
+            $contact_new_data = $request->all();
 
-            foreach ($request->contact as $key => $value) {
+            foreach ($contact_new_data as $key => $value) {
                 if ($value === null || $key === 'password') {
                     $cleanData[$key] = $value;
                     continue;
@@ -130,14 +144,12 @@ class ContactController extends Controller
                 $cleanData[$key] = $value;
             }
 
-
-
-
             $contact->update($cleanData);
 
             return $contact;
         } catch (\Throwable $th) {
-            throw new \Exception("Failed to register employee contact.", 400);
+            \Log::error($th->getMessage());
+            throw new \Exception("Failed to register employee contact.", 500);
         }
     }
     public function destroy($id, AuthPinApprovalRequest $request)

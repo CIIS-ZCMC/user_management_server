@@ -2,7 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
-
+use App\Http\Controllers\DTR\BioController;
+use App\Http\Controllers\HR\EmployeesReportByStatusController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,6 +20,15 @@ use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 Route::get('/initialize-storage', function (Request $request) {
     Artisan::call('storage:link');
 });
+
+//BLIZMIGRATION
+Route::post('/savebiometric', [BioController::class, 'SaveBiometric']);
+
+Route::get('employees/report-pdf-with-active-employees', [EmployeesReportByStatusController::class, 'activeEmployees']);
+Route::get('employees/report-pdf-with-employees-with-no-biometric', [EmployeesReportByStatusController::class, 'employeesWithNoBiometric']);
+Route::get('employees/report-pdf-with-employees-with-no-login-transaction', [EmployeesReportByStatusController::class, 'employeesWithNoLoginTransaction']);
+Route::get('employees/report-total-number-of-employees-per-status', [EmployeesReportByStatusController::class, 'totalNumberOfEmployeesPerStatus']);
+Route::get('employees/download-pdf-with-active-employees', [EmployeesReportByStatusController::class, 'downloadPdf']);
 
 
 // In case the env client domain doesn't work
@@ -93,12 +103,28 @@ Route::
             Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
         });
 
+
+Route::
+        namespace("Migration")->group(function () {
+            Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
+            Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+        });
+
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
-        Route::namespace("Migration")->group(function () {
-            Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
-            Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+        // VERSION 2
+        Route::namespace("AccessManagement")->group(callback: function () {
+            Route::get('employee-with-special-access-roles', "EmployeeWithSpecialAccessRoleController@index");
+
+            // Systems API Key Management
+            Route::post('system-api-keys', "SystemsAPIKeyController@store");
+            Route::delete('system-api-keys', "SystemsAPIKeyController@destroy");
+        });
+
+        // VERSION 2
+        Route::namespace('Authentication')->group(callback: function () {
+            Route::delete('sign-out', 'AuthWithCredentialController@destroy');
         });
 
         // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
@@ -941,6 +967,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
+            Route::post('employee-profile-update-data', 'EmployeeProfileController@updateEmployeeProfileData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM post'])->group(function () {
             Route::post('employee-profile-by-area', 'EmployeeProfileController@employeesByArea');
         });
 
@@ -1761,8 +1791,8 @@ Route::middleware('auth.cookie')->group(function () {
 
     /**
      * TROUBLE SHOOT
-     * Daily Time Record Management 
-     * 
+     * Daily Time Record Management
+     *
      * VERSION 2
      */
     Route::namespace('App\Http\Controllers\DTR')->group(function () {
@@ -1782,6 +1812,14 @@ Route::middleware('auth.cookie')->group(function () {
         /** APPLY CODE HERE */
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::get('dtr-device-devices', 'BioMSController@index');
+            Route::post('dtr-device-deletedatafromdevice', 'BioMSController@deletedatafromdevice');
+            Route::get('dtr-device-attendances', 'BioMSController@fetchAttendanceDevices');
+            Route::get('dtr-device-attendancelist', 'AttendanceController@fetchAttendanceList');
+            Route::post('dtr-device-attendanceData', 'AttendanceController@fetchAttendanceDataFromDevice');
+            Route::get('dtr-device-attendancerequest', 'AttendanceController@fetchAttendanceRequest');
+            Route::post('dtr-device-logs', 'DTRcontroller@fetchLogs');
+            Route::post("dtr-device-updatedevicestatus", "BioMSController@updateDeviceStatus");
+            Route::get("dtr-registering-devices", "BioController@fetchRegisteringDevices");
             Route::post('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
             Route::post('dtr-pulluser-from-devices', 'BioController@fetchUserFromDevice');
             Route::post('dtr-pushuser-to-opdevices', 'BioController@fetchUserToOPDevice');
@@ -2708,6 +2746,10 @@ Route::middleware('auth.cookie')->group(function () {
  * then store the data in the database of the server api
  */
 
+Route::post('test', function () {
+    return response()->json(['data' => 'PASSED', 'message' => "Test passed"], 200);
+});
+
 Route::
         namespace('App\Http\Controllers')->group(function () {
             Route::middleware('auth.thirdparty')->group(function () {
@@ -2726,10 +2768,6 @@ Route::
                     Route::get('erp-data-designations', 'ErpDataController@designations');
                     Route::get('erp-data-users', 'ErpDataController@users');
                     Route::get('erp-data-assigned-areas', 'ErpDataController@assignedAreas');
-                });
-
-                Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
-                    Route::get('fetch-employee-time-record', 'EmployeeTimeRecordController@fetch');
                 });
             });
         });

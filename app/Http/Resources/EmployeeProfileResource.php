@@ -15,6 +15,8 @@ class EmployeeProfileResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $biometric = $this->biometric;
+
         $personal_information = $this->personalInformation;
         $name = $personal_information->employeeName();
         $assigned_area = $this->assignedArea;
@@ -43,7 +45,9 @@ class EmployeeProfileResource extends JsonResource
             'date_hired' => $this->date_hired,
             'employment_status' => $employment_status,
             'account_status' => $account_status,
-            'renewal_date' => $this->renewal === null? "N/A": $this->renewal
+            'renewal_date' => $this->renewal === null? "N/A": $this->renewal,
+            'is_active' => $this->isAccountActive(),
+            'has_biometric' =>  $biometric == null || $biometric->biometric == 'NOT_YET_REGISTERED',
         ];
     }
 }

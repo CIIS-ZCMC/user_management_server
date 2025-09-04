@@ -33,14 +33,7 @@ use PHPMailer\PHPMailer\SMTP;
 use App\Http\Controllers\DTR\DeviceLogsController;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Recompute;
-use App\Models\DigitalDtrSignatureRequest;
-use App\Models\DigitalDtrSignatureRequestFile;
-use App\Traits\DigitalDtrSignatureLoggable;
-use App\Models\DigitalDtrSignatureLog;
-use App\Models\DigitalSignedDtr;
-use App\Services\DigitalSignatureService;
-use App\Services\DtrSigningService;
-
+use DateTime;
 class DTRcontroller extends Controller
 {
     protected $helper;
@@ -75,16 +68,44 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function fetchLogs(Request $request)
+    {
+        $date = $request->date;
+        $employee = $request->employee_id;
+
+        $biometric_id = $employee['biometric_id'];
+        $dtrlogs = DailyTimeRecordLogs::where('biometric_id', $biometric_id)->where('dtr_date', $date)->first();
+        if ($dtrlogs) {
+
+            $logs = json_decode($dtrlogs->json_logs);
+            $CleanLog = collect($logs)->filter(function ($row) use ($biometric_id, $date) {
+                return $row->biometric_id == $biometric_id && date('Y-m-d', strtotime($row->date_time)) == $date;
+            });
+            return response()->json([
+                'message' => "list retrieved successfully",
+                'data' => $CleanLog
+            ]);
+        }
+        return response()->json([
+            'message' => "list retrieved successfully",
+            'data' => []
+        ]);
+    }
+
     public function printDtrLogs(Request $request)
     {
         $user = $request->user;
         $biometric_id = $user->biometric_id; //$user->biometric_id;
         $date = $request->requestDate;
         $dtr = $this->getUserDeviceLogs($biometric_id, $date);
+        if (!$dtr) {
+            return redirect("/NoLogsDataFound");
+        }
         $emp = EmployeeProfile::where('biometric_id', $biometric_id)->first();
         $Name = $emp->personalInformation->name();
         $designation = $emp->findDesignation();
         $empID = $emp->employee_id;
+
 
 
         $options = new Options();
@@ -153,10 +174,17 @@ class DTRcontroller extends Controller
             return DailyTimeRecordLogs::where('biometric_id', $biometric_id)->get();
         }
         $log = DailyTimeRecordLogs::where('biometric_id', $biometric_id)->where('dtr_date', $filterDate)->first();
+        if (!$log) {
+            return [];
+        }
 
+        $jsonLogs = json_decode($log->json_logs);
+        $logs = array_filter($jsonLogs, function ($row) use ($filterDate) {
+            return date("Y-m-d", strtotime($row->date_time)) == $filterDate;
+        });
         return [
             'dtr_date' => $log->dtr_date,
-            'logs' => json_decode($log->json_logs),
+            'logs' => $logs,
             'created_at' => $log->created_at,
             'updated_at' => $log->updated_at
         ];
@@ -251,11 +279,19 @@ class DTRcontroller extends Controller
 
     public function deleteDeviceLogs()
     {
-        foreach ($this->devices as $device) {
-            if ($tad = $this->device->bIO($device)) {
-                $tad->delete_data(['value' => 3]);
+        try {
+            foreach ($this->devices as $device) {
+                $tad = $this->device->bIO($device);
+                if ($tad) {
+                    $tad->delete_data(['value' => 3]);
+                } else {
+                    Helpersv2::errorLog($this->CONTROLLER_NAME, 'deleteDeviceLogs', "Failed to connect or method not found for device: " . json_encode($device));
+                }
             }
+        } catch (\Exception $e) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'deleteDeviceLogs', $e->getMessage());
         }
+
     }
 
     function getvalidatedData($bioEntry)
@@ -272,7 +308,9 @@ class DTRcontroller extends Controller
         return null;
     }
 
-    public function PullingLogic($device, $Employee_Attendance, $date_now, $biometric_id) {}
+    public function PullingLogic($device, $Employee_Attendance, $date_now, $biometric_id)
+    {
+    }
 
 
     function isNotEmptyFields($logs)
@@ -303,12 +341,12 @@ class DTRcontroller extends Controller
             ) {
                 $bioEntry = [
                     'first_entry' => !empty($val->second_in) ? $val->second_in : $val->second_out,
-                    'date_time'   => !empty($val->second_in) ? $val->second_in : $val->second_out
+                    'date_time' => !empty($val->second_in) ? $val->second_in : $val->second_out
                 ];
             } else {
                 $bioEntry = [
                     'first_entry' => !empty($val->first_in) ? $val->first_in : $val->first_out,
-                    'date_time'   => !empty($val->first_in) ? $val->first_in : $val->first_out
+                    'date_time' => !empty($val->first_in) ? $val->first_in : $val->first_out
                 ];
             }
 
@@ -488,17 +526,25 @@ class DTRcontroller extends Controller
 
         try {
             $loaded = [];
+            set_time_limit(0);
+
             foreach ($this->devices as $device) {
+
+
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
+
                     $logs = $tad->get_att_log();
-                    $all_user_info = $tad->get_all_user_info();
                     $attendance = simplexml_load_string($logs);
-                    $user_Inf = simplexml_load_string($all_user_info);
+                    if (!$attendance) {
+                        \Log::error("Failed to parse XML from device: " . $device->ip_address);
+                        continue;
+                    }
                     $attendance_Logs = $this->helper->getAttendance($attendance);
+                    $user_Inf = $this->device->getUserInformation($attendance_Logs, $tad);
+                    $Employee_Info = $this->helper->getEmployee($user_Inf);
+
 
                     if ($this->isNotEmptyFields($attendance_Logs)) {
-
-                        $Employee_Info = $this->helper->getEmployee($user_Inf);
                         $Employee_Attendance = $this->helper->getEmployeeAttendance(
                             $attendance_Logs,
                             $Employee_Info
@@ -506,6 +552,7 @@ class DTRcontroller extends Controller
 
                         $this->DeviceLog->Save($Employee_Attendance, $device);
                         $this->SaveLogsLocal($Employee_Attendance, $device);
+
 
                         $date_and_timeD = simplexml_load_string($tad->get_date());
                         if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
@@ -570,6 +617,8 @@ class DTRcontroller extends Controller
                                                      */
 
                                                     $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $this->getvalidatedData($bioEntry), $biometric_id);
+
+
                                                 } else {
                                                     /**
                                                      * With Schedule
@@ -577,6 +626,7 @@ class DTRcontroller extends Controller
                                                      */
 
                                                     $this->DTR->NoBreaktimePull($DaySchedule, $this->getvalidatedData($bioEntry), $biometric_id);
+
                                                 }
                                             } else {
 
@@ -706,8 +756,18 @@ class DTRcontroller extends Controller
             }
         } catch (\Throwable $th) {
 
+            Log::channel("custom-dtr-log")->error(
+                sprintf(
+                    "fetchDTRFromDevice Error: %s in %s on line %d\n%s",
+                    $th->getMessage(),
+                    $th->getFile(),
+                    $th->getLine(),
+                    $th->getTraceAsString()
+                )
+            );
+
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
-            // return $th;
+            return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
@@ -1215,7 +1275,7 @@ class DTRcontroller extends Controller
                 $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
                 $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
                 $fileContent = $dompdf->output();
-                $dtrDate =  date('Y-m-d', strtotime("$year_of-$month_of-01"));
+                $dtrDate = date('Y-m-d', strtotime("$year_of-$month_of-01"));
 
 
                 $saveResult = null;
@@ -2351,7 +2411,7 @@ class DTRcontroller extends Controller
 
             foreach ($biometric_ids as $ids) {
                 $emp = EmployeeProfile::where('biometric_id', $ids->biometric_id)->first();
-                $dtrlogs = DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
+                return $dtrlogs = DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
 
                 $latestDate = null;
                 $logs = [];
@@ -2359,6 +2419,9 @@ class DTRcontroller extends Controller
                 $date = '';
 
                 $dtrstatus = '';
+                if ($dtrlogs->isEmpty()) {
+                    continue;
+                }
                 foreach ($dtrlogs as $dtr) {
                     $date = $dtr->dtr_date;
 
@@ -2405,7 +2468,7 @@ class DTRcontroller extends Controller
             return $data;
         } catch (\Throwable $th) {
 
-            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
+            // Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
             return $th;
         }
     }
@@ -2417,42 +2480,130 @@ class DTRcontroller extends Controller
             //throw $th;
         }
     }
-
     public function SaveLogsLocal($attendancelog, $device)
     {
+        $today = now()->format('Y-m-d');
+        $fileName = 'biometricLogV2_' . $today . '.txt';
 
-        $fileName = 'biometricLog_' . now()->format('Y_m_d') . '.txt';
-        $header = " -- Biometric Logs as of : " . date('Y-m-d') . PHP_EOL;
+        // Prepare headers
+        $header = " -- Biometric Logs for: " . $today . " (Strict Date Match)" . PHP_EOL;
+        $header2 = "biometric_id | date_time | Status | Employee | Device Name | Ip-Address" . PHP_EOL;
+        $separator = str_repeat('-', 100) . PHP_EOL;
 
-        $header2 = "biometric_id - date_time - Status - Employee - Punch State - Device Name - Ip-Address " . PHP_EOL;
-        $header3 = '-' . PHP_EOL;
-        $header4 = '-' . PHP_EOL;
-        $header5 = '-' . PHP_EOL;
         // Read existing content if file exists
         $existingContent = '';
         if (Storage::disk('local')->exists($fileName)) {
             $existingContent = Storage::disk('local')->get($fileName);
         } else {
-            $existingContent = $header . '' . $header4 . '' . $header3 . '' . $header2 . '' . $header5;
+            $existingContent = $header . $separator . $header2 . $separator;
         }
 
         $newContent = '';
+        $recordsProcessed = 0;
+        $recordsAdded = 0;
+        $recordsSkipped = 0;
+
         foreach ($attendancelog as $value) {
-            $datas = $value['biometric_id'] . '_' . $value['date_time'] . '_' . $value['status'] . '_' . $value['name'] . '_' . $value['status_description']['description'] . '_' . $device['device_name'] . '_' . $device['ip_address'];
-            // Check if data already exists in the file
-            if (strpos($existingContent, $datas) === false) {
-                $newContent .= $datas . PHP_EOL;
+            $recordsProcessed++;
+            try {
+                // Create DateTime objects for precise comparison
+                $logDateTime = new DateTime($value['date_time']);
+                $todayStart = new DateTime($today);
+                $todayEnd = clone $todayStart;
+                $todayEnd->modify('+1 day');
+
+                // Strict date check
+                if ($logDateTime < $todayStart || $logDateTime >= $todayEnd) {
+                    $recordsSkipped++;
+                    continue;
+                }
+
+                $logData = [
+                    'biometric_id' => $value['biometric_id'],
+                    'date_time' => $value['date_time'],
+                    'status' => $value['status'],
+                    'name' => $value['name'],
+                    'device_name' => $device['device_name'],
+                    'ip_address' => $device['ip_address']
+                ];
+
+                $format = implode(' | ', array_fill(0, count($logData), '%s'));
+                $dataString = vsprintf($format, array_values($logData));
+
+                // Check for duplicates
+                if (strpos($existingContent, $dataString) === false) {
+                    $newContent .= $dataString . PHP_EOL;
+                    $recordsAdded++;
+                }
+            } catch (Exception $e) {
+                $recordsSkipped++;
+                Log::channel("custom-dtr-log")->error("SaveLogsLocal :: Error processing record: " . $e->getMessage());
+                continue;
             }
         }
 
-        // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
+        // Only update if there's new content
         if (!empty($newContent)) {
             Storage::disk('local')->put($fileName, $existingContent . $newContent);
-            return response()->json(['message' => 'File created/updated successfully!', 'file' => $fileName], 201);
-        } else {
-            return response()->json(['message' => 'No new data to add.'], 200);
+            Log::channel("custom-dtr-log")->info("SaveLogsLocal :: Successfully saved {$recordsAdded} new records to {$fileName}");
+
+            return response()->json([
+                'message' => 'File updated with today\'s logs only!',
+                'file' => $fileName,
+                'records_added' => $recordsAdded,
+                'records_processed' => $recordsProcessed,
+                'records_skipped' => $recordsSkipped,
+                'date_validation' => 'Strict (00:00:00 to 23:59:59)'
+            ], 201);
         }
+
+        return response()->json([
+            'message' => 'No new today\'s logs to add.',
+            'current_date' => $today,
+            'records_processed' => $recordsProcessed,
+            'records_skipped' => $recordsSkipped,
+            'date_validation' => 'Strict (00:00:00 to 23:59:59)'
+        ], 200);
     }
+    //orign
+    // public function SaveLogsLocal($attendancelog, $device)
+    // {
+    //     Log::channel("registration-log")->info("visited saveslogslocal");
+    //     Log::channel("custom-dtr-log")->info('visited savelogslocal');
+    //     $fileName = 'biometricLog_' . now()->format('Y_m_d') . '.txt';
+    //     $header = " -- Biometric Logs as of : " . date('Y-m-d') . PHP_EOL;
+
+    //     $header2 = "biometric_id - date_time - Status - Employee - Punch State - Device Name - Ip-Address " . PHP_EOL;
+    //     $header3 = '-' . PHP_EOL;
+    //     $header4 = '-' . PHP_EOL;
+    //     $header5 = '-' . PHP_EOL;
+    //     // Read existing content if file exists
+    //     $existingContent = '';
+    //     if (Storage::disk('local')->exists($fileName)) {
+    //         $existingContent = Storage::disk('local')->get($fileName);
+    //     } else {
+    //         $existingContent = $header . '' . $header4 . '' . $header3 . '' . $header2 . '' . $header5;
+    //     }
+
+    //     $newContent = '';
+    //     foreach ($attendancelog as $value) {
+    //         $datas = $value['biometric_id'] . '_' . $value['date_time'] . '_' . $value['status'] . '_' . $value['name'] . '_' . $value['status_description']['description'] . '_' . $device['device_name'] . '_' . $device['ip_address'];
+    //         // Check if data already exists in the file
+    //         if (strpos($existingContent, $datas) === false) {
+    //             $newContent .= $datas . PHP_EOL;
+    //         }
+    //     }
+
+    //     // Append the new content to the existing content and store it in the 'local' disk (storage/app directory)
+    //     if (!empty($newContent)) {
+    //         Storage::disk('local')->put($fileName, $existingContent . $newContent);
+    //         Log::channel("custom-dtr-log")->info('SavesLogsLocal :: created');
+    //         return response()->json(['message' => 'File created/updated successfully!', 'file' => $fileName], 201);
+    //     } else {
+    //         Log::channel("custom-dtr-log")->info('SavesLogsLocal :: No new data to addd');
+    //         return response()->json(['message' => 'No new data to add.'], 200);
+    //     }
+    // }
 
 
     public function saveSignedDtrFileForSignatureRequest($employee, $filename, $fileContent, $dtr_date, $whole_month)

@@ -24,28 +24,16 @@ class DeviceLogsController extends Controller
         $this->helper = new Helpers();
     }
 
-    public function ClearDeviceLogs($startDate)
+    public function ClearDeviceLogs($startDate = null)
     {
-        if (!$startDate) {
-            $startDate = date('Y-m-d');
-        }
-        /**
-         * Deletion of Device logs stored from Database
-         * Every 3 months from current Date
-         */
-        $startDateTime = Carbon::parse($startDate);
-        $currentDateTime = Carbon::now();
-        $diffInMonths = $currentDateTime->diffInMonths($startDateTime, false);
-        if ($diffInMonths <= 6 && $diffInMonths >= 0) {
-            $threeMonthsFromStartDate = $startDateTime->copy()->sub("9 days");
-
-            $date = $threeMonthsFromStartDate->format('Y-m-d');
-            DeviceLogs::where('dtr_date', "<=", $date)->delete();
-            Log::channel("custom-dtr-log")->info('DEVICE LOGS CLEARED FROM  ' . $date . ' and LATE on.. ' . date('Y-m-d H:i'));
-        } else {
-            return null;
-        }
+        $startDateTime = $startDate ? Carbon::parse($startDate) : Carbon::today();
+        $thresholdDate = $startDateTime->copy()->subMonths(6)->format('Y-m-d');
+        DeviceLogs::where('dtr_date', '<=', $thresholdDate)->delete();
+    
+        Log::channel('custom-dtr-log')->info("DEVICE LOGS CLEARED up to $thresholdDate at " . now()->format('Y-m-d H:i'));
+    
     }
+    
 
     public function CheckDTR($biometric_id)
     {
