@@ -272,13 +272,15 @@ class PlantillaController extends Controller
                 $newPlantilla = PlantillaNumber::where('id', $to_assign)->first()->plantilla;
                 $area = [];
 
+                if($newPlantilla){
+                    DB::rollBack();
+        
+                    return response()->json([
+                        'data' => $to_assign,
+                        'message' => 'No plantilla records found for this user.'
+                    ], Response::HTTP_NOT_FOUND);
+                }
 
-                DB::rollBack();
-    
-                return response()->json([
-                    'data' => $to_assign,
-                    'message' => 'No plantilla records found for this user.'
-                ], Response::HTTP_NOT_FOUND);
                 if($plantilla_assigned_area->division_id !== null){
                     $area[] = ["division_id" => $$plantilla_assigned_area->division_id];
                 }
