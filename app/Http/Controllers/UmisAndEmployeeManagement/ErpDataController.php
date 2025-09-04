@@ -156,7 +156,7 @@ class ErpDataController extends Controller
         }
     }
 
-    public function holidays()
+    public function holidays()  
     {
         try {
             $holidays = Holiday::all();

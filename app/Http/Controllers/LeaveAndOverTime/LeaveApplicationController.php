@@ -44,6 +44,7 @@ use App\Models\OfficialTime;
 use DateTime;
 use App\Imports\LeaveApplicationsImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
 {
