@@ -642,7 +642,9 @@ class LeaveApplicationController extends Controller
                         if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
                             $leaveType = $employeeCredit->leaveType->code;
                             if ($leaveType === "VL" || $leaveType === "SL") {
-                                $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType]($log->leave_credits ?? 0) : ($log->leave_credits ?? 0);
+                                $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType])
+                                    ? $totalCreditsEarnedThisMonth[$leaveType] + ($log->leave_credits ?? 0)
+                                    : ($log->leave_credits ?? 0);
                             }
                         }
 
