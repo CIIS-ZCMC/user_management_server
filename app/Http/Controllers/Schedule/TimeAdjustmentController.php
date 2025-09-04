@@ -30,7 +30,7 @@ class TimeAdjustmentController extends Controller
         try {
 
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching ' . $this->PLURAL_MODULE_NAME . '.');
-            return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjustment::all())], Response::HTTP_OK);
+            return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjustment::latest()->get())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -318,7 +318,7 @@ class TimeAdjustmentController extends Controller
 
             // Continue with your existing logic
             $user = $request->user;
-            $approving_officer = Section::where('area-id', 'HOPPS-HRMO-DE-001')->first()->supervisor_employee_profile_id;
+            $approving_officer = Section::where('area_id', 'HOPPS-HRMO-DE-001')->first()->supervisor_employee_profile_id;
 
             $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
 
