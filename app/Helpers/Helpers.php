@@ -1246,19 +1246,19 @@ class Helpers
     public static function sendNotification($body)
     {
 
-        $response = Http::post('http://192.168.5.1:8033/notification', $body);
+        // $response = Http::post('http://192.168.5.1:8033/notification', $body);
 
-        if ($response->successful()) {
-            $body = $response->body();
-            if ($response->successful()) {
-                return 'Message triggered successfully';
-            } else {
-                return 'Failed to trigger message';
-            }
-        } else {
-            $status = $response->status();
-            return "HTTP request failed with status: $status";
-        }
+        // if ($response->successful()) {
+        //     $body = $response->body();
+        //     if ($response->successful()) {
+        //         return 'Message triggered successfully';
+        //     } else {
+        //         return 'Failed to trigger message';
+        //     }
+        // } else {
+        //     $status = $response->status();
+        //     return "HTTP request failed with status: $status";
+        // }
     }
 
     public static function customRound($numericValue)

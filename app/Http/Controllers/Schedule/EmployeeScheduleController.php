@@ -56,7 +56,7 @@ class EmployeeScheduleController extends Controller
                 ->where('id', '!=', 1);
 
             if (!$isSpecialUser) {
-                $myEmployees = $user->myEmployees($assigned_area, $user);
+                $myEmployees = $user->myEmployees($assigned_area, $user)->toArray();
                 $employee_ids = collect($myEmployees)->pluck('id')->toArray();
                 $query->whereIn('id', $employee_ids);
             }
@@ -105,7 +105,7 @@ class EmployeeScheduleController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th, $request->page);
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

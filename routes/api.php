@@ -2234,10 +2234,6 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('ovt-application/{id}', 'OvertimeController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
-            Route::get('user-ovt-application', 'OvertimeController@userOvertimeApplication');
-        });
-
         //hr
         Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
             Route::get('ovt-application-approved-hr', 'OvertimeController@approvedOvertimeApplication');

@@ -38,6 +38,8 @@ class OvertimeController extends Controller
      */
     private $CONTROLLER_NAME = 'OvertimeController';
 
+   
+
     public function printOvertimeForm($id)
     {
 
@@ -272,6 +274,14 @@ class OvertimeController extends Controller
 
                 ], Response::HTTP_OK);
             }
+
+          
+            $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->get();
+            return response()->json([
+                'user_id' => $employeeId,
+                'data' => OvertimeResource::collection($overtime_application),
+                'message' => 'Retrieved all overtime application'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -659,7 +669,7 @@ class OvertimeController extends Controller
 
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th);
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1002,6 +1012,8 @@ class OvertimeController extends Controller
         try {
             $data = OvertimeApplication::findOrFail($id);
 
+            
+
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -1027,12 +1039,13 @@ class OvertimeController extends Controller
                     $log_action = 'Approved by Approving Officer';
                     break;
             }
+           
             $data->update(['status' => $status]);
-            OvtApplicationLog::create([
-                'overtime_application_id' => $data->id,
-                'action_by_id' => $employee_profile->id,
-                'action' => $log_action
-            ]);
+            // OvtApplicationLog::create([
+            //     'overtime_application_id' => $data->id,
+            //     'action_by_id' => $employee_profile->id,
+            //     'action' => $log_action
+            // ]);
 
             $approving = EmployeeProfile::where('id', $data->approving_officer)->first();
             $email = $approving->personalinformation->contact->email_address;
@@ -1048,12 +1061,12 @@ class OvertimeController extends Controller
             SendEmailJob::dispatch('overtime_request', $email, $name, $data);
 
             return response()->json([
-                'data' => new OvertimeResource($data),
+               // 'data' => new OvertimeResource($data),
                 'message' => $log_action,
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th);
             return response()->json(['msg' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1072,6 +1085,7 @@ class OvertimeController extends Controller
     public function getUserOvertime(Request $request)
     {
         try {
+           
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $overtime_applications = OvertimeApplication::with(['dates.employees', 'activities.dates.employees'])
