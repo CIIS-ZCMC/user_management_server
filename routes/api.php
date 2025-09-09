@@ -6,6 +6,7 @@ use App\Http\Controllers\DTR\BioController;
 use App\Http\Controllers\HR\EmployeesReportByStatusController;
 use App\Http\Controllers\Authentication\AuthTokenBearerController;
 use App\Http\Controllers\LeaveAndOverTime\EmployeeLeaveCreditController;
+use App\Http\Controllers\LeaveAndOverTime\EmployeeOvertimeCreditController;
 use App\Http\Controllers\v2\DailyTimeRecord\DailyTimeRecordController;
 use App\Http\Controllers\v2\Schedule\ScheduleController;
 
@@ -71,7 +72,8 @@ Route::namespace('App\Http\Controllers')->group(function () {
 });
 
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
-Route::post('/employee-leave-credits/import', [EmployeeLeaveCreditController::class, 'import']);
+Route::post('employee-leave-credits/import', [EmployeeLeaveCreditController::class, 'import']);
+Route::post('overtime-credits/import', [EmployeeOvertimeCreditController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
