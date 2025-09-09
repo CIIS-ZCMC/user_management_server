@@ -1623,7 +1623,8 @@ class LeaveApplicationController extends Controller
 
             $checkSchedule = Helpers::hasSchedule($start, $end, $employee_id);
 
-            if (!$checkSchedule) {
+
+            if (!$checkSchedule['status']) {
                 return response()->json(['message' => "Employee doesn't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
 

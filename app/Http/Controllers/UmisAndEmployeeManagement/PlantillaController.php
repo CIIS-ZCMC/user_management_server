@@ -267,67 +267,54 @@ class PlantillaController extends Controller
                     'started_at' => $old_assignedArea->effective_at,
                     'end_at' => now()
                 ]);
+                
+                $plantilla_number = PlantillaNumber::where('id', $to_assign)->first();
+                $plantilla = $plantilla_number->plantilla;
 
-                $plantilla_assigned_area = PlantillaAssignedArea::where('plantilla_number_id', $to_assign)->first();
-                $newPlantilla = PlantillaNumber::where('id', $to_assign)->first()->plantilla;
+                if(!$plantilla){
+                    DB::rollBack();
+        
+                    return response()->json([
+                        'data' => $to_assign,
+                        'message' => 'No plantilla records found for this user.'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+                
+                $key = strtolower($request->sector) . '_id';
+                $cleanData['plantilla_number_id'] = $plantilla_number->id;
+                $cleanData[$key] = strip_tags($request->area_id);
+                $cleanData['effective_at'] = now();
+
+                $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
                 $area = [];
 
-
-                DB::rollBack();
-    
-                return response()->json([
-                    'data' => $to_assign,
-                    'message' => 'No plantilla records found for this user.'
-                ], Response::HTTP_NOT_FOUND);
-                if($plantilla_assigned_area->division_id !== null){
-                    $area[] = ["division_id" => $$plantilla_assigned_area->division_id];
+                foreach ($key_list as $value) {
+                    if ($value === $key) continue;
+                    $cleanData[$value] = null;
+                    $area[$value] = null;
                 }
 
-                if($plantilla_assigned_area->department_id !== null){
-                    $area[] = ["department_id" => $$plantilla_assigned_area->department_id];
-                }
-
-                if($plantilla_assigned_area->section_id !== null){
-                    $area[] = ["section_id" => $$plantilla_assigned_area->section_id];
-                }
-
-                if($plantilla_assigned_area->unit_id !== null){
-                    $area[] = ["unit_id" => $$plantilla_assigned_area->unit_id];
-                }
+                PlantillaAssignedArea::create(attributes: $cleanData);
+                $plantilla_number->update(['assigned_at' => now()]);
 
                 AssignArea::create([
                     ...$area,
                     'salary_grade_step' => 1,
                     'employee_profile_id' => $id,
-                    'designation_id' => $newPlantilla->designation_id,
-                    'plantilla_id' => $newPlantilla->id,
+                    'designation_id' => $plantilla->designation_id,
+                    'plantilla_id' => $plantilla->id,
                     'plantilla_number_id' => $to_assign,
                     'effective_at' => now()
                 ]);
 
-                $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
+                $plantilla_number->update(['is_vacant' => 1, 'employee_profile_id' => NULL]);
 
-
-                // CHANGE PLANTILLA EMP TYPE to EMPLOYEE PROFILE EMP TYPE
-                // if ($employee_profile->employmentType->name === 'Permanent CTI') {
-                //     $plantilla_number->update([
-                //         'is_dissolve' => 1,
-                //         'is_vacant' => 0,
-                //         'employee_profile_id' => NULL,
-                //     ]);
-                // } else {
-                    $plantilla_number->update(['is_vacant' => 1, 'employee_profile_id' => NULL]);
-                    $plantilla = $plantilla_number->plantilla;
-                    $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
-                // }
-
-                PlantillaNumber::where('id', $to_assign)->update([
+                $plantilla_number->update([
                     'employee_profile_id' => $id,
                     'is_vacant' => 0,
                     'is_dissolve' => 0,
                 ]);
 
-                $plantilla = $newPlantilla;
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
                 $old_assignedArea->delete();
 
@@ -440,12 +427,13 @@ class PlantillaController extends Controller
                 return response()->json(['message' => 'No record found for designation with id ' . $id], Response::HTTP_NOT_FOUND);
             }
 
-            $plantilla_numbers = PlantillaNumber::where('is_vacant', 1)
-            ->where('assigned_at', NULL)
-            ->where('is_dissolve', 0)
-            ->whereHas('plantilla', function($query) use ($id) {
-                return $query->where('designation_id', $id);
-            })->get();
+            $plantilla_numbers = PlantillaNumber::whereHas('plantilla', function($query) use ($id) {
+                    return $query->where('designation_id', $id);
+                })
+                ->where('is_vacant', 1)
+                // ->where('assigned_at', NULL)
+                ->where('is_dissolve', 0)
+                ->get();
 
             return response()->json([
                 'data' => PlantillaWithDesignationResource::collection($plantilla_numbers),

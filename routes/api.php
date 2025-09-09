@@ -4,6 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use App\Http\Controllers\DTR\BioController;
 use App\Http\Controllers\HR\EmployeesReportByStatusController;
+use App\Http\Controllers\Authentication\AuthTokenBearerController;
+use App\Http\Controllers\v2\DailyTimeRecord\DailyTimeRecordController;
+use App\Http\Controllers\v2\Schedule\ScheduleController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -23,6 +27,23 @@ Route::get('/initialize-storage', function (Request $request) {
 
 //BLIZMIGRATION
 Route::post('/savebiometric', [BioController::class, 'SaveBiometric']);
+
+Route::prefix('auth')->group(function () {
+    Route::post('sign-in', [AuthTokenBearerController::class, 'store']);
+});
+
+Route::middleware('auth.cookie')->group(function () {
+    
+    Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+        Route::prefix('v2')->group(function () {
+            Route::get('daily-time-records', [DailyTimeRecordController::class, 'index']);
+
+            Route::get('schedules', [ScheduleController::class, 'index']);
+
+            Route::delete('sign-out', [AuthTokenBearerController::class, 'delete']);
+        });
+    });
+});
 
 Route::get('employees/report-pdf-with-active-employees', [EmployeesReportByStatusController::class, 'activeEmployees']);
 Route::get('employees/report-pdf-with-employees-with-no-biometric', [EmployeesReportByStatusController::class, 'employeesWithNoBiometric']);
@@ -99,10 +120,10 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     });
 
 
-    Route::namespace("Migration")->group(function () {
-        Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
-        Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
-    });
+    // Route::namespace("Migration")->group(function () {
+    //     Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
+    //     Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+    // });
 
 Route::middleware('auth.cookie')->group(function () {
 

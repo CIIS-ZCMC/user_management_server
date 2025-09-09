@@ -32,4 +32,19 @@ class SalaryGrade extends Model
     {
         return $this->hasMany(Designation::class);
     }
+
+    public function salaryGradeAmount(int $step)
+    {
+        return match ($step) {
+            1 => $this->one,
+            2 => $this->two,
+            3 => $this->three,
+            4 => $this->four,
+            5 => $this->five,
+            6 => $this->six,
+            7 => $this->seven,
+            8 => $this->eight,
+            default => null,
+        };
+    }
 }
