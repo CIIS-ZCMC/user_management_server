@@ -494,7 +494,7 @@
                     <td>{{ $employee['email'] }}</td>
                     <td>{{ $employee['area'] ?? 'Not Assigned' }}</td>
                     <td>{{ \Carbon\Carbon::parse($employee['date_hired'])->format('M j, Y') }}</td>
-                    <td><span class="status-badge status-warning">{{ $employee['has_login_history'] ? 'Yes' : 'No' }}</span></td>
+                    <td><span class="status-badge status-warning">{{ $employee['has_login_history'] }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -535,7 +535,7 @@
                     <td>{{ $employee['email'] }}</td>
                     <td>{{ $employee['area'] ?? 'Not Assigned' }}</td>
                     <td>{{ \Carbon\Carbon::parse($employee['date_hired'])->format('M j, Y') }}</td>
-                    <td><span class="status-badge status-warning">{{ $employee['has_login_history'] ? 'Yes' : 'No' }}</span></td>
+                    <td><span class="status-badge status-warning">{{ $employee['has_login_history']}}</span></td>
                 </tr>
                 @endforeach
             </tbody>

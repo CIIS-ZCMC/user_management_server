@@ -101,4 +101,9 @@ class EmployeeSummaryReportService
 
         return $employees_no_biometric;
     }
+
+    protected function totalEmployeeWithLoginTransaction()
+    {
+        
+    }
 }
