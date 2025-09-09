@@ -5,6 +5,7 @@ use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use App\Http\Controllers\DTR\BioController;
 use App\Http\Controllers\HR\EmployeesReportByStatusController;
 use App\Http\Controllers\Authentication\AuthTokenBearerController;
+use App\Http\Controllers\LeaveAndOverTime\EmployeeLeaveCreditController;
 use App\Http\Controllers\v2\DailyTimeRecord\DailyTimeRecordController;
 use App\Http\Controllers\v2\Schedule\ScheduleController;
 
@@ -33,7 +34,7 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth.cookie')->group(function () {
-    
+
     Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
         Route::prefix('v2')->group(function () {
             Route::get('daily-time-records', [DailyTimeRecordController::class, 'index']);
@@ -59,17 +60,18 @@ Route::namespace("App\Http\Controllers\UmisAndEmployeeManagement")->group(functi
 });
 
 Route::namespace('App\Http\Controllers')->group(function () {
-        // VERSION 2
-        Route::namespace('Authentication')->group(function () {
-            Route::post('sign-in', 'AuthWithCredentialController@store');
-        });
-
-        Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
-        Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
-        Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+    // VERSION 2
+    Route::namespace('Authentication')->group(function () {
+        Route::post('sign-in', 'AuthWithCredentialController@store');
     });
 
+    Route::get('transfer-employee-areas', 'TransferEmployeeAreaController@index');
+    Route::put('transfer-employee-areas', 'TransferEmployeeAreaController@update');
+    Route::delete('transfer-employee-areas', 'TransferEmployeeAreaController@destroy');
+});
+
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
+Route::post('/employee-leave-credits/import', [EmployeeLeaveCreditController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
@@ -103,27 +105,27 @@ Route::namespace('App\Http\Controllers\PayrollHooks')->group(function () {
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-        // Route::post('sign-in', 'EmployeeProfileController@signIn');
-        Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-        Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-        Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-        Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-        Route::post('new-password', 'EmployeeProfileController@newPassword');
-        Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-        Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-        Route::get('validate-token', 'CsrfTokenController@validateToken');
-        Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-        Route::get('generate-pds', 'PersonalInformationController@generatePDS');
+    // Route::post('sign-in', 'EmployeeProfileController@signIn');
+    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
+    Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+    Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+    Route::get('generate-pds', 'PersonalInformationController@generatePDS');
 
 
-        Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
-    });
+    Route::get('in-active-employees/force-delete', 'EmployeeProfileController@remove');
+});
 
 
-    // Route::namespace("Migration")->group(function () {
-    //     Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
-    //     Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
-    // });
+// Route::namespace("Migration")->group(function () {
+//     Route::post('reset-password-get-link', 'ResetPasswordWithCsv@getLinkOfEmployeeToResetPassword');
+//     Route::post('reset-password-with-employee-ids', 'ResetPasswordWithCsv@resetAndSendNewCredentialToUsers');
+// });
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -2118,7 +2120,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
-            Route::post('leave-credit-update', 'LeaveApplicationController@updateCredit');
+            Route::post('leave-credit-update', 'LeaveApplicationController@');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 use App\Models\EmployeeLeaveCredit;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Imports\EmployeeLeaveCreditsImport;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\Response;
 
 class EmployeeLeaveCreditController extends Controller
 {
@@ -62,5 +65,25 @@ class EmployeeLeaveCreditController extends Controller
     public function destroy(EmployeeLeaveCredit $employeeLeaveCredit)
     {
         //
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,txt',
+        ]);
+
+        try {
+            Excel::import(new EmployeeLeaveCreditsImport, $request->file('file'));
+
+            return response()->json([
+                'message' => 'Employee leave credits imported successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Import failed.',
+                'error'   => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
