@@ -22,8 +22,9 @@ class EmployeeSummaryReportService
         $overAll = $this->overAllEmployee($request);
         $regular = $this->regularEmployee($request);
         $jobOrder = $this->jobOrderEmployee($request);
+        $medicalDoctors = $this->medicalDoctorsEmployee($request);
 
-        $pdf = PDF::loadView('report.employees_list_by_status', compact('overAll', 'regular', 'jobOrder'));
+        $pdf = PDF::loadView('report.employees_list_by_status', compact('overAll', 'regular', 'jobOrder', 'medicalDoctors'));
         return $pdf->download('Employee Biometric Enrollment Status Report.pdf');
     }
 
@@ -56,6 +57,29 @@ class EmployeeSummaryReportService
 
         $employees_no_biometric = $this->sortEmployeesNoBiometric($employeesNoBiometric, $request);
         $totalRegisteredAndNoneRegisteredEmployees = $this->employeeRepository->getTotalRegisteredAndNoneRegisteredEmployees('regular');
+
+        $total_with_no_biometric = $totalRegisteredAndNoneRegisteredEmployees->where('has_biometric', 'No')->first();
+        $total_with_biometric = $totalRegisteredAndNoneRegisteredEmployees->where('has_biometric', 'Yes')->first();
+
+        return [
+            'employees' => $employees,
+            'employeesWithBiometric' => $employeesWithBiometric,
+            'employeesNoBiometric' => $employees_no_biometric,
+            'total_with_no_biometric' => $total_with_no_biometric,
+            'total_with_biometric' => $total_with_biometric
+        ];
+    }
+
+    protected function medicalDoctorsEmployee($request)
+    {
+        $employees = $this->employeeRepository->activeEmployee('medical_doctors')->count();
+        $employeesWithBiometric = $this->activeEmployeesService->getActiveEmployees('medical_doctors')->count();
+        $employeesNoBiometric = $this->employeesWithNoBiometricService->getMedicalDoctorsWithNoBiometric();
+
+        $employees_no_biometric = $this->sortEmployeesNoBiometric($employeesNoBiometric, $request);
+        $totalRegisteredAndNoneRegisteredEmployees = $this->employeeRepository->getTotalRegisteredAndNoneRegisteredEmployees('medical_doctors');
+        
+        \Log::info(json_encode($employees_no_biometric, JSON_PRETTY_PRINT));
 
         $total_with_no_biometric = $totalRegisteredAndNoneRegisteredEmployees->where('has_biometric', 'No')->first();
         $total_with_biometric = $totalRegisteredAndNoneRegisteredEmployees->where('has_biometric', 'Yes')->first();

@@ -466,6 +466,48 @@
             </div>
         </div>
     </div>
+    <!-- Medical Doctors Without Biometric Data -->
+    <div class="section page-break">
+        <div class="section-header">
+            <div class="section-title">Medical Doctors Requiring Biometric Enrollment</div>
+            <div class="section-count">{{ $medicalDoctors['total_with_no_biometric']->total }} employees need immediate attention</div>
+        </div>
+        
+        @if(isset($medicalDoctors['employeesNoBiometric']) && count($medicalDoctors['employeesNoBiometric']) > 0)
+        <table>
+            <thead>
+                <tr>
+                    <th width="10%">Employee ID</th>
+                    <th width="20%">Full Name</th>
+                    <th width="20%">Email Address</th>
+                    <th width="20%">Area Assigned</th>
+                    <th width="12%">Job Position</th>
+                    <th width="12%">Date Registered</th>
+                    <th width="8%">Login Activity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($medicalDoctors['employeesNoBiometric'] as $employee)
+                <tr>
+                    <td><strong>{{ $employee['employee_id'] }}</strong></td>
+                    <td>{{ $employee['name'] }}</td>
+                    <td>{{ $employee['email'] }}</td>
+                    <td>{{ $employee['area'] ?? 'Not Assigned' }}</td>
+                    <td>{{ $employee['job_position'] ?? 'Not Assigned' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($employee['created_at'])->format('M j, Y') }}</td>
+                    <td><span class="{{ $employee['has_login_history'] == 'Yes' ? 'status-badge status-active' : 'status-badge status-warning' }}">{{ $employee['has_login_history'] }}</span></td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @else
+        <div class="no-data">
+            <div class="icon">✅</div>
+            <div><strong>Excellent!</strong></div>
+            <div>All employees have completed biometric enrollment.</div>
+        </div>
+        @endif
+    </div>
     
     <!-- Regular Employees Without Biometric Data -->
     <div class="section page-break">
@@ -482,7 +524,8 @@
                     <th width="25%">Full Name</th>
                     <th width="25%">Email Address</th>
                     <th width="20%">Area Assigned</th>
-                    <th width="12%">Date Hired</th>
+                    <th width="12%">Job Position</th>
+                    <th width="12%">Date Registered</th>
                     <th width="8%">Login Activity</th>
                 </tr>
             </thead>
@@ -493,8 +536,9 @@
                     <td>{{ $employee['name'] }}</td>
                     <td>{{ $employee['email'] }}</td>
                     <td>{{ $employee['area'] ?? 'Not Assigned' }}</td>
-                    <td>{{ \Carbon\Carbon::parse($employee['date_hired'])->format('M j, Y') }}</td>
-                    <td><span class="status-badge status-warning">{{ $employee['has_login_history'] }}</span></td>
+                    <td>{{ $employee['job_position'] ?? 'Not Assigned' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($employee['created_at'])->format('M j, Y') }}</td>
+                    <td><span class="status-badge {{ $employee['has_login_history'] == 'Yes' ? 'status-active' : 'status-warning' }}">{{ $employee['has_login_history'] }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -523,7 +567,8 @@
                     <th width="25%">Full Name</th>
                     <th width="25%">Email Address</th>
                     <th width="20%">Area Assigned</th>
-                    <th width="12%">Date Hired</th>
+                    <th width="12%">Job Position</th>
+                    <th width="12%">Date Registered</th>
                     <th width="8%">Login Activity</th>
                 </tr>
             </thead>
@@ -534,8 +579,9 @@
                     <td>{{ $employee['name'] }}</td>
                     <td>{{ $employee['email'] }}</td>
                     <td>{{ $employee['area'] ?? 'Not Assigned' }}</td>
-                    <td>{{ \Carbon\Carbon::parse($employee['date_hired'])->format('M j, Y') }}</td>
-                    <td><span class="status-badge status-warning">{{ $employee['has_login_history']}}</span></td>
+                    <td>{{ $employee['job_position'] ?? 'Not Assigned' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($employee['created_at'])->format('M j, Y') }}</td>
+                    <td><span class="status-badge {{ $employee['has_login_history'] == 'Yes' ? 'status-active' : 'status-warning' }}">{{ $employee['has_login_history']}}</span></td>
                 </tr>
                 @endforeach
             </tbody>
