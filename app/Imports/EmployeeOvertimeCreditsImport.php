@@ -4,93 +4,83 @@ namespace App\Imports;
 
 use App\Models\EmployeeProfile;
 use App\Models\EmployeeOvertimeCredit;
-use App\Models\EmployeeOvertimeCreditLogs; // if you also want logging like leave credits
-use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use App\Models\EmployeeOvertimeCreditLog;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
-
-class EmployeeOvertimeCreditsImport implements ToModel
+class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
 {
-    public function model(array $row)
+    public function collection(Collection $rows)
     {
-        static $headerSkipped = false;
+        foreach ($rows as $row) {
+            if (empty($row['employee_id'])) {
+                continue;
+            }
 
-        if (!$headerSkipped) {
-            $headerSkipped = true; // Skip header row
-            return null;
-        }
+            $employeeProfile = EmployeeProfile::where('employee_id', $row['employee_id'])->first();
+            if (!$employeeProfile) {
+                continue;
+            }
 
-        // Excel columns: [employee_id, earned_credit_by_hour, valid_until]
+            $creditValue = (float) ($row['cto'] ?? 0);
+            $validUntilRaw = $row['valid_until'] ?? null;
 
-        // 1. Find employee profile
-        $employeeProfile = EmployeeProfile::where('employee_id', $row[0])->first();
-        if (!$employeeProfile) {
-            return null; // Skip if employee not found
-        }
-
-        $validUntil = null;
-
-        if (!empty($row[2])) {
-            try {
-                if (is_numeric($row[2])) {
-                    // Excel stores date as a serial number (e.g. 45720)
-                    $validUntil = ExcelDate::excelToDateTimeObject($row[2])->format('Y-m-d');
-                } else {
-                    // Try dd/mm/YYYY first
-                    $validUntil = \Carbon\Carbon::createFromFormat('d/m/Y', trim($row[2]))->format('Y-m-d');
-                }
-            } catch (\Exception $e) {
+            // Parse valid_until (can be Excel serial or string)
+            $validUntil = null;
+            if (!empty($validUntilRaw)) {
                 try {
-                    // Fallback if Excel gives YYYY-mm-dd
-                    $validUntil = \Carbon\Carbon::parse($row[2])->format('Y-m-d');
-                } catch (\Exception $e2) {
-                    $validUntil = null; // leave null if parsing fails
+                    if (is_numeric($validUntilRaw)) {
+                        $validUntil = ExcelDate::excelToDateTimeObject($validUntilRaw)->format('Y-m-d');
+                    } else {
+                        try {
+                            $validUntil = Carbon::createFromFormat('m/d/Y', trim($validUntilRaw))->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            $validUntil = Carbon::parse($validUntilRaw)->format('Y-m-d');
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $validUntil = null;
                 }
             }
-        }
 
-        $creditValue = $row[1] ?? 0;
+            // Find existing CTO with the same employee + valid_until
+            $overtimeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfile->id)
+                ->whereDate('valid_until', $validUntil)
+                ->first();
 
-        // 3. Check existing overtime credit
-        $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfile->id)
-            ->where('valid_until', $validUntil)
-            ->first();
+            $previousCredit = 0;
 
-        if ($existingCredit) {
-            $previousCredit = $existingCredit->earned_credit_by_hour;
-            $existingCredit->earned_credit_by_hour = $creditValue;
-            $existingCredit->save();
+            if ($overtimeCredit) {
+                $previousCredit = $overtimeCredit->earned_credit_by_hour;
 
+                $overtimeCredit->update([
+                    'earned_credit_by_hour' => $creditValue,
+                ]);
+            } else {
+                $overtimeCredit = EmployeeOvertimeCredit::create([
+                    'employee_profile_id'   => $employeeProfile->id,
+                    'earned_credit_by_hour' => $creditValue,
+                    'used_credit_by_hour'   => 0,
+                    'max_credit_monthly'    => 40,
+                    'max_credit_annual'     => 120,
+                    'valid_until'           => $validUntil,
+                    'is_expired'            => false,
+                ]);
+            }
+
+            // Log
             EmployeeOvertimeCreditLog::create([
-                'employee_ot_credit_id' => $existingCredit->id,
-                'action'                => 'add',
-                'reason'                => 'Imported credit update',
+                'employee_ot_credit_id' => $overtimeCredit->id,
+                'action'                => $overtimeCredit->wasRecentlyCreated ? "add" : "update",
+                'reason'                => $overtimeCredit->wasRecentlyCreated
+                    ? "Overtime Credit Starting Balance"
+                    : "Overtime Credit Updated via Import",
                 'hours'                 => $creditValue,
             ]);
-
-            return $existingCredit;
-        } else {
-            $newCredit = EmployeeOvertimeCredit::create([
-                'employee_profile_id'   => $employeeProfile->id,
-                'earned_credit_by_hour' => $creditValue,
-                'used_credit_by_hour'   => 0,
-                'max_credit_monthly'    => 40,
-                'max_credit_annual'     => 120,
-                'valid_until'           => $validUntil,
-                'is_expired'            => false,
-            ]);
-
-            EmployeeOvertimeCreditLog::create([
-                'employee_ot_credit_id' => $newCredit->id,
-                'action'                => 'add',
-                'reason'                => 'Imported new credit',
-                'hours'                 => $creditValue,
-            ]);
-
-            return $newCredit;
         }
     }
+    
 }
