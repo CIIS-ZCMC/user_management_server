@@ -815,7 +815,7 @@ class CtoApplicationController extends Controller
                 $existingCredit->earned_credit_by_hour += $creditValue;
                 $existingCredit->save();
                 $employee = EmployeeOvertimeCreditLog::create([
-                    'employee_ot_credit_id' => $employeeId,
+                    'employee_ot_credit_id' => $existingCredit->id,
                     'action' => 'add',
                     'reason' => 'Update Credit',
                     'hours' => $creditValue
@@ -832,7 +832,7 @@ class CtoApplicationController extends Controller
                     'is_expired' => '0',
                 ]);
                 EmployeeOvertimeCreditLog::create([
-                    'employee_ot_credit_id' => $employeeId,
+                    'employee_ot_credit_id' => $newCredit->id,
                     'action' => 'add',
                     'reason' => 'Update Credit',
                     'hours' => $creditValue
