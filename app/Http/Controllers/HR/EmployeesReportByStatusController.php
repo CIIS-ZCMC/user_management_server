@@ -4,6 +4,7 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Services\HR\ActiveEmployeesService;
+use App\Services\HR\EmployeeBiometricStatusService;
 use App\Services\HR\EmployeesWithNoBiometricService;
 use App\Services\HR\EmployeesWithNoLoginTransactionService;
 use App\Http\Resources\HR\EmployeesReportByStatusResource;
@@ -19,8 +20,16 @@ class EmployeesReportByStatusController extends Controller
         private ActiveEmployeesService $activeEmployeesService,
         private EmployeesWithNoBiometricService $employeesWithNoBiometricService,
         private EmployeesWithNoLoginTransactionService $employeesWithNoLoginTransactionService,
-        private EmployeeSummaryReportService $employeeSummaryReportService
+        private EmployeeSummaryReportService $employeeSummaryReportService,
     ){}
+
+    public function moMsNoBiometrics()
+    {
+        return EmployeesReportByStatusResource::collection($this->employeesWithNoBiometricService->getMedicalDoctorsWithNoBiometric())
+            ->additional([
+                'message' => "Successfully retrieved employees with no biometric"
+            ]);
+    }
 
     public function activeEmployees(Request $request)
     {

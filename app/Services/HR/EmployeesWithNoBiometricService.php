@@ -14,4 +14,9 @@ class EmployeesWithNoBiometricService
     {
         return $this->employeeRepository->getEmployeesWithNoBiometric($filter);
     }
+
+    public function getMedicalDoctorsWithNoBiometric()
+    {
+        return $this->employeeRepository->getMedicalDoctorsWithNoBiometric();
+    }
 }

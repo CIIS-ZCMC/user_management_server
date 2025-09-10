@@ -32,7 +32,10 @@ class EmployeeRepository
             ->whereNotNull('employee_id')
             ->get()
             ->map(function($employee) {
-                $employee->has_login_history = $employee->login_trails_count > 0 ? 'Yes' : 'No';
+                $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'No';
+                $employee->has_biometric = 'Yes';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+
                 return $employee;
             });
         }
@@ -46,7 +49,10 @@ class EmployeeRepository
             ->whereIn('employment_type_id', $filter == 'regular' ? [1,2,3,4] : [5])
             ->get()
             ->map(function($employee) {
-                $employee->has_login_history = $employee->login_trails_count > 0 ? 'Yes' : 'No';
+                $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'None';
+                $employee->has_biometric = 'Yes';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+                
                 return $employee;
             });
     }
@@ -55,22 +61,24 @@ class EmployeeRepository
     {
         if($filter == null){
             return EmployeeProfile::with('loginTrails')
-            ->withCount('loginTrails')
-            ->leftJoin('biometrics as b', 'b.biometric_id', '=', 'employee_profiles.biometric_id')
-            ->whereNotNull('employee_profiles.employee_id')
-            ->whereNull('employee_profiles.deactivated_at')
-            ->where('employee_profiles.biometric_id', '>', 0)
-            ->where(function ($query) {
-                $query->whereNull('b.biometric') // no record in biometrics table
-                      ->orWhere('b.biometric', '=', 'NOT_YET_REGISTERED'); // has record but not registered
-            })
-            ->select('employee_profiles.*')
-            ->get()
-            ->map(function ($employee) {
-                $employee->has_login_history = $employee->login_trails_count > 0 ? 'Yes' : 'No';
-                $employee->has_biometric = 'No';
-                return $employee;
-            });
+                ->withCount('loginTrails')
+                ->leftJoin('biometrics as b', 'b.biometric_id', '=', 'employee_profiles.biometric_id')
+                ->whereNotNull('employee_profiles.employee_id')
+                ->whereNull('employee_profiles.deactivated_at')
+                ->where('employee_profiles.biometric_id', '>', 0)
+                ->where(function ($query) {
+                    $query->whereNull('b.biometric') // no record in biometrics table
+                        ->orWhere('b.biometric', '=', 'NOT_YET_REGISTERED'); // has record but not registered
+                })
+                ->select('employee_profiles.*')
+                ->get()
+                ->map(function ($employee) {
+                    $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'No';
+                    $employee->has_biometric = 'No';
+                    $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+
+                    return $employee;
+                });
         }
 
         return EmployeeProfile::with('loginTrails')
@@ -86,8 +94,35 @@ class EmployeeRepository
             ->select('employee_profiles.*')
             ->get()
             ->map(function ($employee) {
-                $employee->has_login_history = $employee->login_trails_count > 0 ? 'Yes' : 'No';
+                $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'None';
                 $employee->has_biometric = 'No';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+
+                return $employee;
+            });
+    }
+
+    public function getMedicalDoctorsWithNoBiometric()
+    {
+        return EmployeeProfile::leftJoin('biometrics as b', 'b.biometric_id', '=', 'employee_profiles.biometric_id')
+            ->whereNotNull('employee_profiles.employee_id')
+            ->whereNull('employee_profiles.deactivated_at')
+            ->where('employee_profiles.biometric_id', '>', 0)
+            ->whereHas('assignedArea.plantilla.designation', function ($query) {
+                return $query->where('name', 'LIKE', '%Medical Officer%')
+                    ->orWhere('name', 'LIKE', '%Medical Specialist%');
+            })
+            ->where(function ($query) {
+                $query->whereNull('b.biometric') // no record in biometrics table
+                    ->orWhere('b.biometric', '=', 'NOT_YET_REGISTERED'); // has record but not registered
+            })
+            ->select('employee_profiles.*')
+            ->get()
+            ->map(function ($employee) {
+                $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'No';
+                $employee->has_biometric = 'No';
+                $employee->job_position = $employee->assignedArea->plantilla->designation->code;
+
                 return $employee;
             });
     }
@@ -107,28 +142,32 @@ class EmployeeRepository
             ->select('employee_profiles.*')
             ->get()
             ->map(function ($employee) {
-                $employee->has_login_history = $employee->login_trails_count > 0 ? 'Yes' : 'No';
+                $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'None';
                 $employee->has_biometric = 'No';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+                
                 return $employee;
             });
         }
 
         return EmployeeProfile::with('loginTrails')
-        ->withCount('loginTrails')
-        ->leftJoin('biometrics as b', 'b.biometric_id', '=', 'employee_profiles.biometric_id')
-        ->whereNotNull('employee_profiles.employee_id')
-        ->whereNull('employee_profiles.deactivated_at')
-        ->where(function ($query) {
-            $query->whereNull('b.biometric_id')
-                ->orWhere('b.biometric', '=', 'NOT_YET_REGISTERED');
-        })
-        ->select('employee_profiles.*')
-        ->get()
-        ->map(function ($employee) {
-            $employee->has_login_history = $employee->login_trails_count > 0 ? 'Yes' : 'No';
-            $employee->has_biometric = 'No';
-            return $employee;
-        });
+            ->withCount('loginTrails')
+            ->leftJoin('biometrics as b', 'b.biometric_id', '=', 'employee_profiles.biometric_id')
+            ->whereNotNull('employee_profiles.employee_id')
+            ->whereNull('employee_profiles.deactivated_at')
+            ->where(function ($query) {
+                $query->whereNull('b.biometric_id')
+                    ->orWhere('b.biometric', '=', 'NOT_YET_REGISTERED');
+            })
+            ->select('employee_profiles.*')
+            ->get()
+            ->map(function ($employee) {
+                $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'None';
+                $employee->has_biometric = 'No';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+                
+                return $employee;
+            });
     }
 
     public function getTotalRegisteredAndNoneRegisteredEmployees($filter = null)
