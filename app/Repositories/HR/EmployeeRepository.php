@@ -33,6 +33,9 @@ class EmployeeRepository
             ->get()
             ->map(function($employee) {
                 $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'No';
+                $employee->has_biometric = 'Yes';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+
                 return $employee;
             });
         }
@@ -47,6 +50,9 @@ class EmployeeRepository
             ->get()
             ->map(function($employee) {
                 $employee->has_login_history = $employee->loginTrails->count() > 0 ? 'Yes' : 'None';
+                $employee->has_biometric = 'Yes';
+                $employee->job_position = $employee->assignedArea->plantila_id != null ? $employee->assignedArea->plantilla->designation->code : $employee->assignedArea->designation->code;
+                
                 return $employee;
             });
     }
