@@ -74,6 +74,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 Route::post('leave-application-import', [LeaveApplicationController::class, 'import']);
 Route::post('employee-leave-credits/import', [EmployeeLeaveCreditController::class, 'import']);
 Route::post('overtime-credits/import', [EmployeeOvertimeCreditController::class, 'import']);
+Route::post('employee-credits/import', [EmployeeLeaveCreditController::class, 'import']);
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
