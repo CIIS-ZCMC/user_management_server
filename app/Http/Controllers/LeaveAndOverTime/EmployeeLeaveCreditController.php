@@ -113,16 +113,11 @@ class EmployeeLeaveCreditController extends Controller
             Excel::import($importClass, $file);
 
             return response()->json([
-                'success' => true,
                 'message' => ucfirst($importType) . ' credits imported successfully',
-                'data'    => [
-                    'created' => $importClass->created,
-                    'updated' => $importClass->updated,
-                ],
+                'data'    => $importClass->data, // unified array
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
                 'message' => 'Error during import: ' . $e->getMessage(),
                 'data'    => null,
             ], 500);

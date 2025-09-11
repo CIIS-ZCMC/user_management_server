@@ -14,8 +14,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
 {
-    public $created = [];
-    public $updated = [];
+    public $data = [];
 
     public function collection(Collection $rows)
     {
@@ -51,6 +50,7 @@ class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
                     ->first();
 
                 $previousCredit = 0;
+                $action = 'create';
 
                 if ($leaveCredit) {
                     $previousCredit = $leaveCredit->total_leave_credits;
@@ -60,12 +60,7 @@ class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
                         'used_leave_credits'  => $leaveCredit->used_leave_credits,
                     ]);
 
-                    $this->updated[] = [
-                        'employee_id'     => $employeeProfile->employee_id,
-                        'leave_type'      => $leaveType->code,
-                        'previous_credit' => $previousCredit,
-                        'new_credit'      => $creditValue,
-                    ];
+                    $action = 'update';
                 } else {
                     $leaveCredit = EmployeeLeaveCredit::create([
                         'employee_profile_id' => $employeeProfile->id,
@@ -73,13 +68,16 @@ class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
                         'total_leave_credits' => $creditValue,
                         'used_leave_credits'  => 0,
                     ]);
-
-                    $this->created[] = [
-                        'employee_id'   => $employeeProfile->employee_id,
-                        'leave_type'    => $leaveType->code,
-                        'new_credit'    => $creditValue,
-                    ];
                 }
+
+                // Push result in unified array
+                $this->data[] = [
+                    'employee_id'     => $employeeProfile->employee_id,
+                    'leave_type'      => $leaveType->code,
+                    'previous_credit' => $previousCredit,
+                    'new_credit'      => $creditValue,
+                    'action'          => $action,
+                ];
 
                 // Log
                 EmployeeLeaveCreditLogs::create([

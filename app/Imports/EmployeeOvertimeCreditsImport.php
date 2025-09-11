@@ -13,8 +13,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
 {
-    public $created = [];
-    public $updated = [];
+    public $data = [];
     public $skipped = [];
 
     public function collection(Collection $rows)
@@ -59,6 +58,7 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                 ->first();
 
             $previousCredit = 0;
+            $action = 'add';
 
             if ($overtimeCredit) {
                 $previousCredit = $overtimeCredit->earned_credit_by_hour;
@@ -67,12 +67,7 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                     'earned_credit_by_hour' => $creditValue,
                 ]);
 
-                $this->updated[] = [
-                    'employee_id'     => $employeeProfile->employee_id,
-                    'previous_credit' => $previousCredit,
-                    'new_credit'      => $creditValue,
-                    'valid_until'     => $validUntil,
-                ];
+                $action = 'update';
             } else {
                 $overtimeCredit = EmployeeOvertimeCredit::create([
                     'employee_profile_id'   => $employeeProfile->id,
@@ -83,23 +78,26 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                     'valid_until'           => $validUntil,
                     'is_expired'            => false,
                 ]);
-
-                $this->created[] = [
-                    'employee_id'   => $employeeProfile->employee_id,
-                    'new_credit'    => $creditValue,
-                    'valid_until'   => $validUntil,
-                ];
             }
 
             // Log
             EmployeeOvertimeCreditLog::create([
                 'employee_ot_credit_id' => $overtimeCredit->id,
-                'action'                => $overtimeCredit->wasRecentlyCreated ? "add" : "update",
-                'reason'                => $overtimeCredit->wasRecentlyCreated
+                'action'                => $action,
+                'reason'                => $action === "add"
                     ? "Overtime Credit Starting Balance"
                     : "Overtime Credit Updated via Import",
                 'hours'                 => $creditValue,
             ]);
+
+            // Add to one unified data array
+            $this->data[] = [
+                'employee_id'     => $employeeProfile->employee_id,
+                'previous_credit' => $previousCredit,
+                'new_credit'      => $creditValue,
+                'valid_until'     => $validUntil,
+                'action'          => $action,
+            ];
         }
     }
 }
