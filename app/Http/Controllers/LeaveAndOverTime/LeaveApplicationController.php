@@ -1214,6 +1214,20 @@ class LeaveApplicationController extends Controller
             }
 
 
+            // SoloParent
+            if ($leave_type->code === 'SP' && $employee_profile->date_hired) {
+                $dateHired = Carbon::parse($employee_profile->date_hired);
+                $oneYearAgo = Carbon::now()->subYear();
+
+                // check if date_hired is more than 1 year ago
+                if ($dateHired->gt($oneYearAgo)) {
+                    return response()->json([
+                        'message' => "You must have at least 1 year of service from your date hired (" . $dateHired->toDateString() . ") to apply for Solo Parent Leave."
+                    ], Response::HTTP_FORBIDDEN);
+                }
+            }
+
+
             //IF SICK LEAVE
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
 
