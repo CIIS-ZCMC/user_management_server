@@ -20,20 +20,26 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
     {
         foreach ($rows as $row) {
             if (empty($row['employee_id'])) {
-                $this->skipped[] = ['reason' => 'Missing employee_id', 'row' => $row->toArray()];
+                $this->skipped[] = [
+                    'reason' => 'Missing employee_id',
+                    'row'    => $row->toArray()
+                ];
                 continue;
             }
 
             $employeeProfile = EmployeeProfile::where('employee_id', $row['employee_id'])->first();
             if (!$employeeProfile) {
-                $this->skipped[] = ['reason' => 'Employee not found', 'row' => $row->toArray()];
+                $this->skipped[] = [
+                    'reason' => 'Employee not found',
+                    'row'    => $row->toArray()
+                ];
                 continue;
             }
 
             $creditValue   = (float) ($row['cto'] ?? 0);
             $validUntilRaw = $row['valid_until'] ?? null;
 
-            // Parse valid_until (can be Excel serial or string)
+            // Parse valid_until (Excel serial or string)
             $validUntil = null;
             if (!empty($validUntilRaw)) {
                 try {
@@ -47,7 +53,10 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                         }
                     }
                 } catch (\Exception $e) {
-                    $this->skipped[] = ['reason' => 'Invalid date format', 'row' => $row->toArray()];
+                    $this->skipped[] = [
+                        'reason' => 'Invalid date format',
+                        'row'    => $row->toArray()
+                    ];
                     $validUntil = null;
                 }
             }
@@ -90,13 +99,14 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                 'hours'                 => $creditValue,
             ]);
 
-            // Add to one unified data array
+            // Add both IDs into data
             $this->data[] = [
-                'employee_id'     => $employeeProfile->employee_id,
-                'previous_credit' => $previousCredit,
-                'new_credit'      => $creditValue,
-                'valid_until'     => $validUntil,
-                'action'          => $action,
+                'employee_profile_id' => $employeeProfile->id,
+                'employee_id'         => $employeeProfile->employee_id,
+                'previous_credit'     => $previousCredit,
+                'new_credit'          => $creditValue,
+                'valid_until'         => $validUntil,
+                'action'              => $action,
             ];
         }
     }

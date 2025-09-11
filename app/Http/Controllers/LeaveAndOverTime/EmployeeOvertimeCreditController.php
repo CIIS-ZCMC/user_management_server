@@ -305,44 +305,61 @@ class EmployeeOvertimeCreditController extends Controller
             $import = new EmployeeOvertimeCreditsImport();
             Excel::import($import, $request->file('file'));
 
-            // Build the same response as getEmployees
-            $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
-                ->whereHas('employeeProfile', function ($query) {
-                    $query->whereNotNull('employee_id');
-                })
-                ->whereHas('employeeProfile', function ($query) {
-                    $query->where('employment_type_id', '!=', 5);
-                })
+            // Collect only the employees we just processed
+            $employeeProfileIds = collect($import->data)->pluck('employee_profile_id')->unique();
+
+            // Load their updated overtime credits (like in getEmployees)
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])
+                ->whereIn('employee_profile_id', $employeeProfileIds)
                 ->get()
                 ->groupBy('employee_profile_id');
 
             $response = [];
-            foreach ($leaveCredits as $employeeProfileId => $leaveCreditGroup) {
-                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
-                $leaveCreditData = [];
 
-                foreach ($leaveCreditGroup as $leaveCredit) {
-                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+            foreach ($overtimeCredits as $employeeProfileId => $credits) {
+                $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
+
+                $currentYearBalance = 0;
+                $currentYearValidUntil = null;
+                $nextYearBalance = 0;
+                $nextYearValidUntil = null;
+                $overallTotalBalance = 0;
+
+                foreach ($credits as $credit) {
+                    if (!$credit->is_expired) {
+                        $validUntil = \Carbon\Carbon::parse($credit->valid_until);
+                        $year = $validUntil->year;
+                        $overallTotalBalance += $credit->earned_credit_by_hour;
+
+                        if ($year == now()->year) {
+                            $currentYearBalance += $credit->earned_credit_by_hour;
+                            $currentYearValidUntil = $validUntil->toDateString();
+                        } elseif ($year == now()->year + 1) {
+                            $nextYearBalance += $credit->earned_credit_by_hour;
+                            $nextYearValidUntil = $validUntil->toDateString();
+                        }
+                    }
                 }
 
-                // Fetch CTO credit
-                $ctoCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfileId)->value('earned_credit_by_hour');
-                $leaveCreditData['CTO'] = $ctoCredit;
-
-                // Build employee response
                 $employeeResponse = [
-                    'id'          => $employeeProfileId,
-                    'name'        => $employeeDetails,
-                    'employee_id' => $leaveCreditGroup->first()->employeeProfile->employee_id,
+                    'id' => $employeeProfileId,
+                    'name' => $employeeDetails,
+                    'employee_id' => $credits->first()->employeeProfile->employee_id,
+                    'credits' => [
+                        'current_year_balance' => $currentYearBalance,
+                        'current_valid_until' => $currentYearValidUntil,
+                        'next_year_balance' => $nextYearBalance,
+                        'next_year_valid_until' => $nextYearValidUntil,
+                        'overall_total_balance' => $overallTotalBalance,
+                    ],
                 ];
-                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
 
                 $response[] = $employeeResponse;
             }
 
             return response()->json([
                 'message' => 'Employee overtime credits imported successfully.',
-                'data'    => $response,
+                'data'    => $response, // 👈 same format as getEmployees()
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json([

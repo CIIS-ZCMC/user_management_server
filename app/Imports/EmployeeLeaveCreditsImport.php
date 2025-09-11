@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
 {
-    public $data = [];
+    public $affected = []; // collect affected employee_profile_ids
 
     public function collection(Collection $rows)
     {
@@ -28,7 +28,6 @@ class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            // Leave types mapping
             $leaveTypeCodes = ['fl', 'spl', 'vl', 'sl'];
 
             foreach ($leaveTypeCodes as $code) {
@@ -37,32 +36,22 @@ class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
                 }
 
                 $creditValue = (float) $row[$code];
-
-                // Find leave type
-                $leaveType = LeaveType::where('code', strtoupper($code))->first();
+                $leaveType   = LeaveType::where('code', strtoupper($code))->first();
                 if (!$leaveType) {
                     continue;
                 }
 
-                // Find existing credit
                 $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $employeeProfile->id)
                     ->where('leave_type_id', $leaveType->id)
                     ->first();
 
-                $previousCredit = 0;
-                $action = 'create';
-
                 if ($leaveCredit) {
-                    $previousCredit = $leaveCredit->total_leave_credits;
-
                     $leaveCredit->update([
                         'total_leave_credits' => $creditValue,
                         'used_leave_credits'  => $leaveCredit->used_leave_credits,
                     ]);
-
-                    $action = 'update';
                 } else {
-                    $leaveCredit = EmployeeLeaveCredit::create([
+                    EmployeeLeaveCredit::create([
                         'employee_profile_id' => $employeeProfile->id,
                         'leave_type_id'       => $leaveType->id,
                         'total_leave_credits' => $creditValue,
@@ -70,26 +59,12 @@ class EmployeeLeaveCreditsImport implements ToCollection, WithHeadingRow
                     ]);
                 }
 
-                // Push result in unified array
-                $this->data[] = [
-                    'employee_id'     => $employeeProfile->employee_id,
-                    'leave_type'      => $leaveType->code,
-                    'previous_credit' => $previousCredit,
-                    'new_credit'      => $creditValue,
-                    'action'          => $action,
-                ];
-
-                // Log
-                EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $leaveCredit->id,
-                    'previous_credit'          => $previousCredit,
-                    'leave_credits'            => $creditValue,
-                    'reason'                   => $leaveCredit->wasRecentlyCreated
-                        ? "Leave Credit Starting Balance"
-                        : "Leave Credit Updated via Import",
-                    'action'                   => $leaveCredit->wasRecentlyCreated ? "add" : "update",
-                ]);
+                // mark employee as affected
+                $this->affected[] = $employeeProfile->id;
             }
         }
+
+        // ensure unique IDs only
+        $this->affected = array_unique($this->affected);
     }
 }

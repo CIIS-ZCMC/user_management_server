@@ -76,17 +76,12 @@ class EmployeeLeaveCreditController extends Controller
         ]);
 
         try {
-            // Run the import
-            Excel::import(new EmployeeLeaveCreditsImport, $request->file('file'));
+            $import = new EmployeeLeaveCreditsImport();
+            Excel::import($import, $request->file('file'));
 
-            // Build the same response format as getEmployees
+            // only query affected employees
             $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
-                ->whereHas('employeeProfile', function ($query) {
-                    $query->whereNotNull('employee_id');
-                })
-                ->whereHas('employeeProfile', function ($query) {
-                    $query->where('employment_type_id', '!=', 5);
-                })
+                ->whereIn('employee_profile_id', $import->affected)
                 ->get()
                 ->groupBy('employee_profile_id');
 
@@ -99,10 +94,9 @@ class EmployeeLeaveCreditController extends Controller
                     $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
                 }
 
-                // Fetch CTO credit
+                // Fetch CTO
                 $ctoCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfileId)
                     ->value('earned_credit_by_hour');
-
                 $leaveCreditData['CTO'] = $ctoCredit;
 
                 $employeeResponse = [
