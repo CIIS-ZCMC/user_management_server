@@ -6,6 +6,7 @@ use App\Models\EmployeeOvertimeCredit;
 use App\Http\Controllers\Controller;
 use App\Imports\EmployeeLeaveCreditsImport;
 use App\Imports\EmployeeOvertimeCreditsImport;
+use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
 use App\Models\OvertimeApplication;
@@ -300,10 +301,48 @@ class EmployeeOvertimeCreditController extends Controller
         ]);
 
         try {
-            Excel::import(new EmployeeOvertimeCreditsImport, $request->file('file'));
+            // Run the import
+            $import = new EmployeeOvertimeCreditsImport();
+            Excel::import($import, $request->file('file'));
+
+            // Build the same response as getEmployees
+            $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->whereNotNull('employee_id');
+                })
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->where('employment_type_id', '!=', 5);
+                })
+                ->get()
+                ->groupBy('employee_profile_id');
+
+            $response = [];
+            foreach ($leaveCredits as $employeeProfileId => $leaveCreditGroup) {
+                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+                $leaveCreditData = [];
+
+                foreach ($leaveCreditGroup as $leaveCredit) {
+                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+                }
+
+                // Fetch CTO credit
+                $ctoCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfileId)->value('earned_credit_by_hour');
+                $leaveCreditData['CTO'] = $ctoCredit;
+
+                // Build employee response
+                $employeeResponse = [
+                    'id'          => $employeeProfileId,
+                    'name'        => $employeeDetails,
+                    'employee_id' => $leaveCreditGroup->first()->employeeProfile->employee_id,
+                ];
+                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+
+                $response[] = $employeeResponse;
+            }
 
             return response()->json([
-                'message' => 'Employee overtime credits imported successfully.'
+                'message' => 'Employee overtime credits imported successfully.',
+                'data'    => $response,
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json([
