@@ -99,24 +99,32 @@ class EmployeeLeaveCreditController extends Controller
         $file = $request->file('file');
 
         try {
+            $importClass = null;
+
             switch ($importType) {
                 case 'leave':
-                    Excel::import(new EmployeeLeaveCreditsImport, $file);
+                    $importClass = new EmployeeLeaveCreditsImport();
                     break;
-
                 case 'overtime':
-                    Excel::import(new EmployeeOvertimeCreditsImport, $file);
+                    $importClass = new EmployeeOvertimeCreditsImport();
                     break;
             }
+
+            Excel::import($importClass, $file);
 
             return response()->json([
                 'success' => true,
                 'message' => ucfirst($importType) . ' credits imported successfully',
+                'data'    => [
+                    'created' => $importClass->created,
+                    'updated' => $importClass->updated,
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error during import: ' . $e->getMessage(),
+                'data'    => null,
             ], 500);
         }
     }

@@ -13,19 +13,25 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
 {
+    public $created = [];
+    public $updated = [];
+    public $skipped = [];
+
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
             if (empty($row['employee_id'])) {
+                $this->skipped[] = ['reason' => 'Missing employee_id', 'row' => $row->toArray()];
                 continue;
             }
 
             $employeeProfile = EmployeeProfile::where('employee_id', $row['employee_id'])->first();
             if (!$employeeProfile) {
+                $this->skipped[] = ['reason' => 'Employee not found', 'row' => $row->toArray()];
                 continue;
             }
 
-            $creditValue = (float) ($row['cto'] ?? 0);
+            $creditValue   = (float) ($row['cto'] ?? 0);
             $validUntilRaw = $row['valid_until'] ?? null;
 
             // Parse valid_until (can be Excel serial or string)
@@ -42,6 +48,7 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                         }
                     }
                 } catch (\Exception $e) {
+                    $this->skipped[] = ['reason' => 'Invalid date format', 'row' => $row->toArray()];
                     $validUntil = null;
                 }
             }
@@ -59,6 +66,13 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                 $overtimeCredit->update([
                     'earned_credit_by_hour' => $creditValue,
                 ]);
+
+                $this->updated[] = [
+                    'employee_id'     => $employeeProfile->employee_id,
+                    'previous_credit' => $previousCredit,
+                    'new_credit'      => $creditValue,
+                    'valid_until'     => $validUntil,
+                ];
             } else {
                 $overtimeCredit = EmployeeOvertimeCredit::create([
                     'employee_profile_id'   => $employeeProfile->id,
@@ -69,6 +83,12 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
                     'valid_until'           => $validUntil,
                     'is_expired'            => false,
                 ]);
+
+                $this->created[] = [
+                    'employee_id'   => $employeeProfile->employee_id,
+                    'new_credit'    => $creditValue,
+                    'valid_until'   => $validUntil,
+                ];
             }
 
             // Log
@@ -82,5 +102,4 @@ class EmployeeOvertimeCreditsImport implements ToCollection, WithHeadingRow
             ]);
         }
     }
-    
 }

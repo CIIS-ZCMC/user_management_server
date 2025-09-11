@@ -32,6 +32,7 @@ return new class extends Migration
             $table->boolean('shifting')->default(FALSE);
             $table->boolean('is_2fa')->default(FALSE);
             $table->boolean('solo_parent')->default(FALSE);
+            $table->date('valid_until')->nullable();
             $table->datetime('renewal')->nullable();
             $table->unsignedBigInteger('employment_type_id');
             $table->foreign('employment_type_id')->references('id')->on('employment_types');
