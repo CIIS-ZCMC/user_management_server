@@ -48,12 +48,12 @@ class AttendanceController extends Controller
                     ->get();
 
             }
-    
+
             return response()->json([
                 'message' => "List retrieved successfully",
                 'data' => $data
             ]);
-    
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'fetchAttendanceList', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -102,10 +102,10 @@ class AttendanceController extends Controller
             return response()->json([
                 "message"=>"list retrieved successfully",
                 'data'=>$data,
-                
+
             ]);
 
-        //     
+        //
         //     if (!$device) {
         //         return response()->json(['message' => 'Device not found'], Response::HTTP_NOT_FOUND);
         //     }
@@ -125,23 +125,24 @@ class AttendanceController extends Controller
     ->where("ip_address",$request->ip_address)
     ->get();
     $title = $request->title ?? "";
-    set_time_limit(0); 
+    set_time_limit(0);
     ini_set('max_execution_time', 10600);
 
-   
+
     $dateRequest = date("Y-m-d");
 
-   
+
     if(isset($request->dateRequest)){
         $dateRequest = date("Y-m-d",strtotime($request->dateRequest));
     }
-    
-    $mergedAttendance = []; 
+
+    $mergedAttendance = [];
+
 
     foreach ($devices as $device) {
         try {
             // Connect to device
-           
+
             if ($tad = $this->device->bIO($device)) {
                 // Get raw attendance logs
                 $logs = $tad->get_att_log();
@@ -150,29 +151,21 @@ class AttendanceController extends Controller
                     \Log::error("Failed to parse XML from device: " . $device->ip_address);
                     continue;
                 }
-                $attendanceLogs = $this->helper->getAttendance($attendance);
-                $userInfo = $this->device->getUserInformation($attendanceLogs, $tad);
-                $employeeInfo = $this->helper->getEmployee($userInfo);
-
-
-                $attendanceLogs = array_values(array_filter($attendanceLogs,function($row) use($dateRequest) {
+              
+              $attendanceLogs = $this->helper->getAttendance($attendance);
+              $attendanceLogs = array_values(array_filter($attendanceLogs,function($row) use($dateRequest) {
                         return date("Y-m-d",strtotime($row['date_time'])) == $dateRequest;
                 }));
-
-             
-               
-                foreach ($employeeInfo as $employee) {
+                foreach ($attendanceLogs as $employee) {
                     $biometricId = $employee['biometric_id'];
-                  
+
                  $user = Biometrics::join('employee_profiles', 'biometrics.biometric_id', '=', 'employee_profiles.biometric_id')
                                    ->where('biometrics.biometric_id', $biometricId)
                                    ->select('biometrics.*')
                                    ->first();
+
                     if (!$user) continue;
 
-                    
-
-                  
                     $profile = $user->employeeProfile;
                     $area = $profile->assignedArea->details ?? null;
                     $details = null;
@@ -183,20 +176,20 @@ class AttendanceController extends Controller
                                     if($info){
                                       $details = $info['details']->toArray(request()) ?? "";
                                       $sector =  $info['sector'] ?? "";
-                                                         
+
                                   }
-                              
+
                        $employeeLogs = array_values(array_filter($attendanceLogs, function($log) use ($dateRequest, $biometricId) {
                                       return $log['biometric_id'] == $biometricId  && date("Y-m-d", strtotime($log['date_time'])) == $dateRequest;
-                          }));        
+                          }));
                           if(!$employeeLogs){continue;}
 
-                         
-                        
-                                  
-                    usort($employeeLogs, fn($a, $b) => 
+
+
+
+                    usort($employeeLogs, fn($a, $b) =>
                         strtotime(datetime: $a['date_time']) <=> strtotime($b['date_time'])
-                    );     
+                    );
                     $dateKey = date('Y-m-d', strtotime($employeeLogs[0]['date_time']));
                     $mergeKey = "{$biometricId}_{$dateKey}";
 
@@ -215,7 +208,7 @@ class AttendanceController extends Controller
                             'title' => $title,
                             'deviceIP' => $device->ip_address
                         ];
-                    } else { 
+                    } else {
                         $mergedAttendance[$mergeKey]['first_entry'] = min(
                             $mergedAttendance[$mergeKey]['first_entry'],
                             $firstEntry
@@ -231,9 +224,9 @@ class AttendanceController extends Controller
                     $tad->delete_data(['value' => 3]);
                 }
             }
-            
+
         } catch (\Exception $e) {
-            return "offline";
+            return $e;
             \Log::error("Device {$device->ip_address} failed: " . $e->getMessage());
             continue;
         }
@@ -258,11 +251,11 @@ class AttendanceController extends Controller
     ]);
 //    return $this->GenerateToExcel($data, $title);
 }
-  
-    
+
+
     public function SavetoDb($data){
     foreach ($data as $row) {
-      
+
                 $title_key = $row['title'];
                 $attendance = Attendance::firstOrCreate(["title"=>$title_key]);
                 $row['attendances_id'] = $attendance->id;
@@ -278,7 +271,7 @@ class AttendanceController extends Controller
                     }
                     } else {
                         $attendanceInfo = Attendance_Information::create($row);
-                    }             
+                    }
             }
     }
 
@@ -304,16 +297,16 @@ class AttendanceController extends Controller
             $logs = $attendance->logs->sortBy(function($log) {
                 return strtolower($log->name);
             });
-         
+
             return $this->GenerateToExcel($logs->toArray(),$attendance->title);
         } catch (\Throwable $th) {
             return $th->getMessage();
         }
     }
-    
+
     public function GenerateToExcel($data,$title){
-        
-      
+
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
          $headers = array_keys($data[0]);
