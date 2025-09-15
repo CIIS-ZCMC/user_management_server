@@ -528,16 +528,6 @@ class DTRcontroller extends Controller
            
             foreach ($this->devices as $device) {
 
-                $device = [
-                    'id'=> 17,
-                    'ip_address' => '192.168.5.183',
-                    'com_key' => 0,
-                    'description' => 'TAD1',
-                    'soap_port' => 80,
-                    'udp_port' => 4370,
-                    'encoding' => 'utf-8'
-                ];
-               
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
               
                     $logs = $tad->get_att_log();
