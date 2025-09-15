@@ -331,7 +331,7 @@ class Helpers
             $entry = date('Y-m-d', strtotime($value['first_in']));
             $entryTime = date('H:i', strtotime($value['first_in']));
         }
-        
+
         $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
             $entryDateTime = strtotime("$entry $entryTime");
         
@@ -363,23 +363,22 @@ class Helpers
         }));
         
 
+        // $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
+        //     $entryDateTime = strtotime($entry . ' ' . $entryTime);
 
-       /* $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
-            $entryDateTime = strtotime($entry . ' ' . $entryTime);
+        //     return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
+        //         (
+        //             (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) &&
+        //                 date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' -4 hours'))) ||
+        //             (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours')) &&
+        //                 date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' -4 hours'))) ||
+        //             (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['third_entry'] . ' +4 hours')) &&
+        //                 date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['third_entry'] . ' -4 hours'))) ||
+        //             (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' +4 hours')) &&
+        //                 date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' -4 hours')))
+        //         );
+        // }));
 
-            return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
-                (
-                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) &&
-                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' -4 hours'))) ||
-                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours')) &&
-                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' -4 hours'))) ||
-                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['third_entry'] . ' +4 hours')) &&
-                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['third_entry'] . ' -4 hours'))) ||
-                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' +4 hours')) &&
-                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' -4 hours')))
-                );
-        }));
-*/
 
 
 
@@ -1316,82 +1315,88 @@ class Helpers
     {
         $new_timing = 0;
         $unique_Employee_IDs = [];
-        $date = date('Y-m-d');
-        
-        // Get unique employee IDs and determine date
+    
+        // Get unique employee IDs
         foreach ($check_Records as $record) {
             $employee_ID = $record['biometric_id'];
             if (!in_array($employee_ID, $unique_Employee_IDs)) {
                 $unique_Employee_IDs[] = $employee_ID;
             }
-            if ($yesterdate) {
-                $date = date('Y-m-d', strtotime($record['date_time']));
-            }
         }
     
         foreach ($unique_Employee_IDs as $id) {
-            $employee_Records = array_filter($check_Records, function ($att) use ($id) {
-                return $att['biometric_id'] == $id;
-            });
+            // Group records for this employee by date
+            $recordsByDate = [];
+            foreach ($check_Records as $record) {
+                if ($record['biometric_id'] == $id) {
+                    $recDate = date('Y-m-d', strtotime($record['date_time']));
     
-            // Prepare new records
-            $new_Rec = [];
-            foreach ($employee_Records as $record) {
-                $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($record['date_time'])))
-                    ->where('biometric_id', $record['biometric_id'])
-                    ->first();
-                
-                $entry = "Logged";
-                if ($rec) {
-                    $timeFields = [$rec->first_in, $rec->first_out, $rec->second_in, $rec->second_out];
-                    if (in_array($record['date_time'], $timeFields)) {
-                        $entry = "Daily Time Recorded";
+                    // If yesterdate flag is set, force recDate to the record's date
+                    if ($yesterdate) {
+                        $recDate = date('Y-m-d', strtotime($record['date_time']));
                     }
-                }
     
-                $new_Rec[] = [
-                    'timing' => $new_timing++,
-                    'biometric_id' => $record['biometric_id'],
-                    'name' => $record['name'],
-                    'date_time' => $record['date_time'],
-                    'status' => $record['status'],
-                    'status_description' => $record['status_description'],
-                    'device_id' => $device['id'],
-                    'device_name' => $this->getDeviceName($device['id']),
-                    'entry_status' => $entry,
-                    'datepull' => date('Y-m-d H:i:s')
-                ];
+                    $recordsByDate[$recDate][] = $record;
+                }
             }
     
-            // Check for existing logs (both validated and non-validated)
-            $existingLogs = DailyTimeRecordlogs::whereDate('dtr_date', $date)
-                ->where('biometric_id', $id)
-                ->first();
+            // Process each date separately
+            foreach ($recordsByDate as $recDate => $employee_Records) {
+                $new_Rec = [];
     
-            if ($existingLogs) {
-                // Merge with existing logs
-                $existingData = json_decode($existingLogs->json_logs, true) ?: [];
-                $mergedData = $this->mergeAndDeduplicateRecords($existingData, $new_Rec);
-                
-                $existingLogs->update([
-                    'json_logs' => json_encode($mergedData),
-                    'validated' => $validate // Update validation status
-                ]);
-            } else {
-                // Check for DTR record
-                $dtrRecord = DailyTimeRecords::whereDate('dtr_date', $date)
+                foreach ($employee_Records as $record) {
+                    $rec = DailyTimeRecords::whereDate('dtr_date', $recDate)
+                        ->where('biometric_id', $record['biometric_id'])
+                        ->first();
+    
+                    $entry = "Logged";
+                    if ($rec) {
+                        $timeFields = [$rec->first_in, $rec->first_out, $rec->second_in, $rec->second_out];
+                        if (in_array($record['date_time'], $timeFields)) {
+                            $entry = "Daily Time Recorded";
+                        }
+                    }
+    
+                    $new_Rec[] = [
+                        'timing' => $new_timing++,
+                        'biometric_id' => $record['biometric_id'],
+                        'name' => $record['name'],
+                        'date_time' => $record['date_time'],
+                        'status' => $record['status'],
+                        'status_description' => $record['status_description'],
+                        'device_id' => $device['id'],
+                        'device_name' => $this->getDeviceName($device['id']),
+                        'entry_status' => $entry,
+                        'datepull' => date('Y-m-d H:i:s')
+                    ];
+                }
+    
+                // Check logs only for this employee and date
+                $existingLogs = DailyTimeRecordlogs::whereDate('dtr_date', $recDate)
                     ->where('biometric_id', $id)
                     ->first();
     
-                $logData = [
-                    'biometric_id' => $id,
-                    'dtr_id' => $dtrRecord ? $dtrRecord->id : 0,
-                    'json_logs' => json_encode($new_Rec),
-                    'validated' => $validate,
-                    'dtr_date' => $date
-                ];
+                if ($existingLogs) {
+                    $existingData = json_decode($existingLogs->json_logs, true) ?: [];
+                    $mergedData = $this->mergeAndDeduplicateRecords($existingData, $new_Rec);
     
-                DailyTimeRecordlogs::create($logData);
+                    $existingLogs->update([
+                        'json_logs' => json_encode($mergedData),
+                        'validated' => $validate
+                    ]);
+                } else {
+                    $dtrRecord = DailyTimeRecords::whereDate('dtr_date', $recDate)
+                        ->where('biometric_id', $id)
+                        ->first();
+    
+                    DailyTimeRecordlogs::create([
+                        'biometric_id' => $id,
+                        'dtr_id' => $dtrRecord ? $dtrRecord->id : 0,
+                        'json_logs' => json_encode($new_Rec),
+                        'validated' => $validate,
+                        'dtr_date' => $recDate
+                    ]);
+                }
             }
         }
     }
@@ -1420,6 +1425,7 @@ class Helpers
     
         return $existingData;
     }
+    
 /////////////////////////////////////////////////////////////
     public function getAttendance($attendance)
     {
@@ -1442,14 +1448,19 @@ class Helpers
       public function getEmployee($user_Inf)
     {
         $Employee_Info = [];
-    
+        
         foreach ($user_Inf as $item) {
-            // If it's object, use ->Row; if array, use ['Row']
-            $row = is_object($item) ? $item->Row : $item['Row'];
-    
+            $user = Biometrics::join('employee_profiles', 'biometrics.biometric_id', '=', 'employee_profiles.biometric_id')
+            ->where('biometrics.biometric_id', $item['biometric_id'])
+            ->select('biometrics.*')
+            ->first();
+
+            if (!$user) continue;
+
+            $profile = $user->employeeProfile;
             $Employee_Info[] = [
-                'biometric_id' => isset($row->PIN2) ? (string)$row->PIN2 : (isset($row['PIN2']) ? $row['PIN2'] : null),
-                'name' => isset($row->Name) ? (string)$row->Name : (isset($row['Name']) ? $row['Name'] : null),
+                'biometric_id' =>$item['biometric_id'],
+                'name' => $profile->name(),
             ];
         }
     
