@@ -527,10 +527,9 @@ class DTRcontroller extends Controller
             set_time_limit(0);
            
             foreach ($this->devices as $device) {
-                
-      
+
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
-                   
+              
                     $logs = $tad->get_att_log();
                     $attendance = simplexml_load_string($logs);
                     if (!$attendance) {
@@ -538,18 +537,19 @@ class DTRcontroller extends Controller
                         continue;
                     }
                      $attendance_Logs = $this->helper->getAttendance($attendance);
-                     $user_Inf = $this->device->getUserInformation($attendance_Logs, $tad);
-                     $Employee_Info = $this->helper->getEmployee($user_Inf);
+                    //  $user_Inf = $this->device->getUserInformation($attendance_Logs, $tad);
+                      $Employee_Info = $this->helper->getEmployee($attendance_Logs);
                 
                     
                     if ($this->isNotEmptyFields($attendance_Logs)) {
+                        
                         $Employee_Attendance = $this->helper->getEmployeeAttendance(
                             $attendance_Logs,
                             $Employee_Info
                         );
 
                         $this->DeviceLog->Save($Employee_Attendance, $device);
-                      $this->SaveLogsLocal($Employee_Attendance, $device);
+                        $this->SaveLogsLocal($Employee_Attendance, $device);
 
                         
                         $date_and_timeD = simplexml_load_string($tad->get_date());

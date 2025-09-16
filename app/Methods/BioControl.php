@@ -79,18 +79,23 @@ class BioControl
 
         foreach ($uniqueBios as $PIN) {
             try {
+                
                 // Get raw XML response (bypass TAD's auto-parsing if needed)
                 $response = $tad->get_user_info(['pin' => $PIN]);
+
+                
 
                 // Handle raw response if parsing fails
                 $xmlString = is_object($response) ? $response->get_response_body() : $response;
 
                 // Clean invalid XML characters
-                $xmlString = mb_convert_encoding($xmlString, 'UTF-8', 'UTF-8');
+                $xmlString = mb_convert_encoding($xmlString, 'UTF-8', 'auto');
                 $xmlString = preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $xmlString);
-
+                
                 // Parse XML
                 $userInfo = simplexml_load_string($xmlString);
+
+              
                 if ($userInfo !== false) {
                     $userInfoList[] = $userInfo;
                 } else {
@@ -502,6 +507,7 @@ class BioControl
 
     public function fetchDataToDevice($device, $biometric_id)
     {
+        //xxxxx
         if ($tad = $this->bIO($device)) {
             $data = Biometrics::where('biometric_id', $biometric_id)
                 ->Where('biometric', '!=', 'NOT_YET_REGISTERED')
