@@ -229,8 +229,7 @@ class LeaveApplicationController extends Controller
 
                 $leave_applications = LeaveApplication::select('leave_applications.*')
                     ->where(function ($query) use ($hrmo, $employeeId) {
-                        $query->whereIn('leave_applications.status', $hrmo)
-                            ->where('leave_applications.hrmo_officer', $employeeId);
+                        $query->whereIn('leave_applications.status', $hrmo);
                     })
 
                     ->groupBy(
