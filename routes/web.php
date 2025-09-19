@@ -38,6 +38,7 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         Route::get('/ftchdtrfrmdvc', 'fetchDTRFromDevice')->name('fetchdtrfromdevice');
         Route::get('/viewdtr', 'viewDTR')->name('viewdtr');
         Route::get('generateDtr', 'generateDTR')->name('generateDtr');
+         Route::get("/throwAllNonRegistered",'throwAllNonReg');
         //   Route::get('fetchUserDTR', 'fetchUserDTR')->name('fetchuserdtr');
         // Route::get('/getHolidays', 'getHolidays')->name('getHolidays');
         // Route::get('/setHolidays', 'setHolidays')->name('setHolidays');
