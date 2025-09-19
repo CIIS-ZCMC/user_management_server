@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\DTR;
 
 use App\Models\Biometrics;
+use App\Models\Devices;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
@@ -2567,7 +2568,59 @@ class DTRcontroller extends Controller
     // }
 
 
+    public function throwAllNonReg($cmd){
+        set_time_limit(0);
+        ini_set('max_execution_time', 10600);
+     $employees = EmployeeProfile::whereNotIn('biometric_id', function ($query) {
+            $query->select('biometric_id')
+                  ->from('biometrics');
+        })->get();
 
+        $listofEmployees = $employees->reduce(function ($carry, $employee) {
+            if(!in_array($employee->biometric_id,["-1"])){
+                 $carry[] = [
+                'pin'  => $employee->biometric_id,
+                'name' => $employee->lastNameTofirstName(), // <-- this now calls the accessor on the model
+            ];
+            }
+            return $carry;
+        }, []);
+
+        $reg_devices = Devices::where("is_registration",1)->where("is_active",1)->get();
+
+        $reg_devices->reduce(function($carry,$data){
+            if(!in_array($data->ip_address,["192.168.5.171","192.168.5.172"])){
+                $carry[] = $data;
+            }
+            return $carry;
+        },[]);
+        $cmd->comment("Initializing ...");
+        foreach ($reg_devices as $device) {
+            if($tad = $this->device->bIO($device)){
+                $cmd->info(`Device connection successful - {$device->ip_address}`);
+                  foreach ($listofEmployees as $employee) {  
+              if($this->device->fetcBulkDataToDeviceForNewFPRegistration($tad,$employee['pin'],$employee['name'])){
+                $cmd->line($employee['pin'] . ' ' . $employee['name'] . ' - Pushed to device ' . $device->ip_address);
+
+              }
+          
+            }
+            }
+          
+
+        }
+      
+    
+      return response()->json([
+        "message"=> "All data was fetched in registration devices"
+      ]);
+        
+        
+
+
+        
+        
+    }
     public function test()
     {
         return view('dtrlog');
