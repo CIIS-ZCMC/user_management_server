@@ -499,6 +499,15 @@ class BioControl
         return false;
     }
 
+    public function fetcBulkDataToDeviceForNewFPRegistration($tad, $biometric_id, $name)
+    {
+            $tad->set_user_info([
+                'pin' => $biometric_id,
+                'name' => $name,
+            ]);
+          return true;
+    }
+
     /**
      *
      *
