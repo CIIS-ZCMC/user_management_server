@@ -2597,7 +2597,7 @@ class DTRcontroller extends Controller
         $cmd->comment("Initializing ...");
         foreach ($reg_devices as $device) {
             if($tad = $this->device->bIO($device)){
-                $cmd->info(`Device connection successful - {$device->ip_address}`);
+              $cmd->info('Device connection successful - ' . $device->ip_address);
                   foreach ($listofEmployees as $employee) {  
               if($this->device->fetcBulkDataToDeviceForNewFPRegistration($tad,$employee['pin'],$employee['name'])){
                 $cmd->line($employee['pin'] . ' ' . $employee['name'] . ' - Pushed to device ' . $device->ip_address);
