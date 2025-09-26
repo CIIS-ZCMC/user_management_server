@@ -128,7 +128,38 @@ class BioControl
             'macaddress' => $mac_address
         ]);
     }
+    public       function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
+    {
+        Biometrics::where('biometric_id', $biometric_id)->update([
+            'privilege' => $priv
+        ]);
 
+        $added =  $tad->set_user_info([
+            'pin' => $user_data->biometric_id,
+            'name' => $user_data->name,
+            'privilege' => $is_Admin
+        ]);
+
+
+        $biometric_Data = json_decode($user_data->biometric);
+        if ($added) {
+            if ($biometric_Data !== null) {
+                foreach ($biometric_Data as $row) {
+                    $fingerid = $row->Finger_ID;
+                    $size = $row->Size;
+                    $valid = $row->Valid;
+                    $template = $row->Template;
+                    $tad->set_user_template([
+                        'pin' => $user_data->biometric_id,
+                        'finger_id' => $fingerid,
+                        'size' => $size,
+                        'valid' => $valid,
+                        'template' => $template
+                    ]);
+                }
+            }
+        }
+    }
     public function setSuperAdmin($device, $biometric_ids, $unset)
     {
 
@@ -136,38 +167,7 @@ class BioControl
 
             //
 
-            function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
-            {
-                Biometrics::where('biometric_id', $biometric_id)->update([
-                    'privilege' => $priv
-                ]);
-
-                $added =  $tad->set_user_info([
-                    'pin' => $user_data->biometric_id,
-                    'name' => $user_data->name,
-                    'privilege' => $is_Admin
-                ]);
-
-
-                $biometric_Data = json_decode($user_data->biometric);
-                if ($added) {
-                    if ($biometric_Data !== null) {
-                        foreach ($biometric_Data as $row) {
-                            $fingerid = $row->Finger_ID;
-                            $size = $row->Size;
-                            $valid = $row->Valid;
-                            $template = $row->Template;
-                            $tad->set_user_template([
-                                'pin' => $user_data->biometric_id,
-                                'finger_id' => $fingerid,
-                                'size' => $size,
-                                'valid' => $valid,
-                                'template' => $template
-                            ]);
-                        }
-                    }
-                }
-            }
+      
             foreach ($biometric_ids as $ids) {
                 $user_data = Biometrics::where('biometric_id', $ids)->get();
 
@@ -175,10 +175,10 @@ class BioControl
                     foreach ($user_data as $data) {
                         if ($unset) {
 
-                            saveSettings($ids, $data, $tad, 0, 0);
+                            $this->saveSettings($ids, $data, $tad, 0, 0);
                         } else {
 
-                            saveSettings($ids, $data, $tad, 14, 1);
+                            $this->saveSettings($ids, $data, $tad, 14, 1);
                         }
                     }
                 }
@@ -406,6 +406,8 @@ class BioControl
         }
     }
 
+
+    //Add fetch bull userData from dEvice via COMMAND
     public function fetchUserDataFromDeviceToDB($device, $biometric_id)
     {
         if ($tad = $this->BIO($device)) {
