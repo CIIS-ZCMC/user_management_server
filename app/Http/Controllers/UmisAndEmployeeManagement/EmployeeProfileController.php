@@ -4566,7 +4566,7 @@ class EmployeeProfileController extends Controller
                     $cleanData[$value] = null;
                 }
 
-                $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+                $plantilla_assign_area = PlantillaAssignedArea::create(attributes: $cleanData);
                 $plantilla_number->update(['assigned_at' => now()]);
 
                 $plantilla = $plantilla_number->plantilla;

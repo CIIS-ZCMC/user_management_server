@@ -87,6 +87,7 @@ class EmployeeRepository
             ->whereNotNull('employee_profiles.employee_id')
             ->whereNull('employee_profiles.deactivated_at')
             ->where('employee_profiles.biometric_id', '>', 0)
+            ->whereIn('employment_type_id', $filter == 'regular' ? [1,2,3,4] : [5])
             ->where(function ($query) {
                 $query->whereNull('b.biometric') // no record in biometrics table
                     ->orWhere('b.biometric', '=', 'NOT_YET_REGISTERED'); // has record but not registered
