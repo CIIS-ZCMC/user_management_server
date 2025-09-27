@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\v2\Plantilla\PlantillaImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use App\Http\Controllers\DTR\BioController;
@@ -41,6 +42,8 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('schedules', [ScheduleController::class, 'index']);
 
             Route::delete('sign-out', [AuthTokenBearerController::class, 'delete']);
+
+            Route::get('plantilla-import', PlantillaImportController::class);
         });
     });
 });
